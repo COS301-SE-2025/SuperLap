@@ -1,6 +1,6 @@
 # READ ME
 
-![Alt text](docs/images/Place Holder.png)
+![Alt text](docs/images/banner.png)
 
 ## Table of Contents
 - [Installation](#installation)
