@@ -37,6 +37,18 @@ app.get('/users', async (req, res) => {
   }
 });
 
+// Fetch a single user by username
+app.get('/users/:username', async (req, res) => {
+  try {
+    const username = req.params.username;
+    const user = await db.collection("users").findOne({username: username});
+    res.json(user);
+  } catch (error) {
+    console.error("GET error:", error);
+    res.status(500).json({message: "Failed to fetch user"});
+  }
+});
+
 // TRACK ROUTES
 
 
