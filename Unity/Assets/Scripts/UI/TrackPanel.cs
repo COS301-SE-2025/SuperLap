@@ -11,6 +11,7 @@ public class TrackPanel : MonoBehaviour
     [Header("UI References")]
     public Button uploadButton;
     public Button generateMeshButton;
+    public Button sendToServerButton;
     public RawImage imagePreview;
     public GameObject meshViewerContainer;
     public TextMeshProUGUI statusText;
@@ -265,6 +266,10 @@ public class TrackPanel : MonoBehaviour
             // Show mesh viewer
             if (meshViewerContainer != null)
                 meshViewerContainer.SetActive(true);
+                
+            // Show send to server button
+            if (sendToServerButton != null)
+                sendToServerButton.interactable = true;
                 
             UpdateStatus("3D track mesh generated successfully!");
         }

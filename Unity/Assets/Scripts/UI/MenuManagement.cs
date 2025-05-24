@@ -4,11 +4,58 @@ using TMPro;
 
 public class MenuManagement : MonoBehaviour
 {
+  public GameObject MainMenuCanvas;
+  public GameObject LoginRegisterCanvas;
+  public GameObject MainCamera;
+
+  public float transitionSpeed = 5.0f;
+
+  private bool isTransitioningToLogin = false;
+  private bool isTransitioningToMainMenu = false;
+  void Update()
+  {
+    if (isTransitioningToLogin)
+    {
+      MainCamera.transform.position = Vector3.MoveTowards(MainCamera.transform.position, new Vector3(-10, 4, 4), transitionSpeed * Time.deltaTime);
+      MainCamera.transform.LookAt(new Vector3(0,0,10));
+      if(MainCamera.transform.position == new Vector3(-10, 4, 4))
+      {
+        isTransitioningToLogin = false;
+      }
+    }
+    if (isTransitioningToMainMenu)
+    {
+      MainCamera.transform.position = Vector3.MoveTowards(MainCamera.transform.position, new Vector3(-7, 4, 18), transitionSpeed * Time.deltaTime);
+      MainCamera.transform.LookAt(new Vector3(0,0,10));
+      if(MainCamera.transform.position == new Vector3(-7, 4, 18))
+      {
+        isTransitioningToMainMenu = false;
+      }
+    }
+  }
+
   public void goToScene(string sceneName)
   {
     SceneManager.LoadScene(sceneName);
     Debug.Log("Scene loaded: " + sceneName);
   }
+
+  
+
+  public void transitionToLogin()
+  {
+    MainMenuCanvas.SetActive(false);
+    LoginRegisterCanvas.SetActive(true);
+    isTransitioningToLogin = true;
+  }
+
+  public void transitionToMainMenu()
+  {
+    MainMenuCanvas.SetActive(true);
+    LoginRegisterCanvas.SetActive(false);
+    isTransitioningToMainMenu = true;
+  }
+  
   public void exitGame()
   {
     Application.Quit();
