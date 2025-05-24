@@ -86,6 +86,19 @@ app.post('/users', async (req, res) => {
   }
 });
 
+// Delete a single user
+app.delete('/users/:username', async (req, res) => {
+  try {
+    const username = req.params.username;
+    const result = await db.collection("users").deleteOne({username: username});
+    res.status(201).json({message: "User deleted successfully"});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to delete user"});
+  }
+});
+
+
 // TRACK ROUTES
 
 
