@@ -49,6 +49,26 @@ app.get('/users/:username', async (req, res) => {
   }
 });
 
+// Update a single user
+app.put('/users/:username', async (req, res) => {
+  const username = req.params.username;
+  const updatedData = req.body;
+
+  try {
+    const result = await db.collection('users').updateOne({ username: username }, { $set: updatedData });
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: 'User not found or data unchanged' });
+    }
+
+    res.json({ message: 'User updated successfully' });
+  } catch (error) {
+    console.error('Update error:', error);
+    res.status(500).json({ message: 'Failed to update user' });
+  }
+});
+
+
 // TRACK ROUTES
 
 
