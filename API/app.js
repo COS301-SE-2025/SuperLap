@@ -14,4 +14,32 @@ async function connectToDb() {
   console.log("Connected to MongoDB");
 }
 
+// Default route
+app.get('/', async (req, res) => {
+  try {
+    res.json({ message: "Hello from Express!" });
+  } catch (error) {
+    console.log("GET error:", error);
+    res.status(500).json({message:"Failed to fetch default route"});
+  }
+});
+
+// USER ROUTES
+
+
+
+// TRACK ROUTES
+
+
+
+// RACING LINE ROUTES
+
+
+
+// TRAINING SESSION ROUTES
+
+
+
+
+
 module.exports = { app, connectToDb };
