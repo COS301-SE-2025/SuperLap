@@ -26,7 +26,16 @@ app.get('/', async (req, res) => {
 
 // USER ROUTES
 
-
+// Fetch all users
+app.get('/users', async (req, res) => {
+  try {
+    const users = await db.collection("users").find().toArray();
+    res.json(users);
+  } catch (error) {
+    console.error("GET error:", error);
+    res.status(500).json({message: "Failed to fetch users"});
+  }
+});
 
 // TRACK ROUTES
 
