@@ -68,6 +68,23 @@ app.put('/users/:username', async (req, res) => {
   }
 });
 
+// Create a single user
+app.post('/users', async (req, res) => {
+  try {
+    const newUser = req.body;
+    // Check if the user already exists
+    const existingUser = await db.collection("users").findOne({ username: newUser.username });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username already taken" });
+    }
+    // Insert the new user into the database
+    await (await db).collection("users").insertOne(newUser);
+    res.status(201).json({ message: "User created successfully" });
+  } catch (error) {
+    console.error("Create error:", error);
+    res.status(500).json({ message: "Error creating user" });
+  }
+});
 
 // TRACK ROUTES
 
