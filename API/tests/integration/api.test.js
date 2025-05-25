@@ -67,4 +67,12 @@ describe('API Endpoints', function () {
     expect(res.status).to.equal(200); // Your current implementation returns 200 with null body
     expect(res.body).to.satisfy(val => val === null || typeof val === 'object');
   });
+
+  it('PUT /users/:username should return 404 if user does not exist', async function () {
+    const res = await request(app)
+      .put('/users/fakeuser123')
+      .send({ age: 99 });
+    expect(res.status).to.equal(404);
+    expect(res.body).to.have.property('message', 'User not found or data unchanged');
+  });
 });
