@@ -75,4 +75,11 @@ describe('API Endpoints', function () {
     expect(res.status).to.equal(404);
     expect(res.body).to.have.property('message', 'User not found or data unchanged');
   });
+  
+  it('DELETE /users/:username should return success even if user does not exist', async function () {
+    const res = await request(app)
+      .delete('/users/nonexistentuser');
+    expect(res.status).to.equal(201); // You may want to consider changing this to 404 for nonexistent users
+    expect(res.body).to.have.property('message', 'User deleted successfully');
+  });
 });
