@@ -109,7 +109,136 @@ app.delete('/users/:username', async (req, res) => {
 
 // TRACK ROUTES
 
+// Fetch all tracks
+app.get('/tracks', async (req, res) => {
+  try {
+    const tracks = await db.collection("tracks").find().toArray();
+    res.json(tracks);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
 
+// Fetch a single track by name
+app.get('/tracks/:name', async (req, res) => {
+  try {
+    const trackName = req.params.name;
+    const track = await db.collection("tracks").findOne({name: trackName});
+    res.json(track);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch track"});
+  }
+});
+
+// Fetch all tracks by type
+app.get('/tracks/:type', async (req, res) => {
+  try {
+    const trackType = req.params.type;
+    const tracks = await db.collection("tracks").find({type: trackType}).toArray();
+    res.json(tracks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
+
+// Fetch all tracks by city
+app.get('/tracks/:city', async (req, res) => {
+  try {
+    const trackCity = req.params.city;
+    const tracks = await db.collection("tracks").find({city: trackCity}).toArray();
+    res.status(201).json(tracks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
+
+// Fetch all tracks by country
+app.get('/tracks/:country', async (req, res) => {
+  try {
+    const trackCountry = req.params.country;
+    const tracks = await db.collection("tracks").find({country: trackCountry}).toArray();
+    res.status(201).json(tracks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
+
+// Fetch all tracks by location
+app.get('/tracks/:location', async (req, res) => {
+  try {
+    const trackLocation = req.params.location;
+    const tracks = await db.collection("tracks").find({location: trackLocation}).toArray();
+    res.status(201).json(tracks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
+
+// Create a track
+app.post('/tracks', async (req, res) => {
+  try {
+    const newTrack = req.body;
+    // Check if the track already exists
+    const existingTrack = await db.collection("tracks").findOne({ name: newTrack.name });
+    if (existingTrack) {
+      return res.status(400).json({ message: "Track already exists" });
+    }
+    // Insert the new track into the database
+    await db.collection("tracks").insertOne(newTrack);
+    res.status(201).json({ message: "Track created successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating track" });
+  }
+});
+
+// Update track
+app.put('/tracks/:name', async (req, res) => {
+  const trackName = req.params.username;
+  const updatedData = req.body;
+
+  try {
+    const result = await db.collection('tracks').updateOne({ name: trackName }, { $set: updatedData });
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: 'Track not found or data unchanged' });
+    }
+
+    res.json({ message: 'Track updated successfully' });
+  } catch (error) {
+    console.error('Update error:', error);
+    res.status(500).json({ message: 'Failed to update track' });
+  }
+});
+
+// Delete track
+app.delete('/tracks/:name', async (req, res) => {
+  try {
+    const trackName = req.params.name;
+    await db.collection("tracks").deleteOne({name: trackName});
+    res.status(201).json({ message: "Track deleted successfully" });
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({ message: "Failed to delete track" });
+  }
+});
+
+// Fetch track image
+app.get('/images/:name', async (req, res) => {
+  try {
+    const trackName = req.params.name;
+    const track = await db.collection("tracks").findOne({name: trackLocation});
+    res.status(201).json(track.image);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
 // RACING LINE ROUTES
 
 
