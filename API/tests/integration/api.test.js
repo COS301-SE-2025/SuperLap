@@ -52,4 +52,11 @@ describe('API Endpoints', function () {
     expect(res.status).to.equal(200);
     expect(res.body).to.have.property('message', 'User updated successfully');
   });
+
+  it('DELETE /users/:username should delete the user', async function () {
+    const res = await request(app)
+      .delete(`/users/${testUser.username}`);
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.property('message', 'User deleted successfully');
+  });
 });
