@@ -3,6 +3,14 @@
 > This file is intended to provide a brief overview of the API, its usage, how to run it, and where to contribute.
 
 ## How to run the API
+Ensure that you are set up with MONGO DB and have the necessary environment variables configured.
+You will need a .env with the details are in the **💾-general-backend** pinned message.
+
+```bash
+    cd API
+    npm install dotenv
+```
+
 ```bash
     npm install
     npm start
