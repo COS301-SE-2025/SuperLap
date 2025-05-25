@@ -6989,7 +6989,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1997537222}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: transitionToMainMenu
         m_Mode: 1
