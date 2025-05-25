@@ -93,7 +93,6 @@ public class MenuManagement : MonoBehaviour
       {
         errorText.text = message;
       }
-      }
     }
   }
 
