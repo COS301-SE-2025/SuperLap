@@ -19,20 +19,8 @@ jobs:
         with:
           dotnet-version: "6.0.x"
 
-      - name: Generate Unity project files
-        run: |
-          # Check if Unity directory exists
-          if [ -d "Unity" ]; then
-            echo "Unity directory found"
-            # List contents to see what's actually there
-            ls -la Unity/
-          else
-            echo "Unity directory not found, checking for Unity scripts in other locations"
-            find . -name "*.cs" -type f | head -10
-          fi
-
-      - name: Run C# linting with file-based approach
+      - name: Run C# linting
         uses: wearerequired/lint-action@v2
         with:
           dotnet_format: true
-          dotnet_format_args: "--include **/*.cs --verify-no-changes"
+          dotnet_format_args: "Unity/Unity.sln"
