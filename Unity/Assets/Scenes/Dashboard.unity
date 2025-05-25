@@ -2661,8 +2661,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MainMenuCanvas: {fileID: 0}
-  LoginRegisterCanvas: {fileID: 0}
+  LoginCanvas: {fileID: 0}
+  RegisterCanvas: {fileID: 0}
   MainCamera: {fileID: 0}
+  ErrorMessage: {fileID: 0}
   transitionSpeed: 5
 --- !u!114 &1312239168
 MonoBehaviour:
