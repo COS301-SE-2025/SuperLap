@@ -124,6 +124,18 @@ app.get('/tracks/:name', async (req, res) => {
   }
 });
 
+// Fetch all tracks by type
+app.get('/tracks/:type', async (req, res) => {
+  try {
+    const trackType = req.params.type;
+    const tracks = await db.collection("tracks").find({type: trackType}).toArray();
+    res.json(tracks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
+
 // RACING LINE ROUTES
 
 
