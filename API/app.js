@@ -189,6 +189,25 @@ app.post('/tracks', async (req, res) => {
   }
 });
 
+// Update track
+app.put('/tracks/:name', async (req, res) => {
+  const trackName = req.params.username;
+  const updatedData = req.body;
+
+  try {
+    const result = await db.collection('tracks').updateOne({ name: trackName }, { $set: updatedData });
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: 'Track not found or data unchanged' });
+    }
+
+    res.json({ message: 'Track updated successfully' });
+  } catch (error) {
+    console.error('Update error:', error);
+    res.status(500).json({ message: 'Failed to update track' });
+  }
+});
+
 // RACING LINE ROUTES
 
 
