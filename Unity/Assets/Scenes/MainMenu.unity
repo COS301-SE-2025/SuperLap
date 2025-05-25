@@ -6242,7 +6242,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1691245219}
+      - m_Target: {fileID: 1997537222}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: transitionToLogin
         m_Mode: 1
@@ -6565,7 +6565,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1820766444}
+      - m_Target: {fileID: 1997537222}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: transitionToRegister
         m_Mode: 1
@@ -6989,7 +6989,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1820766444}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: transitionToMainMenu
         m_Mode: 1
@@ -7980,7 +7980,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1715566895}
+      - m_Target: {fileID: 1997537222}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: transitionToLogin
         m_Mode: 1
@@ -9494,7 +9494,6 @@ GameObject:
   - component: {fileID: 1691245216}
   - component: {fileID: 1691245215}
   - component: {fileID: 1691245214}
-  - component: {fileID: 1691245219}
   m_Layer: 5
   m_Name: MainMenuCanvas
   m_TagString: Untagged
@@ -9597,24 +9596,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1691245219
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1691245213}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dece916d16f227b499098647a184e9e1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MainMenuCanvas: {fileID: 1691245213}
-  LoginCanvas: {fileID: 1820766438}
-  RegisterCanvas: {fileID: 1715566894}
-  MainCamera: {fileID: 66388068}
-  ErrorMessage: {fileID: 0}
-  transitionSpeed: 5
 --- !u!1 &1692175862
 GameObject:
   m_ObjectHideFlags: 0
@@ -14558,7 +14539,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1715566895}
+      - m_Target: {fileID: 1997537222}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: transitionToMainMenu
         m_Mode: 1
@@ -14890,7 +14871,6 @@ GameObject:
   - component: {fileID: 1715566898}
   - component: {fileID: 1715566897}
   - component: {fileID: 1715566896}
-  - component: {fileID: 1715566895}
   m_Layer: 5
   m_Name: RegisterCanvas
   m_TagString: Untagged
@@ -14898,24 +14878,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1715566895
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1715566894}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dece916d16f227b499098647a184e9e1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MainMenuCanvas: {fileID: 1691245213}
-  LoginCanvas: {fileID: 1820766438}
-  RegisterCanvas: {fileID: 1715566894}
-  MainCamera: {fileID: 66388068}
-  ErrorMessage: {fileID: 1914235969}
-  transitionSpeed: 5
 --- !u!114 &1715566896
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15272,13 +15234,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1820766444}
+      - m_Target: {fileID: 1997537222}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: Login
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 1851065434}
-          m_ObjectArgumentAssemblyTypeName: TMPro.TMP_InputField, Unity.TextMeshPro
+          m_ObjectArgument: {fileID: 1488741429}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -15335,7 +15297,6 @@ GameObject:
   - component: {fileID: 1820766441}
   - component: {fileID: 1820766440}
   - component: {fileID: 1820766439}
-  - component: {fileID: 1820766444}
   m_Layer: 5
   m_Name: LoginCanvas
   m_TagString: Untagged
@@ -15438,24 +15399,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1820766444
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1820766438}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dece916d16f227b499098647a184e9e1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MainMenuCanvas: {fileID: 1691245213}
-  LoginCanvas: {fileID: 1820766438}
-  RegisterCanvas: {fileID: 1715566894}
-  MainCamera: {fileID: 66388068}
-  ErrorMessage: {fileID: 1488741429}
-  transitionSpeed: 5
 --- !u!1 &1851065433
 GameObject:
   m_ObjectHideFlags: 0
@@ -15853,7 +15796,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1997537222}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: exitGame
         m_Mode: 1
@@ -16258,13 +16201,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1715566895}
+      - m_Target: {fileID: 1997537222}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
         m_MethodName: RegisterUser
-        m_Mode: 1
+        m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgument: {fileID: 1914235969}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -16318,6 +16261,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1997537221}
   - component: {fileID: 1997537220}
+  - component: {fileID: 1997537222}
   m_Layer: 0
   m_Name: init
   m_TagString: Untagged
@@ -16355,6 +16299,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1997537222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1997537219}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dece916d16f227b499098647a184e9e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MainMenuCanvas: {fileID: 1691245213}
+  LoginCanvas: {fileID: 1820766438}
+  RegisterCanvas: {fileID: 1715566894}
+  MainCamera: {fileID: 66388068}
+  transitionSpeed: 5
 --- !u!1 &2087038682
 GameObject:
   m_ObjectHideFlags: 0
