@@ -60,8 +60,7 @@ describe('API Endpoints', function () {
     expect(res.body).to.have.property('message', 'User deleted successfully');
   });
 
-  // // Edge Testing
-
+  // Edge Testing
   it('GET /users/:username should return null or appropriate response if user not found', async function () {
     const res = await request(app).get('/users/nonexistentuser');
     expect(res.status).to.equal(200); // Your current implementation returns 200 with null body
@@ -94,4 +93,13 @@ describe('API Endpoints', function () {
     expect(res.body).to.have.property('message', 'User not found or data unchanged');
   });
 
+  it('POST /users should not allow creating a user with an existing username', async function () {
+    // Create the user once
+    await request(app).post('/users').send(testUser);
+
+    // Try to create the same user again
+    const res = await request(app).post('/users').send(testUser);
+    expect(res.status).to.equal(400);
+    expect(res.body).to.have.property('message', 'Username already taken');
+  });
 });
