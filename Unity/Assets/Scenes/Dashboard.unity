@@ -5280,8 +5280,8 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 729960491}
         m_TargetAssemblyTypeName: MenuManagement, Assembly-CSharp
-        m_MethodName: transitionToMainMenu
-        m_Mode: 1
+        m_MethodName: goToScene
+        m_Mode: 5
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -7653,8 +7653,6 @@ GameObject:
   - component: {fileID: 1923104955}
   - component: {fileID: 1923104954}
   - component: {fileID: 1923104953}
-  - component: {fileID: 1923104956}
-  - component: {fileID: 1923104957}
   m_Layer: 5
   m_Name: LoadingPanel
   m_TagString: Untagged
@@ -7743,52 +7741,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1923104951}
   m_CullTransparentMesh: 1
---- !u!114 &1923104956
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1923104951}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ed5f2aaeb4f5a34581137b23a98a851, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  trackBackgroundImage: {fileID: 2124747296}
-  racingLineImage: {fileID: 361705990}
-  maskContainer: {fileID: 0}
-  trackTexture: {fileID: 2800000, guid: b24bd75ebea2383438752b7a0b068106, type: 3}
-  racingLineTexture: {fileID: 2800000, guid: 0d2daebe055843749b283eb64f9e5822, type: 3}
-  animationSpeed: 2
-  animationType: 0
-  autoStart: 1
-  loop: 1
-  maskRadius: 50
-  pathResolution: 100
-  useManualProgress: 0
-  manualProgress: 0
-  isAnimating: 0
-  currentProgress: 0
-  racingLinePath: []
-  maskCircles: []
---- !u!114 &1923104957
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1923104951}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d634e8785eb1f043a97eb4978b8a15c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  trackImage: {fileID: 2124747296}
-  racingLineImage: {fileID: 361705990}
-  trackTexture: {fileID: 2800000, guid: b24bd75ebea2383438752b7a0b068106, type: 3}
-  racingLineTexture: {fileID: 2800000, guid: 0d2daebe055843749b283eb64f9e5822, type: 3}
-  showRacingLineOnly: 0
 --- !u!1 &1942960488
 GameObject:
   m_ObjectHideFlags: 0

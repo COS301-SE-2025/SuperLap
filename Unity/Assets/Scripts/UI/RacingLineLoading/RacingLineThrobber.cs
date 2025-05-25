@@ -44,7 +44,10 @@ public class RacingLineThrobber : MonoBehaviour
     void Start()
     {
         SetupImages();
-        
+    }
+    
+    void OnEnable()
+    {
         if (autoStart)
         {
             StartLoading();

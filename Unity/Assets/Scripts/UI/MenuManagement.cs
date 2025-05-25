@@ -9,8 +9,6 @@ public class MenuManagement : MonoBehaviour
   public GameObject RegisterCanvas;
   public GameObject MainCamera;
 
-  public GameObject ErrorMessage;
-
   public float transitionSpeed = 5.0f;
 
   private bool isTransitioningToLogin = false;
@@ -25,6 +23,8 @@ public class MenuManagement : MonoBehaviour
       if(MainCamera.transform.position == new Vector3(-10, 4, 4))
       {
         isTransitioningToLogin = false;
+        isTransitioningToMainMenu = false;
+        isTransitioningToRegister = false;
       }
     }
     if (isTransitioningToMainMenu)
@@ -34,15 +34,19 @@ public class MenuManagement : MonoBehaviour
       if(MainCamera.transform.position == new Vector3(-7, 4, 18))
       {
         isTransitioningToMainMenu = false;
+        isTransitioningToLogin = false;
+        isTransitioningToRegister = false;
       }
     }
     if (isTransitioningToRegister)
     {
-      MainCamera.transform.position = Vector3.MoveTowards(MainCamera.transform.position, new Vector3(-10, 4, 4), transitionSpeed * Time.deltaTime);
+      MainCamera.transform.position = Vector3.MoveTowards(MainCamera.transform.position, new Vector3(10, 8, 18), transitionSpeed * Time.deltaTime);
       MainCamera.transform.LookAt(new Vector3(0,0,10));
-      if(MainCamera.transform.position == new Vector3(-10, 4, 4))
+      if(MainCamera.transform.position == new Vector3(10, 8, 18))
       {
         isTransitioningToRegister = false;
+        isTransitioningToLogin = false;
+        isTransitioningToMainMenu = false;
       }
     }
   }
@@ -55,26 +59,33 @@ public class MenuManagement : MonoBehaviour
 
   public void transitionToLogin()
   {
+    isTransitioningToLogin = true;
+    isTransitioningToMainMenu = false;
+    isTransitioningToRegister = false;
+    LoginCanvas.SetActive(true);
     MainMenuCanvas.SetActive(false);
     RegisterCanvas.SetActive(false);
-    LoginCanvas.SetActive(true);
-    isTransitioningToLogin = true;
+
   }
 
   public void transitionToMainMenu()
   {
+    isTransitioningToMainMenu = true;
+    isTransitioningToLogin = false;
+    isTransitioningToRegister = false;
     MainMenuCanvas.SetActive(true);
     LoginCanvas.SetActive(false);
     RegisterCanvas.SetActive(false);
-    isTransitioningToMainMenu = true;
   }
 
   public void transitionToRegister()
   {
+    isTransitioningToRegister = true;
+    isTransitioningToLogin = false;
+    isTransitioningToMainMenu = false;
+    RegisterCanvas.SetActive(true);
     MainMenuCanvas.SetActive(false);
     LoginCanvas.SetActive(false);
-    RegisterCanvas.SetActive(true);
-    isTransitioningToRegister = true;
   }
   
   public void exitGame()
@@ -83,68 +94,39 @@ public class MenuManagement : MonoBehaviour
     Debug.Log("Game exited");
   }
 
-  private void ShowErrorMessage(string message)
+  public void Login(GameObject errorMessage)
   {
-    if (ErrorMessage != null)
+    TMP_InputField[] inputFields = LoginCanvas.GetComponentsInChildren<TMP_InputField>();
+    
+    if (inputFields.Length >= 1)
     {
-      ErrorMessage.SetActive(true);
-      TMP_Text errorText = ErrorMessage.GetComponent<TMP_Text>();
-      if (errorText != null)
+      TMP_InputField usernameField = inputFields[0];
+      if (usernameField != null && !string.IsNullOrEmpty(usernameField.text.Trim()))
       {
-        errorText.text = message;
-      }
-    }
-  }
-
-  public void Login(TMP_InputField usernameInputField)
-  {
-    if (usernameInputField != null)
-    {
-      string username = usernameInputField.text;
-      if (!string.IsNullOrEmpty(username.Trim()))
-      {
-        Debug.Log("Login attempt with username: " + username);
-        PlayerPrefs.SetString("Username", username);
+        Debug.Log("Login attempt with username: " + usernameField.text);
+        PlayerPrefs.SetString("Username", usernameField.text);
         PlayerPrefs.Save();
         goToScene("Dashboard");
       }
       else
       {
-        ShowErrorMessage("Username cannot be empty!");
+        if (errorMessage != null)
+        {
+          TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+          if (errorText != null)
+          {
+            errorText.text = "Username cannot be empty!";
+          }
+        }
+        else
+        {
+          Debug.LogError("Error message GameObject is not provided!");
+        }
       }
-    }
-    else
-    {
-      ShowErrorMessage("Username cannot be empty!");
     }
   }
 
-  public void Register(TMP_InputField usernameInputField, TMP_InputField emailInputField)
-  {
-    if (usernameInputField != null && emailInputField != null)
-    {
-      string username = usernameInputField.text;
-      string email = emailInputField.text;
-      if(!string.IsNullOrEmpty(username.Trim()) && !string.IsNullOrEmpty(email.Trim()))
-      {
-        Debug.Log("Register attempt with username: " + username);
-        PlayerPrefs.SetString("Username", username);
-        PlayerPrefs.SetString("Email", email);
-        PlayerPrefs.Save();
-        goToScene("Dashboard");
-      }
-      else
-      {
-        ShowErrorMessage("Username and email cannot be empty!");
-      }
-    }
-    else
-    {
-      ShowErrorMessage("Username and email cannot be empty!");
-    }
-  }
-
-  public void RegisterUser()
+  public void RegisterUser(GameObject errorMessage)
   {
     TMP_InputField[] inputFields = RegisterCanvas.GetComponentsInChildren<TMP_InputField>();
     
@@ -153,13 +135,45 @@ public class MenuManagement : MonoBehaviour
       TMP_InputField usernameField = inputFields[0];
       TMP_InputField emailField = inputFields[1];
       
-      Register(usernameField, emailField);
+      if(usernameField != null && emailField != null && !string.IsNullOrEmpty(usernameField.text.Trim()) && !string.IsNullOrEmpty(emailField.text.Trim()))
+      {
+        Debug.Log("Register attempt with username: " + usernameField.text + " and email: " + emailField.text);
+        PlayerPrefs.SetString("Username", usernameField.text);
+        PlayerPrefs.SetString("Email", emailField.text);
+        PlayerPrefs.Save();
+        goToScene("Dashboard");
+      }
+      else
+      {
+        if (errorMessage != null)
+        {
+          TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+          if (errorText != null)
+          {
+            errorText.text = "Username and email cannot be empty!";
+          }
+        }
+        else
+        {
+          Debug.LogError("Error message GameObject is not provided!");
+        }
+      }
     }
     else
     {
-      ErrorMessage.SetActive(true);
-      ErrorMessage.GetComponent<TMP_Text>().text = "Missing input fields!";
-      Debug.LogError("RegisterCanvas needs at least 2 TMP_InputField components for username and email");
+      if (errorMessage != null)
+      {
+        TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+        if (errorText != null)
+        {
+          errorText.text = "Username and email cannot be empty!";
+        }
+      }
+      else
+      {
+        Debug.LogError("Error message GameObject is not provided!");
+      }
     }
   }
+ 
 }
