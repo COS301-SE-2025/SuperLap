@@ -32,5 +32,9 @@ describe('API Endpoints', function () {
     expect(res.body).to.have.property('message', 'User created successfully');
   });
 
-
+  it('GET /users should return an array of users', async function () {
+    const res = await request(app).get('/users');
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an('array');
+  });
 });
