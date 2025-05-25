@@ -136,6 +136,18 @@ app.get('/tracks/:type', async (req, res) => {
   }
 });
 
+// Fetch all tracks by city
+app.get('/tracks/:city', async (req, res) => {
+  try {
+    const trackCity = req.params.city;
+    const tracks = await db.collection("tracks").find({city: trackCity}).toArray();
+    res.status(201).json(tracks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
+
 // RACING LINE ROUTES
 
 
