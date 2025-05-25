@@ -112,6 +112,18 @@ app.get('/tracks', async (req, res) => {
   }
 });
 
+// Fetch a single track by name
+app.get('/tracks/:name', async (req, res) => {
+  try {
+    const trackName = req.params.name;
+    const track = await db.collection("tracks").findOne({name: trackName});
+    res.json(track);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch track"});
+  }
+});
+
 // RACING LINE ROUTES
 
 
