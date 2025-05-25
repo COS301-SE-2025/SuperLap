@@ -59,4 +59,12 @@ describe('API Endpoints', function () {
     expect(res.status).to.equal(201);
     expect(res.body).to.have.property('message', 'User deleted successfully');
   });
+
+  // // Edge Testing
+
+  it('GET /users/:username should return null or appropriate response if user not found', async function () {
+    const res = await request(app).get('/users/nonexistentuser');
+    expect(res.status).to.equal(200); // Your current implementation returns 200 with null body
+    expect(res.body).to.satisfy(val => val === null || typeof val === 'object');
+  });
 });

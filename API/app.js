@@ -102,9 +102,7 @@ app.delete('/users/:username', async (req, res) => {
 // TRACK ROUTES
 
 
-
 // RACING LINE ROUTES
-
 
 
 // TRAINING SESSION ROUTES
