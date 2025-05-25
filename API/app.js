@@ -220,6 +220,18 @@ app.delete('/tracks/:name', async (req, res) => {
   }
 });
 
+// Fetch track image
+app.get('/images/:name', async (req, res) => {
+  try {
+    const trackName = req.params.name;
+    const track = await db.collection("tracks").findOne({name: trackLocation});
+    res.status(201).json(track.image);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
+
 // RACING LINE ROUTES
 
 
