@@ -172,6 +172,23 @@ app.get('/tracks/:location', async (req, res) => {
   }
 });
 
+// Create a track
+app.post('/tracks', async (req, res) => {
+  try {
+    const newTrack = req.body;
+    // Check if the track already exists
+    const existingTrack = await db.collection("tracks").findOne({ name: newTrack.name });
+    if (existingTrack) {
+      return res.status(400).json({ message: "Track already exists" });
+    }
+    // Insert the new track into the database
+    await db.collection("tracks").insertOne(newTrack);
+    res.status(201).json({ message: "Track created successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating track" });
+  }
+});
+
 // RACING LINE ROUTES
 
 
