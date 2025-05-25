@@ -101,7 +101,16 @@ app.delete('/users/:username', async (req, res) => {
 
 // TRACK ROUTES
 
-
+// Fetch all tracks
+app.get('/tracks', async (req, res) => {
+  try {
+    const tracks = await db.collection("tracks").find().toArray();
+    res.json(tracks);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({message: "Failed to fetch tracks"});
+  }
+});
 
 // RACING LINE ROUTES
 
