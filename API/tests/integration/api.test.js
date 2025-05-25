@@ -37,4 +37,10 @@ describe('API Endpoints', function () {
     expect(res.status).to.equal(200);
     expect(res.body).to.be.an('array');
   });
+
+  it('GET /users/:username should return a specific user', async function () {
+    const res = await request(app).get(`/users/${testUser.username}`);
+    expect(res.status).to.equal(200);
+    expect(res.body).to.include({ username: testUser.username });
+  });
 });
