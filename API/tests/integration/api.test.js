@@ -43,4 +43,13 @@ describe('API Endpoints', function () {
     expect(res.status).to.equal(200);
     expect(res.body).to.include({ username: testUser.username });
   });
+
+  it('PUT /users/:username should update the user', async function () {
+    const updatedData = { age: 30 };
+    const res = await request(app)
+      .put(`/users/${testUser.username}`)
+      .send(updatedData);
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('message', 'User updated successfully');
+  });
 });
