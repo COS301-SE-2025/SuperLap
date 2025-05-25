@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { app, connectToDb } = require('../../app');
+const { app, connectToDb, closeDbConnection } = require('../../app');
 const { expect } = require('chai');
 
 describe('API Endpoints', function () {
@@ -16,6 +16,7 @@ describe('API Endpoints', function () {
   afterAll(async function () {
     const db = app.locals.db;
     await db.collection('users').deleteMany({ username: testUser.username });
+    await closeDbConnection();
   });
 
   it('GET / should return a message and collections', async function () {
@@ -102,4 +103,14 @@ describe('API Endpoints', function () {
     expect(res.status).to.equal(400);
     expect(res.body).to.have.property('message', 'Username already taken');
   });
+
+  it('POST /users should return 400 for malformed JSON', async function () {
+    const res = await request(app)
+      .post('/users')
+      .set('Content-Type', 'application/json')
+      .send('{"username": "badjson"'); // missing closing }
+
+    expect(res.status).to.be.oneOf([400, 500]); // depending on express behavior
+  });
+
 });

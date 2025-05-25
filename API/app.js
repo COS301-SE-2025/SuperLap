@@ -6,12 +6,20 @@ const app = express();
 app.use(express.json());
 const uri = process.env.MONGO_URI;
 let db;
+let client; // this will be used to close the connection later
 
 async function connectToDb() {
   const client = await MongoClient.connect(uri);
   db = client.db("Superlap");
   app.locals.db = db;
   console.log("Connected to MongoDB");
+}
+
+async function closeDbConnection() {
+  if (client) {
+    await client.close();
+    console.log("MongoDB connection closed");
+  }
 }
 
 // Default route
@@ -108,7 +116,4 @@ app.delete('/users/:username', async (req, res) => {
 // TRAINING SESSION ROUTES
 
 
-
-
-
-module.exports = { app, connectToDb };
+module.exports = { app, connectToDb, closeDbConnection };
