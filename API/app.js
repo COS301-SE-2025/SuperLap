@@ -208,6 +208,18 @@ app.put('/tracks/:name', async (req, res) => {
   }
 });
 
+// Delete track
+app.delete('/tracks/:name', async (req, res) => {
+  try {
+    const trackName = req.params.name;
+    await db.collection("tracks").deleteOne({name: trackName});
+    res.status(201).json({ message: "Track deleted successfully" });
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({ message: "Failed to delete track" });
+  }
+});
+
 // RACING LINE ROUTES
 
 
