@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
-
 public class MenuManagement : MonoBehaviour
 {
   public GameObject MainMenuCanvas;
@@ -101,12 +100,41 @@ public class MenuManagement : MonoBehaviour
     if (inputFields.Length >= 1)
     {
       TMP_InputField usernameField = inputFields[0];
-      if (usernameField != null && !string.IsNullOrEmpty(usernameField.text.Trim()))
+      TMP_InputField passwordField = inputFields[1];
+      if (usernameField != null && !string.IsNullOrEmpty(usernameField.text.Trim()) && passwordField != null && !string.IsNullOrEmpty(passwordField.text.Trim()))
       {
-        Debug.Log("Login attempt with username: " + usernameField.text);
-        PlayerPrefs.SetString("Username", usernameField.text);
-        PlayerPrefs.Save();
-        goToScene("Dashboard");
+        string username = usernameField.text.Trim();
+        string password = passwordField.text.Trim();
+        APIManager.Instance.LoginUser(username, password, (success, message, user) =>
+        {
+          if (success)
+          {
+            // Store user data in PlayerPrefs
+            PlayerPrefs.SetString("Username", user.username);
+            PlayerPrefs.SetString("Email", user.email);
+            PlayerPrefs.SetString("Password", user.password);
+            PlayerPrefs.Save();
+            
+            Debug.Log("Login successful: " + message);
+            goToScene("Dashboard");
+          }
+          else
+          {
+            // Show error message
+            if (errorMessage != null)
+            {
+              TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+              if (errorText != null)
+              {
+                errorText.text = message;
+              }
+            }
+            else
+            {
+              Debug.Log("Error message GameObject is not provided!");
+            }
+          }
+        });
       }
       else
       {
@@ -115,15 +143,29 @@ public class MenuManagement : MonoBehaviour
           TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
           if (errorText != null)
           {
-            errorText.text = "Username cannot be empty!";
+            errorText.text = "Username or Passwordcannot be empty!";
           }
         }
         else
         {
-          Debug.LogError("Error message GameObject is not provided!");
+          Debug.Log("Error message GameObject is not provided!");
         }
       }
     }
+  }
+
+  public void PasswordChange()
+  {
+    TMP_InputField[] inputFields = LoginCanvas.GetComponentsInChildren<TMP_InputField>();
+    if (inputFields.Length >= 2)
+    {
+      TMP_InputField passwordField = inputFields[1];
+      if(passwordField)
+      {
+        passwordField.contentType = TMP_InputField.ContentType.Password;
+      }
+    }
+    
   }
 
   public void RegisterUser(GameObject errorMessage)
@@ -133,15 +175,46 @@ public class MenuManagement : MonoBehaviour
     if (inputFields.Length >= 2)
     {
       TMP_InputField usernameField = inputFields[0];
-      TMP_InputField emailField = inputFields[1];
-      
-      if(usernameField != null && emailField != null && !string.IsNullOrEmpty(usernameField.text.Trim()) && !string.IsNullOrEmpty(emailField.text.Trim()))
+      TMP_InputField passwordField = inputFields[1];
+      TMP_InputField emailField = inputFields[2];
+
+      if(usernameField != null && !string.IsNullOrEmpty(usernameField.text.Trim()) && 
+      emailField != null && !string.IsNullOrEmpty(emailField.text.Trim()) && 
+      passwordField != null && !string.IsNullOrEmpty(passwordField.text.Trim()))
       {
-        Debug.Log("Register attempt with username: " + usernameField.text + " and email: " + emailField.text);
-        PlayerPrefs.SetString("Username", usernameField.text);
-        PlayerPrefs.SetString("Email", emailField.text);
-        PlayerPrefs.Save();
-        goToScene("Dashboard");
+        string username = usernameField.text.Trim();
+        string email = emailField.text.Trim();
+        string password = passwordField.text.Trim();
+        APIManager.Instance.RegisterUser(username, email, password, (success, message) =>
+        {
+          if (success)
+          {
+            // Store user data in PlayerPrefs
+            PlayerPrefs.SetString("Username", username);
+            PlayerPrefs.SetString("Email", email);
+            PlayerPrefs.SetString("Password", password);
+            PlayerPrefs.Save();
+            
+            Debug.Log("Registration successful: " + message);
+            goToScene("Dashboard");
+          }
+          else
+          {
+            // Show error message
+            if (errorMessage != null)
+            {
+              TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+              if (errorText != null)
+              {
+                errorText.text = message;
+              }
+            }
+            else
+            {
+              Debug.Log("Error message GameObject is not provided!");
+            }
+          }
+        });
       }
       else
       {
@@ -150,12 +223,12 @@ public class MenuManagement : MonoBehaviour
           TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
           if (errorText != null)
           {
-            errorText.text = "Username and email cannot be empty!";
+            errorText.text = "Username and email and password cannot be empty!";
           }
         }
         else
         {
-          Debug.LogError("Error message GameObject is not provided!");
+          Debug.Log("Error message GameObject is not provided!");
         }
       }
     }
@@ -171,7 +244,7 @@ public class MenuManagement : MonoBehaviour
       }
       else
       {
-        Debug.LogError("Error message GameObject is not provided!");
+        Debug.Log("Error message GameObject is not provided!");
       }
     }
   }
