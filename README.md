@@ -73,4 +73,4 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 | Milan Kruger   | desc | [GitHub](https://example.com/api) | [LinkedIn](https://example.com/api) |
 | Qwinton Knocklein   | desc | [GitHub](https://example.com/api) | [LinkedIn](https://example.com/api) |
 | Sean van der Merwe   | desc | [GitHub](https://example.com/api) | [LinkedIn](https://example.com/api) |
-| Simon van der Merwe   | desc | [GitHub](https://example.com/api) | [LinkedIn](https://example.com/api) |
+| Simon van der Merwe   | I am a third year BSc Computer Science student at the University of Pretoria. Networks and optimization are some of my biggest passions. For this project I will be working on the UI/UX, as well as DevOps. | [GitHub](https://github.com/u04576617) | [LinkedIn](https://za.linkedin.com/in/simon-van-der-merwe-50189729b) |
