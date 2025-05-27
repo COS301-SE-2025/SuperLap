@@ -1,8 +1,12 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
+const { setupSwagger } = require('./swagger');
 
 const app = express();
+// Swagger setup
+setupSwagger(app);
+
 app.use(express.json());
 const uri = process.env.MONGO_URI;
 let db;
@@ -21,6 +25,25 @@ async function closeDbConnection() {
     console.log("MongoDB connection closed");
   }
 }
+
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Default route
+ *     description: Returns a welcome message from Express.
+ *     responses:
+ *       200:
+ *         description: A successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Hello from Express!
+ */
 
 // Default route
 app.get('/', async (req, res) => {
