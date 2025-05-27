@@ -1,3 +1,4 @@
+
 Shader "TextMeshPro/Bitmap" {
 
 Properties {

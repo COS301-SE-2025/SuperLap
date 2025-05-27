@@ -48,8 +48,32 @@
     <Analyzer Include="/home/richter/Unity/Hub/Editor/6000.0.49f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowserWindows.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowser.cs" />
+    <Compile Include="Assets/Scripts/UI/DashboardManager.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/Sample/CanvasSampleSaveFileText.cs" />
+    <Compile Include="Assets/Scripts/UI/RacingLine3D/TrackPanelSetup.cs" />
+    <Compile Include="Assets/Scripts/UI/RacingLine3D/TrackViewer.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowserEditor.cs" />
+    <Compile Include="Assets/Scripts/UI/RacingLine3D/TrackPanel.cs" />
     <Compile Include="Assets/Scripts/UI/BikeAnimation.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/IStandaloneFileBrowser.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowserLinux.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/Sample/CanvasSampleOpenFileText.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowserMac.cs" />
+    <Compile Include="Assets/Scripts/UI/MenuManagement.cs" />
     <Compile Include="Assets/Scripts/UI/UIThemer.cs" />
+    <Compile Include="Assets/Scripts/UI/RacingLine3D/TrackPanelFixer.cs" />
+    <Compile Include="Assets/Scripts/UI/MainMenuInit.cs" />
+    <Compile Include="Assets/Scripts/UI/init.cs" />
+    <Compile Include="Assets/Scripts/UI/RacingLineLoading/RacingLineThrobber.cs" />
+    <Compile Include="Assets/Scripts/UI/DashboardInit.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/Sample/CanvasSampleOpenFileTextMultiple.cs" />
+    <Compile Include="Assets/Scripts/UI/APIManager.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/Sample/CanvasSampleSaveFileImage.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/Sample/BasicSample.cs" />
+    <Compile Include="Assets/StandaloneFileBrowser/Sample/CanvasSampleOpenFileImage.cs" />
+    <Compile Include="Assets/Scripts/UI/RacingLine3D/TrackMeshGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
@@ -60,6 +84,7 @@
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF SSD.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/SDFFunctions.hlsl" />
+    <None Include="Assets/StandaloneFileBrowser/Plugins/Ookii.Dialogs.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Surface.shader" />
     <None Include="Assets/TextMesh Pro/Sprites/EmojiOne Attribution.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Custom-Atlas.shader" />
@@ -70,6 +95,7 @@
     <None Include="Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc" />
     <None Include="Assets/TextMesh Pro/Resources/LineBreaking Following Characters.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader" />
+    <None Include="Assets/StandaloneFileBrowser/Plugins/System.Windows.Forms.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt" />
@@ -545,12 +571,20 @@
       <HintPath>Library/PackageCache/com.unity.ext.nunit@b16e6d09cd93/net40/unity-custom/nunit.framework.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Ookii.Dialogs">
+      <HintPath>Assets/StandaloneFileBrowser/Plugins/Ookii.Dialogs.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
       <HintPath>Library/PackageCache/com.unity.visualscripting@7dcdc439b230/Runtime/VisualScripting.Flow/Dependencies/NCalc/Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>Library/PackageCache/com.unity.nuget.mono-cecil@d6f9955a5d5f/Mono.Cecil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <HintPath>Assets/StandaloneFileBrowser/Plugins/System.Windows.Forms.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="netstandard">
@@ -1045,20 +1079,20 @@
       <HintPath>Library/ScriptAssemblies/Unity.InputSystem.ForUI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Searcher.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.Searcher.Editor.dll</HintPath>
+    <Reference Include="UnityEditor.UI">
+      <HintPath>Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.AI.Navigation">
-      <HintPath>Library/ScriptAssemblies/Unity.AI.Navigation.dll</HintPath>
+    <Reference Include="Unity.Searcher.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.Searcher.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Rider.Editor">
       <HintPath>Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEditor.UI">
-      <HintPath>Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
+    <Reference Include="Unity.AI.Navigation">
+      <HintPath>Library/ScriptAssemblies/Unity.AI.Navigation.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipeline.Universal.ShaderLibrary">
@@ -1081,24 +1115,24 @@
       <HintPath>Library/ScriptAssemblies/Unity.ShaderGraph.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.RenderPipelines.Core.Editor.Shared">
-      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Shared.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Timeline">
       <HintPath>Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Editor.Shared">
+      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Shared.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.PlasticSCM.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.PlasticSCM.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.RenderPipelines.Core.ShaderLibrary">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.ShaderLibrary.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.PlasticSCM.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.PlasticSCM.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Multiplayer.Center.Editor">
@@ -1153,12 +1187,12 @@
       <HintPath>Library/ScriptAssemblies/Unity.VisualScripting.Core.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.AI.Navigation.Updater">
-      <HintPath>Library/ScriptAssemblies/Unity.AI.Navigation.Updater.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Multiplayer.Center.Common">
       <HintPath>Library/ScriptAssemblies/Unity.Multiplayer.Center.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.AI.Navigation.Updater">
+      <HintPath>Library/ScriptAssemblies/Unity.AI.Navigation.Updater.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.VisualScripting.Flow.Editor">
@@ -1189,12 +1223,12 @@
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Toolchain.Linux-x86_64">
-      <HintPath>Library/ScriptAssemblies/Unity.Toolchain.Linux-x86_64.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Runtime">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Toolchain.Linux-x86_64">
+      <HintPath>Library/ScriptAssemblies/Unity.Toolchain.Linux-x86_64.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="EasyTextEffects">
