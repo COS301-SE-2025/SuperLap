@@ -21,11 +21,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        include:
-          - os: windows-latest
-            build-target: StandaloneWindows64
-            build-args: ''
+        - os: windows-latest
+          build-target: StandaloneWindows64
+          build-args: ''
     steps:
       - uses: actions/checkout@v4
         with:
