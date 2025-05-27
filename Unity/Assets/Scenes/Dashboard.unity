@@ -850,8 +850,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -13.597}
-  m_SizeDelta: {x: 0, y: 47.194}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &156780977
 MonoBehaviour:
@@ -3293,6 +3293,7 @@ GameObject:
   - component: {fileID: 729960485}
   - component: {fileID: 729960490}
   - component: {fileID: 729960491}
+  - component: {fileID: 729960492}
   m_Layer: 5
   m_Name: Dashboard
   m_TagString: Untagged
@@ -3426,6 +3427,19 @@ MonoBehaviour:
   RegisterCanvas: {fileID: 0}
   MainCamera: {fileID: 0}
   transitionSpeed: 5
+--- !u!114 &729960492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 729960482}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07c8e87ce05dc434ca0c8adc1df2df4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trackDropdown: {fileID: 224753808}
 --- !u!84 &799033989
 RenderTexture:
   m_ObjectHideFlags: 0
@@ -4015,7 +4029,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 46.917}
+  m_SizeDelta: {x: 0, y: 70}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &933430134
 GameObject:
