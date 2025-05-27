@@ -57,6 +57,28 @@ app.get('/', async (req, res) => {
 
 // USER ROUTES
 
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Fetch all users
+ *     description: Returns a list of all users.
+ *     responses:
+ *       200:
+ *         description: A successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ */
+
 // Fetch all users
 app.get('/users', async (req, res) => {
   try {
