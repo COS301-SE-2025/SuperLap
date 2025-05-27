@@ -21,12 +21,67 @@ class TrackProcessor:
         print(f"Image loaded successfully.")
         return self.original_image
     
+    def processImg(self, img):
+        # Process the track for easier edge detection
+
+        # Convert img to greyscale
+        greyscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        # bilateral filter to reduce noise and preserve edges
+        biLatfilter = cv.bilateralFilter(greyscale, 9, 75, 75)
+
+        # Convert to hsv for better colour detection
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+        # Find black track
+        lower_black = np.array([0,0,0])
+        upper_black = np.array([360,255,110])
+        # Threshold the hsv img to get only black
+        dark_mask = cv.inRange(hsv, lower_black, upper_black)
+
+        # Matrix
+        #kernel = np.ones((3,3), np.uint8)
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7,7))
+
+        closing = cv.morphologyEx(dark_mask, cv.MORPH_CLOSE, kernel, iterations=2)
+        opening = cv.morphologyEx(dark_mask, cv.MORPH_OPEN, kernel, iterations=1)
+
+        # Cleaning image using morphological operations which removes small noise and fills small holes
+        #closing = cv.morphologyEx(thresh, cv.MORPH_CLOSE, kernel)
+        #opening = cv.morphologyEx(thresh, cv.MORPH_OPEN, kernel)
+        #cleaned = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel)
+
+        #background = cv.dilate(closing, kernel, iterations=1)
+
+        #distTransform = cv.distanceTransform(closing, cv.DIST_L2, 0)
+        #_, foreground = cv.threshold(distTransform, 0.002 * distTransform.max(), 255, 0)
+
+        # Otsu's threshold selection to better define track
+        _, thresh = cv.threshold(biLatfilter, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+
+        cv.imshow("Greyscale", greyscale)
+        cv.imshow("Filtered", biLatfilter)
+        #cv.imwrite("old_mask.png", dark_mask)
+        cv.imshow("dark_mask", dark_mask)
+        cv.imshow("Otsu", thresh)
+        #cv.imshow("closing", closing)
+        #cv.imshow("opening", opening)
+        #cv.imshow("cleaned", cleaned)
+        #cv.imshow("background", background)
+        #cv.imshow("foreground", foreground)
+        self.processed_image = thresh
+        self.track_mask = dark_mask
+        return thresh
+    
 def processTrack(img_path, out_dir = "output"):
     processor = TrackProcessor()
 
     try:
         print(f"Loading Image: {img_path}")
         processor.loadImg(img_path)
+        
+        print("Processing Image...")
+        processor.processImg(processor.original_image)
+
         
         cv.waitKey(0)
         cv.destroyAllWindows
