@@ -1,0 +1,14 @@
+node_modules/
+.env
+
+.DS_Store
+Thumbs.db
+
+dist/
+build/
+coverage/
+
+.vscode/
+.history/
+
+package-lock.json
