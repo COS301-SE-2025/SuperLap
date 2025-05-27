@@ -23,8 +23,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         include:
-          - os: ubuntu-latest
-            build-target: windows
+          - os: windows-latest
+            build-target: StandaloneWindows64
             build-args: ''
     steps:
       - uses: actions/checkout@v4
