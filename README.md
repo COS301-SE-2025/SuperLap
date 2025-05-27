@@ -2,11 +2,6 @@
     <img src="docs/images/temp.png" alt="Logo" width="100"/>
 </p>
 <p align="center">
-    <span style="font-size: 2.5em; font-weight: bold; color: #E54B4B;">
-        SuperLap Racing Line Optimization System
-    </span>
-</p>
-<p align="center">
     <img src="docs/images/banner.png" alt="Banner"/>
 </p>
 
@@ -49,7 +44,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 
 <h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
 
-+ [Project Board](https://github.com/)
++ [Project Board](https://github.com/orgs/COS301-SE-2025/projects/227?query=is%3Aopen)
 - [Functional Requirements (SRS)](docs/FunctionalRequirements.pdf)
 - [Architectural Requirements](docs/ArchitecturalRequirements.pdf)
 + [Architecture Diagram](docs/ArchitectureDiagram.pdf)
@@ -69,7 +64,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 
 | Name | Description | GitHub      | LinkedIn |
 |-------|-------------|-----------|-----------|
-| Amber Ann Werner   | I am a third-year Computer Science student at the University of Pretoria with a strong interest in security coding and logical system design. I am currently leading the Quintessential team in this project, where I am primarily focused on backend development. I am passionate about problem-solving and building secure, efficient software solutions. | [GitHub](https://example.com/api) | [LinkedIn](https://example.com/api) |
+| Amber Ann Werner   | As a third-year Computer Science student, I’ve developed a strong foundation in data handling, software engineering, and cybersecurity. My academic journey and hands-on experience have allowed me to build confidence in working with technologies like C++, Python, Git, Postman, Express, and Node.js. I'm particularly drawn to understanding how systems work under the hood and enjoy exploring ways to use code more effectively and meaningfully. One of the highlights of my studies so far was working on a group project where we built a basic city builder game. It was a rewarding experience that pushed us to think creatively, collaborate effectively, and apply what we’d learned in a practical setting. I take pride in writing clean, readable code and have a knack for debugging and testing—skills I believe are just as critical as development itself. I’m always looking for opportunities that challenge me and help me grow, and this project genuinely excites me. It aligns perfectly with my interests and offers a chance to dive deeper into areas I'm passionate about. I’d be thrilled to be a part of it and contribute meaningfully to the team’s success. | [GitHub](https://github.com/Amber21457752) |  [LinkedIn](https://za.linkedin.com/in/amber-ann-werner-5087b2258?trk=people_directory) |
 | Milan Kruger   | desc | [GitHub](https://example.com/api) | [LinkedIn](https://example.com/api) |
 | Qwinton Knocklein   | desc | [GitHub](https://example.com/api) | [LinkedIn](https://example.com/api) |
 | Sean van der Merwe   | desc | [GitHub](https://example.com/api) | [LinkedIn](https://example.com/api) |
