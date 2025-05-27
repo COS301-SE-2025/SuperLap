@@ -154,18 +154,12 @@ public class MenuManagement : MonoBehaviour
     }
   }
 
-  public void PasswordChange()
+  public void PasswordChange(TMP_InputField passwordField)
   {
-    TMP_InputField[] inputFields = LoginCanvas.GetComponentsInChildren<TMP_InputField>();
-    if (inputFields.Length >= 2)
+    if(passwordField)
     {
-      TMP_InputField passwordField = inputFields[1];
-      if(passwordField)
-      {
-        passwordField.contentType = TMP_InputField.ContentType.Password;
-      }
+      passwordField.contentType = TMP_InputField.ContentType.Password;
     }
-    
   }
 
   public void RegisterUser(GameObject errorMessage)
