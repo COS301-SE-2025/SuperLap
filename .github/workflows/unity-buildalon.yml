@@ -17,13 +17,12 @@ jobs:
     permissions:
       contents: read
     env:
-      UNITY_PROJECT_PATH: ''
+      UNITY_PROJECT_PATH: 'Unity'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
         include:
-          - os: ubuntu-latest
+          - os: windows-latest
             build-target: StandaloneWindows64
             build-args: ''
     steps:
@@ -67,10 +66,10 @@ jobs:
           name: '${{ github.run_number }}.${{ github.run_attempt }}-${{ matrix.os }}-${{ matrix.build-target }}-Artifacts'
           path: |
             ${{ github.workspace }}/**/*.log
-            ${{ env.UNITY_PROJECT_PATH }}/Builds/StandaloneWindows64/**/*.exe
-            ${{ env.UNITY_PROJECT_PATH }}/Builds/StandaloneWindows64/**/*.dll
-            ${{ env.UNITY_PROJECT_PATH }}/Builds/StandaloneWindows64/**/*_Data
-            ${{ env.UNITY_PROJECT_PATH }}/Builds/StandaloneWindows64/MonoBleedingEdge/
+            ${{ env.UNITY_PROJECT_PATH }}/Builds/windows/**/*.exe
+            ${{ env.UNITY_PROJECT_PATH }}/Builds/windows/**/*.dll
+            ${{ env.UNITY_PROJECT_PATH }}/Builds/windows/**/*_Data
+            ${{ env.UNITY_PROJECT_PATH }}/Builds/windows/MonoBleedingEdge/
       - name: Clean Artifacts
         if: always()
         shell: bash
