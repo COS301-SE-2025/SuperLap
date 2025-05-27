@@ -1,0 +1,26 @@
+name: C# Linting
+
+on:
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  run-linters:
+    name: Run linters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "6.0.x"
+
+      - name: Run C# linting
+        uses: wearerequired/lint-action@v2
+        with:
+          dotnet_format: true
+          dotnet_format_args: "Unity/Unity.sln"
