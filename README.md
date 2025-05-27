@@ -2,7 +2,7 @@
     <img src="docs/images/temp.png" alt="Logo" width="100"/>
 </p>
 <p align="center">
-    <img src="docs/images/banner.png" alt="Banner"/>
+    <img src="docs/images/newbanner.png" alt="Banner"/>
 </p>
 
 <p align="center">
