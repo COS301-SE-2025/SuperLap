@@ -24,7 +24,7 @@ public class APIManager : MonoBehaviour
 {
     [Header("API Configuration")]
     public string baseURL = "http://localhost:3000";
-    
+
     private static APIManager _instance;
     public static APIManager Instance
     {
@@ -120,7 +120,7 @@ public class APIManager : MonoBehaviour
             if (request.result == UnityWebRequest.Result.Success)
             {
                 string responseText = request.downloadHandler.text;
-                
+
                 // Check if user exists (API returns null if user doesn't exist)
                 if (responseText == "null" || string.IsNullOrEmpty(responseText))
                 {
@@ -174,7 +174,7 @@ public class APIManager : MonoBehaviour
                     // Unity's JsonUtility doesn't handle arrays directly, so we need to wrap it
                     string wrappedJson = "{\"users\":" + jsonResponse + "}";
                     UserListWrapper wrapper = JsonUtility.FromJson<UserListWrapper>(wrappedJson);
-                    
+
                     Debug.Log("Retrieved " + wrapper.users.Count + " users");
                     callback?.Invoke(true, "Users retrieved successfully", wrapper.users);
                 }
@@ -195,5 +195,64 @@ public class APIManager : MonoBehaviour
     private class UserListWrapper
     {
         public List<User> users;
+    }
+
+    //Track routes
+
+    [System.Serializable]
+    public class Track
+    {
+        public string id;
+        public string name;
+    }
+
+    [System.Serializable]
+    public class TrackList
+    {
+        public List<Track> tracks;
+    }
+
+    public static class JsonHelper
+    {
+        public static T[] FromJson<T>(string json)
+        {
+            string wrapped = "{\"Items\":" + json + "}";
+            Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(wrapped);
+            return wrapper.Items;
+        }
+
+        [System.Serializable]
+        private class Wrapper<T>
+        {
+            public T[] Items;
+        }
+    }
+
+    private IEnumerator GetAllTracksCoroutine(System.Action<bool, string, List<Track>> callback)
+    {
+        using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/tracks"))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                string json = request.downloadHandler.text;
+
+                Track[] tracks = JsonHelper.FromJson<Track>(json);
+                callback?.Invoke(true, "Tracks loaded successfully", new List<Track>(tracks));
+            }
+            else
+            {
+                string errorMessage = request.error ?? "Unknown error occurred";
+                callback?.Invoke(false, errorMessage, null);
+            }
+        }
+    }
+
+    public void GetAllTracks(System.Action<bool, string, List<Track>> callback)
+    {
+        StartCoroutine(GetAllTracksCoroutine(callback));
     }
 } 
