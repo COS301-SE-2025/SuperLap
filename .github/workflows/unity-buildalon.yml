@@ -22,8 +22,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-latest
-            build-target: StandaloneWindows64
+          - os: ubuntu-latest
+            build-target: StandaloneLinux64
             build-args: ''
     steps:
       - uses: actions/checkout@v4
