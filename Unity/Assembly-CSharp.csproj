@@ -42,12 +42,12 @@
     <UnityVersion>6000.0.49f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="/home/richter/.vscode/extensions/visualstudiotoolsforunity.vstuc-1.1.2/Analyzers/Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="/home/richter/Unity/Hub/Editor/6000.0.49f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll" />
     <Analyzer Include="/home/richter/Unity/Hub/Editor/6000.0.49f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="/home/richter/Unity/Hub/Editor/6000.0.49f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+<<<<<<< HEAD
     <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowserWindows.cs" />
     <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowser.cs" />
     <Compile Include="Assets/Scripts/UI/DashboardManager.cs" />
@@ -74,6 +74,9 @@
     <Compile Include="Assets/StandaloneFileBrowser/Sample/BasicSample.cs" />
     <Compile Include="Assets/StandaloneFileBrowser/Sample/CanvasSampleOpenFileImage.cs" />
     <Compile Include="Assets/Scripts/UI/RacingLine3D/TrackMeshGenerator.cs" />
+=======
+    <Compile Include="Assets/BikeAnimation.cs" />
+>>>>>>> 4de93255792b0bf3f50b1b7b74d1899a0acd3e3c
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
@@ -84,7 +87,10 @@
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF SSD.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/SDFFunctions.hlsl" />
+<<<<<<< HEAD
     <None Include="Assets/StandaloneFileBrowser/Plugins/Ookii.Dialogs.dll" />
+=======
+>>>>>>> 4de93255792b0bf3f50b1b7b74d1899a0acd3e3c
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Surface.shader" />
     <None Include="Assets/TextMesh Pro/Sprites/EmojiOne Attribution.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Custom-Atlas.shader" />
@@ -95,7 +101,10 @@
     <None Include="Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc" />
     <None Include="Assets/TextMesh Pro/Resources/LineBreaking Following Characters.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader" />
+<<<<<<< HEAD
     <None Include="Assets/StandaloneFileBrowser/Plugins/System.Windows.Forms.dll" />
+=======
+>>>>>>> 4de93255792b0bf3f50b1b7b74d1899a0acd3e3c
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt" />
@@ -1289,6 +1298,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+<<<<<<< HEAD
+=======
+    <ProjectReference Include="StandaloneFileBrowser.csproj" />
+    <ProjectReference Include="MainAssembly.csproj" />
+>>>>>>> 4de93255792b0bf3f50b1b7b74d1899a0acd3e3c
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
