@@ -1,0 +1,46 @@
+name: Backend API Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Backend/API/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Backend/API/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Jest Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      # Set up MongoDB service for testing
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: Backend/API/package.json
+
+      - name: Install dependencies
+        working-directory: Backend/API
+        run: npm install
+
+      - name: Run Jest tests
+        working-directory: Backend/API
+        run: npx jest --forceExit
+        env:
+          # Set up MongoDB connection for tests
+          MONGO_URI: mongodb://localhost:27017/Superlap_test
