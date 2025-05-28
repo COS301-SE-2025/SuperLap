@@ -39,7 +39,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 
 
 🔹 [Demo 1 Video](https://github.com/)  
-🔹 [Demo 1 Presentation](https://github.com/)
+🔹 [Demo 1 Presentation](https://www.canva.com/design/DAGolqiGbpo/pvPyxXwBTqHanQH77_W3Yw/edit?utm_content=DAGolqiGbpo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 
 <h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
@@ -49,6 +49,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 - [Architectural Requirements](docs/ArchitecturalRequirements.pdf)
 + [Architecture Diagram](docs/ArchitectureDiagram.pdf)
 + [Class Diagram](docs/ClassDiagram.pdf)
++ [Domain Model](docs/DomainModel.pdf)
 + [Deployment Diagram](docs/DeploymentDiagram.pdf)
 - [Installation Manual](docs/InstallationManual.pdf)
 - [Technical Installation Manual](docs/TechnicalInstallationManual.pdf)
