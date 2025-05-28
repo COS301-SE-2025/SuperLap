@@ -38,7 +38,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 <h2 style="font-weight: bold; color: #E54B4B;">Demo Links</h2>
 
 
-🔹 [Demo 1 Video](https://github.com/)  
+🔹 [Demo 1 Video](https://youtu.be/JzFT60XwmTg)  
 🔹 [Demo 1 Presentation](https://www.canva.com/design/DAGolqiGbpo/pvPyxXwBTqHanQH77_W3Yw/edit?utm_content=DAGolqiGbpo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 
