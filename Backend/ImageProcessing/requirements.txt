@@ -1,0 +1,11 @@
+opencv-python
+numpy
+pillow
+
+# other imports
+opencv-python
+numpy
+scipy
+scikit-image
+scikit-learn
+matplotlib

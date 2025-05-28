@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6af64e0c24dc47fffffc06927199ecace95bdb68
 Shader "TextMeshPro/Bitmap" {
 
 Properties {

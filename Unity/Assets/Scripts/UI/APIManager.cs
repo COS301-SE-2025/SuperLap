@@ -24,7 +24,7 @@ public class APIManager : MonoBehaviour
 {
     [Header("API Configuration")]
     public string baseURL = "http://localhost:3000";
-
+    
     private static APIManager _instance;
     public static APIManager Instance
     {
@@ -120,7 +120,7 @@ public class APIManager : MonoBehaviour
             if (request.result == UnityWebRequest.Result.Success)
             {
                 string responseText = request.downloadHandler.text;
-
+                
                 // Check if user exists (API returns null if user doesn't exist)
                 if (responseText == "null" || string.IsNullOrEmpty(responseText))
                 {
@@ -174,7 +174,7 @@ public class APIManager : MonoBehaviour
                     // Unity's JsonUtility doesn't handle arrays directly, so we need to wrap it
                     string wrappedJson = "{\"users\":" + jsonResponse + "}";
                     UserListWrapper wrapper = JsonUtility.FromJson<UserListWrapper>(wrappedJson);
-
+                    
                     Debug.Log("Retrieved " + wrapper.users.Count + " users");
                     callback?.Invoke(true, "Users retrieved successfully", wrapper.users);
                 }
