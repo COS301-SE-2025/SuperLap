@@ -6,11 +6,14 @@
 </p>
 
 <p align="center">
-    <!-- GitHub Actions Build --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions"> <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2025/SuperLap/build.yml?branch=main&label=Build&logo=github" alt="Build Status"> </a>
+    <!-- GitHub Actions Build --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions"> <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2025/SuperLap/backend-api-tests.yml?branch=main&label=Build&logo=github" alt="Build Status"> </a>
     <!-- Code Coverage (Codecov) --> <a href="https://codecov.io/gh/COS301-SE-2025/SuperLap"> <img src="https://codecov.io/gh/COS301-SE-2025/SuperLap/branch/main/graph/badge.svg" alt="Code Coverage"> </a>
     <!-- Requirements (shields.io custom) --> <img src="https://img.shields.io/badge/requirements-met-brightgreen" alt="Requirements Status">
     <!-- GitHub Issues --> <a href="https://github.com/COS301-SE-2025/SuperLap/issues"> <img src="https://img.shields.io/github/issues/COS301-SE-2025/SuperLap?label=issues" alt="GitHub Issues"> </a>
-    <!-- Uptime Robot (customize as needed) --> <a href="https://status.uptimerobot.com/YOUR_STATUS_PAGE_ID"> <img src="https://img.shields.io/uptimerobot/status/m781234567-abc123456?label=Uptime" alt="Uptime Robot Status"> </a>
+    <!-- Uptime Robot -->
+    <a href="https://stats.uptimerobot.com/wBJXuBm8PL">
+    <img src="https://img.shields.io/uptimerobot/status/u1234567-abcdefg12345678" alt="Uptime Robot Status">
+    </a>
 </p>
 <p align="center">
     <!-- Python --> <img src="https://img.shields.io/badge/Python-3.x-blue?logo=python&logoColor=white" alt="Python Badge">
@@ -38,8 +41,8 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 <h2 style="font-weight: bold; color: #E54B4B;">Demo Links</h2>
 
 
-🔹 [Demo 1 Video](https://github.com/)  
-🔹 [Demo 1 Presentation](https://github.com/)
+🔹 [Demo 1 Video](https://www.canva.com/design/DAGolqiGbpo/pvPyxXwBTqHanQH77_W3Yw/edit?utm_content=DAGolqiGbpo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)  
+🔹 [Demo 1 Presentation](https://www.canva.com/design/DAGolqiGbpo/pvPyxXwBTqHanQH77_W3Yw/edit?utm_content=DAGolqiGbpo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 
 <h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
