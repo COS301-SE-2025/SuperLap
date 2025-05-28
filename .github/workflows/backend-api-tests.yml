@@ -1,12 +1,8 @@
 name: Backend API Tests
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'Backend/API/**'
   pull_request:
-    branches: [ main ]
+    branches: [ dev ]
     paths:
       - 'Backend/API/**'
   workflow_dispatch:
