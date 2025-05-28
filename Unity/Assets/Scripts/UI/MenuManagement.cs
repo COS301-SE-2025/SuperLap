@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System.Text.RegularExpressions;
+
 public class MenuManagement : MonoBehaviour
 {
   public GameObject MainMenuCanvas;
@@ -13,6 +15,13 @@ public class MenuManagement : MonoBehaviour
   private bool isTransitioningToLogin = false;
   private bool isTransitioningToMainMenu = false;
   private bool isTransitioningToRegister = false;
+
+  private bool IsValidEmail(string email)
+  {
+    string emailPattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+    return Regex.IsMatch(email, emailPattern);
+  }
+
   void Update()
   {
     if (isTransitioningToLogin)
@@ -179,6 +188,25 @@ public class MenuManagement : MonoBehaviour
         string username = usernameField.text.Trim();
         string email = emailField.text.Trim();
         string password = passwordField.text.Trim();
+        
+        // Validate email format
+        if (!IsValidEmail(email))
+        {
+          if (errorMessage != null)
+          {
+            TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+            if (errorText != null)
+            {
+              errorText.text = "Please enter a valid email address!";
+            }
+          }
+          else
+          {
+            Debug.Log("Error message GameObject is not provided!");
+          }
+          return;
+        }
+        
         APIManager.Instance.RegisterUser(username, email, password, (success, message) =>
         {
           if (success)
@@ -190,7 +218,7 @@ public class MenuManagement : MonoBehaviour
             PlayerPrefs.Save();
             
             Debug.Log("Registration successful: " + message);
-            goToScene("Dashboard");
+            goToScene("Login");
           }
           else
           {
