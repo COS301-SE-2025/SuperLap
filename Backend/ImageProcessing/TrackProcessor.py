@@ -114,6 +114,27 @@ class TrackProcessor:
         
         return self.track_boundaries
     
+    def saveProcessedImages(self, results, output_dir, base_filename):
+        saved_files = []
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        for name, image in results.items():
+            if image is not None:
+                filename = f"{base_filename}_{name}.png"
+                filepath = os.path.join(output_dir, filename)
+                cv.imwrite(filepath, image)
+                saved_files.append(filepath)
+                print(f"Saved: {filepath}")
+
+        if self.original_image is not None:
+            original_path = os.path.join(output_dir, f"{base_filename}_original.png")
+            cv.imwrite(original_path, self.original_image)
+            saved_files.append(original_path)
+            print(f"Saved: {original_path}")
+
+        return saved_files
+    
 def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
     processor = TrackProcessor()
 
@@ -127,7 +148,7 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
         print(f"Processing Image: {base_filename}")
         results = processor.processImg(processor.original_image, show_debug)
 
-        saved_files = processor.saveProcessedImages(results, output_dir, show_debug)
+        saved_files = processor.saveProcessedImages(results, output_dir, base_filename)
 
         summary = {
             'original_image': img_path,
