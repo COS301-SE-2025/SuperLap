@@ -115,7 +115,32 @@ class TrackProcessor:
             print("Not enough contours found to detect boundaries.")
 
         return self.track_boundaries
+    
+    def extractCenterline(self, method='skeleton', show_debug=True):
+        if self.track_mask is None:
+            print("Track mask not found")
+            return None
+        
+        track_bin = (self.track_mask > 0).astype(np.uint8)
 
+        if method == 'skeleton':
+            skeleton = skeletonize(track_bin).astype(np.uint8) * 255
+            centerline_points = self.skeletonToPoints(skeleton)
+        elif method == 'distance_transform':
+            dist_transform = cv.distanceTransform(track_bin, cv.DIST_L2, 5)
+        elif method == 'medial_axis':
+            dist_transform = cv.distanceTransform(track_bin, cv.DIST_L2, 5)
+        else:
+            print(f"{method} not recognised, defaulting to skeleton")
+
+
+        if show_debug:
+            self.visualizeCenterline(skeleton if method == 'skeleton' else None)
+
+        return {
+            'centerline_raw'
+        }
+    
     def readEdgesFromBin(self, bin_path):
         # Read edge coordinates from binary file
         edges = {'outer_boundary': [], 'inner_boundary': []}
@@ -194,7 +219,7 @@ class TrackProcessor:
 
         return saved_files
     
-def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
+def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, centerline_method='skeleton'):
     processor = TrackProcessor()
 
     try:
@@ -207,9 +232,17 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
         print(f"Processing Image: {base_filename}")
         results = processor.processImg(processor.original_image, show_debug)
 
+        print("Generating boundaries...")
         boundaries = processor.detectBoundaries(results['processed_image'], show_debug)
 
         if boundaries:
+            print(f"Extracting centerline using {centerline_method} method...")
+            centerline_results = processor.extractCenterline(method=centerline_method, show_debug=show_debug)
+
+            if centerline_results:
+                results.update(centerline_results)
+                centerline_files = processor.saveCenterlineData(output_dir, base_filename)
+
             def contour_to_list(contour):
                 return contour.squeeze().tolist() if contour.ndim == 3 else contour.tolist()
 
@@ -240,7 +273,10 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
             'original_image': img_path,
             'output_directory': output_dir,
             'processed_files': saved_files,
-            'processing_successful': True
+            'processing_successful': True,
+            'centerline_extracted': processor.centerline is not None,
+            'centerline_points': len(processor.centerline) if processor.centerline else 0,
+
         }
 
         summary_path = os.path.join(output_dir, f"{base_filename}_summary.json")
@@ -289,6 +325,7 @@ def main():
     parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
     parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
     parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing and generate edge visualization')
+    parser.add_argument('--centerline-method', '-c', choices=['skeleton', 'distance_transform', 'medial_axis'], default='skeleton', help='Method for centerline extraction (Default: skeleton)')
 
     args = parser.parse_args()
 
@@ -299,24 +336,39 @@ def main():
             result = processTrack(args.file, args.output, args.debug)
             if result:
                 print(f"\nSingle file processing complete")
+                if result['centerline_extracted']:
+                    print(f"Centerline extracted with {result['centerline_points']} points")
             else:
                 print(f"\nFailed to process {args.file}")
         else:
             print(f"File not found: {args.file}")
     else:
-        results = processAllTracks(args.input, args.output, args.debug)
+        results = processAllTracks(args.input, args.output, args.debug, args.centerline_method)
 
         print(f"\n{'='*50}")
         print(f"PROCESSING SUMMARY")
         print(f"\n{'='*50}")
         print(f"Total files processed: {len(results)}")
         print(f"Output directory: {args.output}")
+        print(f"Centerline method used: {args.centerline_method}")
 
         if results:
             print(f"\nProcessed tracks:")
+            centerline_success = 0
+
             for result in results:
                 trackName = Path(result['original_image']).stem
-                print(f" - {trackName}: {len(result['processed_files'])} files generated")
+                status_info = []
+
+                if result['centerline_extracted']:
+                    centerline_success += 1
+                    status_info.append(f"{result['centerline_points']} centerline points")
+
+                status_str = ", ".join(status_info) if status_info else "basic processing only"
+                print(f" - {trackName}: {len(result['processed_files'])} files generated ({status_str})")
+
+            print(f"\nCenterline extraction success rate: {centerline_success}/{len(results)} tracks")
+
                 
 if __name__ == "__main__":
     main()
