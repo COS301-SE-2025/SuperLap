@@ -3,10 +3,6 @@ require('dotenv').config();
 const { MongoClient } = require('mongodb');
 const { setupSwagger } = require('./swagger');
 
-const trackRouter = require('./Endpoints/TrackEndpoints');
-const userRouter = require('./Endpoints/UserEndpoints');
-
-
 const app = express();
 // Swagger setup
 setupSwagger(app);
@@ -17,10 +13,10 @@ let db;
 let client; // this will be used to close the connection later
 
 async function connectToDb() {
-  const client = await MongoClient.connect(uri);
+  client = await MongoClient.connect(uri);
   db = client.db("Superlap");
   app.locals.db = db;
-  
+
   const trackRouter = require('./Endpoints/TrackEndpoints')(db);
   const userRouter = require('./Endpoints/UserEndpoints')(db);
 
@@ -29,6 +25,7 @@ async function connectToDb() {
 
   console.log("Connected to MongoDB");
 }
+
 
 async function closeDbConnection() {
   if (client) {
