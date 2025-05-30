@@ -57,7 +57,6 @@ class TrackProcessor:
         if show_debug:
             cv.imshow("Greyscale", greyscale)
             cv.imshow("Filtered", bi_lat_filter)
-            #cv.imwrite("old_mask.png", dark_mask)
             cv.imshow("dark_mask", dark_mask)
             cv.imshow("Otsu", thresh)
             #cv.imshow("closing", closing)
@@ -70,11 +69,11 @@ class TrackProcessor:
         self.track_mask = dark_mask
         return {
             'processed_image': thresh,
-            'track_mask': dark_mask,
-            'greyscale': greyscale,
-            'filtered': bi_lat_filter,
-            'closing': closing,
-            'opening': opening
+            #'track_mask': dark_mask,
+            #'greyscale': greyscale,
+            #'filtered': bi_lat_filter,
+            #'closing': closing,
+            #'opening': opening
         }
 
     def detectBoundaries(self, img, show_debug=True):
@@ -103,25 +102,23 @@ class TrackProcessor:
                 plt.tight_layout()
                 plt.show()
 
-                print("Number of contours found: "+str(len(contours)))
-                print("Number of datapoints for outer boundary: ",str(len(outerBoundary)))
-                print("Number of datapoints for inner boundary: ",str(len(innerBoundary)))
+                print("Number of contours found: " + str(len(contours)))
+                print("Number of datapoints for outer boundary: ", str(len(outerBoundary)))
+                print("Number of datapoints for inner boundary: ", str(len(innerBoundary)))
 
-                contour_img = cv.imread(self.original_image, cv.IMREAD_COLOR)
-                cv.drawContours(contour_img, outerBoundary, -1, (255,0,0), thickness=2)
-                cv.drawContours(contour_img, innerBoundary, -1, (0,0,255), thickness=2)
-                #cv.drawContours(contImg, contours, -1, 255, thickness=2)
+                contour_img = self.original_image.copy()
+                cv.drawContours(contour_img, [outerBoundary], -1, (255,0,0), thickness=2)
+                cv.drawContours(contour_img, [innerBoundary], -1, (0,0,255), thickness=2)
                 cv.imshow("Contours", contour_img)
-        else:
-            print("Not enough contours found to detect boundaries")
         
+        else:
+            print("Not enough contours found to detect boundaries.")
+
         return self.track_boundaries
-    
+
     def readEdgesFromBin(self, bin_path):
-        edges = {
-            'outer_boundary': [],
-            'inner_boundary': []
-        }
+        # Read edge coordinates from binary file
+        edges = {'outer_boundary': [], 'inner_boundary': []}
 
         with open(bin_path, 'rb') as f:
             for key in ['outer_boundary', 'inner_boundary']:
@@ -132,15 +129,48 @@ class TrackProcessor:
 
                 points = []
                 for _ in range(num_points):
-                    coords = f.read(8) # 2 floats = 8 bytes
+                    coords = f.read(8)  # 2 floats = 8 bytes
                     x, y = struct.unpack('<ff', coords)
-                    points.append((int(round(x)), (int(round(y)))))
+                    points.append((int(round(x)), int(round(y))))
                 edges[key] = points
 
         return edges
-    
-    def drawEdgesFromBin(self, bin_path, output_path=None, canvas_size=None):
 
+    def drawEdgesFromBin(self, bin_path, output_path=None, canvas_size=None):
+        # Draw edges from binary file onto a blank canvas
+        if canvas_size is None:
+            if self.original_image is not None:
+                h, w = self.original_image.shape[:2]
+                canvas_size = (w, h)
+            else:
+                canvas_size = (1524, 1024)
+        
+        if output_path is None:
+            output_dir = os.path.dirname(bin_path)
+            output_path = os.path.join(output_dir, 'edgeVisualization.png')
+
+        edge_data = self.readEdgesFromBin(bin_path)
+        
+        outer = edge_data['outer_boundary']
+        inner = edge_data['inner_boundary']
+
+        # Create blank white canvas
+        image = np.ones((canvas_size[1], canvas_size[0], 3), dtype=np.uint8) * 255
+
+        def draw_contour(points, color):
+            for i in range(1, len(points)):
+                cv.line(image, points[i - 1], points[i], color, thickness=2)
+            if len(points) > 2:
+                cv.line(image, points[-1], points[0], color, thickness=2)  # close loop
+
+        draw_contour(outer, (0, 255, 0))  # green
+        draw_contour(inner, (0, 0, 255))  # red
+
+        # Save image
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        cv.imwrite(output_path, image)
+        print(f"Edge visualization saved to: {output_path}")
+        
         return output_path
     
     def saveProcessedImages(self, results, output_dir, base_filename):
@@ -164,7 +194,7 @@ class TrackProcessor:
 
         return saved_files
     
-def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, draw_edges=False):
+def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
     processor = TrackProcessor()
 
     try:
@@ -178,28 +208,29 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, d
         results = processor.processImg(processor.original_image, show_debug)
 
         boundaries = processor.detectBoundaries(results['processed_image'], show_debug)
+
         if boundaries:
             def contour_to_list(contour):
-                return contour.squeeze().tolist if contour.ndim == 3 else contour.tolist()
-            
+                return contour.squeeze().tolist() if contour.ndim == 3 else contour.tolist()
+
             edge_data = {
                 'outer_boundary': contour_to_list(boundaries['outer']),
                 'inner_boundary': contour_to_list(boundaries['inner'])
             }
 
+            # Save binary edge coordinates
             edge_bin_path = os.path.join(output_dir, 'edgeCoordinates.bin')
             os.makedirs(output_dir, exist_ok=True)
-
             with open(edge_bin_path, 'wb') as f:
                 for key in ['outer_boundary', 'inner_boundary']:
                     points = edge_data[key]
-                    f.write(struct.pack('<I', len(points)))
+                    f.write(struct.pack('<I', len(points)))  # Write number of points
                     for x, y in points:
-                        f.write(struct.pack('<ff', float(x), float(y)))
-
+                        f.write(struct.pack('<ff', float(x), float(y)))  # Write each point as float32
             print(f"Edge coordinates saved to: {edge_bin_path}")
 
-            if draw_edges:
+            # Draw edges visualization if debug is enabled
+            if show_debug:
                 edge_viz_path = processor.drawEdgesFromBin(edge_bin_path)
                 results['edge_visualization'] = cv.imread(edge_viz_path)
 
@@ -220,7 +251,7 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, d
 
         if show_debug:
             cv.waitKey(0)
-            cv.destroyAllWindows
+            cv.destroyAllWindows()
 
         return summary
 
@@ -228,7 +259,7 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, d
         print(f"Error processing track image {img_path}: {str(e)}")
         return None
     
-def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True, draw_edges=False):
+def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True):
     extensions = ['*.png', '*.jpg', '*.bmp', '*.tiff']
 
     image_files = []
@@ -245,7 +276,7 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
     results = []
     for img_path in image_files:
         print(f"\n{'='*50}")
-        result = processTrack(img_path, output_base_dir, show_debug, draw_edges)
+        result = processTrack(img_path, output_base_dir, show_debug)
         if result:
             results.append(result)
 
@@ -257,8 +288,7 @@ def main():
     parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
     parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
     parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
-    parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing')
-    parser.add_argument('--draw-edges', action='store_true', help='Generate edge visualization from binary edge coordinates')
+    parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing and generate edge visualization')
 
     args = parser.parse_args()
 
@@ -266,7 +296,7 @@ def main():
 
     if args.file:
         if os.path.exists(args.file):
-            result = processTrack(args.file, args.output, args.debug, args.draw_edges)
+            result = processTrack(args.file, args.output, args.debug)
             if result:
                 print(f"\nSingle file processing complete")
             else:
@@ -274,7 +304,7 @@ def main():
         else:
             print(f"File not found: {args.file}")
     else:
-        results = processAllTracks(args.input, args.output, args.debug, args.draw_edges)
+        results = processAllTracks(args.input, args.output, args.debug)
 
         print(f"\n{'='*50}")
         print(f"PROCESSING SUMMARY")
