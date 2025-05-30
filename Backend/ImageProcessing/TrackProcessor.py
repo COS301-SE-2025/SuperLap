@@ -7,6 +7,9 @@ import os
 import argparse
 import glob
 import struct
+from scipy import ndimage
+from scipy.interpolate import interp1d, splprep, splev
+from skimage.morphology import skeletonize
 
 class TrackProcessor:
     def __init__(self):
@@ -40,16 +43,11 @@ class TrackProcessor:
         dark_mask = cv.inRange(hsv, lower_black, upper_black)
 
         # Matrix
-        #kernel = np.ones((3,3), np.uint8)
         kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7,7))
 
         # Cleaning image using morphological operations which removes small noise and fills small holes
         closing = cv.morphologyEx(dark_mask, cv.MORPH_CLOSE, kernel, iterations=2)
-        opening = cv.morphologyEx(dark_mask, cv.MORPH_OPEN, kernel, iterations=1)
-
-        #background = cv.dilate(closing, kernel, iterations=1)
-        #distTransform = cv.distanceTransform(closing, cv.DIST_L2, 0)
-        #_, foreground = cv.threshold(distTransform, 0.002 * distTransform.max(), 255, 0)
+        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, kernel, iterations=1)
 
         # Otsu's threshold selection to better define track
         _, thresh = cv.threshold(bi_lat_filter, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
@@ -58,15 +56,11 @@ class TrackProcessor:
             cv.imshow("Greyscale", greyscale)
             cv.imshow("Filtered", bi_lat_filter)
             cv.imshow("dark_mask", dark_mask)
+            cv.imshow("cleaned opening", opening)
             cv.imshow("Otsu", thresh)
-            #cv.imshow("closing", closing)
-            #cv.imshow("opening", opening)
-            #cv.imshow("cleaned", cleaned)
-            #cv.imshow("background", background)
-            #cv.imshow("foreground", foreground)
 
         self.processed_image = thresh
-        self.track_mask = dark_mask
+        self.track_mask = opening
         return {
             'processed_image': thresh,
             #'track_mask': dark_mask,
@@ -126,10 +120,14 @@ class TrackProcessor:
         if method == 'skeleton':
             skeleton = skeletonize(track_bin).astype(np.uint8) * 255
             centerline_points = self.skeletonToPoints(skeleton)
+
         elif method == 'distance_transform':
             dist_transform = cv.distanceTransform(track_bin, cv.DIST_L2, 5)
+
+
         elif method == 'medial_axis':
             dist_transform = cv.distanceTransform(track_bin, cv.DIST_L2, 5)
+
         else:
             print(f"{method} not recognised, defaulting to skeleton")
 
@@ -141,6 +139,17 @@ class TrackProcessor:
             'centerline_raw'
         }
     
+    def skeletonToPoints(self, skeleton):
+        points = []
+        y_coords, x_coords = np.where(skeleton > 0)
+        for x, y in zip(x_coords, y_coords):
+            points.append((int(x), int(y)))
+        return points
+    
+    def visualizeCenterline(self, skeleton=None):
+        if self.original_image is None:
+            return
+
     def readEdgesFromBin(self, bin_path):
         # Read edge coordinates from binary file
         edges = {'outer_boundary': [], 'inner_boundary': []}
