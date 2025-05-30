@@ -1,8 +1,11 @@
+from pathlib import Path
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import json
 import os
+import argparse
+import glob
 
 class TrackProcessor:
     def __init__(self):
@@ -122,14 +125,40 @@ def processTrack(img_path, out_dir = "output"):
         print(f"Error processing track image: {str(e)}")
         return None
 
+def main():
+    parser = argparse.ArgumentParser(description="Process tracetrack images for ML algorithm")
+    parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
+    parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
+    parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
+    parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing')
+
+    args = parser.parse_args()
+
+    os.makedirs(args.output, exist_ok=True)
+
+    if args.file:
+        if os.path.exists(args.file):
+            result = processTrack(args.file, args.output, args.debug)
+            if result:
+                print(f"\nSingle file processing complete")
+            else:
+                print(f"\nFailed to process {args.file}")
+        else:
+            print(f"File not found: {args.file}")
+    else:
+        results = processAllTracks(args.input, args.output, args.debug)
+
+        print(f"\n{'='*50}")
+        print(f"PROCESSING SUMMARY")
+        print(f"\n{'='*50}")
+        print(f"Total files processed: {len(results)}")
+        print(f"Output directory: {args.output}")
+
+        if results:
+            print(f"\nProcessed tracks:")
+            for result in results:
+                trackName = Path(result['original_image']).stem
+                print(f" - {trackName}: {len(result['processed_files'])} files generated")
+                
 if __name__ == "__main__":
-    img_path = "trackImages/test.png"  # Replace with image path
-    output_dir = "trackOutput"  # Replace with output directory
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    track_features = processTrack(img_path, output_dir)
-
-    if track_features:
-        print(f"Processed track features saved to {output_dir}")
-        print("Track features extracted summary:")
+    main()
