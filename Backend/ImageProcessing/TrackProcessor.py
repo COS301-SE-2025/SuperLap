@@ -181,9 +181,6 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
         pattern = os.path.join(input_dir, ext)
         image_files.extend(glob.glob(pattern))
 
-        pattern = os.path.join(input_dir, ext.upper())
-        image_files.extend(glob.glob(pattern))
-
     if not image_files:
         print(f"No image files found in {input_dir}")
         return []
