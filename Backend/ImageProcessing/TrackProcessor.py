@@ -24,7 +24,7 @@ class TrackProcessor:
         print(f"Image loaded successfully.")
         return self.original_image
     
-    def processImg(self, img):
+    def processImg(self, img, show_debug=True):
         # Process the track for easier edge detection
         greyscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
         # bilateral filter to reduce noise and preserve edges
@@ -53,20 +53,28 @@ class TrackProcessor:
         # Otsu's threshold selection to better define track
         _, thresh = cv.threshold(biLatfilter, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 
-        #!!! to be moved to the visualization method
-        cv.imshow("Greyscale", greyscale)
-        cv.imshow("Filtered", biLatfilter)
-        #cv.imwrite("old_mask.png", dark_mask)
-        cv.imshow("dark_mask", dark_mask)
-        cv.imshow("Otsu", thresh)
-        #cv.imshow("closing", closing)
-        #cv.imshow("opening", opening)
-        #cv.imshow("cleaned", cleaned)
-        #cv.imshow("background", background)
-        #cv.imshow("foreground", foreground)
+        if show_debug:
+            cv.imshow("Greyscale", greyscale)
+            cv.imshow("Filtered", biLatfilter)
+            #cv.imwrite("old_mask.png", dark_mask)
+            cv.imshow("dark_mask", dark_mask)
+            cv.imshow("Otsu", thresh)
+            #cv.imshow("closing", closing)
+            #cv.imshow("opening", opening)
+            #cv.imshow("cleaned", cleaned)
+            #cv.imshow("background", background)
+            #cv.imshow("foreground", foreground)
+
         self.processed_image = thresh
         self.track_mask = dark_mask
-        return thresh
+        return {
+            'processed_image': thresh,
+            'track_mask': dark_mask,
+            'greyscale': greyscale,
+            'filtered': biLatfilter,
+            'closing': closing,
+            'opening': opening
+        }
 
     def detectBoundaries(self, processedImg):
         # Find track boundaries using color and edge detection
@@ -99,30 +107,50 @@ class TrackProcessor:
         print("Number of datapoints for inner boundary: ",str(len(innerBoundary)))
 
         #!!! to be moved to visualization method
-        contImg = cv.imread(img_path, cv.IMREAD_COLOR)
-        cv.drawContours(contImg, outerBoundary, -1, (255,0,0), thickness=2)
-        cv.drawContours(contImg, innerBoundary, -1, (0,0,255), thickness=2)
+        contour_img = cv.imread(img_path, cv.IMREAD_COLOR)
+        cv.drawContours(contour_img, outerBoundary, -1, (255,0,0), thickness=2)
+        cv.drawContours(contour_img, innerBoundary, -1, (0,0,255), thickness=2)
         #cv.drawContours(contImg, contours, -1, 255, thickness=2)
-        cv.imshow("Contours", contImg)
+        cv.imshow("Contours", contour_img)
         
         return self.track_boundaries
     
-def processTrack(img_path, out_dir = "output"):
+def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
     processor = TrackProcessor()
 
     try:
         print(f"Loading Image: {img_path}")
         processor.loadImg(img_path)
-        
-        print("Processing Image...")
-        processor.processImg(processor.original_image)
 
+        base_filename = Path(img_path).stem
+        output_dir = os.path.join(output_base_dir, base_filename)
         
-        cv.waitKey(0)
-        cv.destroyAllWindows
+        print(f"Processing Image: {base_filename}")
+        results = processor.processImg(processor.original_image, show_debug)
+
+        saved_files = processor.saveProcessedImages(results, output_dir, show_debug)
+
+        summary = {
+            'original_image': img_path,
+            'output_directory': output_dir,
+            'processed_files': saved_files,
+            'processing_successful': True
+        }
+
+        summary_path = os.path.join(output_dir, f"{base_filename}_summary.json")
+        with open(summary_path, 'w') as f:
+            json.dump(summary, f, indent=2)
+
+        print(f"Processing complete. Files saved to: {output_dir}")
+
+        if show_debug:
+            cv.waitKey(0)
+            cv.destroyAllWindows
+
+        return summary
 
     except Exception as e:
-        print(f"Error processing track image: {str(e)}")
+        print(f"Error processing track image {img_path}: {str(e)}")
         return None
 
 def main():
