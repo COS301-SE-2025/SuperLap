@@ -152,6 +152,33 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
     except Exception as e:
         print(f"Error processing track image {img_path}: {str(e)}")
         return None
+    
+def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True):
+    extensions = ['*.png', '*.jpg', '*.bmp', '*.tiff']
+
+    image_files = []
+    for ext in extensions:
+        pattern = os.path.join(input_dir, ext)
+        image_files.extend(glob.glob(pattern))
+
+        pattern = os.path.join(input_dir, ext.upper())
+        image_files.extend(glob.glob(pattern))
+
+    if not image_files:
+        print(f"No image files found in {input_dir}")
+        return []
+    
+    print(f"Found {len(image_files)} image(s) to process")
+
+    results = []
+    for img_path in image_files:
+        print(f"\n{'='*50}")
+        result = processTrack(img_path, output_base_dir, show_debug)
+        if result:
+            results.append(result)
+
+    return results
+
 
 def main():
     parser = argparse.ArgumentParser(description="Process tracetrack images for ML algorithm")
