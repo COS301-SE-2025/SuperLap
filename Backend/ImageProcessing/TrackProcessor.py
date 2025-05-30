@@ -28,7 +28,7 @@ class TrackProcessor:
         # Process the track for easier edge detection
         greyscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
         # bilateral filter to reduce noise and preserve edges
-        biLatfilter = cv.bilateralFilter(greyscale, 9, 75, 75)
+        bi_lat_filter = cv.bilateralFilter(greyscale, 9, 75, 75)
 
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
@@ -51,11 +51,11 @@ class TrackProcessor:
         #_, foreground = cv.threshold(distTransform, 0.002 * distTransform.max(), 255, 0)
 
         # Otsu's threshold selection to better define track
-        _, thresh = cv.threshold(biLatfilter, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        _, thresh = cv.threshold(bi_lat_filter, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 
         if show_debug:
             cv.imshow("Greyscale", greyscale)
-            cv.imshow("Filtered", biLatfilter)
+            cv.imshow("Filtered", bi_lat_filter)
             #cv.imwrite("old_mask.png", dark_mask)
             cv.imshow("dark_mask", dark_mask)
             cv.imshow("Otsu", thresh)
@@ -71,47 +71,46 @@ class TrackProcessor:
             'processed_image': thresh,
             'track_mask': dark_mask,
             'greyscale': greyscale,
-            'filtered': biLatfilter,
+            'filtered': bi_lat_filter,
             'closing': closing,
             'opening': opening
         }
 
-    def detectBoundaries(self, processedImg):
+    def detectBoundaries(self, img, show_debug=True):
         # Find track boundaries using color and edge detection
-        cannyEdges = cv.Canny(processedImg, 100, 700)
-
-        #!!! to be moved to the visualization method
-        rgb = cv.cvtColor(self.original_image, cv.COLOR_BGR2RGB)
-        _, axs = plt.subplots(1, 2, figsize=(7,4))
-        axs[0].imshow(rgb), axs[0].set_title('Original')
-        axs[1].imshow(cannyEdges), axs[1].set_title('Edges')
-        for ax in axs:
-            ax.set_xticks([]), ax.set_yticks([])
-        plt.tight_layout()
-        plt.show()
+        cannyEdges = cv.Canny(img, 100, 700)
 
         contours, _ = cv.findContours(cannyEdges, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv.contourArea, reverse=True)
 
-        print("Number of contours found: "+str(len(contours)))
+        if show_debug:
+            rgb = cv.cvtColor(self.original_image, cv.COLOR_BGR2RGB)
+            _, axs = plt.subplots(1, 2, figsize=(7,4))
+            axs[0].imshow(rgb), axs[0].set_title('Original')
+            axs[1].imshow(cannyEdges), axs[1].set_title('Edges')
+            for ax in axs:
+                ax.set_xticks([]), ax.set_yticks([])
+            plt.tight_layout()
+            plt.show()
 
-        outerBoundary = contours[0]
-        innerBoundary = contours[2]
+            print("Number of contours found: "+str(len(contours)))
 
-        self.track_boundaries = {
-            'outer': outerBoundary,
-            'inner': innerBoundary
-        }
+            outerBoundary = contours[0]
+            innerBoundary = contours[2]
 
-        print("Number of datapoints for outer boundary: ",str(len(outerBoundary)))
-        print("Number of datapoints for inner boundary: ",str(len(innerBoundary)))
+            self.track_boundaries = {
+                'outer': outerBoundary,
+                'inner': innerBoundary
+            }
 
-        #!!! to be moved to visualization method
-        contour_img = cv.imread(img_path, cv.IMREAD_COLOR)
-        cv.drawContours(contour_img, outerBoundary, -1, (255,0,0), thickness=2)
-        cv.drawContours(contour_img, innerBoundary, -1, (0,0,255), thickness=2)
-        #cv.drawContours(contImg, contours, -1, 255, thickness=2)
-        cv.imshow("Contours", contour_img)
+            print("Number of datapoints for outer boundary: ",str(len(outerBoundary)))
+            print("Number of datapoints for inner boundary: ",str(len(innerBoundary)))
+
+            contour_img = cv.imread(self.original_image, cv.IMREAD_COLOR)
+            cv.drawContours(contour_img, outerBoundary, -1, (255,0,0), thickness=2)
+            cv.drawContours(contour_img, innerBoundary, -1, (0,0,255), thickness=2)
+            #cv.drawContours(contImg, contours, -1, 255, thickness=2)
+            cv.imshow("Contours", contour_img)
         
         return self.track_boundaries
     
