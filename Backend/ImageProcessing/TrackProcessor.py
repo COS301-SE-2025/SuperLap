@@ -6,6 +6,7 @@ import json
 import os
 import argparse
 import glob
+import struct
 
 class TrackProcessor:
     def __init__(self):
@@ -83,18 +84,7 @@ class TrackProcessor:
         contours, _ = cv.findContours(cannyEdges, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv.contourArea, reverse=True)
 
-        if show_debug:
-            rgb = cv.cvtColor(self.original_image, cv.COLOR_BGR2RGB)
-            _, axs = plt.subplots(1, 2, figsize=(7,4))
-            axs[0].imshow(rgb), axs[0].set_title('Original')
-            axs[1].imshow(cannyEdges), axs[1].set_title('Edges')
-            for ax in axs:
-                ax.set_xticks([]), ax.set_yticks([])
-            plt.tight_layout()
-            plt.show()
-
-            print("Number of contours found: "+str(len(contours)))
-
+        if len(contours) >= 3:
             outerBoundary = contours[0]
             innerBoundary = contours[2]
 
@@ -103,16 +93,55 @@ class TrackProcessor:
                 'inner': innerBoundary
             }
 
-            print("Number of datapoints for outer boundary: ",str(len(outerBoundary)))
-            print("Number of datapoints for inner boundary: ",str(len(innerBoundary)))
+            if show_debug:
+                rgb = cv.cvtColor(self.original_image, cv.COLOR_BGR2RGB)
+                _, axs = plt.subplots(1, 2, figsize=(7,4))
+                axs[0].imshow(rgb), axs[0].set_title('Original')
+                axs[1].imshow(cannyEdges), axs[1].set_title('Edges')
+                for ax in axs:
+                    ax.set_xticks([]), ax.set_yticks([])
+                plt.tight_layout()
+                plt.show()
 
-            contour_img = cv.imread(self.original_image, cv.IMREAD_COLOR)
-            cv.drawContours(contour_img, outerBoundary, -1, (255,0,0), thickness=2)
-            cv.drawContours(contour_img, innerBoundary, -1, (0,0,255), thickness=2)
-            #cv.drawContours(contImg, contours, -1, 255, thickness=2)
-            cv.imshow("Contours", contour_img)
+                print("Number of contours found: "+str(len(contours)))
+                print("Number of datapoints for outer boundary: ",str(len(outerBoundary)))
+                print("Number of datapoints for inner boundary: ",str(len(innerBoundary)))
+
+                contour_img = cv.imread(self.original_image, cv.IMREAD_COLOR)
+                cv.drawContours(contour_img, outerBoundary, -1, (255,0,0), thickness=2)
+                cv.drawContours(contour_img, innerBoundary, -1, (0,0,255), thickness=2)
+                #cv.drawContours(contImg, contours, -1, 255, thickness=2)
+                cv.imshow("Contours", contour_img)
+        else:
+            print("Not enough contours found to detect boundaries")
         
         return self.track_boundaries
+    
+    def readEdgesFromBin(self, bin_path):
+        edges = {
+            'outer_boundary': [],
+            'inner_boundary': []
+        }
+
+        with open(bin_path, 'rb') as f:
+            for key in ['outer_boundary', 'inner_boundary']:
+                length_bytes = f.read(4)
+                if not length_bytes:
+                    break
+                num_points = struct.unpack('<I', length_bytes)[0]
+
+                points = []
+                for _ in range(num_points):
+                    coords = f.read(8) # 2 floats = 8 bytes
+                    x, y = struct.unpack('<ff', coords)
+                    points.append((int(round(x)), (int(round(y)))))
+                edges[key] = points
+
+        return edges
+    
+    def drawEdgesFromBin(self, bin_path, output_path=None, canvas_size=None):
+
+        return output_path
     
     def saveProcessedImages(self, results, output_dir, base_filename):
         saved_files = []
@@ -135,7 +164,7 @@ class TrackProcessor:
 
         return saved_files
     
-def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
+def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, draw_edges=False):
     processor = TrackProcessor()
 
     try:
@@ -147,6 +176,32 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
         
         print(f"Processing Image: {base_filename}")
         results = processor.processImg(processor.original_image, show_debug)
+
+        boundaries = processor.detectBoundaries(results['processed_image'], show_debug)
+        if boundaries:
+            def contour_to_list(contour):
+                return contour.squeeze().tolist if contour.ndim == 3 else contour.tolist()
+            
+            edge_data = {
+                'outer_boundary': contour_to_list(boundaries['outer']),
+                'inner_boundary': contour_to_list(boundaries['inner'])
+            }
+
+            edge_bin_path = os.path.join(output_dir, 'edgeCoordinates.bin')
+            os.makedirs(output_dir, exist_ok=True)
+
+            with open(edge_bin_path, 'wb') as f:
+                for key in ['outer_boundary', 'inner_boundary']:
+                    points = edge_data[key]
+                    f.write(struct.pack('<I', len(points)))
+                    for x, y in points:
+                        f.write(struct.pack('<ff', float(x), float(y)))
+
+            print(f"Edge coordinates saved to: {edge_bin_path}")
+
+            if draw_edges:
+                edge_viz_path = processor.drawEdgesFromBin(edge_bin_path)
+                results['edge_visualization'] = cv.imread(edge_viz_path)
 
         saved_files = processor.saveProcessedImages(results, output_dir, base_filename)
 
@@ -173,7 +228,7 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True):
         print(f"Error processing track image {img_path}: {str(e)}")
         return None
     
-def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True):
+def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True, draw_edges=False):
     extensions = ['*.png', '*.jpg', '*.bmp', '*.tiff']
 
     image_files = []
@@ -190,7 +245,7 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
     results = []
     for img_path in image_files:
         print(f"\n{'='*50}")
-        result = processTrack(img_path, output_base_dir, show_debug)
+        result = processTrack(img_path, output_base_dir, show_debug, draw_edges)
         if result:
             results.append(result)
 
@@ -198,11 +253,12 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Process tracetrack images for ML algorithm")
+    parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
     parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
     parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
     parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
     parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing')
+    parser.add_argument('--draw-edges', action='store_true', help='Generate edge visualization from binary edge coordinates')
 
     args = parser.parse_args()
 
@@ -210,7 +266,7 @@ def main():
 
     if args.file:
         if os.path.exists(args.file):
-            result = processTrack(args.file, args.output, args.debug)
+            result = processTrack(args.file, args.output, args.debug, args.draw_edges)
             if result:
                 print(f"\nSingle file processing complete")
             else:
@@ -218,7 +274,7 @@ def main():
         else:
             print(f"File not found: {args.file}")
     else:
-        results = processAllTracks(args.input, args.output, args.debug)
+        results = processAllTracks(args.input, args.output, args.debug, args.draw_edges)
 
         print(f"\n{'='*50}")
         print(f"PROCESSING SUMMARY")
