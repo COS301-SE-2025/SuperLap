@@ -34,3 +34,7 @@ build/
 
 
 act/
+
+# Ignore all image files and json data generated from the imageProcessor
+processedTracks/
+trackImages/
