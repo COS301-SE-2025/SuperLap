@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./Backend/API
+    volumes:
+      - ./Backend/API:/app
+    working_dir: /app
+    ports:
+      - "8000:8000"  # adjust as needed
+    command: python main.py
+
+  image_processor:
+    build:
+      context: ./Backend/ImageProcessing
+    volumes:
+      - ./Backend/ImageProcessing:/app
+    working_dir: /app
+    command: python process.py
+
+  node_frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "3000:3000"
+    command: npm start

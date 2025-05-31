@@ -10,6 +10,9 @@ This directory contains various setup scripts and utilities for the SuperLap pro
 - **Description**: Setup script to download and install [nektos/act](https://github.com/nektos/act) for running GitHub Actions workflows locally
 - **Usage**: `./scripts/setup-act.sh`
 
+### Docker - Containerization Platform
+- [**Build & Run**](#build-and-run-docker)
+
 ## Quick Start
 
 To get started with any tool, simply run the corresponding setup script:
@@ -55,3 +58,7 @@ When contributing new scripts:
 
 **Project**: SuperLap  
 **Purpose**: Developer tooling and automation scripts
+
+---
+
+## Build and Run Docker
