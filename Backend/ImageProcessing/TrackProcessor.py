@@ -19,6 +19,7 @@ class TrackProcessor:
         self.track_mask = None
         self.track_boundaries = None
         self.centerline = None
+        self.centerline_smoothed = None
 
     def loadImg(self, img_path):
         # Load and convert the image
@@ -138,7 +139,7 @@ class TrackProcessor:
 
         return self.track_boundaries
     
-    def extractCenterline(self, method='skeleton', show_debug=True):
+    def extractCenterline(self, method='skeleton', smooth=True, show_debug=True):
         if self.track_mask is None:
             print("Track mask not found")
             return None
@@ -158,13 +159,30 @@ class TrackProcessor:
 
         else:
             print(f"{method} not recognised, defaulting to skeleton")
+            skeleton = skeletonize(track_bin).astype(np.uint8) * 255
+            centerline_points = self.skeletonToPoints(skeleton)
 
+        if len(centerline_points) == 0:
+            print(f"No centerline points found with method: {method}")
+            return None
+        ordered_points = self.orderPoints(centerline_points)
+
+        if smooth and len(ordered_points) > 10:
+            smoothed_points = self.smoothCenterline(ordered_points)
+            self.centerline_smoothed = smoothed_points
+        else:
+            smoothed_points = ordered_points
+            self.centerline_smoothed = ordered_points
+
+        self.centerline = ordered_points
 
         if show_debug:
             self.visualizeCenterline(skeleton if method == 'skeleton' else None)
 
         return {
-            'centerline_raw'
+            'centerline_raw': ordered_points,
+            'centerline_smoothed': smoothed_points,
+            'skeleton_image': skeleton if method == 'skeleton' else None
         }
     
     def skeletonToPoints(self, skeleton):
