@@ -21,7 +21,7 @@ You will need a .env with the details are in the **💾-general-backend** pinned
     npm install --save-dev jest
     npm install --save-dev supertest
 
-    cd API
+    cd Backend/API
     npx jest
 
 ```
