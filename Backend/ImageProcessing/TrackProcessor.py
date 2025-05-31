@@ -31,32 +31,31 @@ class TrackProcessor:
     def processImg(self, img, show_debug=True):
         # Process the track for easier edge detection
         greyscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        # bilateral filter to reduce noise and preserve edges
-        bi_lat_filter = cv.bilateralFilter(greyscale, 9, 75, 75)
-
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
         # Find black track
         lower_black = np.array([0,0,0])
         upper_black = np.array([360,255,110])
-        # Threshold the hsv img to get only black
         dark_mask = cv.inRange(hsv, lower_black, upper_black)
 
+        # bilateral filter to reduce noise and preserve edges
+        bi_lat_filter = cv.bilateralFilter(dark_mask, 10, 130, 75)
+
         # Matrix
-        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7,7))
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2,2))
 
         # Cleaning image using morphological operations which removes small noise and fills small holes
-        closing = cv.morphologyEx(dark_mask, cv.MORPH_CLOSE, kernel, iterations=2)
-        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, kernel, iterations=1)
+        opening = cv.morphologyEx(bi_lat_filter, cv.MORPH_OPEN, kernel, iterations=1)
+        closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel, iterations=1)
 
         # Otsu's threshold selection to better define track
-        _, thresh = cv.threshold(bi_lat_filter, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        _, thresh = cv.threshold(closing, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 
         if show_debug:
             cv.imshow("Greyscale", greyscale)
-            cv.imshow("Filtered", bi_lat_filter)
             cv.imshow("dark_mask", dark_mask)
-            cv.imshow("cleaned opening", opening)
+            cv.imshow("Filtered", bi_lat_filter)
+            cv.imshow("cleaned", closing)
             cv.imshow("Otsu", thresh)
 
         self.processed_image = thresh
@@ -72,18 +71,45 @@ class TrackProcessor:
 
     def detectBoundaries(self, img, show_debug=True):
         # Find track boundaries using color and edge detection
-        cannyEdges = cv.Canny(img, 100, 700)
+        cannyEdges = cv.Canny(img, 85, 520)
 
-        contours, _ = cv.findContours(cannyEdges, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        contours = sorted(contours, key=cv.contourArea, reverse=True)
+        contours, hierarchy = cv.findContours(cannyEdges, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        
+        if contours:
+            outer_contours = []
+            inner_contours = []
 
-        if len(contours) >= 3:
+            for i, contour in enumerate(contours):
+                if hierarchy[0][i][3] == -1:
+                    outer_contours.append(contour)
+                else:
+                    inner_contours.append(contour)
+
+            if outer_contours:
+                outer_boundary = max(outer_contours, key=cv.contourArea)
+                outer_boundary = outer_boundary.reshape(-1, 2)
+            else:
+                raise ValueError("No outer boundary found")
+            
+            inner_boundaries = []
+            for contour in inner_contours:
+                area = cv.contourArea(contour)
+                if area > 100:
+                    inner_boundaries.append(contour.reshape(-1, 2))
+
+            inner_boundary = None
+            if inner_boundaries:
+                inner_boundary = max(inner_boundaries, key=lambda x: cv.contourArea(x.reshape(-1, 1, 2)))
+        
+            '''contours = sorted(contours, key=cv.contourArea, reverse=True)
+
+            if len(contours) >= 3:
             outerBoundary = contours[0]
-            innerBoundary = contours[2]
+            innerBoundary = contours[2]'''
 
             self.track_boundaries = {
-                'outer': outerBoundary,
-                'inner': innerBoundary
+                'outer': outer_boundary,
+                'inner': inner_boundary
             }
 
             if show_debug:
@@ -97,12 +123,14 @@ class TrackProcessor:
                 plt.show()
 
                 print("Number of contours found: " + str(len(contours)))
-                print("Number of datapoints for outer boundary: ", str(len(outerBoundary)))
-                print("Number of datapoints for inner boundary: ", str(len(innerBoundary)))
+                print("Number of datapoints for outer boundary: ", str(len(outer_boundary)))
+                print("Number of datapoints for inner boundary: ", str(len(inner_boundary)))
 
                 contour_img = self.original_image.copy()
-                cv.drawContours(contour_img, [outerBoundary], -1, (255,0,0), thickness=2)
-                cv.drawContours(contour_img, [innerBoundary], -1, (0,0,255), thickness=2)
+                cv.drawContours(contour_img, [outer_boundary], -1, (255,0,0), thickness=2)
+                cv.drawContours(contour_img, [inner_boundary], -1, (0,0,255), thickness=2)
+                cv.drawContours(contour_img, outer_contours, -1, (0,255,0), thickness=1)
+                cv.drawContours(contour_img, outer_contours, -1, (0,255,255), thickness=1)
                 cv.imshow("Contours", contour_img)
         
         else:
@@ -145,6 +173,54 @@ class TrackProcessor:
         for x, y in zip(x_coords, y_coords):
             points.append((int(x), int(y)))
         return points
+    
+    def orderPoints(self, points):
+        if len(points) < 2:
+            return points
+        
+        #points_arr = np.array(points)
+
+        ordered = [points[0]]
+        remaining = points[1:]
+
+        current = np.array(points[0])
+
+        while remaining:
+            distances = [np.linalg.norm(current - np.array(p)) for p in remaining]
+            nearest = np.argmin(distances)
+            nearest_pnt = remaining[nearest]
+
+            ordered.append(nearest_pnt)
+            current = np.array(nearest_pnt)
+            remaining.pop(nearest)
+        
+        return ordered
+    
+    def smoothCenterline(self, points, smoothing_factor=0.1):
+        if len(points) < 4:
+            return
+        
+        points_arr = np.array(points)
+        x_coords = points_arr[:, 0]
+        y_coords = points_arr[:, 1]
+
+        t = np.linspace(0, 1, len(points))
+
+        try:
+            trck_x = interp1d(t, x_coords, kind='cubic', fill_value='extrapolate')
+            trck_y = interp1d(t, y_coords, kind='cubic', fill_value='extrapolate')
+
+            t_smooth = np.linspace(0, 1, len(points) * 2)
+            x_smooth = trck_x(t_smooth)
+            y_smooth = trck_y(t_smooth)
+
+            smoothed_points = [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
+            return smoothed_points
+
+        except Exception as e:
+            print(f"Smoothing failed: {e}. Returning original points")
+            return points
+
     
     def visualizeCenterline(self, skeleton=None):
         if self.original_image is None:
@@ -246,11 +322,11 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
 
         if boundaries:
             print(f"Extracting centerline using {centerline_method} method...")
-            centerline_results = processor.extractCenterline(method=centerline_method, show_debug=show_debug)
+            #centerline_results = processor.extractCenterline(method=centerline_method, show_debug=show_debug)
 
-            if centerline_results:
-                results.update(centerline_results)
-                centerline_files = processor.saveCenterlineData(output_dir, base_filename)
+            #if centerline_results:
+                #results.update(centerline_results)
+                #centerline_files = processor.saveCenterlineData(output_dir, base_filename)
 
             def contour_to_list(contour):
                 return contour.squeeze().tolist() if contour.ndim == 3 else contour.tolist()
@@ -304,7 +380,7 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
         print(f"Error processing track image {img_path}: {str(e)}")
         return None
     
-def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True):
+def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True, centerline_method='skeleton'):
     extensions = ['*.png', '*.jpg', '*.bmp', '*.tiff']
 
     image_files = []
@@ -321,7 +397,7 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
     results = []
     for img_path in image_files:
         print(f"\n{'='*50}")
-        result = processTrack(img_path, output_base_dir, show_debug)
+        result = processTrack(img_path, output_base_dir, show_debug, centerline_method)
         if result:
             results.append(result)
 
