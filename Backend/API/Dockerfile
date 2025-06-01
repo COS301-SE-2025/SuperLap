@@ -1,9 +1,19 @@
 # Backend/API/Dockerfile
-FROM python:3.10-slim
 
+FROM node:18
+
+# Create app directory
 WORKDIR /app
-COPY . /app
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy package.json and install dependencies
+COPY package.json ./
+RUN npm install
 
-CMD ["python", "main.py"]
+# Copy the rest of the source code
+COPY . .
+
+# Expose the port your app runs on
+EXPOSE 3000
+
+# Run the app
+CMD ["npm", "start"]
