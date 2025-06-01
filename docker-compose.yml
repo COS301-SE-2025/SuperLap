@@ -9,25 +9,26 @@ services:
       - /app/node_modules  # Prevents overwriting node_modules inside the container
     ports:
       - "3000:3000"
+    env_file:
+      - ./Backend/API/.env
     environment:
       - NODE_ENV=development
-      - MONGO_URL=mongodb://host.docker.internal:27017/yourdb
     command: npm start
 
-  image_processor:
-    build:
-      context: ./Backend/ImageProcessing
-    volumes:
-      - ./Backend/ImageProcessing:/app
-    working_dir: /app
-    command: python process.py
+  # image_processor:
+  #   build:
+  #     context: ./Backend/ImageProcessing
+  #   volumes:
+  #     - ./Backend/ImageProcessing:/app
+  #   working_dir: /app
+  #   command: python process.py
 
-  node_frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - .:/usr/src/app
-    ports:
-      - "3000:3000"
-    command: npm start
+  # node_frontend:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - .:/usr/src/app
+  #   ports:
+  #     - "3000:3000"
+  #   command: npm start
