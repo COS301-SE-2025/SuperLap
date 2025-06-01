@@ -15,7 +15,7 @@ services:
       - NODE_ENV=development
     command: npm start
 
-  image_processing:
+  imageprocessing:
     build:
       context: ./Backend/ImageProcessing
     volumes:
