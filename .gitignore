@@ -1,6 +1,20 @@
 # Ignore node_modules folder (npm packages)
 node_modules/
 
+# Ignore Python virtual environments
+venv/
+.venv/
+ENV/
+env/
+.ENV/
+.Env/
+.env/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
 # Ignore log files
 *.log
 npm-debug.log*
@@ -32,5 +46,5 @@ build/
 # Ignore npm package lock files if you want to regenerate fresh every time (optional)
 # package-lock.json
 
-
+# GitHub Actions (if using act)
 act/
