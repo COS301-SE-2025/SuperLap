@@ -15,13 +15,12 @@ services:
       - NODE_ENV=development
     command: npm start
 
-  # image_processor:
-  #   build:
-  #     context: ./Backend/ImageProcessing
-  #   volumes:
-  #     - ./Backend/ImageProcessing:/app
-  #   working_dir: /app
-  #   command: python process.py
+  image_processing:
+    build:
+      context: ./Backend/ImageProcessing
+    volumes:
+      - ./Backend/ImageProcessing:/app
+    command: python TrackProcessor.py
 
   # node_frontend:
   #   build:
