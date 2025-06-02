@@ -3293,6 +3293,7 @@ GameObject:
   - component: {fileID: 729960485}
   - component: {fileID: 729960490}
   - component: {fileID: 729960492}
+  - component: {fileID: 729960493}
   m_Layer: 5
   m_Name: Dashboard
   m_TagString: Untagged
@@ -3422,6 +3423,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   trackDropdown: {fileID: 224753808}
+--- !u!114 &729960493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 729960482}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 052e89f1a77b0604c8dcfdd873a3cc57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  leaderboard: {fileID: 1998788557}
+  leaderboardButtonText: {fileID: 1356838107}
+  transitionSpeed: 1000
 --- !u!84 &799033989
 RenderTexture:
   m_ObjectHideFlags: 0
@@ -7918,8 +7934,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 729960490}
-        m_TargetAssemblyTypeName: DashboardManager, MainAssembly
+      - m_Target: {fileID: 729960493}
+        m_TargetAssemblyTypeName: DashboardShowLeaderboard, MainAssembly
         m_MethodName: transitionLeaderboard
         m_Mode: 1
         m_Arguments:
@@ -9094,6 +9110,18 @@ MonoBehaviour:
       - m_Target: {fileID: 729960490}
         m_TargetAssemblyTypeName: DashboardManager, Assembly-CSharp
         m_MethodName: showImportTrack
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 729960493}
+        m_TargetAssemblyTypeName: DashboardShowLeaderboard, MainAssembly
+        m_MethodName: HideLeaderboard
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
