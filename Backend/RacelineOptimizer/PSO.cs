@@ -87,7 +87,15 @@ namespace RacelineOptimizer
 
             return globalBest;
         }
-
         
+        public List<Vector2> GenerateRaceline(List<(Vector2 inner, Vector2 outer)> track, float[] ratios)
+        {
+            var raceline = new List<Vector2>();
+            for (int i = 0; i < track.Count; i++)
+            {
+                raceline.Add(Vector2.Lerp(track[i].inner, track[i].outer, ratios[i]));
+            }
+            return raceline;
+        }
     }
 }
