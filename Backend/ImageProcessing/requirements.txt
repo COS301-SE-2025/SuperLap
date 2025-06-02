@@ -1,9 +1,9 @@
-opencv-python-headless
+opencv-python
 numpy
 pillow
 
 # other imports
-opencv-python-headless
+opencv-python
 numpy
 scipy
 scikit-image

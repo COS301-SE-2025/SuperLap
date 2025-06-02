@@ -73,6 +73,10 @@ Steps to run the system with Docker:
 4. Run the following commands to build and run the Docker containers:
 
 ```bash
+xhost +local:docker # For WSL and Linux users
+set DISPLAY=host.docker.internal:0.0 # For Windows users
+
+xhost +local:docker
 docker-compose down --remove-orphans
 docker-compose up --build
 ```
@@ -80,6 +84,9 @@ docker-compose up --build
 you could also run:
 
 ```bash
+xhost +local:docker # For WSL and Linux users
+set DISPLAY=host.docker.internal:0.0 # For Windows users
+
 docker-compose down --remove-orphans
 docker-compose build
 docker-compose up
@@ -100,10 +107,18 @@ Run the tests:
 **For example:**
 
 ```bash
-npm --prefix api test -- -t "dbRouter should handle GET requests"
+npm --prefix api test -- dbRouter.test.ts
 ```
 
-npm --prefix daemon test
+otherwise run all tests:
 
-npm --prefix api test -- dbRouter.test.ts
-npm --prefix api test -- db.test.ts
+```bash
+npm test
+```
+
+And to run the tests in each service:
+
+```bash
+npm --prefix api test
+npm --prefix image-processing test
+```
