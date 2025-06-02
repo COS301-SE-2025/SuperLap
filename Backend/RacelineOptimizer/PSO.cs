@@ -35,6 +35,59 @@ namespace RacelineOptimizer
             return cost;
         }
 
+        public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, int numParticles = 30, int iterations = 100)
+        {
+            int dimensions = track.Count;
+            Random rand = new();
+            var particles = new List<Particle>();
+            float[] globalBest = new float[dimensions];
+            float globalBestCost = float.MaxValue;
+
+            for (int i = 0; i < numParticles; i++)
+            {
+                var p = new Particle(dimensions, rand);
+                p.BestCost = EvaluateCost(track, p.Position);
+                if (p.BestCost < globalBestCost)
+                {
+                    globalBestCost = p.BestCost;
+                    Array.Copy(p.Position, globalBest, dimensions);
+                }
+                particles.Add(p);
+            }
+
+            for (int iter = 0; iter < iterations; iter++)
+            {
+                foreach (var p in particles)
+                {
+                    for (int d = 0; d < dimensions; d++)
+                    {
+                        float inertia = 0.5f * p.Velocity[d];
+                        float cognitive = 1.5f * (float)rand.NextDouble() * (p.BestPosition[d] - p.Position[d]);
+                        float social = 1.5f * (float)rand.NextDouble() * (globalBest[d] - p.Position[d]);
+
+                        p.Velocity[d] = inertia + cognitive + social;
+                        p.Position[d] += p.Velocity[d];
+                        p.Position[d] = Math.Clamp(p.Position[d], 0f, 1f);
+                    }
+
+                    float cost = EvaluateCost(track, p.Position);
+                    if (cost < p.BestCost)
+                    {
+                        p.BestCost = cost;
+                        Array.Copy(p.Position, p.BestPosition, dimensions);
+
+                        if (cost < globalBestCost)
+                        {
+                            globalBestCost = cost;
+                            Array.Copy(p.Position, globalBest, dimensions);
+                        }
+                    }
+                }
+            }
+
+            return globalBest;
+        }
+
         
     }
 }
