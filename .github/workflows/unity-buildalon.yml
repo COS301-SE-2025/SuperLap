@@ -18,12 +18,12 @@ jobs:
       contents: read
     env:
       UNITY_PROJECT_PATH: 'Unity'
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
     strategy:
       matrix:
         include:
-          - os: windows-latest
-            build-target: StandaloneWindows64
+          - os: ubuntu-latest
+            build-target: StandaloneLinux64
             build-args: ''
     steps:
       - uses: actions/checkout@v4
