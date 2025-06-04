@@ -23,6 +23,7 @@ yarn-error.log*
 
 # Ignore environment variables file (if you have one)
 .env
+.secrets
 
 # Ignore OS files (macOS, Windows)
 .DS_Store

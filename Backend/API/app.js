@@ -17,8 +17,8 @@ async function connectToDb() {
   db = client.db("Superlap");
   app.locals.db = db;
 
-  const trackRouter = require('./Endpoints/TrackEndpoints')(db);
-  const userRouter = require('./Endpoints/UserEndpoints')(db);
+  const trackRouter = require('./endpoints/trackEndpoints')(db);
+  const userRouter = require('./endpoints/userEndpoints')(db);
 
   app.use('', trackRouter);
   app.use('', userRouter);
