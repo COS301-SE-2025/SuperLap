@@ -72,7 +72,7 @@ class TrackProcessor:
         # Find track boundaries using color and edge detection
         cannyEdges = cv.Canny(img, 85, 170)
 
-        contours, _ = cv.findContours(cannyEdges, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv.findContours(cannyEdges, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
         
         if not contours or len(contours) < 3:
             print("Not enough contours found to detect boundaries")
@@ -102,6 +102,113 @@ class TrackProcessor:
 
         return self.track_boundaries
     
+    def calculateCurvature(self, points, window_size=5):
+        curvatures = np.zeros(len(points))
+        
+        for i in range(len(points)):
+            start_idx = max(0, i - window_size)
+            end_idx = min(len(points), i + window_size + 1)
+            window_points = points[start_idx:end_idx]
+            
+            if len(window_points) < 3:
+                curvatures[i] = 0
+                continue
+            
+            current = points[i]
+            start_vec = window_points[0] - current
+            end_vec = window_points[-1] - current
+            
+            start_norm = np.linalg.norm(start_vec)
+            end_norm = np.linalg.norm(end_vec)
+            
+            if start_norm == 0 or end_norm == 0:
+                curvatures[i] = 0
+                continue
+            
+            dot_product = np.dot(start_vec, end_vec) / (start_norm * end_norm)
+            dot_product = np.clip(dot_product, -1.0, 1.0)
+            angle = np.arccos(dot_product)
+            
+            curvatures[i] = angle
+        
+        return curvatures
+    
+    def normalizeContour(self, contour, target_points=1800):
+        if len(contour) < 1000:
+            print(f"Warning: Contour has too few points ({len(contour)}) for normalization")
+            return contour
+        
+        if contour.ndim == 3:
+            points = contour.squeeze()
+        else:
+            points = contour
+
+        if not np.array_equal(points[0], points[-1]):
+            points = np.vstack([points, points[0]])
+
+        x_coords = points[:, 0]
+        y_coords = points[:, 1]
+
+        curvatures = self.calculateCurvature(points)
+
+        from scipy.ndimage import gaussian_filter1d
+        curvatures_smooth = gaussian_filter1d(curvatures, sigma=2)
+
+        distances = np.sqrt(np.diff(x_coords)**2 + np.diff(y_coords)**2)
+        cumulative_dist = np.concatenate([[0], np.cumsum(distances)])
+
+        total_length = cumulative_dist[-1]
+        if total_length == 0:
+            print("Warning: Contour has zero length")
+            return contour
+        
+        normalized_dist = cumulative_dist / total_length
+
+        try:
+            interp_x = interp1d(normalized_dist, x_coords, kind='linear', assume_sorted=True)
+            interp_y = interp1d(normalized_dist, y_coords, kind='linear', assume_sorted=True)
+            interp_curvature = interp1d(normalized_dist, curvatures_smooth, kind='linear', assume_sorted=True)
+            
+            base_samples = np.linspace(0, 1, target_points * 2)
+            curvature_at_samples = interp_curvature(base_samples)
+            
+            min_curvature = np.min(curvature_at_samples)
+            max_curvature = np.max(curvature_at_samples)
+            
+            if max_curvature - min_curvature > 0:
+                normalized_curvature = 0.2 + 0.8 * (curvature_at_samples - min_curvature) / (max_curvature - min_curvature)
+            else:
+                normalized_curvature = np.ones_like(curvature_at_samples)
+            
+            cumulative_density = np.cumsum(normalized_curvature)
+            cumulative_density = cumulative_density / cumulative_density[-1]
+            
+            target_density = np.linspace(0, 1, target_points + 1)[:-1]
+            
+            adaptive_samples = np.interp(target_density, cumulative_density, base_samples)
+            new_x = interp_x(adaptive_samples)
+            new_y = interp_y(adaptive_samples)
+            
+            norm_contour = np.column_stack([new_x, new_y]).astype(np.float32)
+            
+            final_curvatures = interp_curvature(adaptive_samples)
+            high_curvature_points = np.sum(final_curvatures > np.mean(final_curvatures))
+            
+            print(f"Normalized contour from {len(contour)} to {len(norm_contour)} points")
+            print(f"  - {high_curvature_points}/{len(norm_contour)} points in high-curvature areas")
+            print(f"  - Curvature range: {np.min(final_curvatures):.3f} to {np.max(final_curvatures):.3f}")
+            
+            return norm_contour
+        
+        except Exception as e:
+            print(f"Error during curvature-based normalization: {e}")
+            print(f"Falling back to even spacing...")
+            new_dist = np.linspace(0, 1, target_points + 1)[:, 1]
+            new_x = interp_x(new_dist)
+            new_y = interp_y(new_dist)
+            norm_contour = np.column_stack([new_x, new_y]).astype(np.float32)
+            return norm_contour
+
     def extractCenterline(self, method='skeleton', smooth=True, show_debug=True):
         if self.track_mask is None:
             print("Track mask not found")
@@ -240,7 +347,7 @@ class TrackProcessor:
 
         return edges
 
-    def drawEdgesFromBin(self, bin_path, output_path=None, canvas_size=None):
+    def drawEdgesFromBin(self, bin_path, canvas_size=None):
         # Draw edges from binary file onto a blank canvas
         if canvas_size is None:
             if self.original_image is not None:
@@ -248,10 +355,6 @@ class TrackProcessor:
                 canvas_size = (w, h)
             else:
                 canvas_size = (1524, 1024)
-        
-        if output_path is None:
-            output_dir = os.path.dirname(bin_path)
-            output_path = os.path.join(output_dir, 'edgeVisualization.png')
 
         edge_data = self.readEdgesFromBin(bin_path)
         
@@ -270,12 +373,9 @@ class TrackProcessor:
         draw_contour(outer, (0, 255, 0))  # green
         draw_contour(inner, (0, 0, 255))  # red
 
-        # Save image
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        cv.imwrite(output_path, image)
-        print(f"Edge visualization saved to: {output_path}")
+        print(f"Edge visualization image created from: {bin_path}")
         
-        return output_path
+        return image
     
     def saveProcessedImages(self, results, output_dir, base_filename):
         saved_files = []
@@ -315,7 +415,13 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
         boundaries = processor.detectBoundaries(results['processed_image'], show_debug)
 
         if boundaries:
+            print("Normalizing boundaries to 1800 points using curvature-based adaptive sampling...")
+            normalized_outer = processor.normalizeContour(boundaries['outer'], target_points=1800)
+            normalized_inner = processor.normalizeContour(boundaries['inner'], target_points=1800)
             
+            boundaries['outer'] = normalized_outer
+            boundaries['inner'] = normalized_inner
+
             if extract_centerline:
                 print(f"Extracting centerline using {centerline_method} method...")
                 centerline_results = processor.extractCenterline(method=centerline_method, show_debug=show_debug)
@@ -332,8 +438,8 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
                 return contour.squeeze().tolist() if contour.ndim == 3 else contour.tolist()
 
             edge_data = {
-                'outer_boundary': contour_to_list(boundaries['outer']),
-                'inner_boundary': contour_to_list(boundaries['inner'])
+                'outer_boundary': contour_to_list(normalized_outer),
+                'inner_boundary': contour_to_list(normalized_inner)
             }
 
             # Save binary edge coordinates
@@ -342,20 +448,19 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
             with open(edge_bin_path, 'wb') as f:
                 for key in ['outer_boundary', 'inner_boundary']:
                     points = edge_data[key]
-                    f.write(struct.pack('<I', len(points)))  # Write number of points
+                    f.write(struct.pack('<I', len(points)))
                     for x, y in points:
-                        f.write(struct.pack('<ff', float(x), float(y)))  # Write each point as float32
-            print(f"Edge coordinates saved to: {edge_bin_path}")
+                        f.write(struct.pack('<ff', float(x), float(y)))
+            print(f"Edge coordinates saved to: {edge_bin_path} (outer: {len(edge_data['outer_boundary'])} points, inner: {len(edge_data['inner_boundary'])} points)")
 
-            # Draw edges visualization if debug is enabled
+            results['edge_visualization'] = processor.drawEdgesFromBin(edge_bin_path)
+
+            # Add centerline visualization
             if show_debug:
                 if extract_centerline and processor.centerline:
                     centerline_img = processor.visualizeCenterline()
-                if centerline_img is not None:
-                    results['centerline_visualization'] = centerline_img
-
-                edge_viz_path = processor.drawEdgesFromBin(edge_bin_path)
-                results['edge_visualization'] = cv.imread(edge_viz_path)
+                    if centerline_img is not None:
+                        results['centerline_visualization'] = centerline_img
 
         saved_files = processor.saveProcessedImages(results, output_dir, base_filename)
 
@@ -364,9 +469,11 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
             'output_directory': output_dir,
             'processed_files': saved_files,
             'processing_successful': True,
+            'boundary_points_normalized': True,
+            'outer_boundary_points': 1800 if boundaries else 0,
+            'inner_boundary_points': 1800 if boundaries else 0,
             'centerline_extracted': extract_centerline and processor.centerline is not None,
-            'centerline_points': len(processor.centerline) if processor.centerline else 0,
-
+            'centerline_points': len(processor.centerline) if processor.centerline else 0
         }
 
         summary_path = os.path.join(output_dir, f"{base_filename}_summary.json")
@@ -427,6 +534,8 @@ def main():
             result = processTrack(args.file, args.output, args.debug)
             if result:
                 print(f"\nSingle file processing complete")
+                print(f"Boundaries normalized to {result['outer_boundary_points']} outer and {result['inner_boundary_points']} inner points")
+
                 if args.extract_centerline and result['centerline_extracted']:
                     print(f"Centerline extracted with {result['centerline_points']} points")
                 elif args.extract_centerline:
@@ -456,6 +565,7 @@ def main():
             for result in results:
                 trackName = Path(result['original_image']).stem
                 status_info = []
+                status_info.append(f"Boundaries normalized to 1800 points each")
 
                 if args.extract_centerline and result['centerline_extracted']:
                     centerline_success += 1
