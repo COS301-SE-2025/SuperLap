@@ -6428,6 +6428,14 @@ PrefabInstance:
       value: PasswordInput
       objectReference: {fileID: 0}
     - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+      propertyPath: m_InputType
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+      propertyPath: m_ContentType
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -7129,6 +7137,18 @@ PrefabInstance:
     - target: {fileID: 2479494610490979142, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
       propertyPath: m_Name
       value: EmailInput
+      objectReference: {fileID: 0}
+    - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+      propertyPath: m_ContentType
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+      propertyPath: m_KeyboardType
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+      propertyPath: m_CharacterValidation
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14615,6 +14635,14 @@ PrefabInstance:
     - target: {fileID: 2479494610490979142, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
       propertyPath: m_Name
       value: PasswordInput
+      objectReference: {fileID: 0}
+    - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+      propertyPath: m_InputType
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+      propertyPath: m_ContentType
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
