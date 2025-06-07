@@ -6648,6 +6648,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 746131857}
   m_CullTransparentMesh: 1
+--- !u!114 &749888212 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+  m_PrefabInstance: {fileID: 372993640}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &830257477
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7238,11 +7249,33 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1340342986}
   m_CullTransparentMesh: 1
+--- !u!114 &1343590670 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+  m_PrefabInstance: {fileID: 1308533154}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &1421439248 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2057707391178971293, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
   m_PrefabInstance: {fileID: 1471199926}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1421439249 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+  m_PrefabInstance: {fileID: 1471199926}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1471199926
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14049,8 +14082,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MainMenuCanvas: {fileID: 1691245213}
+  MainMenuInputs: []
   LoginCanvas: {fileID: 1820766438}
+  LoginInputs:
+  - {fileID: 1421439249}
+  - {fileID: 2088280590}
   RegisterCanvas: {fileID: 1715566894}
+  RegisterInputs:
+  - {fileID: 749888212}
+  - {fileID: 429694923}
+  - {fileID: 1343590670}
   MainCamera: {fileID: 66388068}
   transitionSpeed: 5
 --- !u!1 &2087038682
@@ -14135,6 +14176,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2087038682}
   m_CullTransparentMesh: 1
+--- !u!114 &2088280590 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8705953510132298470, guid: 83b88bed6a1c2fd8ab3e71afd653e4c9, type: 3}
+  m_PrefabInstance: {fileID: 1630968146636754353}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2106701762
 GameObject:
   m_ObjectHideFlags: 0
