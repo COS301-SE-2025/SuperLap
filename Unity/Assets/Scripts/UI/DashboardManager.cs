@@ -7,26 +7,26 @@ public class DashboardManager : MonoBehaviour
   public GameObject dashboard;
   public GameObject importTrack;
 
-  public GameObject analysis;
+  public GameObject Analysis;
 
   public void showDashboard()
   {
     dashboard.SetActive(true);
     importTrack.SetActive(false);
-    analysis.SetActive(false);
+    Analysis.SetActive(false);
   }
 
   public void showImportTrack()
   {
     dashboard.SetActive(false);
     importTrack.SetActive(true);
-    analysis.SetActive(false);
+    Analysis.SetActive(false);
   }
 
   public void showAnalysis()
   {
     dashboard.SetActive(false);
     importTrack.SetActive(false);
-    analysis.SetActive(true);
+    Analysis.SetActive(true);
   }
 }

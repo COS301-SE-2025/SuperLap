@@ -1,20 +1,6 @@
 # Ignore node_modules folder (npm packages)
 node_modules/
 
-# Ignore Python virtual environments
-venv/
-.venv/
-ENV/
-env/
-.ENV/
-.Env/
-.env/
-
-# Ignore Python cache files
-__pycache__/
-*.py[cod]
-*$py.class
-
 # Ignore log files
 *.log
 npm-debug.log*
@@ -23,7 +9,6 @@ yarn-error.log*
 
 # Ignore environment variables file (if you have one)
 .env
-.secrets
 
 # Ignore OS files (macOS, Windows)
 .DS_Store
@@ -47,15 +32,5 @@ build/
 # Ignore npm package lock files if you want to regenerate fresh every time (optional)
 # package-lock.json
 
-# GitHub Actions (if using act)
-act/
 
-# Ignore all image files and json data generated from the imageProcessor
-processedTracks/
-trackImages/
-Backend/ImageProcessing/venv
-Backend/ImageProcessing/debug
-Backend/RacelineOptimizer/bin
-Backend/RacelineOptimizer/obj
-/Backend/RacelineOptimizer/Output
-/Backend/RacelineOptimizer/Input
+act/

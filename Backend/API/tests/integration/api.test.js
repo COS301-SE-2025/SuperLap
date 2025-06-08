@@ -10,7 +10,7 @@ describe('API Endpoints', function () {
   const testUser = {
     username: 'testuser',
     email: 'testuser@example.com',
-    password: 'testpassword',
+    age: 25,
   };
 
   afterAll(async function () {
