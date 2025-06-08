@@ -1770,6 +1770,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dashboard: {fileID: 729960482}
   importTrack: {fileID: 1312239166}
+  analysis: {fileID: 824509490}
 --- !u!1 &487382600
 GameObject:
   m_ObjectHideFlags: 0
@@ -2375,8 +2376,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -526, y: -119}
-  m_SizeDelta: {x: -1121, y: 185.785}
+  m_AnchoredPosition: {x: -485.616, y: -117.122}
+  m_SizeDelta: {x: -1040.233, y: 182.028}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &604115310
 MonoBehaviour:
@@ -2426,7 +2427,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 23.25
+  m_fontSize: 26.5
   m_fontSizeBase: 10
   m_fontWeight: 400
   m_enableAutoSizing: 1
