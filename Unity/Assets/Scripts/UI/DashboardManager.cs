@@ -6,7 +6,6 @@ public class DashboardManager : MonoBehaviour
 {
   public GameObject dashboard;
   public GameObject importTrack;
-
   public GameObject Analysis;
 
   public void showDashboard()
