@@ -8,8 +8,75 @@ namespace RacelineOptimizer
         {
             // First, uniformly resample the inner boundary
             List<Vector2> resampledInner = Resample(inner, numSamples, closed);
+            
+            // Then find corresponding outer points based on closest segments
+            List<Vector2> matchedOuter = FindClosestOuterPoints(resampledInner, outer, closed);
+            
+            var result = new List<(Vector2, Vector2)>();
+            for (int i = 0; i < numSamples; i++)
+                result.Add((resampledInner[i], matchedOuter[i]));
 
-            return resampledInner;
+            return result;
+        }
+
+        private static List<Vector2> FindClosestOuterPoints(List<Vector2> innerPoints, List<Vector2> outerPath, bool closed)
+        {
+            var matchedOuter = new List<Vector2>();
+            
+            foreach (var innerPoint in innerPoints)
+            {
+                Vector2 closestPoint = FindClosestPointOnPath(innerPoint, outerPath, closed);
+                matchedOuter.Add(closestPoint);
+            }
+            
+            return matchedOuter;
+        }
+
+        private static Vector2 FindClosestPointOnPath(Vector2 targetPoint, List<Vector2> path, bool closed)
+        {
+            float minDistance = float.MaxValue;
+            Vector2 closestPoint = path[0];
+            
+            // Check each segment of the path
+            int pathCount = closed ? path.Count : path.Count - 1;
+            
+            for (int i = 0; i < pathCount; i++)
+            {
+                Vector2 segmentStart = path[i];
+                Vector2 segmentEnd = path[(i + 1) % path.Count];
+                
+                Vector2 pointOnSegment = GetClosestPointOnSegment(targetPoint, segmentStart, segmentEnd);
+                float distance = Vector2.Distance(targetPoint, pointOnSegment);
+                
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestPoint = pointOnSegment;
+                }
+            }
+            
+            return closestPoint;
+        }
+
+        private static Vector2 GetClosestPointOnSegment(Vector2 point, Vector2 segmentStart, Vector2 segmentEnd)
+        {
+            Vector2 segmentVector = segmentEnd - segmentStart;
+            Vector2 pointVector = point - segmentStart;
+            
+            float segmentLengthSquared = segmentVector.LengthSquared();
+            
+            // If the segment is effectively a point, return the start point
+            if (segmentLengthSquared < 1e-6f)
+                return segmentStart;
+            
+            // Calculate the projection parameter t
+            float t = Vector2.Dot(pointVector, segmentVector) / segmentLengthSquared;
+            
+            // Clamp t to [0, 1] to stay within the segment
+            t = Math.Max(0f, Math.Min(1f, t));
+            
+            // Return the point on the segment
+            return segmentStart + t * segmentVector;
         }
 
         private static List<Vector2> Resample(List<Vector2> path, int numSamples, bool closed = false)
