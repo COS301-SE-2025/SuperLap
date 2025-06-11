@@ -8,31 +8,77 @@ namespace RacelineOptimizer
 {
     public class PSO
     {
-        private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios)
+
+        private static float Clamp(float value, float min, float max)
+        {
+            return MathF.Max(min, MathF.Min(max, value));
+        }
+
+        private static float GetCornerBias(List<CornerDetector.CornerSegment> corners, int index)
+        {
+            foreach (var corner in corners)
+            {
+                if (corner.EndIndex < index)
+                    continue;
+
+                float severity = MathF.Min(1f, MathF.Abs(corner.Angle) / 90f);
+                float t = Math.Clamp((index - corner.StartIndex) / (float)(corner.EndIndex - corner.StartIndex), 0f, 1f);
+
+                // Outer -> inner -> outer
+                float baseBias = MathF.Cos(t * MathF.PI);
+                float biasOffset = baseBias * 0.5f * severity;
+
+                return corner.IsLeftTurn
+                    ? 0.5f - biasOffset
+                    : 0.5f + biasOffset;
+            }
+
+            return 0.5f;
+        }
+        
+        private float CalculateCorneringCost(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, float[] ratios)
         {
             float cost = 0f;
-            List<Vector2> path = new();
-
             for (int i = 0; i < track.Count; i++)
             {
-                var point = Vector2.Lerp(track[i].inner, track[i].outer, ratios[i]);
-                path.Add(point);
-            }
+                float idealBias = GetCornerBias(corners, i);
+                float ratio = ratios[i];
 
-            for (int i = 1; i < path.Count - 1; i++)
-            {
-                var v1 = Vector2.Normalize(path[i] - path[i - 1]);
-                var v2 = Vector2.Normalize(path[i + 1] - path[i]);
-                float dot = Vector2.Dot(v1, v2);
-                cost += 1f - dot;
+                if (idealBias > 0.5f)
+                {
+                    if (ratios[i] > 0.5f)
+                    {
+                        cost += (1.0f - ratios[i]) * 20;
+                    }
+                    else
+                    {
+                        cost += (1.0f - ratios[i]) * 100;
+                    }
+                }
+                else if (idealBias < 0.5f)
+                {
+                    if (ratios[i] < 0.5f)
+                    {
+                        cost += ratios[i] * 10;
+                    }
+                    else
+                    {
+                        cost += ratios[i] * 1000;
+                    }
+                }
             }
-
-            for (int i = 1; i < path.Count; i++)
-            {
-                cost += Vector2.Distance(path[i], path[i - 1]);
-            }
-
             return cost;
+        }
+        private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios, List<CornerDetector.CornerSegment> corners)
+        {
+            List<Vector2> path = new(track.Count);
+            for (int i = 0; i < track.Count; i++)
+                path.Add(Vector2.Lerp(track[i].inner, track[i].outer, ratios[i]));
+
+            float cost = 0f;
+            float corneringCost = CalculateCorneringCost(track, corners, ratios);
+        
+            return corneringCost;
         }
 
         public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, int numParticles = 30, int iterations = 100)
