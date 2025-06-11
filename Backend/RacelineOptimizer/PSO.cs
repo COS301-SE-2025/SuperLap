@@ -1,13 +1,41 @@
-//Partical Swarm Optimization algorithm for Raceline Optimization
-
-using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace RacelineOptimizer
 {
     public class PSO
     {
+        private readonly float smoothnessWeight;
+        private readonly float distanceWeight;
+        private readonly float racingBiasWeight;
+        private readonly float inertiaStart;
+        private readonly float inertiaEnd;
+        private readonly float cognitiveWeight;
+        private readonly float socialWeight;
+        private readonly float maxVelocity;
+        private int patience;
+
+        public PSO(
+            float smoothnessWeight = 25f, //Favours less sharp turns (25f)
+            float distanceWeight = 4f, //Favours shorter paths(typically more straight) (4f)
+            float racingBiasWeight = 0.5f,  //Favours paths opposite to upcoming corner direction.
+            float inertiaStart = 0.6f,
+            float inertiaEnd = 0.1f,
+            float cognitiveWeight = 1.7f,
+            float socialWeight = 1.7f,
+            float maxVelocity = 0.01f,
+            int patience = 1000
+        )
+        {
+            this.smoothnessWeight = smoothnessWeight;
+            this.distanceWeight = distanceWeight;
+            this.racingBiasWeight = racingBiasWeight;
+            this.inertiaStart = inertiaStart;
+            this.inertiaEnd = inertiaEnd;
+            this.cognitiveWeight = cognitiveWeight;
+            this.socialWeight = socialWeight;
+            this.maxVelocity = maxVelocity;
+            this.patience = patience;
+        }
 
         private static float Clamp(float value, float min, float max)
         {
@@ -69,6 +97,45 @@ namespace RacelineOptimizer
             }
             return cost;
         }
+
+
+        private float CalculateSmoothnessCost(List<Vector2> path)
+        {
+            float totalCost = 0f;
+            int count = path.Count;
+            if (count < 3) return float.MaxValue;
+
+            for (int i = 1; i < count - 1; i++)
+            {
+                Vector2 prev = path[i - 1];
+                Vector2 curr = path[i];
+                Vector2 next = path[i + 1];
+
+                Vector2 v1 = Vector2.Normalize(curr - prev);
+                Vector2 v2 = Vector2.Normalize(next - curr);
+
+                float dot = Vector2.Dot(v1, v2);
+                dot = Math.Clamp(dot, -1f, 1f);
+
+                float angle = MathF.Acos(dot);
+
+                float curvature = angle / Vector2.Distance(prev, next);
+                totalCost += curvature * curvature;
+            }
+
+            return totalCost * 100f;
+        }
+
+        private float EvaluateDistanceCost(List<Vector2> path)
+        {
+            float totalDistance = 0f;
+            for (int i = 1; i < path.Count; i++)
+            {
+                totalDistance += Vector2.Distance(path[i - 1], path[i]);
+            }
+            return totalDistance;
+        }
+
         private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios, List<CornerDetector.CornerSegment> corners)
         {
             List<Vector2> path = new(track.Count);
@@ -77,22 +144,36 @@ namespace RacelineOptimizer
 
             float cost = 0f;
             float corneringCost = CalculateCorneringCost(track, corners, ratios);
-        
-            return corneringCost;
+            float smoothnessCost = CalculateSmoothnessCost(path);
+            float distanceCost = EvaluateDistanceCost(path);
+            cost += distanceCost * distanceWeight
+                + corneringCost * racingBiasWeight
+                + smoothnessCost * smoothnessWeight;
+
+            return cost;
         }
 
-        public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, int numParticles = 30, int iterations = 100)
+
+        public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, int numParticles = 30, int iterations = 100)
         {
+            object globalLock = new();
+            ThreadLocal<Random> threadRand = new(() => new Random(Guid.NewGuid().GetHashCode()));
             int dimensions = track.Count;
             Random rand = new();
             var particles = new List<Particle>();
             float[] globalBest = new float[dimensions];
             float globalBestCost = float.MaxValue;
 
+            float[] recentCosts = new float[patience];
+            int recentIndex = 0;
+
             for (int i = 0; i < numParticles; i++)
             {
                 var p = new Particle(dimensions, rand);
-                p.BestCost = EvaluateCost(track, p.Position);
+                p.Position[^1] = p.Position[0];
+                p.BestPosition[^1] = p.BestPosition[0];
+
+                p.BestCost = EvaluateCost(track, p.Position, corners);
                 if (p.BestCost < globalBestCost)
                 {
                     globalBestCost = p.BestCost;
@@ -103,36 +184,108 @@ namespace RacelineOptimizer
 
             for (int iter = 0; iter < iterations; iter++)
             {
-                foreach (var p in particles)
+                float inertiaWeight = inertiaStart + (inertiaEnd - inertiaStart) * (iter / (float)iterations);
+
+                Parallel.ForEach(particles, () => new Random(Guid.NewGuid().GetHashCode()), (p, _, localRand) =>
                 {
                     for (int d = 0; d < dimensions; d++)
                     {
-                        float inertia = 0.5f * p.Velocity[d];
-                        float cognitive = 1.5f * (float)rand.NextDouble() * (p.BestPosition[d] - p.Position[d]);
-                        float social = 1.5f * (float)rand.NextDouble() * (globalBest[d] - p.Position[d]);
+                        float inertia = inertiaWeight * p.Velocity[d];
+                        float cognitive = cognitiveWeight * (float)localRand.NextDouble() * (p.BestPosition[d] - p.Position[d]);
+                        float social = socialWeight * (float)localRand.NextDouble() * (globalBest[d] - p.Position[d]);
 
                         p.Velocity[d] = inertia + cognitive + social;
-                        p.Position[d] += p.Velocity[d];
-                        p.Position[d] = Math.Clamp(p.Position[d], 0f, 1f);
-                    }
+                        p.Velocity[d] = Clamp(p.Velocity[d], -maxVelocity, maxVelocity);
 
-                    float cost = EvaluateCost(track, p.Position);
+                        p.Position[d] += p.Velocity[d];
+                        p.Position[d] = Clamp(p.Position[d], 0f, 1f);
+                    }
+                    p.Position[^1] = p.Position[0]; // Ensure loop closure
+
+                    float cost = EvaluateCost(track, p.Position, corners);
                     if (cost < p.BestCost)
                     {
                         p.BestCost = cost;
                         Array.Copy(p.Position, p.BestPosition, dimensions);
+                        p.NoImprovementSteps = 0;
 
-                        if (cost < globalBestCost)
+                        lock (globalLock)
                         {
-                            globalBestCost = cost;
-                            Array.Copy(p.Position, globalBest, dimensions);
+                            if (cost < globalBestCost)
+                            {
+                                globalBestCost = cost;
+                                Array.Copy(p.Position, globalBest, dimensions);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        p.NoImprovementSteps++;
+                    }
+
+                    return localRand;
+                }, _ => { });
+
+                // Begin anti-local-minimum enhancements
+                int resetInterval = 200;
+                float perturbAmount = 0.05f;
+                int stagnationLimit = 50;
+
+                if (iter % resetInterval == 0)
+                {
+                    Particle worst = particles.OrderByDescending(p => p.BestCost).First();
+                    lock (globalLock)
+                    {
+                        worst.Randomize(rand);
+                        worst.Position[^1] = worst.Position[0];
+                        worst.BestPosition[^1] = worst.BestPosition[0];
+                        worst.BestCost = EvaluateCost(track, worst.Position, corners);
+                        if (worst.BestCost < globalBestCost)
+                        {
+                            globalBestCost = worst.BestCost;
+                            Array.Copy(worst.Position, globalBest, dimensions);
                         }
                     }
                 }
+
+                // Apply perturbation to stuck particles
+                foreach (var p in particles)
+                {
+                    if (p.NoImprovementSteps >= stagnationLimit)
+                    {
+                        for (int d = 0; d < dimensions; d++)
+                        {
+                            float perturb = perturbAmount * ((float)rand.NextDouble() - 0.5f);
+                            p.Position[d] = Clamp(p.Position[d] + perturb, 0f, 1f);
+                        }
+                        p.Position[^1] = p.Position[0];
+                        p.NoImprovementSteps = 0;
+                    }
+                }
+
+                // Store recent cost improvement
+                recentCosts[recentIndex % patience] = globalBestCost;
+                recentIndex++;
+
+                // Check early stopping every iteration
+                if (recentIndex >= patience)
+                {
+                    float oldest = recentCosts[(recentIndex - patience) % patience];
+                    float improvement = MathF.Abs(oldest - globalBestCost);
+                    if (improvement < 0.01f)
+                    {
+                        Console.WriteLine($"Early stopping at iteration {iter}, BestCost = {globalBestCost:F4}");
+                        break;
+                    }
+                }
+
+                if (iter % 1000 == 0)
+                    Console.WriteLine($"Iteration {iter}, BestCost = {globalBestCost:F4}");
             }
 
             return globalBest;
         }
+
 
         public List<Vector2> SmoothRaceline(List<Vector2> raceline, int iterations = 2)
         {
@@ -192,14 +345,17 @@ namespace RacelineOptimizer
 
             return clamped;
         }
-        
+
+
         public List<Vector2> GenerateRaceline(List<(Vector2 inner, Vector2 outer)> track, float[] ratios)
         {
             var raceline = new List<Vector2>();
             for (int i = 0; i < track.Count; i++)
-            {
                 raceline.Add(Vector2.Lerp(track[i].inner, track[i].outer, ratios[i]));
-            }
+
+            if (raceline.Count > 1 && raceline[0] != raceline[^1])
+                raceline.Add(raceline[0]);
+
             return raceline;
         }
     }
