@@ -87,6 +87,27 @@ namespace RacelineOptimizer
 
             return globalBest;
         }
+
+        public List<Vector2> SmoothRaceline(List<Vector2> raceline, int iterations = 2)
+        {
+            for (int iter = 0; iter < iterations; iter++)
+            {
+                List<Vector2> smoothed = new();
+                int count = raceline.Count;
+
+                for (int i = 0; i < count; i++)
+                {
+                    Vector2 p0 = raceline[i];
+                    Vector2 p1 = raceline[(i + 1) % count];
+                    smoothed.Add(Vector2.Lerp(p0, p1, 0.25f));
+                    smoothed.Add(Vector2.Lerp(p0, p1, 0.75f));
+                }
+
+                raceline = smoothed;
+            }
+
+            return raceline;
+        }
         
         public List<Vector2> GenerateRaceline(List<(Vector2 inner, Vector2 outer)> track, float[] ratios)
         {
