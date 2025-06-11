@@ -108,6 +108,44 @@ namespace RacelineOptimizer
 
             return raceline;
         }
+
+        public List<Vector2> ClampToTrack(List<(Vector2 inner, Vector2 outer)> track, List<Vector2> raceline)
+        {
+            List<Vector2> clamped = new();
+
+            for (int i = 0; i < track.Count && i < raceline.Count; i++)
+            {
+                Vector2 A = track[i].inner;
+                Vector2 B = track[i].outer;
+                Vector2 P = raceline[i];
+
+                // Check if P is between A and B (within track width at this point)
+                Vector2 AB = B - A;
+                Vector2 AP = P - A;
+
+                float proj = Vector2.Dot(AP, AB) / Vector2.Dot(AB, AB);
+
+                // Distance from point to line segment
+                float t = Clamp(proj, 0f, 1f);
+                Vector2 projection = Vector2.Lerp(A, B, t);
+
+                // Check if point is "off track"
+                float distToSegmentSq = (P - projection).LengthSquared();
+                float trackWidthSq = (B - A).LengthSquared();
+
+                // If outside narrow margin from segment line, clamp
+                if (proj < 0f || proj > 1f || distToSegmentSq > 1e-4f * trackWidthSq)
+                {
+                    clamped.Add(projection);
+                }
+                else
+                {
+                    clamped.Add(P); // Keep original if already on track
+                }
+            }
+
+            return clamped;
+        }
         
         public List<Vector2> GenerateRaceline(List<(Vector2 inner, Vector2 outer)> track, float[] ratios)
         {
