@@ -129,6 +129,18 @@ class TrackProcessor:
         
         return kmeans_mask
     
+    def adaptiveHSVMask(self, hsv, show_debug=False):
+        params = self.adaptive_mask_params or self.analyzeImageCharacteristics(cv.cvtColor(hsv, cv.COLOR_HSV2BGR))
+        
+        lower_bound = np.array([0, 0, 0])
+        upper_bound = np.array([180, 255, int(params['upper_v'])])
+        mask = cv.inRange(hsv, lower_bound, upper_bound)
+        
+        if show_debug:
+            print(f"Adaptive HSV bounds: Lower {lower_bound}, Upper {upper_bound}")
+        
+        return mask
+    
     def processImg(self, img, show_debug=True):
         # Process the track for easier edge detection
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
