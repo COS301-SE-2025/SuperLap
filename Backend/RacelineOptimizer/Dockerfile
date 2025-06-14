@@ -1,25 +1,31 @@
-# Use official .NET SDK image
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 WORKDIR /app
 
-# Copy project files
+# Copy csproj and restore
 COPY *.csproj ./
 RUN dotnet restore
 
 # Copy everything else
 COPY . ./
 
-# Build the application
+# Create Input and Output folders (in the build stage for completeness)
+RUN mkdir -p Input Output
+
+# Publish app
 RUN dotnet publish -c Release -o out
 
-# Runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/runtime:9.0
+
 WORKDIR /app
-COPY --from=build /app/out .
 
-# Create input/output directories
-RUN mkdir -p /app/Input && mkdir -p /app/Output
+# Copy built app from build stage
+COPY --from=build /app/out ./
 
-# Set entrypoint
-ENTRYPOINT ["dotnet", "RacelineOptimizer.dll"]
+# Create Input and Output in runtime container (redundant with bind mount, but ensures it exists)
+RUN mkdir -p Input Output
+
+# Default command to run app
+CMD ["dotnet", "RacelineOptimizer.dll"]
