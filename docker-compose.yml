@@ -23,6 +23,8 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
     command: python TrackProcessor.py
+    depends_on:
+      - api  # Waits for api service to start
 
   racelineoptimizer:
     build:
@@ -31,6 +33,8 @@ services:
       - ./Backend/RacelineOptimizer/Input:/app/Input
       - ./Backend/RacelineOptimizer/Output:/app/Output
     command: ["dotnet", "RacelineOptimizer.dll"]
+    depends_on:
+      - api  # Waits for api service to start
 
 # Define named volumes here
 volumes:
