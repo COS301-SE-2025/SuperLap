@@ -75,7 +75,7 @@ class TrackProcessor:
         elif v_mean[0][0] > 160:
             print("Light surface detected (concrete/light surfaces)...")
             params['track_detection_method'] = 'bright_surface'
-            params['upper_v'] = min(140, bright_threshold - 0.5 * v_std[0][0])
+            params['upper_v'] = min(180, bright_threshold - 0.5 * v_std[0][0])
             params['brightness_factor'] = 0.8
         else:
             print("Standard surface detected...")
@@ -168,26 +168,26 @@ class TrackProcessor:
         if params['track_detection_method'] in ['very_dark_asphalt', 'dark_asphalt']:
             weights = {
                 'lab_enhanced': 0.35, 
-                'hsv_improved': 0.25, 
-                'otsu_enhanced': 0.2, 
+                'hsv_improved': 0.1, 
+                'otsu_enhanced': 0.25, 
                 'gradient_enhanced': 0.1, 
-                'kmeans_enhanced': 0.1
+                'kmeans_enhanced': 0.2
             }
         elif params['track_detection_method'] == 'bright_surface':
             weights = {
                 'lab_enhanced': 0.2, 
-                'hsv_improved': 0.3, 
-                'otsu_enhanced': 0.25, 
-                'gradient_enhanced': 0.15, 
-                'kmeans_enhanced': 0.1
+                'hsv_improved': 0.1, 
+                'otsu_enhanced': 0.4, 
+                'gradient_enhanced': 0.1, 
+                'kmeans_enhanced': 0.2
             }
         else:
             weights = {
                 'lab_enhanced': 0.25, 
-                'hsv_improved': 0.25, 
+                'hsv_improved': 0.15, 
                 'otsu_enhanced': 0.25, 
-                'gradient_enhanced': 0.15, 
-                'kmeans_enhanced': 0.1
+                'gradient_enhanced': 0.1, 
+                'kmeans_enhanced': 0.25
             }
         
         combined = self.combineMasks(masks, weights)
@@ -267,7 +267,7 @@ class TrackProcessor:
         masks['kmeans'] = kmeans_mask
         
         # Combine masks with adjusted weights
-        combined = self.combineMasks(masks, weights={'hsv': 0.3, 'otsu': 0.3, 'adaptive': 0.2, 'kmeans': 0.2})
+        combined = self.combineMasks(masks, weights={'hsv': 0.2, 'otsu': 0.4, 'adaptive': 0.1, 'kmeans': 0.3})
         
         if show_debug:
             print("Showing mask comparison...")
@@ -377,12 +377,12 @@ class TrackProcessor:
 
         # Improved morphological operations
         # Fill small holes first
-        close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale, kernel_scale))
-        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, close_kernel, iterations=2)
+        close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale - 1, kernel_scale - 1))
+        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, close_kernel, iterations=1)
         
         # Remove small noise
-        open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale + 2, kernel_scale + 2))
-        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, open_kernel, iterations=1)
+        open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale, kernel_scale))
+        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, open_kernel, iterations=3)
 
         # Final dilation to ensure connectivity
         final_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale - 1, kernel_scale - 1))
@@ -445,16 +445,19 @@ class TrackProcessor:
             perimeter = cv.arcLength(contour, True)
             
             if area > min_area and perimeter > min_perimeter:
-                # Check aspect ratio and compactness
-                rect = cv.minAreaRect(contour)
-                width, height = rect[1]
-                if width > 0 and height > 0:
-                    aspect_ratio = max(width, height) / min(width, height)
-                    compactness = 4 * np.pi * area / (perimeter * perimeter)
-                    
-                    # More lenient criteria for track shapes
-                    if aspect_ratio > 1.3 and compactness < 0.8:
-                        valid_contours.append(contour)
+                # Additional checks for track-like shapes
+                hull = cv.convexHull(contour)
+                hull_area = cv.contourArea(hull)
+                solidity = area / hull_area if hull_area > 0 else 0
+                
+                # Check if contour is reasonably complex (not just a simple shape)
+                if solidity > 0.3 and solidity < 0.95:  # Not too simple, not too complex
+                    rect = cv.minAreaRect(contour)
+                    width, height = rect[1]
+                    if width > 0 and height > 0:
+                        aspect_ratio = max(width, height) / min(width, height)
+                        if aspect_ratio > 1.3:  # Elongated shape typical of tracks
+                            valid_contours.append(contour)
         
         if not valid_contours:
             print("No valid track contours found")
@@ -617,8 +620,13 @@ class TrackProcessor:
         return curvatures
     
     def normalizeContour(self, contour, target_points=1800):
-        if len(contour) < 1000:
-            print(f"Warning: Contour has too few points ({len(contour)}) for normalization")
+        if contour is None or len(contour) == 0:
+            print("Warning: Empty contour provided")
+            return np.array([])
+    
+        min_required_points = max(50, target_points // 36)
+        if len(contour) < min_required_points:
+            print(f"Warning: Contour has too few points ({len(contour)}) for reliable normalization")
             return contour
         
         if contour.ndim == 3:
@@ -697,11 +705,12 @@ class TrackProcessor:
             print("Track mask not found")
             return None
         
-        track_bin = (self.track_mask > 0).astype(np.uint8)
+        track_bin = (self.track_mask > 0).astype(bool)
 
         #if method == 'skeleton':
-        skeleton = skeletonize(track_bin).astype(np.uint8) * 255
-        centerline_points = self.skeletonToPoints(skeleton)
+        skeleton = skeletonize(track_bin)
+        skeleton_img = (skeleton * 255).astype(np.uint8)
+        centerline_points = self.skeletonToPoints(skeleton_img)
 
         #elif method == 'distance_transform':
             #dist_transform = cv.distanceTransform(track_bin, cv.DIST_L2, 5)
