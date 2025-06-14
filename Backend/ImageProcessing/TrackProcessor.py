@@ -111,6 +111,24 @@ class TrackProcessor:
         
         return combined
     
+    def createKMeansMask(self, img, n_clusters=4):
+        data = img.reshape((-1, 3))
+        data = np.float32(data)
+        
+        # Apply k-means
+        criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 20, 1.0)
+        _, labels, centers = cv.kmeans(data, n_clusters, None, criteria, 10, cv.KMEANS_RANDOM_CENTERS)
+        
+        labels = labels.reshape(img.shape[:2])
+        
+        # Find the darkest cluster (likely to be track)
+        center_brightness = [np.mean(center) for center in centers]
+        darkest_cluster = np.argmin(center_brightness)
+        
+        kmeans_mask = (labels == darkest_cluster).astype(np.uint8) * 255
+        
+        return kmeans_mask
+    
     def processImg(self, img, show_debug=True):
         # Process the track for easier edge detection
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
