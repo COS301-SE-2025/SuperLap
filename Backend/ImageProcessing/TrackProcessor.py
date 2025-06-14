@@ -30,27 +30,62 @@ class TrackProcessor:
         print(f"Image loaded successfully.")
         return self.original_image
     
+    def analyzeImageCharacteristics(self, img):
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        
+        h_mean, h_std = cv.meanStdDev(hsv[:,:,0])
+        s_mean, s_std = cv.meanStdDev(hsv[:,:,1])
+        v_mean, v_std = cv.meanStdDev(hsv[:,:,2])
+        
+        # Analyze histogram peaks for value channel (brightness)
+        hist_v = cv.calcHist([hsv], [2], None, [256], [0,256])
+        
+        # Find dark regions (potential track areas)
+        dark_threshold = np.percentile(hsv[:,:,2], 20)  # Bottom 20% of brightness
+        
+        # Adaptive thresholds based on image characteristics
+        params = {
+            'v_mean': float(v_mean[0][0]),
+            'v_std': float(v_std[0][0]),
+            'dark_threshold': float(dark_threshold),
+            'brightness_factor': 1.0
+        }
+        
+        if v_mean[0][0] < 80:  # Very dark
+            params['upper_v'] = min(150, dark_threshold + 2 * v_std[0][0])
+            params['brightness_factor'] = 1.2
+        elif v_mean[0][0] > 180:  # Very bright
+            params['upper_v'] = min(180, dark_threshold + 1.5 * v_std[0][0])
+            params['brightness_factor'] = 0.8
+        else:  # Normal brightness
+            params['upper_v'] = min(160, dark_threshold + 2 * v_std[0][0])
+            params['brightness_factor'] = 1.0
+        
+        self.adaptive_mask_params = params
+        return params
+    
     def processImg(self, img, show_debug=True):
         # Process the track for easier edge detection
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
         # Find black track
         lower_black = np.array([0,0,0])
-        upper_black = np.array([180,255,160])
+        upper_black = np.array([180,255,130])
         dark_mask = cv.inRange(hsv, lower_black, upper_black)
 
         # bilateral filter to reduce noise and preserve edges
-        bi_lat_filter = cv.bilateralFilter(dark_mask, 15, 150, 80)
+        bi_lat_filter = cv.bilateralFilter(dark_mask, 10, 130, 30)
 
         # Matrix
-        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5,5))
+        close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (1,1))
+        open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3,3))
 
         # Cleaning image using morphological operations which removes small noise and fills small holes
-        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, kernel, iterations=3)
-        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, kernel, iterations=2)
+        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, close_kernel, iterations=10)
+        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, open_kernel, iterations=4)
 
-        final_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5,5))
-        dilated = cv.dilate(opening, final_kernel, iterations=2)
+        final_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2,2))
+        dilated = cv.dilate(opening, final_kernel, iterations=1)
 
         # Otsu's threshold selection to better define track
         _, thresh = cv.threshold(dilated, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
@@ -81,8 +116,8 @@ class TrackProcessor:
         else:
             img_gray = img.copy()
 
-        blurred = cv.GaussianBlur(img_gray, (5,5), 0)
-        self.distance_transform = cv.distanceTransform(blurred, cv.DIST_L2, 5)
+        #blurred = cv.GaussianBlur(img_gray, (3,3), 0)
+        self.distance_transform = cv.distanceTransform(img_gray, cv.DIST_L2, 5)
         dist_norm = cv.normalize(self.distance_transform, None, 0, 255, cv.NORM_MINMAX, dtype=cv.CV_8U)
 
         max_dist = np.max(self.distance_transform)
@@ -90,7 +125,7 @@ class TrackProcessor:
         _, centerline_mask = cv.threshold(self.distance_transform, centerline_thresh, 255, cv.THRESH_BINARY)
         centerline_mask = centerline_mask.astype(np.uint8)
 
-        boundaries = self.createBoundariesFromMask(blurred, show_debug)
+        boundaries = self.createBoundariesFromMask(img_gray, show_debug)
 
         if boundaries is None:
             print("Falling back to enhanced edge detection...")
@@ -99,6 +134,7 @@ class TrackProcessor:
         self.track_boundaries = boundaries
 
         if show_debug:
+            #cv.imshow("Gaussian Blur", blurred)
             cv.imshow("Distance Transform", dist_norm)
             cv.imshow("Centerline Mask", centerline_mask)
 
