@@ -1,29 +1,25 @@
-FROM python:3.10-slim
+# Use official .NET SDK image
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
 WORKDIR /app
 
-# Install GUI and Qt dependencies (no qt5-default)
-RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libxkbcommon-x11-0 \
-    libxcb-xinerama0 \
-    libxcb-randr0 \
-    libxcb-shape0 \
-    libxcb-xfixes0 \
-    libxcb1 \
-    libx11-xcb1 \
-    libqt5widgets5 \
-    libqt5gui5 \
-    libqt5core5a \
-    && rm -rf /var/lib/apt/lists/*
+# Copy project files
+COPY *.csproj ./
+RUN dotnet restore
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy everything else
+COPY . ./
 
-COPY . .
+# Build the application
+RUN dotnet publish -c Release -o out
 
-CMD ["python", "TrackProcessor.py"]
+# Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
+WORKDIR /app
+COPY --from=build /app/out .
+
+# Create input/output directories
+RUN mkdir -p /app/Input && mkdir -p /app/Output
+
+# Set entrypoint
+ENTRYPOINT ["dotnet", "RacelineOptimizer.dll"]

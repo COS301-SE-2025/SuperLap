@@ -24,6 +24,14 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
     command: python TrackProcessor.py
 
+  raceline_optimizer:
+    build:
+      context: ./Backend/RacelineOptimizer
+    volumes:
+      - ./Backend/RacelineOptimizer/Input:/app/Input  # Mount input folder
+      - ./Backend/RacelineOptimizer/Output:/app/Output # Mount output folder
+    tty: true  # Keeps container running for interactive selection
+
   # node_frontend:
   #   build:
   #     context: .
