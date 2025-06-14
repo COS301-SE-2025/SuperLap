@@ -64,6 +64,53 @@ class TrackProcessor:
         self.adaptive_mask_params = params
         return params
     
+    def createAdaptiveMask(self, img, method='multi_approach', show_debug=False):
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        
+        if method == 'multi_approach':
+            return self.multiApproachMask(img, hsv, gray, show_debug)
+        elif method == 'adaptive_hsv':
+            return self.adaptiveHSVMask(hsv, show_debug)
+        elif method == 'otsu_adaptive':
+            return self.otsuAdaptiveMask(gray, show_debug)
+        else:
+            return self.adaptiveHSVMask(hsv, show_debug)
+        
+    def multiApproachMask(self, img, hsv, gray, show_debug=False):
+        masks = {}
+        # Approach 1: Adaptive HSV masking
+        params = self.analyzeImageCharacteristics(img)
+        
+        # Dynamic HSV ranges based on image analysis
+        lower_bound = np.array([0, 0, 0])
+        upper_bound = np.array([180, 255, int(params['upper_v'])])
+        
+        hsv_mask = cv.inRange(hsv, lower_bound, upper_bound)
+        masks['hsv'] = hsv_mask
+        
+        # Approach 2: Adaptive threshold on grayscale
+        # Use Otsu's method as base, then adjust
+        _, otsu_thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        masks['otsu'] = otsu_thresh
+        
+        # Approach 3: Local adaptive threshold
+        adaptive_thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                             cv.THRESH_BINARY_INV, 15, 8)
+        masks['adaptive'] = adaptive_thresh
+        
+        # Approach 4: Color-based segmentation using K-means
+        kmeans_mask = self.createKMeansMask(img, n_clusters=4)
+        masks['kmeans'] = kmeans_mask
+        
+        # Combine masks using weighted voting
+        combined = self.combineMasks(masks, weights={'hsv': 0.3, 'otsu': 0.25, 'adaptive': 0.2, 'kmeans': 0.25})
+        
+        if show_debug:
+            self.showMaskComparison(masks, combined)
+        
+        return combined
+    
     def processImg(self, img, show_debug=True):
         # Process the track for easier edge detection
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
