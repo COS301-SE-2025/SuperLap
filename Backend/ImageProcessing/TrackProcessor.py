@@ -20,6 +20,7 @@ class TrackProcessor:
         self.track_boundaries = None
         self.centerline = None
         self.centerline_smoothed = None
+        self.distance_transform = None
 
     def loadImg(self, img_path):
         # Load and convert the image
@@ -35,72 +36,177 @@ class TrackProcessor:
 
         # Find black track
         lower_black = np.array([0,0,0])
-        upper_black = np.array([180,255,150])
+        upper_black = np.array([180,255,160])
         dark_mask = cv.inRange(hsv, lower_black, upper_black)
 
         # bilateral filter to reduce noise and preserve edges
-        bi_lat_filter = cv.bilateralFilter(dark_mask, 10, 130, 75)
+        bi_lat_filter = cv.bilateralFilter(dark_mask, 15, 150, 80)
 
         # Matrix
-        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2,2))
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5,5))
 
         # Cleaning image using morphological operations which removes small noise and fills small holes
-        opening = cv.morphologyEx(bi_lat_filter, cv.MORPH_OPEN, kernel, iterations=1)
-        closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel, iterations=1)
+        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, kernel, iterations=3)
+        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, kernel, iterations=2)
+
+        final_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5,5))
+        dilated = cv.dilate(opening, final_kernel, iterations=2)
 
         # Otsu's threshold selection to better define track
-        _, thresh = cv.threshold(closing, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        _, thresh = cv.threshold(dilated, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 
         if show_debug:
-            #cv.imshow("dark_mask", dark_mask)
-            #cv.imshow("Filtered", bi_lat_filter)
-            #cv.imshow("cleaned", closing)
-            cv.imshow("Otsu", thresh)
+            cv.imshow("Original Mask", dark_mask)
+            cv.imshow("After Bilateral Filter", bi_lat_filter)
+            cv.imshow("After Morphological Ops", opening)
+            cv.imshow("Final Processed", thresh)
 
         self.processed_image = thresh
-        self.track_mask = opening
+        self.track_mask = thresh
         return {
             'processed_image': thresh,
-            #'track_mask': dark_mask,
-            #'greyscale': greyscale,
-            #'filtered': bi_lat_filter,
-            #'closing': closing,
-            #'opening': opening
+            'track_mask': thresh,
+            'original_mask': dark_mask,
+            'filtered': bi_lat_filter,
+            #'morphological': opening
         }
+    
+    def detectBoundaries(self, img, show_debug=False):
+        print("Using robust distance transform boundary detection...")
+        return self.detectBoundariesRobust(img, show_debug)
 
-    def detectBoundaries(self, img, show_debug=True):
-        # Find track boundaries using color and edge detection
-        cannyEdges = cv.Canny(img, 85, 170)
+    def detectBoundariesRobust(self, img, show_debug=False):
+        if len(img.shape) == 3:
+            img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        else:
+            img_gray = img.copy()
 
-        contours, _ = cv.findContours(cannyEdges, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+        blurred = cv.GaussianBlur(img_gray, (5,5), 0)
+        self.distance_transform = cv.distanceTransform(blurred, cv.DIST_L2, 5)
+        dist_norm = cv.normalize(self.distance_transform, None, 0, 255, cv.NORM_MINMAX, dtype=cv.CV_8U)
+
+        max_dist = np.max(self.distance_transform)
+        centerline_thresh = 0.4 * max_dist
+        _, centerline_mask = cv.threshold(self.distance_transform, centerline_thresh, 255, cv.THRESH_BINARY)
+        centerline_mask = centerline_mask.astype(np.uint8)
+
+        boundaries = self.createBoundariesFromMask(blurred, show_debug)
+
+        if boundaries is None:
+            print("Falling back to enhanced edge detection...")
+            return self.detectBoundariesEnhanced(img, show_debug)
         
-        if not contours or len(contours) < 3:
-            print("Not enough contours found to detect boundaries")
+        self.track_boundaries = boundaries
+
+        if show_debug:
+            cv.imshow("Distance Transform", dist_norm)
+            cv.imshow("Centerline Mask", centerline_mask)
+
+            if boundaries:
+                contour_img = self.original_image.copy()
+                if boundaries['outer'] is not None:
+                    cv.drawContours(contour_img, [boundaries['outer']], -1, (255, 0, 0), thickness=2)
+                if boundaries['inner'] is not None:
+                    cv.drawContours(contour_img, [boundaries['inner']], -1, (255, 0, 0), thickness=2)
+                cv.imshow("Robust Boundaries", contour_img)
+
+        return boundaries
+    
+    def createBoundariesFromMask(self, track_mask, show_debug=False):
+        contours, _ = cv.findContours(track_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        
+        if not contours:
             return None
         
-        contours = sorted(contours, key=cv.contourArea, reverse=True)
-        outer_boundary = contours[0]
-        inner_boundary = contours[2]
-
-        self.track_boundaries = {
+        valid_contours = []
+        for contour in contours:
+            area = cv.contourArea(contour)
+            perimeter = cv.arcLength(contour, True)
+            
+            if area > 5000 and perimeter > 500:
+                rect = cv.minAreaRect(contour)
+                width, height = rect[1]
+                if width > 0 and height > 0:
+                    aspect_ratio = max(width, height) / min(width, height)
+                    compactness = 4 * np.pi * area / (perimeter * perimeter)
+                    
+                    if aspect_ratio > 1.5 and compactness < 0.6:
+                        valid_contours.append(contour)
+        
+        if not valid_contours:
+            return None
+        
+        main_contour = max(valid_contours, key=cv.contourArea)
+        
+        mask = np.zeros(track_mask.shape, dtype=np.uint8)
+        cv.fillPoly(mask, [main_contour], 255)
+        
+        outer_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (20, 20))
+        outer_mask = cv.dilate(mask, outer_kernel, iterations=2)
+        outer_contours, _ = cv.findContours(outer_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        outer_boundary = max(outer_contours, key=cv.contourArea) if outer_contours else None
+        
+        inner_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
+        inner_mask = cv.erode(mask, inner_kernel, iterations=2)
+        inner_contours, _ = cv.findContours(inner_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        inner_boundary = max(inner_contours, key=cv.contourArea) if inner_contours else None
+        
+        if outer_boundary is None or inner_boundary is None:
+            print("Failed to detect boundaries from mask...")
+            #return self.createBoundariesFromCenterline(main_contour)
+        
+        return {
             'outer': outer_boundary,
-            'inner': inner_boundary
+            'inner': inner_boundary,
+            'method': 'morphological'
         }
+
+    def detectBoundariesEnhanced(self, img, show_debug=True):
+        blurred = cv.GaussianBlur(img, (5, 5), 0)
+        
+        cannyEdges = cv.Canny(blurred, 50, 120)
+        
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5,5))
+        cannyEdges = cv.morphologyEx(cannyEdges, cv.MORPH_CLOSE, kernel, iterations=3)
+        cannyEdges = cv.dilate(cannyEdges, kernel, iterations=2)
+        
+        contours, _ = cv.findContours(cannyEdges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        
+        filtered_contours = []
+        for contour in contours:
+            area = cv.contourArea(contour)
+            perimeter = cv.arcLength(contour, True)
+            
+            if area > 2000 and perimeter > 300:
+                rect = cv.minAreaRect(contour)
+                width, height = rect[1]
+                if width > 0 and height > 0:
+                    aspect_ratio = max(width, height) / min(width, height)
+                    compactness = 4 * np.pi * area / (perimeter * perimeter)
+                    
+                    if aspect_ratio > 1.2 and compactness < 0.7:
+                        filtered_contours.append(contour)
+        
+        if len(filtered_contours) < 2:
+            print("Not enough valid contours found for boundaries")
+            return None
+        
+        filtered_contours = sorted(filtered_contours, key=cv.contourArea, reverse=True)
         
         if show_debug:
-
-            print("Number of contours found: " + str(len(contours)))
-            print("Number of datapoints for outer boundary: ", str(len(outer_boundary)))
-            print("Number of datapoints for inner boundary: ", str(len(inner_boundary)))
-
-            contour_img = self.original_image.copy()
-            cv.drawContours(contour_img, [outer_boundary], -1, (255,0,0), thickness=2)
-            cv.drawContours(contour_img, [inner_boundary], -1, (0,0,255), thickness=2)
-            #cv.drawContours(contour_img, outer_contours, -1, (0,255,0), thickness=1)
-            #cv.drawContours(contour_img, outer_contours, -1, (0,255,255), thickness=1)
-            cv.imshow("Contours", contour_img)
-
-        return self.track_boundaries
+            print(f"Found {len(filtered_contours)} valid contours")
+            enhanced_img = self.original_image.copy()
+            cv.imshow("Enhanced Canny", cannyEdges)
+            for i, contour in enumerate(filtered_contours[:3]):
+                color = [(255,0,0), (0,255,0), (0,0,255)][i]
+                cv.drawContours(enhanced_img, [contour], -1, color, thickness=2)
+            cv.imshow("Enhanced Contours", enhanced_img)
+        
+        return {
+            'outer': filtered_contours[0],
+            'inner': filtered_contours[1],
+            'method': 'enhanced_edge_detection'
+        }
     
     def calculateCurvature(self, points, window_size=5):
         curvatures = np.zeros(len(points))
