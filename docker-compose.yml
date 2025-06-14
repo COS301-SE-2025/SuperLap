@@ -18,11 +18,17 @@ services:
   imageprocessing:
     build:
       context: ./Backend/ImageProcessing
-    environment:
-      - DISPLAY=${DISPLAY}
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
     command: python TrackProcessor.py
+
+
+  # imageprocessing:
+  #   build:
+  #     context: ./Backend/ImageProcessing
+  #   environment:
+  #     - DISPLAY=${DISPLAY}
+  #   volumes:
+  #     - /tmp/.X11-unix:/tmp/.X11-unix
+  #   command: python TrackProcessor.py
 
   # node_frontend:
   #   build:
