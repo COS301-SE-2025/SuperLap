@@ -149,34 +149,73 @@ class TrackProcessor:
         
         return otsu_mask
     
-    def processImg(self, img, show_debug=True):
+    def combineMasks(self, masks, weights=None):
+        if weights is None:
+            weights = {name: 1.0/len(masks) for name in masks.keys()}
+        
+        total_weight = sum(weights.values())
+        weights = {k: v/total_weight for k, v in weights.items()}
+        
+        combined = np.zeros_like(list(masks.values())[0], dtype=np.float32)
+        
+        for name, mask in masks.items():
+            weight = weights.get(name, 0)
+            combined += (mask.astype(np.float32) / 255.0) * weight
+        
+        final_mask = (combined > 0.5).astype(np.uint8) * 255
+        
+        return final_mask
+    
+    def showMaskComparison(self, masks, combined):
+        n_masks = len(masks) + 1
+        cols = 3
+        rows = (n_masks + cols - 1) // cols
+        
+        plt.figure(figsize=(15, 5 * rows))
+        
+        for i, (name, mask) in enumerate(masks.items()):
+            plt.subplot(rows, cols, i + 1)
+            plt.imshow(mask, cmap='gray')
+            plt.title(f'{name.upper()} Mask')
+            plt.axis('off')
+        
+        plt.subplot(rows, cols, len(masks) + 1)
+        plt.imshow(combined, cmap='gray')
+        plt.title('Combined Mask')
+        plt.axis('off')
+        
+        plt.tight_layout()
+        plt.show()
+    
+    def processImg(self, img, mask_method='multi_approach', show_debug=True):
         # Process the track for easier edge detection
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
-        # Find black track
-        lower_black = np.array([0,0,0])
-        upper_black = np.array([180,255,130])
-        dark_mask = cv.inRange(hsv, lower_black, upper_black)
+        # Create adaptive mask
+        adaptive_mask = self.createAdaptiveMask(img, method=mask_method, show_debug=show_debug)
 
         # bilateral filter to reduce noise and preserve edges
-        bi_lat_filter = cv.bilateralFilter(dark_mask, 10, 130, 30)
+        bi_lat_filter = cv.bilateralFilter(adaptive_mask, 10, 130, 30)
+
+        img_area = img.shape[0] * img.shape[1]
+        kernel_scale = max(1, int(np.sqrt(img_area) / 500))
 
         # Matrix
-        close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (1,1))
-        open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3,3))
+        #close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (1,1))
+        #open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3,3))
 
         # Cleaning image using morphological operations which removes small noise and fills small holes
-        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, close_kernel, iterations=10)
-        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, open_kernel, iterations=4)
+        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, (kernel_scale, kernel_scale))
+        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, (kernel_scale * 2, kernel_scale * 2))
 
-        final_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2,2))
+        final_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale, kernel_scale))
         dilated = cv.dilate(opening, final_kernel, iterations=1)
 
         # Otsu's threshold selection to better define track
-        _, thresh = cv.threshold(dilated, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        _, thresh = cv.threshold(dilated, 127, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 
         if show_debug:
-            cv.imshow("Original Mask", dark_mask)
+            cv.imshow("Adaptive Mask", adaptive_mask)
             cv.imshow("After Bilateral Filter", bi_lat_filter)
             cv.imshow("After Morphological Ops", opening)
             cv.imshow("Final Processed", thresh)
@@ -186,8 +225,9 @@ class TrackProcessor:
         return {
             'processed_image': thresh,
             'track_mask': thresh,
-            'original_mask': dark_mask,
+            'adaptive_mask': adaptive_mask,
             'filtered': bi_lat_filter,
+            'mask_params': self.adaptive_mask_params,
             #'morphological': opening
         }
     
@@ -239,12 +279,16 @@ class TrackProcessor:
         if not contours:
             return None
         
+        img_area = track_mask.shape[0] * track_mask.shape[1]
+        min_area = max(5000, img_area * 0.01) # At least 1% of area
+        min_perimeter = max(500, np.sqrt(img_area) * 2) # Adaptive perimeter
+        
         valid_contours = []
         for contour in contours:
             area = cv.contourArea(contour)
             perimeter = cv.arcLength(contour, True)
             
-            if area > 5000 and perimeter > 500:
+            if area > min_area and perimeter > min_perimeter:
                 rect = cv.minAreaRect(contour)
                 width, height = rect[1]
                 if width > 0 and height > 0:
@@ -261,15 +305,17 @@ class TrackProcessor:
         
         mask = np.zeros(track_mask.shape, dtype=np.uint8)
         cv.fillPoly(mask, [main_contour], 255)
+
+        kernel_scale = max(10, int(np.sqrt(img_area) / 100))
         
-        outer_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (20, 20))
+        outer_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale * 2, kernel_scale * 2))
         outer_mask = cv.dilate(mask, outer_kernel, iterations=2)
-        outer_contours, _ = cv.findContours(outer_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        outer_contours, _ = cv.findContours(outer_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
         outer_boundary = max(outer_contours, key=cv.contourArea) if outer_contours else None
         
-        inner_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
+        inner_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale, kernel_scale))
         inner_mask = cv.erode(mask, inner_kernel, iterations=2)
-        inner_contours, _ = cv.findContours(inner_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        inner_contours, _ = cv.findContours(inner_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
         inner_boundary = max(inner_contours, key=cv.contourArea) if inner_contours else None
         
         if outer_boundary is None or inner_boundary is None:
@@ -279,7 +325,7 @@ class TrackProcessor:
         return {
             'outer': outer_boundary,
             'inner': inner_boundary,
-            'method': 'morphological'
+            'method': 'adaptive_morphological'
         }
 
     def detectBoundariesEnhanced(self, img, show_debug=True):
@@ -293,12 +339,16 @@ class TrackProcessor:
         
         contours, _ = cv.findContours(cannyEdges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         
+        img_area = img.shape[0] * img.shape[1]
+        min_area = max(2000, img_area * 0.005)
+        min_perimeter = max(300, np.sqrt(img_area) * 1.5)
+
         filtered_contours = []
         for contour in contours:
             area = cv.contourArea(contour)
             perimeter = cv.arcLength(contour, True)
             
-            if area > 2000 and perimeter > 300:
+            if area > min_area and perimeter > min_perimeter:
                 rect = cv.minAreaRect(contour)
                 width, height = rect[1]
                 if width > 0 and height > 0:
