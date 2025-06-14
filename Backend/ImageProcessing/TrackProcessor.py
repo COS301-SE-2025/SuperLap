@@ -45,7 +45,8 @@ class TrackProcessor:
         hist_v = cv.calcHist([hsv], [2], None, [256], [0,256])
         
         # Find dark regions (potential track areas)
-        dark_threshold = np.percentile(hsv[:,:,2], 20)  # Bottom 20% of brightness
+        dark_threshold = np.percentile(hsv[:,:,2], 30)  # Bottom 30% of brightness
+        bright_threshold = np.percentile(hsv[:,:,2], 70) # Top 30% of brightness
         
         # Adaptive thresholds based on image characteristics
         params = {
@@ -54,26 +55,32 @@ class TrackProcessor:
             'l_mean': float(l_mean[0][0]),
             'l_std': float(l_std[0][0]),
             'dark_threshold': float(dark_threshold),
+            'bright_threshold': float(bright_threshold),
             'brightness_factor': 1.0
         }
+
+        print(f"Image analysis - V_mean: {v_mean[0][0]:.1f}, V_std: {v_std[0][0]:.1f}, L_mean: {l_mean[0][0]:.1f}, L_std: {l_std[0][0]:.1f}")
+        print(f"Dark threshold: {dark_threshold:.1f}, Bright threshold: {bright_threshold:.1f}")
         
-        if v_mean[0][0] < 100:
-            print("Dark asphalt found...")
-            # Dark, low saturation images (asphalt tracks)
+        if v_mean[0][0] < 80:
+            print("Very dark surface detected (likely asphalt)...")
+            params['track_detection_method'] = 'very_dark_asphalt'
+            params['upper_v'] = min(60, dark_threshold + 2.0 * v_std[0][0])
+            params['brightness_factor'] = 1.4
+        elif v_mean[0][0] < 120:
+            print("Dark surface detected (asphalt/dark concrete)...")
             params['track_detection_method'] = 'dark_asphalt'
-            params['upper_v'] = min(115, dark_threshold + 1.5 * v_std[0][0])
-            params['brightness_factor'] = 1.3
-        elif v_mean[0][0] > 150:
-            print("Light surface found...")
-            # Bright images (concrete/light surfaces)
+            params['upper_v'] = min(100, dark_threshold + 1.8 * v_std[0][0])
+            params['brightness_factor'] = 1.2
+        elif v_mean[0][0] > 160:
+            print("Light surface detected (concrete/light surfaces)...")
             params['track_detection_method'] = 'bright_surface'
-            params['upper_v'] = min(160, dark_threshold + 2 * v_std[0][0])
-            params['brightness_factor'] = 0.9
+            params['upper_v'] = min(140, bright_threshold - 0.5 * v_std[0][0])
+            params['brightness_factor'] = 0.8
         else:
-            # Normal brightness
-            print("Standard image...")
+            print("Standard surface detected...")
             params['track_detection_method'] = 'standard'
-            params['upper_v'] = min(110, dark_threshold + 2 * v_std[0][0])
+            params['upper_v'] = min(110, dark_threshold + 2.5 * v_std[0][0])
             params['brightness_factor'] = 1.0
         
         self.adaptive_mask_params = params
@@ -99,70 +106,99 @@ class TrackProcessor:
         masks = {}
         params = self.analyzeImageCharacteristics(img)
         
-        # Method 1: LAB color space for better track surface detection
+        # Method 1: Improved LAB color space detection
         l_channel = lab[:,:,0]
         
-        if params['track_detection_method'] == 'dark_asphalt':
-            # For dark asphalt tracks
-            _, lab_mask = cv.threshold(l_channel, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
-            
-            # Enhance with morphological operations
-            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
-            lab_mask = cv.morphologyEx(lab_mask, cv.MORPH_CLOSE, kernel, iterations=2)
-            
+        if params['track_detection_method'] in ['very_dark_asphalt', 'dark_asphalt']:
+            # Adaptive threshold for dark surfaces
+            lab_mask = cv.adaptiveThreshold(l_channel, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 25, 8)
+            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
+            lab_mask = cv.morphologyEx(lab_mask, cv.MORPH_CLOSE, kernel, iterations=1)
         else:
-            # For other track types, use adaptive threshold on L channel
-            lab_mask = cv.adaptiveThreshold(l_channel, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                          cv.THRESH_BINARY_INV, 21, 10)
+            # Otsu for lighter surfaces
+            blurred_l = cv.GaussianBlur(l_channel, (3, 3), 0)
+            _, lab_mask = cv.threshold(blurred_l, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
         
         masks['lab_enhanced'] = lab_mask
         
-        # Method 2: Enhanced Otsu with preprocessing
-        blurred = cv.GaussianBlur(gray, (5, 5), 0)
+        # Method 2: Improved HSV masking
+        v_channel = hsv[:,:,2]
         
-        # Apply CLAHE for better contrast
-        clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-        enhanced_gray = clahe.apply(blurred)
+        # Create more accurate HSV mask based on track type
+        if params['track_detection_method'] == 'bright_surface':
+            # For bright surfaces, look for darker areas within the bright surface
+            lower_bound = np.array([0, 0, max(20, int(params['dark_threshold'] - 20))])
+            upper_bound = np.array([180, 120, int(params['upper_v'])])
+        else:
+            # For dark surfaces, be more inclusive
+            lower_bound = np.array([0, 0, 0])
+            upper_bound = np.array([180, 150, int(params['upper_v'])])
         
-        _, otsu_enhanced = cv.threshold(enhanced_gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        hsv_mask = cv.inRange(hsv, lower_bound, upper_bound)
+        masks['hsv_improved'] = hsv_mask
+        
+        # Method 3: Enhanced Otsu with CLAHE
+        clahe = cv.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        enhanced_gray = clahe.apply(gray)
+        blurred = cv.GaussianBlur(enhanced_gray, (5, 5), 0)
+        
+        _, otsu_enhanced = cv.threshold(blurred, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
         masks['otsu_enhanced'] = otsu_enhanced
         
-        # Method 3: Gradient-based edge detection for track boundaries
-        grad_x = cv.Sobel(gray, cv.CV_64F, 1, 0, ksize=3)
-        grad_y = cv.Sobel(gray, cv.CV_64F, 0, 1, ksize=3)
-        gradient_magnitude = np.sqrt(grad_x**2 + grad_y**2)
-        gradient_magnitude = np.uint8(gradient_magnitude / gradient_magnitude.max() * 255)
+        # Method 4: Gradient-based approach
+        # Use Laplacian for better edge detection
+        laplacian = cv.Laplacian(gray, cv.CV_64F, ksize=3)
+        laplacian = np.absolute(laplacian)
+        laplacian = np.uint8(laplacian / laplacian.max() * 255)
         
-        # Use gradient to enhance track detection
-        _, gradient_mask = cv.threshold(gradient_magnitude, 30, 255, cv.THRESH_BINARY)
-        gradient_mask = cv.bitwise_not(gradient_mask)  # Invert to get low-gradient areas (track surface)
+        # Invert to get low-gradient areas (smooth track surface)
+        _, gradient_mask = cv.threshold(laplacian, 20, 255, cv.THRESH_BINARY_INV)
         
         # Clean gradient mask
-        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
-        gradient_mask = cv.morphologyEx(gradient_mask, cv.MORPH_CLOSE, kernel, iterations=3)
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+        gradient_mask = cv.morphologyEx(gradient_mask, cv.MORPH_CLOSE, kernel, iterations=2)
         
         masks['gradient_enhanced'] = gradient_mask
         
-        # Method 5: K-means with enhanced clustering
-        kmeans_mask = self.createEnhancedKMeansMask(img, n_clusters=5)
+        # Method 5: Improved K-means clustering
+        kmeans_mask = self.createEnhancedKMeansMask(img, n_clusters=4)
         masks['kmeans_enhanced'] = kmeans_mask
         
-        # Combine masks with intelligent weighting based on track type
-        if params['track_detection_method'] == 'dark_asphalt':
-            weights = {'lab_enhanced': 0.3, 'otsu_enhanced': 0.25, 'gradient_enhanced': 0.25, 
-                      'kmeans_enhanced': 0.2}
+        # mask combination based on track type
+        if params['track_detection_method'] in ['very_dark_asphalt', 'dark_asphalt']:
+            weights = {
+                'lab_enhanced': 0.35, 
+                'hsv_improved': 0.25, 
+                'otsu_enhanced': 0.2, 
+                'gradient_enhanced': 0.1, 
+                'kmeans_enhanced': 0.1
+            }
+        elif params['track_detection_method'] == 'bright_surface':
+            weights = {
+                'lab_enhanced': 0.2, 
+                'hsv_improved': 0.3, 
+                'otsu_enhanced': 0.25, 
+                'gradient_enhanced': 0.15, 
+                'kmeans_enhanced': 0.1
+            }
         else:
-            weights = {'lab_enhanced': 0.25, 'otsu_enhanced': 0.25, 'gradient_enhanced': 0.25, 
-                      'kmeans_enhanced': 0.25}
+            weights = {
+                'lab_enhanced': 0.25, 
+                'hsv_improved': 0.25, 
+                'otsu_enhanced': 0.25, 
+                'gradient_enhanced': 0.15, 
+                'kmeans_enhanced': 0.1
+            }
         
         combined = self.combineMasks(masks, weights)
         
         if show_debug:
+            print("Showing mask comparison...")
             self.showMaskComparison(masks, combined)
         
         return combined
     
-    def createEnhancedKMeansMask(self, img, n_clusters=5):
+    def createEnhancedKMeansMask(self, img, n_clusters=4):
         # Reshape image for k-means
         data = img.reshape((-1, 3))
         data = np.float32(data)
@@ -173,22 +209,30 @@ class TrackProcessor:
         
         labels = labels.reshape(img.shape[:2])
         
-        # Convert centers to HSV for better analysis
+        # Convert centers to different color spaces for analysis
         centers_bgr = centers.reshape(-1, 1, 3).astype(np.uint8)
         centers_hsv = cv.cvtColor(centers_bgr, cv.COLOR_BGR2HSV).reshape(-1, 3)
+        centers_lab = cv.cvtColor(centers_bgr, cv.COLOR_BGR2LAB).reshape(-1, 3)
         
-        # Find track-like clusters (darker, less saturated)
+        # Find track-like clusters using multiple criteria
         track_clusters = []
-        for i, center_hsv in enumerate(centers_hsv):
+        center_brightness = [center[2] for center in centers_hsv]  # V channel
+        center_lightness = [center[0] for center in centers_lab]   # L channel
+        
+        brightness_threshold = np.mean(center_brightness) - 0.3 * np.std(center_brightness)
+        
+        for i, (center_hsv, center_lab) in enumerate(zip(centers_hsv, centers_lab)):
             h, s, v = center_hsv
-            # Track surfaces are typically darker with moderate saturation
-            if v < 150 and s < 100:  # Dark and not too saturated
+            l_val = center_lab[0]
+            
+            # Track surfaces: darker than average, moderate saturation
+            if v < brightness_threshold and s < 100:
                 track_clusters.append(i)
         
+        # Fallback: use darkest clusters if none found
         if not track_clusters:
-            # Fallback: use darkest cluster
-            center_brightness = [np.mean(center) for center in centers]
-            track_clusters = [np.argmin(center_brightness)]
+            sorted_indices = np.argsort(center_brightness)
+            track_clusters = sorted_indices[:max(1, n_clusters//2)].tolist()
         
         # Create mask for track clusters
         kmeans_mask = np.zeros(img.shape[:2], dtype=np.uint8)
@@ -200,38 +244,38 @@ class TrackProcessor:
         
     def multiApproachMask(self, img, hsv, gray, show_debug=False):
         masks = {}
-        # Approach 1: Adaptive HSV masking
         params = self.analyzeImageCharacteristics(img)
         
-        # Dynamic HSV ranges based on image analysis
+        # Approach 1: Improved HSV masking
         lower_bound = np.array([0, 0, 0])
-        upper_bound = np.array([180, 255, int(params['upper_v'])])
+        upper_bound = np.array([180, 200, int(params['upper_v'])])
         
         hsv_mask = cv.inRange(hsv, lower_bound, upper_bound)
         masks['hsv'] = hsv_mask
         
-        # Approach 2: Adaptive threshold on grayscale
-        # Use Otsu's method as base, then adjust
-        _, otsu_thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        # Approach 2: Adaptive threshold with preprocessing
+        blurred = cv.GaussianBlur(gray, (5, 5), 0)
+        _, otsu_thresh = cv.threshold(blurred, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
         masks['otsu'] = otsu_thresh
         
         # Approach 3: Local adaptive threshold
-        adaptive_thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 8)
+        adaptive_thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 21, 10)
         masks['adaptive'] = adaptive_thresh
         
-        # Approach 4: Color-based segmentation using K-means
-        kmeans_mask = self.createKMeansMask(img, n_clusters=4)
+        # Approach 4: Improved K-means
+        kmeans_mask = self.createKMeansMask(img, n_clusters=5)
         masks['kmeans'] = kmeans_mask
         
-        # Combine masks using weighted voting
-        combined = self.combineMasks(masks, weights={'hsv': 0.3, 'otsu': 0.25, 'adaptive': 0.2, 'kmeans': 0.25})
+        # Combine masks with adjusted weights
+        combined = self.combineMasks(masks, weights={'hsv': 0.3, 'otsu': 0.3, 'adaptive': 0.2, 'kmeans': 0.2})
         
         if show_debug:
+            print("Showing mask comparison...")
             self.showMaskComparison(masks, combined)
         
         return combined
     
-    def createKMeansMask(self, img, n_clusters=4):
+    def createKMeansMask(self, img, n_clusters=5):
         data = img.reshape((-1, 3))
         data = np.float32(data)
         
@@ -241,11 +285,18 @@ class TrackProcessor:
         
         labels = labels.reshape(img.shape[:2])
         
-        # Find the darkest cluster (likely to be track)
+        # Find track-like clusters (darker clusters)
         center_brightness = [np.mean(center) for center in centers]
-        darkest_cluster = np.argmin(center_brightness)
+        sorted_indices = np.argsort(center_brightness)
         
-        kmeans_mask = (labels == darkest_cluster).astype(np.uint8) * 255
+        # Take bottom 40% of clusters as potential track
+        num_track_clusters = max(1, int(n_clusters * 0.4))
+        track_clusters = sorted_indices[:num_track_clusters]
+        
+        kmeans_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        for cluster_id in track_clusters:
+            cluster_mask = (labels == cluster_id).astype(np.uint8) * 255
+            kmeans_mask = cv.bitwise_or(kmeans_mask, cluster_mask)
         
         return kmeans_mask
     
@@ -253,7 +304,7 @@ class TrackProcessor:
         params = self.adaptive_mask_params or self.analyzeImageCharacteristics(cv.cvtColor(hsv, cv.COLOR_HSV2BGR))
         
         lower_bound = np.array([0, 0, 0])
-        upper_bound = np.array([180, 255, int(params['upper_v'])])
+        upper_bound = np.array([180, 200, int(params['upper_v'])])
         mask = cv.inRange(hsv, lower_bound, upper_bound)
         
         if show_debug:
@@ -282,7 +333,8 @@ class TrackProcessor:
             weight = weights.get(name, 0)
             combined += (mask.astype(np.float32) / 255.0) * weight
         
-        final_mask = (combined > 0.5).astype(np.uint8) * 255
+        # lower threshold for more inclusive combination
+        final_mask = (combined > 0.4).astype(np.uint8) * 255
         
         return final_mask
     
@@ -306,102 +358,86 @@ class TrackProcessor:
         
         plt.tight_layout()
         plt.show()
+        plt.close()
     
-    def processImg(self, img, mask_method='multi_approach', show_debug=False):
-        # Process the track for easier edge detection
-        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-
+    def processImg(self, img, mask_method='enhanced_multi_approach', show_debug=False):
+        print(f"Processing image with method: {mask_method}")
+        
         # Create adaptive mask
         adaptive_mask = self.createAdaptiveMask(img, method=mask_method, show_debug=show_debug)
 
-        # bilateral filter to reduce noise and preserve edges
-        bi_lat_filter = cv.bilateralFilter(adaptive_mask, 10, 130, 30)
+        # Apply bilateral filter to reduce noise while preserving edges
+        bi_lat_filter = cv.bilateralFilter(adaptive_mask, 9, 80, 80)
 
+        # Calculate kernel size based on image dimensions
         img_area = img.shape[0] * img.shape[1]
-        kernel_scale = max(1, int(np.sqrt(img_area) / 500))
+        kernel_scale = max(3, int(np.sqrt(img_area) / 400))
+        
+        print(f"Using kernel scale: {kernel_scale} for image area: {img_area}")
 
-        # Matrix
-        #close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (1,1))
-        #open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3,3))
+        # Improved morphological operations
+        # Fill small holes first
+        close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale, kernel_scale))
+        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, close_kernel, iterations=2)
+        
+        # Remove small noise
+        open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale + 2, kernel_scale + 2))
+        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, open_kernel, iterations=1)
 
-        # Cleaning image using morphological operations which removes small noise and fills small holes
-        closing = cv.morphologyEx(bi_lat_filter, cv.MORPH_CLOSE, (kernel_scale, kernel_scale))
-        opening = cv.morphologyEx(closing, cv.MORPH_OPEN, (kernel_scale * 2, kernel_scale * 2))
-
-        final_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale, kernel_scale))
+        # Final dilation to ensure connectivity
+        final_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale - 1, kernel_scale - 1))
         dilated = cv.dilate(opening, final_kernel, iterations=1)
 
-        # Otsu's threshold selection to better define track
-        _, thresh = cv.threshold(dilated, 127, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+        # Apply final threshold
+        _, thresh = cv.threshold(dilated, 127, 255, cv.THRESH_BINARY)
 
         if show_debug:
-            cv.imshow("Adaptive Mask", adaptive_mask)
-            cv.imshow("After Bilateral Filter", bi_lat_filter)
-            cv.imshow("After Morphological Ops", opening)
-            cv.imshow("Final Processed", thresh)
+            print("Displaying debug images...")
+            cv.imshow("1. Adaptive Mask", adaptive_mask)
+            cv.imshow("2. After Bilateral Filter", bi_lat_filter)
+            cv.imshow("3. After Morphological Ops", opening)
+            cv.imshow("4. Final Processed", thresh)
+            cv.waitKey(1)  # Brief pause to allow display
 
         self.processed_image = thresh
         self.track_mask = thresh
+        
         return {
             'processed_image': thresh,
             'track_mask': thresh,
             'adaptive_mask': adaptive_mask,
             'filtered': bi_lat_filter,
-            'mask_params': self.adaptive_mask_params,
-            #'morphological': opening
+            'morphological': opening,
+            'mask_params': self.adaptive_mask_params
         }
     
     def detectBoundaries(self, img, show_debug=False):
-        print("Using robust distance transform boundary detection...")
-        return self.detectBoundariesRobust(img, show_debug)
+        print("Using improved boundary detection...")
+        return self.detectBoundariesImproved(img, show_debug)
 
-    def detectBoundariesRobust(self, img, show_debug=False):
+    def detectBoundariesImproved(self, img, show_debug=False):
         if len(img.shape) == 3:
             img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
         else:
             img_gray = img.copy()
 
-        #blurred = cv.GaussianBlur(img_gray, (3,3), 0)
-        self.distance_transform = cv.distanceTransform(img_gray, cv.DIST_L2, 5)
-        dist_norm = cv.normalize(self.distance_transform, None, 0, 255, cv.NORM_MINMAX, dtype=cv.CV_8U)
-
-        max_dist = np.max(self.distance_transform)
-        centerline_thresh = 0.4 * max_dist
-        _, centerline_mask = cv.threshold(self.distance_transform, centerline_thresh, 255, cv.THRESH_BINARY)
-        centerline_mask = centerline_mask.astype(np.uint8)
-
-        boundaries = self.createBoundariesFromMask(img_gray, show_debug)
-
-        if boundaries is None:
-            print("Falling back to enhanced edge detection...")
-            return self.detectBoundariesEnhanced(img, show_debug)
+        # Ensure binary image
+        _, binary_mask = cv.threshold(img_gray, 127, 255, cv.THRESH_BINARY)
         
-        self.track_boundaries = boundaries
-
-        if show_debug:
-            #cv.imshow("Gaussian Blur", blurred)
-            cv.imshow("Distance Transform", dist_norm)
-            cv.imshow("Centerline Mask", centerline_mask)
-
-            if boundaries:
-                contour_img = self.original_image.copy()
-                if boundaries['outer'] is not None:
-                    cv.drawContours(contour_img, [boundaries['outer']], -1, (255, 0, 0), thickness=2)
-                if boundaries['inner'] is not None:
-                    cv.drawContours(contour_img, [boundaries['inner']], -1, (255, 0, 0), thickness=2)
-                cv.imshow("Robust Boundaries", contour_img)
-
-        return boundaries
-    
-    def createBoundariesFromMask(self, track_mask, show_debug=False):
-        contours, _ = cv.findContours(track_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        # Calculate distance transform for centerline detection
+        self.distance_transform = cv.distanceTransform(binary_mask, cv.DIST_L2, 5)
+        
+        # Find contours from the binary mask
+        contours, _ = cv.findContours(binary_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         
         if not contours:
+            print("No contours found in processed image")
             return None
         
-        img_area = track_mask.shape[0] * track_mask.shape[1]
-        min_area = max(5000, img_area * 0.01) # At least 1% of area
-        min_perimeter = max(500, np.sqrt(img_area) * 2) # Adaptive perimeter
+        # Filter contours based on area and shape characteristics
+        img_area = img_gray.shape[0] * img_gray.shape[1]
+        min_area = max(10000, img_area * 0.02)  # At least 2% of image area
+        min_perimeter = max(1000, np.sqrt(img_area) * 3)  # Minimum perimeter
         
         valid_contours = []
         for contour in contours:
@@ -409,94 +445,144 @@ class TrackProcessor:
             perimeter = cv.arcLength(contour, True)
             
             if area > min_area and perimeter > min_perimeter:
+                # Check aspect ratio and compactness
                 rect = cv.minAreaRect(contour)
                 width, height = rect[1]
                 if width > 0 and height > 0:
                     aspect_ratio = max(width, height) / min(width, height)
                     compactness = 4 * np.pi * area / (perimeter * perimeter)
                     
-                    if aspect_ratio > 1.5 and compactness < 0.6:
+                    # More lenient criteria for track shapes
+                    if aspect_ratio > 1.3 and compactness < 0.8:
                         valid_contours.append(contour)
         
         if not valid_contours:
-            return None
+            print("No valid track contours found")
+            return self.detectBoundariesFallback(img_gray, show_debug)
         
+        # Get the largest valid contour as the main track
         main_contour = max(valid_contours, key=cv.contourArea)
         
+        # Create boundaries using improved morphological approach
+        boundaries = self.createBoundariesImproved(binary_mask, main_contour, show_debug)
+        
+        if boundaries is None:
+            print("Falling back to alternative boundary detection...")
+            return self.detectBoundariesFallback(img_gray, show_debug)
+        
+        self.track_boundaries = boundaries
+
+        if show_debug and boundaries:
+            print("Displaying boundary detection results...")
+            # Show distance transform
+            dist_norm = cv.normalize(self.distance_transform, None, 0, 255, cv.NORM_MINMAX, dtype=cv.CV_8U)
+            cv.imshow("Distance Transform", dist_norm)
+            
+            # Show boundaries on original image
+            if self.original_image is not None:
+                contour_img = self.original_image.copy()
+                if boundaries['outer'] is not None:
+                    cv.drawContours(contour_img, [boundaries['outer']], -1, (0, 255, 0), thickness=2)
+                if boundaries['inner'] is not None:
+                    cv.drawContours(contour_img, [boundaries['inner']], -1, (0, 0, 255), thickness=2)
+                cv.imshow("Detected Boundaries", contour_img)
+                cv.waitKey(1)
+
+        return boundaries
+    
+    def createBoundariesImproved(self, track_mask, main_contour, show_debug=False):
+        img_area = track_mask.shape[0] * track_mask.shape[1]
+        
+        # Create a clean mask from the main contour
         mask = np.zeros(track_mask.shape, dtype=np.uint8)
         cv.fillPoly(mask, [main_contour], 255)
-
-        kernel_scale = max(10, int(np.sqrt(img_area) / 100))
         
-        outer_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale * 2, kernel_scale * 2))
-        outer_mask = cv.dilate(mask, outer_kernel, iterations=2)
+        # Calculate adaptive kernel sizes
+        base_kernel_size = max(8, int(np.sqrt(img_area) / 120))
+        
+        # Create outer boundary (dilated)
+        outer_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (base_kernel_size * 2, base_kernel_size * 2))
+        outer_mask = cv.dilate(mask, outer_kernel, iterations=1)
+        
+        # Create inner boundary (eroded)
+        inner_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (base_kernel_size, base_kernel_size))
+        inner_mask = cv.erode(mask, inner_kernel, iterations=1)
+        
+        # Extract contours from the boundary masks
         outer_contours, _ = cv.findContours(outer_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-        outer_boundary = max(outer_contours, key=cv.contourArea) if outer_contours else None
-        
-        inner_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_scale, kernel_scale))
-        inner_mask = cv.erode(mask, inner_kernel, iterations=2)
         inner_contours, _ = cv.findContours(inner_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        
+        outer_boundary = max(outer_contours, key=cv.contourArea) if outer_contours else None
         inner_boundary = max(inner_contours, key=cv.contourArea) if inner_contours else None
         
+        # Validate boundaries
         if outer_boundary is None or inner_boundary is None:
-            print("Failed to detect boundaries from mask...")
-            #return self.createBoundariesFromCenterline(main_contour)
+            print("Warning: Could not create both boundaries")
+            # Try with different kernel sizes
+            if outer_boundary is None:
+                outer_boundary = main_contour
+            if inner_boundary is None:
+                # Create inner boundary from original contour with smaller erosion
+                small_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+                small_inner_mask = cv.erode(mask, small_kernel, iterations=1)
+                small_inner_contours, _ = cv.findContours(small_inner_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+                inner_boundary = max(small_inner_contours, key=cv.contourArea) if small_inner_contours else main_contour
+        
+        print(f"Boundaries created - Outer: {len(outer_boundary)} points, Inner: {len(inner_boundary)} points")
         
         return {
             'outer': outer_boundary,
             'inner': inner_boundary,
-            'method': 'adaptive_morphological'
+            'method': 'improved_morphological'
         }
-
-    def detectBoundariesEnhanced(self, img, show_debug=True):
+    
+    def detectBoundariesFallback(self, img, show_debug=False):
+        print("Using fallback edge-based boundary detection...")
+        
+        # Apply Gaussian blur
         blurred = cv.GaussianBlur(img, (5, 5), 0)
         
-        cannyEdges = cv.Canny(blurred, 50, 120)
+        # Use Canny edge detection with adaptive thresholds
+        edges = cv.Canny(blurred, 30, 100)
         
-        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5,5))
-        cannyEdges = cv.morphologyEx(cannyEdges, cv.MORPH_CLOSE, kernel, iterations=3)
-        cannyEdges = cv.dilate(cannyEdges, kernel, iterations=2)
+        # Morphological operations to close gaps
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+        edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, kernel, iterations=2)
+        edges = cv.dilate(edges, kernel, iterations=1)
         
-        contours, _ = cv.findContours(cannyEdges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        # Find contours
+        contours, _ = cv.findContours(edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         
-        img_area = img.shape[0] * img.shape[1]
-        min_area = max(2000, img_area * 0.005)
-        min_perimeter = max(300, np.sqrt(img_area) * 1.5)
-
-        filtered_contours = []
-        for contour in contours:
-            area = cv.contourArea(contour)
-            perimeter = cv.arcLength(contour, True)
-            
-            if area > min_area and perimeter > min_perimeter:
-                rect = cv.minAreaRect(contour)
-                width, height = rect[1]
-                if width > 0 and height > 0:
-                    aspect_ratio = max(width, height) / min(width, height)
-                    compactness = 4 * np.pi * area / (perimeter * perimeter)
-                    
-                    if aspect_ratio > 1.2 and compactness < 0.7:
-                        filtered_contours.append(contour)
-        
-        if len(filtered_contours) < 2:
-            print("Not enough valid contours found for boundaries")
+        if not contours:
+            print("No contours found in fallback method")
             return None
         
-        filtered_contours = sorted(filtered_contours, key=cv.contourArea, reverse=True)
+        # Filter and sort contours
+        img_area = img.shape[0] * img.shape[1]
+        min_area = max(5000, img_area * 0.01)
+        
+        valid_contours = [c for c in contours if cv.contourArea(c) > min_area]
+        
+        if len(valid_contours) < 1:
+            print("No valid contours found in fallback method")
+            return None
+        
+        # Sort by area
+        valid_contours = sorted(valid_contours, key=cv.contourArea, reverse=True)
         
         if show_debug:
-            print(f"Found {len(filtered_contours)} valid contours")
-            enhanced_img = self.original_image.copy()
-            cv.imshow("Enhanced Canny", cannyEdges)
-            for i, contour in enumerate(filtered_contours[:3]):
-                color = [(255,0,0), (0,255,0), (0,0,255)][i]
-                cv.drawContours(enhanced_img, [contour], -1, color, thickness=2)
-            cv.imshow("Enhanced Contours", enhanced_img)
+            fallback_img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
+            cv.imshow("Fallback Edges", edges)
+            for i, contour in enumerate(valid_contours[:2]):
+                color = [(0, 255, 0), (0, 0, 255)][i] if i < 2 else (255, 0, 0)
+                cv.drawContours(fallback_img, [contour], -1, color, thickness=2)
+            cv.imshow("Fallback Boundaries", fallback_img)
+            cv.waitKey(1)
         
         return {
-            'outer': filtered_contours[0],
-            'inner': filtered_contours[1],
-            'method': 'enhanced_edge_detection'
+            'outer': valid_contours[0],
+            'inner': valid_contours[1] if len(valid_contours) > 1 else valid_contours[0],
+            'method': 'fallback_edge_detection'
         }
     
     def calculateCurvature(self, points, window_size=5):
@@ -600,7 +686,7 @@ class TrackProcessor:
         except Exception as e:
             print(f"Error during curvature-based normalization: {e}")
             print(f"Falling back to even spacing...")
-            new_dist = np.linspace(0, 1, target_points + 1)[:, 1]
+            new_dist = np.linspace(0, 1, target_points + 1)[:-1]
             new_x = interp_x(new_dist)
             new_y = interp_y(new_dist)
             norm_contour = np.column_stack([new_x, new_y]).astype(np.float32)
@@ -806,10 +892,10 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
         processor.loadImg(img_path)
         
         print(f"Processing Image: {base_filename}")
-        results = processor.processImg(processor.original_image, show_debug)
+        results = processor.processImg(processor.original_image, show_debug=show_debug)
 
         print("Generating boundaries...")
-        boundaries = processor.detectBoundaries(results['processed_image'], show_debug)
+        boundaries = processor.detectBoundaries(results['processed_image'], show_debug=show_debug)
 
         if boundaries:
             print("Normalizing boundaries to 1800 points using curvature-based adaptive sampling...")
@@ -928,7 +1014,7 @@ def main():
 
     if args.file:
         if os.path.exists(args.file):
-            result = processTrack(args.file, args.output, args.debug)
+            result = processTrack(args.file, args.output, args.debug, args.centerline_method, args.extract_centerline)
             if result:
                 print(f"\nSingle file processing complete")
                 print(f"Boundaries normalized to {result['outer_boundary_points']} outer and {result['inner_boundary_points']} inner points")
