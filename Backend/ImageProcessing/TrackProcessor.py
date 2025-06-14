@@ -141,6 +141,14 @@ class TrackProcessor:
         
         return mask
     
+    def otsuAdaptiveMask(self, gray, show_debug=False):
+        blurred = cv.GaussianBlur(gray, (5, 5), 0)
+        thresh_val, otsu_mask = cv.threshold(blurred, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        if show_debug:
+            print(f"Otsu threshold value: {thresh_val}")
+        
+        return otsu_mask
+    
     def processImg(self, img, show_debug=True):
         # Process the track for easier edge detection
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
