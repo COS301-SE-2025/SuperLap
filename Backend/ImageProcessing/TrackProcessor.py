@@ -21,6 +21,7 @@ class TrackProcessor:
         self.centerline = None
         self.centerline_smoothed = None
         self.distance_transform = None
+        self.adaptive_mask_params = None
 
     def loadImg(self, img_path):
         # Load and convert the image
@@ -32,10 +33,13 @@ class TrackProcessor:
     
     def analyzeImageCharacteristics(self, img):
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-        
+        lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
+
         h_mean, h_std = cv.meanStdDev(hsv[:,:,0])
         s_mean, s_std = cv.meanStdDev(hsv[:,:,1])
         v_mean, v_std = cv.meanStdDev(hsv[:,:,2])
+
+        l_mean, l_std = cv.meanStdDev(lab[:,:,0])
         
         # Analyze histogram peaks for value channel (brightness)
         hist_v = cv.calcHist([hsv], [2], None, [256], [0,256])
@@ -47,28 +51,42 @@ class TrackProcessor:
         params = {
             'v_mean': float(v_mean[0][0]),
             'v_std': float(v_std[0][0]),
+            'l_mean': float(l_mean[0][0]),
+            'l_std': float(l_std[0][0]),
             'dark_threshold': float(dark_threshold),
             'brightness_factor': 1.0
         }
         
-        if v_mean[0][0] < 80:  # Very dark
-            params['upper_v'] = min(150, dark_threshold + 2 * v_std[0][0])
-            params['brightness_factor'] = 1.2
-        elif v_mean[0][0] > 180:  # Very bright
-            params['upper_v'] = min(180, dark_threshold + 1.5 * v_std[0][0])
-            params['brightness_factor'] = 0.8
-        else:  # Normal brightness
+        if v_mean[0][0] < 100:
+            print("Dark asphalt found...")
+            # Dark, low saturation images (asphalt tracks)
+            params['track_detection_method'] = 'dark_asphalt'
+            params['upper_v'] = min(115, dark_threshold + 1.5 * v_std[0][0])
+            params['brightness_factor'] = 1.3
+        elif v_mean[0][0] > 150:
+            print("Light surface found...")
+            # Bright images (concrete/light surfaces)
+            params['track_detection_method'] = 'bright_surface'
             params['upper_v'] = min(160, dark_threshold + 2 * v_std[0][0])
+            params['brightness_factor'] = 0.9
+        else:
+            # Normal brightness
+            print("Standard image...")
+            params['track_detection_method'] = 'standard'
+            params['upper_v'] = min(110, dark_threshold + 2 * v_std[0][0])
             params['brightness_factor'] = 1.0
         
         self.adaptive_mask_params = params
         return params
     
-    def createAdaptiveMask(self, img, method='multi_approach', show_debug=False):
+    def createAdaptiveMask(self, img, method='enhanced_multi_approach', show_debug=False):
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
         
-        if method == 'multi_approach':
+        if method == 'enhanced_multi_approach':
+            return self.enhancedMultiApproachMask(img, hsv, gray, lab, show_debug)
+        elif method == 'multi_approach':
             return self.multiApproachMask(img, hsv, gray, show_debug)
         elif method == 'adaptive_hsv':
             return self.adaptiveHSVMask(hsv, show_debug)
@@ -76,6 +94,109 @@ class TrackProcessor:
             return self.otsuAdaptiveMask(gray, show_debug)
         else:
             return self.adaptiveHSVMask(hsv, show_debug)
+        
+    def enhancedMultiApproachMask(self, img, hsv, gray, lab, show_debug=False):
+        masks = {}
+        params = self.analyzeImageCharacteristics(img)
+        
+        # Method 1: LAB color space for better track surface detection
+        l_channel = lab[:,:,0]
+        
+        if params['track_detection_method'] == 'dark_asphalt':
+            # For dark asphalt tracks
+            _, lab_mask = cv.threshold(l_channel, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+            
+            # Enhance with morphological operations
+            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+            lab_mask = cv.morphologyEx(lab_mask, cv.MORPH_CLOSE, kernel, iterations=2)
+            
+        else:
+            # For other track types, use adaptive threshold on L channel
+            lab_mask = cv.adaptiveThreshold(l_channel, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                          cv.THRESH_BINARY_INV, 21, 10)
+        
+        masks['lab_enhanced'] = lab_mask
+        
+        # Method 2: Enhanced Otsu with preprocessing
+        blurred = cv.GaussianBlur(gray, (5, 5), 0)
+        
+        # Apply CLAHE for better contrast
+        clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        enhanced_gray = clahe.apply(blurred)
+        
+        _, otsu_enhanced = cv.threshold(enhanced_gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        masks['otsu_enhanced'] = otsu_enhanced
+        
+        # Method 3: Gradient-based edge detection for track boundaries
+        grad_x = cv.Sobel(gray, cv.CV_64F, 1, 0, ksize=3)
+        grad_y = cv.Sobel(gray, cv.CV_64F, 0, 1, ksize=3)
+        gradient_magnitude = np.sqrt(grad_x**2 + grad_y**2)
+        gradient_magnitude = np.uint8(gradient_magnitude / gradient_magnitude.max() * 255)
+        
+        # Use gradient to enhance track detection
+        _, gradient_mask = cv.threshold(gradient_magnitude, 30, 255, cv.THRESH_BINARY)
+        gradient_mask = cv.bitwise_not(gradient_mask)  # Invert to get low-gradient areas (track surface)
+        
+        # Clean gradient mask
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+        gradient_mask = cv.morphologyEx(gradient_mask, cv.MORPH_CLOSE, kernel, iterations=3)
+        
+        masks['gradient_enhanced'] = gradient_mask
+        
+        # Method 5: K-means with enhanced clustering
+        kmeans_mask = self.createEnhancedKMeansMask(img, n_clusters=5)
+        masks['kmeans_enhanced'] = kmeans_mask
+        
+        # Combine masks with intelligent weighting based on track type
+        if params['track_detection_method'] == 'dark_asphalt':
+            weights = {'lab_enhanced': 0.3, 'otsu_enhanced': 0.25, 'gradient_enhanced': 0.25, 
+                      'kmeans_enhanced': 0.2}
+        else:
+            weights = {'lab_enhanced': 0.25, 'otsu_enhanced': 0.25, 'gradient_enhanced': 0.25, 
+                      'kmeans_enhanced': 0.25}
+        
+        combined = self.combineMasks(masks, weights)
+        
+        if show_debug:
+            self.showMaskComparison(masks, combined)
+        
+        return combined
+    
+    def createEnhancedKMeansMask(self, img, n_clusters=5):
+        # Reshape image for k-means
+        data = img.reshape((-1, 3))
+        data = np.float32(data)
+        
+        # Apply k-means
+        criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 1.0)
+        _, labels, centers = cv.kmeans(data, n_clusters, None, criteria, 10, cv.KMEANS_RANDOM_CENTERS)
+        
+        labels = labels.reshape(img.shape[:2])
+        
+        # Convert centers to HSV for better analysis
+        centers_bgr = centers.reshape(-1, 1, 3).astype(np.uint8)
+        centers_hsv = cv.cvtColor(centers_bgr, cv.COLOR_BGR2HSV).reshape(-1, 3)
+        
+        # Find track-like clusters (darker, less saturated)
+        track_clusters = []
+        for i, center_hsv in enumerate(centers_hsv):
+            h, s, v = center_hsv
+            # Track surfaces are typically darker with moderate saturation
+            if v < 150 and s < 100:  # Dark and not too saturated
+                track_clusters.append(i)
+        
+        if not track_clusters:
+            # Fallback: use darkest cluster
+            center_brightness = [np.mean(center) for center in centers]
+            track_clusters = [np.argmin(center_brightness)]
+        
+        # Create mask for track clusters
+        kmeans_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        for cluster_id in track_clusters:
+            cluster_mask = (labels == cluster_id).astype(np.uint8) * 255
+            kmeans_mask = cv.bitwise_or(kmeans_mask, cluster_mask)
+        
+        return kmeans_mask
         
     def multiApproachMask(self, img, hsv, gray, show_debug=False):
         masks = {}
@@ -95,8 +216,7 @@ class TrackProcessor:
         masks['otsu'] = otsu_thresh
         
         # Approach 3: Local adaptive threshold
-        adaptive_thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                             cv.THRESH_BINARY_INV, 15, 8)
+        adaptive_thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 15, 8)
         masks['adaptive'] = adaptive_thresh
         
         # Approach 4: Color-based segmentation using K-means
@@ -187,7 +307,7 @@ class TrackProcessor:
         plt.tight_layout()
         plt.show()
     
-    def processImg(self, img, mask_method='multi_approach', show_debug=True):
+    def processImg(self, img, mask_method='multi_approach', show_debug=False):
         # Process the track for easier edge detection
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
