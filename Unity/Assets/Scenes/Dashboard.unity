@@ -3715,6 +3715,7 @@ MonoBehaviour:
   trackImage: {fileID: 901568451}
   trackLoading: {fileID: 2124747294}
   trackLoadingRacingLine: {fileID: 361705988}
+  dashboardInit: {fileID: 462758248}
 --- !u!114 &729960493
 MonoBehaviour:
   m_ObjectHideFlags: 0
