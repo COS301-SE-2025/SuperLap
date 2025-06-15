@@ -73,20 +73,13 @@ public class DashboardShowLeaderboard : MonoBehaviour
   private void RefreshUIUnderPointer()
   {
     EventSystem eventSystem = EventSystem.current;
-
-    // Clear current selection and hover
     eventSystem.SetSelectedGameObject(null);
-
     PointerEventData pointerData = new PointerEventData(eventSystem)
     {
       position = Input.mousePosition
     };
-
-    // Raycast to find what's under the pointer
     var raycastResults = new List<RaycastResult>();
     eventSystem.RaycastAll(pointerData, raycastResults);
-
-    // Tell Unity to re-hover the top result, if any
     foreach (var result in raycastResults)
     {
       ExecuteEvents.Execute(result.gameObject, pointerData, ExecuteEvents.pointerExitHandler);
