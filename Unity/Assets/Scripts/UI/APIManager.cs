@@ -229,6 +229,14 @@ public class APIManager : MonoBehaviour
   {
     public string id;
     public string name;
+    public string type;
+    public string city;
+    public string country;
+    public string location;
+    public string uploadedBy;
+    public string description;
+    public string dateUploaded;
+    public string _id;
   }
 
   [System.Serializable]
