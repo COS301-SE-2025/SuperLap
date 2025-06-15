@@ -12,6 +12,8 @@ public class TrackDropdownManager : MonoBehaviour
   public GameObject trackLoading;
   public GameObject trackLoadingRacingLine;
 
+  public DashboardInit dashboardInit;
+
   private List<string> trackNames = new List<string>();
 
   private void Start()
@@ -42,7 +44,12 @@ public class TrackDropdownManager : MonoBehaviour
 
         // Automatically load the image for the first track
         if (trackNames.Count > 0)
+        {
+          trackDropdown.value = 0;
+          if (dashboardInit != null)
+            dashboardInit.OnTrackDropdownChanged(0);
           LoadTrackImage(trackNames[0]);
+        }
       }
       else
       {

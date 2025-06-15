@@ -28,7 +28,7 @@ public class AnalysisData : MonoBehaviour
     {
       if (success && track != null)
       {
-        trackDataText.text = $"Track ID: {track._id}\nTrack Name: {track.name}\nTrack Type: {track.type}\nTrack City: {track.city}\nTrack Country: {track.country}\nTrack Location: {track.location}\nTrack Uploaded By: {track.uploadedBy}\nTrack Description: {track.description}\nTrack Date Uploaded: {track.dateUploaded}";
+        trackDataText.text = $"Track Name: {track.name}\nTrack Type: {track.type}\nTrack City: {track.city}\nTrack Country: {track.country}\nTrack Location: {track.location}\nTrack Uploaded By: {track.uploadedBy}\nTrack Description: {track.description}\nTrack Date Uploaded: {track.dateUploaded}";
       }
       else
       {
