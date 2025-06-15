@@ -9,8 +9,10 @@ public class MenuManagement : MonoBehaviour
   public GameObject MainMenuCanvas;
   public List<TMP_InputField> MainMenuInputs;
   public GameObject LoginCanvas;
+  public GameObject LoginError;
   public List<TMP_InputField> LoginInputs;
   public GameObject RegisterCanvas;
+  public GameObject RegisterError;
   public List<TMP_InputField> RegisterInputs;
   public GameObject MainCamera;
 
@@ -70,6 +72,34 @@ public class MenuManagement : MonoBehaviour
         isTransitioningToRegister = false;
         isTransitioningToLogin = false;
         isTransitioningToMainMenu = false;
+      }
+    }
+
+    if (Input.GetKeyDown(KeyCode.Escape))
+    {
+      if (currentMenuState == MenuState.Login)
+      {
+        transitionToMainMenu();
+      }
+      if (currentMenuState == MenuState.Register)
+      {
+        transitionToMainMenu();
+      }
+    }
+
+    if (Input.GetKeyDown(KeyCode.KeypadEnter))
+    {
+      if (currentMenuState == MenuState.Login)
+      {
+        Login();
+      }
+      if (currentMenuState == MenuState.Register)
+      {
+        RegisterUser();
+      }
+      if (currentMenuState == MenuState.MainMenu)
+      {
+        transitionToLogin();
       }
     }
 
@@ -158,7 +188,7 @@ public class MenuManagement : MonoBehaviour
     Debug.Log("Game exited");
   }
 
-  public void Login(GameObject errorMessage)
+  public void Login()
   {
     TMP_InputField[] inputFields = LoginCanvas.GetComponentsInChildren<TMP_InputField>();
 
@@ -186,9 +216,9 @@ public class MenuManagement : MonoBehaviour
           else
           {
             // Show error message
-            if (errorMessage != null)
+            if (LoginError != null)
             {
-              TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+              TMP_Text errorText = LoginError.GetComponent<TMP_Text>();
               if (errorText != null)
               {
                 errorText.text = message;
@@ -203,12 +233,12 @@ public class MenuManagement : MonoBehaviour
       }
       else
       {
-        if (errorMessage != null)
+        if (LoginError != null)
         {
-          TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+          TMP_Text errorText = LoginError.GetComponent<TMP_Text>();
           if (errorText != null)
           {
-            errorText.text = "Username or Passwordcannot be empty!";
+            errorText.text = "Username or Password cannot be empty!";
           }
         }
         else
@@ -227,7 +257,7 @@ public class MenuManagement : MonoBehaviour
     }
   }
 
-  public void RegisterUser(GameObject errorMessage)
+  public void RegisterUser()
   {
     TMP_InputField[] inputFields = RegisterCanvas.GetComponentsInChildren<TMP_InputField>();
 
@@ -244,13 +274,13 @@ public class MenuManagement : MonoBehaviour
         string username = usernameField.text.Trim();
         string email = emailField.text.Trim();
         string password = passwordField.text.Trim();
-        
+
         // Validate email format
         if (!IsValidEmail(email))
         {
-          if (errorMessage != null)
+          if (RegisterError != null)
           {
-            TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+            TMP_Text errorText = RegisterError.GetComponent<TMP_Text>();
             if (errorText != null)
             {
               errorText.text = "Please enter a valid email address!";
@@ -262,7 +292,7 @@ public class MenuManagement : MonoBehaviour
           }
           return;
         }
-        
+
         APIManager.Instance.RegisterUser(username, email, password, (success, message) =>
         {
           if (success)
@@ -279,9 +309,9 @@ public class MenuManagement : MonoBehaviour
           else
           {
             // Show error message
-            if (errorMessage != null)
+            if (RegisterError != null)
             {
-              TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+              TMP_Text errorText = RegisterError.GetComponent<TMP_Text>();
               if (errorText != null)
               {
                 errorText.text = message;
@@ -296,9 +326,9 @@ public class MenuManagement : MonoBehaviour
       }
       else
       {
-        if (errorMessage != null)
+        if (RegisterError != null)
         {
-          TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+          TMP_Text errorText = RegisterError.GetComponent<TMP_Text>();
           if (errorText != null)
           {
             errorText.text = "Username and email and password cannot be empty!";
@@ -312,9 +342,9 @@ public class MenuManagement : MonoBehaviour
     }
     else
     {
-      if (errorMessage != null)
+      if (RegisterError != null)
       {
-        TMP_Text errorText = errorMessage.GetComponent<TMP_Text>();
+        TMP_Text errorText = RegisterError.GetComponent<TMP_Text>();
         if (errorText != null)
         {
           errorText.text = "Username and email cannot be empty!";
