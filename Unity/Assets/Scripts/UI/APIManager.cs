@@ -272,4 +272,84 @@ public class APIManager : MonoBehaviour
   {
     StartCoroutine(GetAllTracksCoroutine(callback));
   }
+
+  // Fetch a track by name
+  public void GetTrackByName(string name, System.Action<bool, string, Track> callback)
+  {
+    StartCoroutine(GetTrackByNameCoroutine(name, callback));
+  }
+
+  private IEnumerator GetTrackByNameCoroutine(string name, System.Action<bool, string, Track> callback)
+  {
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/tracks/{name}"))
+    {
+      yield return request.SendWebRequest();
+
+      if (request.result == UnityWebRequest.Result.Success)
+      {
+        try
+        {
+          string json = request.downloadHandler.text;
+          Track track = JsonUtility.FromJson<Track>(json);
+          callback?.Invoke(true, "Track fetched successfully", track);
+        }
+        catch
+        {
+          callback?.Invoke(false, "Error parsing track data", null);
+        }
+      }
+      else
+      {
+        callback?.Invoke(false, request.error, null);
+      }
+    }
+  }
+
+  // Fetch a track image (base64 or binary)
+  public void GetTrackImage(string name, System.Action<bool, string, Texture2D> callback)
+  {
+    StartCoroutine(GetTrackImageCoroutine(name, callback));
+  }
+
+  private IEnumerator GetTrackImageCoroutine(string name, System.Action<bool, string, Texture2D> callback)
+  {
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/images/{name}"))
+    {
+      yield return request.SendWebRequest();
+
+      if (request.result == UnityWebRequest.Result.Success)
+      {
+        try
+        {
+          // Try to interpret as base64 string first
+          string text = request.downloadHandler.text;
+          Texture2D texture = new Texture2D(2, 2);
+          bool loaded = false;
+          try
+          {
+            byte[] imageBytes = Convert.FromBase64String(text);
+            loaded = texture.LoadImage(imageBytes);
+          }
+          catch
+          {
+            // If not base64, try as binary
+            byte[] imageBytes = request.downloadHandler.data;
+            loaded = texture.LoadImage(imageBytes);
+          }
+          if (loaded)
+            callback?.Invoke(true, "Image fetched successfully", texture);
+          else
+            callback?.Invoke(false, "Failed to load image data", null);
+        }
+        catch
+        {
+          callback?.Invoke(false, "Error parsing image data", null);
+        }
+      }
+      else
+      {
+        callback?.Invoke(false, request.error, null);
+      }
+    }
+  }
 }
