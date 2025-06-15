@@ -51,7 +51,7 @@ app.get('/', async (req, res) => {
     res.json({ message: "Hello from Express!" });
   } catch (error) {
     console.log("GET error:", error);
-    res.status(500).json({message:"Failed to fetch default route"});
+    res.status(500).json({ message: "Failed to fetch default route" });
   }
 });
 
@@ -86,7 +86,7 @@ app.get('/users', async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error("GET error:", error);
-    res.status(500).json({message: "Failed to fetch users"});
+    res.status(500).json({ message: "Failed to fetch users" });
   }
 });
 
@@ -94,11 +94,11 @@ app.get('/users', async (req, res) => {
 app.get('/users/:username', async (req, res) => {
   try {
     const username = req.params.username;
-    const user = await db.collection("users").findOne({username: username});
+    const user = await db.collection("users").findOne({ username: username });
     res.json(user);
   } catch (error) {
     console.error("GET error:", error);
-    res.status(500).json({message: "Failed to fetch user"});
+    res.status(500).json({ message: "Failed to fetch user" });
   }
 });
 
@@ -143,11 +143,11 @@ app.post('/users', async (req, res) => {
 app.delete('/users/:username', async (req, res) => {
   try {
     const username = req.params.username;
-    const result = await db.collection("users").deleteOne({username: username});
-    res.status(201).json({message: "User deleted successfully"});
+    const result = await db.collection("users").deleteOne({ username: username });
+    res.status(201).json({ message: "User deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Failed to delete user"});
+    res.status(500).json({ message: "Failed to delete user" });
   }
 });
 
@@ -160,8 +160,8 @@ app.get('/tracks', async (req, res) => {
     const tracks = await db.collection("tracks").find().toArray();
     res.json(tracks);
   } catch (error) {
-      console.error(error);
-      res.status(500).json({message: "Failed to fetch tracks"});
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch tracks" });
   }
 });
 
@@ -169,11 +169,11 @@ app.get('/tracks', async (req, res) => {
 app.get('/tracks/:name', async (req, res) => {
   try {
     const trackName = req.params.name;
-    const track = await db.collection("tracks").findOne({name: trackName});
+    const track = await db.collection("tracks").findOne({ name: trackName });
     res.json(track);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Failed to fetch track"});
+    res.status(500).json({ message: "Failed to fetch track" });
   }
 });
 
@@ -181,11 +181,11 @@ app.get('/tracks/:name', async (req, res) => {
 app.get('/tracks/:type', async (req, res) => {
   try {
     const trackType = req.params.type;
-    const tracks = await db.collection("tracks").find({type: trackType}).toArray();
+    const tracks = await db.collection("tracks").find({ type: trackType }).toArray();
     res.json(tracks);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Failed to fetch tracks"});
+    res.status(500).json({ message: "Failed to fetch tracks" });
   }
 });
 
@@ -193,11 +193,11 @@ app.get('/tracks/:type', async (req, res) => {
 app.get('/tracks/:city', async (req, res) => {
   try {
     const trackCity = req.params.city;
-    const tracks = await db.collection("tracks").find({city: trackCity}).toArray();
+    const tracks = await db.collection("tracks").find({ city: trackCity }).toArray();
     res.status(201).json(tracks);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Failed to fetch tracks"});
+    res.status(500).json({ message: "Failed to fetch tracks" });
   }
 });
 
@@ -205,11 +205,11 @@ app.get('/tracks/:city', async (req, res) => {
 app.get('/tracks/:country', async (req, res) => {
   try {
     const trackCountry = req.params.country;
-    const tracks = await db.collection("tracks").find({country: trackCountry}).toArray();
+    const tracks = await db.collection("tracks").find({ country: trackCountry }).toArray();
     res.status(201).json(tracks);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Failed to fetch tracks"});
+    res.status(500).json({ message: "Failed to fetch tracks" });
   }
 });
 
@@ -217,11 +217,11 @@ app.get('/tracks/:country', async (req, res) => {
 app.get('/tracks/:location', async (req, res) => {
   try {
     const trackLocation = req.params.location;
-    const tracks = await db.collection("tracks").find({location: trackLocation}).toArray();
+    const tracks = await db.collection("tracks").find({ location: trackLocation }).toArray();
     res.status(201).json(tracks);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Failed to fetch tracks"});
+    res.status(500).json({ message: "Failed to fetch tracks" });
   }
 });
 
@@ -265,7 +265,7 @@ app.put('/tracks/:name', async (req, res) => {
 app.delete('/tracks/:name', async (req, res) => {
   try {
     const trackName = req.params.name;
-    await db.collection("tracks").deleteOne({name: trackName});
+    await db.collection("tracks").deleteOne({ name: trackName });
     res.status(201).json({ message: "Track deleted successfully" });
   } catch (error) {
     console.error("Delete error:", error);
@@ -277,11 +277,11 @@ app.delete('/tracks/:name', async (req, res) => {
 app.get('/images/:name', async (req, res) => {
   try {
     const trackName = req.params.name;
-    const track = await db.collection("tracks").findOne({name: trackLocation});
+    const track = await db.collection("tracks").findOne({ name: trackName });
     res.status(201).json(track.image);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Failed to fetch tracks"});
+    res.status(500).json({ message: "Failed to fetch tracks" });
   }
 });
 // RACING LINE ROUTES

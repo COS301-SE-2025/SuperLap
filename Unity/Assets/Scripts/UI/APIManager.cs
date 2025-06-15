@@ -20,6 +20,14 @@ public class ApiResponse
   public string message;
 }
 
+[System.Serializable]
+public class TrackImageResponse
+{
+  public string filepath;
+  public string contentType;
+  public string data;
+}
+
 public class APIManager : MonoBehaviour
 {
   [Header("API Configuration")]
@@ -321,14 +329,20 @@ public class APIManager : MonoBehaviour
       {
         try
         {
-          // Try to interpret as base64 string first
+          // Print the response data for debugging
+          Debug.Log($"Track image response for {name}: {request.downloadHandler.text}");
+          // Parse JSON and extract base64 data
           string text = request.downloadHandler.text;
           Texture2D texture = new Texture2D(2, 2);
           bool loaded = false;
           try
           {
-            byte[] imageBytes = Convert.FromBase64String(text);
-            loaded = texture.LoadImage(imageBytes);
+            TrackImageResponse imgResp = JsonUtility.FromJson<TrackImageResponse>(text);
+            if (imgResp != null && !string.IsNullOrEmpty(imgResp.data))
+            {
+              byte[] imageBytes = Convert.FromBase64String(imgResp.data);
+              loaded = texture.LoadImage(imageBytes);
+            }
           }
           catch
           {
