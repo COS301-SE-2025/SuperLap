@@ -75,6 +75,6 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 <h2 style="font-weight: bold; color: #E54B4B;">WireFrame</h2>
 
 <p align="center">
-    <img src="docs/images/Wireframe.png" alt="Banner"/>
+    <img src="docs/images/Wireframe.png" alt="Wireframe"/>
 </p>
 
