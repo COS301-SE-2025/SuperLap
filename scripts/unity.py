@@ -167,7 +167,32 @@ def get_unity_editor_path():
         print(f"Error running Unity Hub command: {e}")
         return None
     except FileNotFoundError:
-        print("Unity Hub not found. Make sure it's installed and in your PATH")
+        print("Unity Hub not found. Trying fallback locations...")
+        # Fallback: Try common Unity installation paths
+        common_paths = [
+            "/home/runner/Unity/Hub/Editor/6000.0.50f1/Editor/Unity",  # Container path
+            "/home/richter/Unity/Hub/Editor/6000.0.50f1/Editor/Unity",  # Host path
+            "/home/runner/Unity/Hub/Editor/*/Editor/Unity",  # Container wildcard
+            "/home/richter/Unity/Hub/Editor/*/Editor/Unity",  # Host wildcard
+        ]
+        
+        import glob
+        for path_pattern in common_paths:
+            if '*' in path_pattern:
+                # Use glob for wildcard patterns
+                matches = glob.glob(path_pattern)
+                if matches:
+                    unity_path = matches[0]  # Take the first match
+                    if os.path.exists(unity_path):
+                        print(f"Found Unity editor at fallback location: {unity_path}")
+                        return unity_path
+            else:
+                # Direct path check
+                if os.path.exists(path_pattern):
+                    print(f"Found Unity editor at fallback location: {path_pattern}")
+                    return path_pattern
+        
+        print("Unity Hub and Unity editor not found in any known locations")
         return None
 
 def run_unity_tests(unity_path, project_path="Unity"):
