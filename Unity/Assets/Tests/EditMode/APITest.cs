@@ -1,5 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Net.NetworkInformation;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -8,10 +12,116 @@ public class APITest
 {
     private APIManager apiManager;
     private GameObject testGameObject;
+    private Process backendProcess;
+    private bool wasPortAlreadyInUse;
+
+    private bool IsPortInUse(int port)
+    {
+        IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+        TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
+        
+        foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
+        {
+            if (tcpi.LocalEndPoint.Port == port)
+            {
+                return true;
+            }
+        }
+        
+        // Also check listening ports
+        IPEndPoint[] tcpListeners = ipGlobalProperties.GetActiveTcpListeners();
+        foreach (IPEndPoint endpoint in tcpListeners)
+        {
+            if (endpoint.Port == port)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    private void StartBackendServer()
+    {
+        try
+        {
+            string backendPath = Path.Combine(Application.dataPath, "../../../Backend/API");
+            
+            if (!Directory.Exists(backendPath))
+            {
+                UnityEngine.Debug.LogError($"Backend directory not found at: {backendPath}");
+                return;
+            }
+
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = "npm",
+                Arguments = "start",
+                WorkingDirectory = backendPath,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            backendProcess = Process.Start(startInfo);
+            
+            if (backendProcess != null)
+            {
+                UnityEngine.Debug.Log("Backend server started successfully");
+                
+                // Wait a bit for the server to start up
+                System.Threading.Thread.Sleep(3000);
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("Failed to start backend process");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            UnityEngine.Debug.LogError($"Error starting backend server: {ex.Message}");
+        }
+    }
+
+    private void StopBackendServer()
+    {
+        if (backendProcess != null && !backendProcess.HasExited)
+        {
+            try
+            {
+                backendProcess.Kill();
+                backendProcess.WaitForExit(5000); // Wait up to 5 seconds for graceful shutdown
+                backendProcess.Dispose();
+                UnityEngine.Debug.Log("Backend server stopped successfully");
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogError($"Error stopping backend server: {ex.Message}");
+            }
+            finally
+            {
+                backendProcess = null;
+            }
+        }
+    }
 
     [SetUp]
     public void Setup()
     {
+        // Check if port 3000 is already in use
+        wasPortAlreadyInUse = IsPortInUse(3000);
+        
+        if (!wasPortAlreadyInUse)
+        {
+            // Start the backend server if port is not in use
+            StartBackendServer();
+        }
+        else
+        {
+            UnityEngine.Debug.Log("Port 3000 is already in use, assuming backend is already running");
+        }
+
         // Create a test GameObject with APIManager
         testGameObject = new GameObject("TestAPIManager");
         apiManager = testGameObject.AddComponent<APIManager>();
@@ -27,6 +137,12 @@ public class APITest
         if (testGameObject != null)
         {
             Object.DestroyImmediate(testGameObject);
+        }
+
+        // Stop the backend server only if we started it
+        if (!wasPortAlreadyInUse)
+        {
+            StopBackendServer();
         }
     }
 
