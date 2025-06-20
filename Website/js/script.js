@@ -1,3 +1,4 @@
+//------------------------------------------------------------------------- Download Button Functionality
 function download() {
   // Placeholder download action
   alert("Download started!");
@@ -5,6 +6,7 @@ function download() {
   // window.location.href = 'path/to/your/file.pdf';
 }
 
+//------------------------------------------------------------------------- Back to Top Button Functionality
 // Show/hide the back-to-top button on scroll
 window.addEventListener("scroll", () => {
   const button = document.getElementById("backToTop");
@@ -23,14 +25,14 @@ function scrollToTop() {
   });
 }
 
+//------------------------------------------------------------------------- Countdown Timer Functionality
 function updateCountdown() {
-  // Set your target date and time here (Year, Month (0-11), Day, Hour, Minute, Second)
+  // (Year, Month (0-11), Day, Hour, Minute, Second)
   const targetDate = new Date("2025-09-29T00:00:00");
   const now = new Date();
   const diff = targetDate - now;
 
-  if (diff <= 0) {
-    // If countdown is over
+  if (diff <= 0) { // Need to update this later - but for now this is what it does when it's run out of time
     document.querySelector('.countdown-timer').innerHTML = "<span>🎉 Project Complete</span>";
     return;
   }
@@ -45,8 +47,8 @@ function updateCountdown() {
   document.getElementById("minutes").textContent = String(minutes).padStart(2, '0');
   document.getElementById("seconds").textContent = String(seconds).padStart(2, '0');
 }
-
 // Update every second
 setInterval(updateCountdown, 1000);
 updateCountdown(); // initial run
 
+//------------------------------------------------------------------------- Next
