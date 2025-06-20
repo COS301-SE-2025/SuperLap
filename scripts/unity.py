@@ -41,10 +41,29 @@ def start_backend_server():
         print(f"package.json not found in backend directory: {backend_path}")
         return False
     
-    print(f"Starting backend server from: {backend_path}")
+    print(f"Setting up backend server from: {backend_path}")
     
     try:
-        # Start the backend server
+        # First, run npm install to ensure dependencies are installed
+        print("Running 'npm install' to install dependencies...")
+        npm_install_result = subprocess.run(
+            ["npm", "install"],
+            cwd=backend_path,
+            capture_output=True,
+            text=True,
+            timeout=120  # 2 minute timeout for npm install
+        )
+        
+        if npm_install_result.returncode != 0:
+            print(f"npm install failed with return code: {npm_install_result.returncode}")
+            if npm_install_result.stderr:
+                print(f"npm install error: {npm_install_result.stderr}")
+            return False
+        
+        print("npm install completed successfully")
+        
+        # Now start the backend server
+        print("Starting backend server...")
         backend_process = subprocess.Popen(
             ["npm", "start"],
             cwd=backend_path,
@@ -67,8 +86,11 @@ def start_backend_server():
             stop_backend_server()
         return False
         
+    except subprocess.TimeoutExpired:
+        print("npm install timed out after 2 minutes")
+        return False
     except Exception as e:
-        print(f"Error starting backend server: {e}")
+        print(f"Error setting up backend server: {e}")
         return False
 
 def stop_backend_server():
