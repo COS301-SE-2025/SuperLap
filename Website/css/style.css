@@ -228,47 +228,48 @@ html {
 }
 
 /*-------------------------------------------------------------------------Sections*/
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 section {
     margin-bottom: 2em;
 }
 
-/* Common section padding & alignment */
+footer {
+    background: #222;
+    color: #ccc;
+    text-align: center;
+    padding: 1em;
+}
+
 .about-page section {
     display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 4em 2em;
     min-height: 80vh;
 }
 
-.layout-full {
-    flex-direction: column;
-    text-align: center;
-}
-
-/* Base split layout: 50/50 */
-.layout-split {
-    flex-direction: row;
-    text-align: left;
-}
-
 .split-left,
 .split-right {
-    flex: 1;
     padding: 2em;
 }
 
-/* Adjusted for 1/3 - 2/3 layout */
-.layout-split.uneven .split-left {
-    flex: 1;
-    /* 1/3 */
+/* Headings */
+.split-left h2:first-of-type {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
 }
 
-.layout-split.uneven .split-right {
-    flex: 2;
-    /* 2/3 */
+/* Paragraphs */
+.split-left p {
+    text-align: left;
+    font-size: 1.1rem;
+    line-height: 1.6;
 }
 
+/* Images */
 .split-left img {
     width: 100%;
     height: auto;
@@ -276,10 +277,47 @@ section {
     border-radius: 10px;
 }
 
-/* SECTION-SPECIFIC STYLES */
+/* Full-width stacked layout */
+.layout-full {
+    flex-direction: column;
+    text-align: center;
+}
+
+/* Split 50/50 layout */
+.layout-split {
+    flex-direction: row;
+    text-align: left;
+}
+
+/* Uneven 1/3 - 2/3 split */
+.layout-split.uneven .split-left {
+    flex: 1;
+}
+
+.layout-split.uneven .split-right {
+    flex: 2;
+}
+
+/* Split-right image container */
+.split-right {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    /* or remove this line entirely */
+    padding-top: 0;
+}
+
 .about-intro {
-    background-color: #1e1e1e;
+    align-items: center;
+    justify-content: center;
+    background-color: #161a1d;
     color: white;
+}
+
+.banner {
+    height: 400px;
+    /*600*/
+    /* width: 100px; */
 }
 
 .about-background {
@@ -297,18 +335,12 @@ section {
     color: #333;
 }
 
-footer {
-    background: #222;
-    color: #ccc;
-    text-align: center;
-    padding: 1em;
+#home {
+    padding-top: 0em;
+    min-height: 0vh;
+    /* Or 0 if you want it flush */
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
 
 /*-------------------------------------------------------------------------Back to Top Button*/
 .back-to-top {
@@ -416,20 +448,26 @@ footer {
 
 /*-------------------------------------------------------------------------Progress bar*/
 .progress-bar {
-    position: relative;
+    display: flex;
+    /* position: relative; */
+    justify-content: center;
+    align-items: center;
+    text-align: center;
     max-width: 500px;
     width: 100%;
     background: #161a1d;
-    margin: 0 15px;
+    margin: 0em auto;
     padding: 10px 20px;
     border-radius: 7px;
+    flex-wrap: wrap
 }
 
 .progress-bar .skill-box {
     width: 100%;
-    margin: 1.2em 0em;
+    margin: 0em 0em;
 }
 
+.split-left .title,
 .skill-box .title {
     display: block;
     font-size: 20px;
@@ -437,6 +475,8 @@ footer {
     font-weight: 600;
     color: rgb(226, 226, 226);
     margin-bottom: 1.6em;
+    justify-content: center;
+    text-align: center;
 }
 
 .skill-box .skill-bar {
