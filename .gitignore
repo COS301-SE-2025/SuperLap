@@ -57,5 +57,8 @@ Backend/ImageProcessing/venv
 Backend/ImageProcessing/debug
 Backend/RacelineOptimizer/bin
 Backend/RacelineOptimizer/obj
-/Backend/RacelineOptimizer/Output
-/Backend/RacelineOptimizer/Input
+Backend/RacelineOptimizer/Output
+Backend/RacelineOptimizer/Input
+
+# Ignore Unit Test files
+Unity/TestResults/
