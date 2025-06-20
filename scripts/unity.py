@@ -3,6 +3,118 @@ import re
 import sys
 import os
 import xml.etree.ElementTree as ET
+import time
+import signal
+import atexit
+import socket
+
+# Global variable to track backend process
+backend_process = None
+
+def is_port_in_use(port):
+    """Check if a port is currently in use"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(('localhost', port))
+            return False
+        except socket.error:
+            return True
+
+def start_backend_server():
+    """Start the backend server if port 3000 is not in use"""
+    global backend_process
+    
+    if is_port_in_use(3000):
+        print("Port 3000 is already in use, assuming backend is already running")
+        return True
+    
+    # Find the backend directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    backend_path = os.path.join(script_dir, "..", "Backend", "API")
+    backend_path = os.path.abspath(backend_path)
+    
+    if not os.path.exists(backend_path):
+        print(f"Backend directory not found at: {backend_path}")
+        return False
+    
+    if not os.path.exists(os.path.join(backend_path, "package.json")):
+        print(f"package.json not found in backend directory: {backend_path}")
+        return False
+    
+    print(f"Starting backend server from: {backend_path}")
+    
+    try:
+        # Start the backend server
+        backend_process = subprocess.Popen(
+            ["npm", "start"],
+            cwd=backend_path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            preexec_fn=os.setsid  # Create new process group for easier cleanup
+        )
+        
+        # Wait for server to start up
+        print("Waiting for backend server to start...")
+        for i in range(15):  # Wait up to 15 seconds
+            if is_port_in_use(3000):
+                print("Backend server started successfully!")
+                return True
+            time.sleep(1)
+            print(f"  Waiting... ({i+1}/15)")
+        
+        print("Backend server failed to start within 15 seconds")
+        if backend_process:
+            stop_backend_server()
+        return False
+        
+    except Exception as e:
+        print(f"Error starting backend server: {e}")
+        return False
+
+def stop_backend_server():
+    """Stop the backend server if we started it"""
+    global backend_process
+    
+    if backend_process is None:
+        return
+    
+    try:
+        print("Stopping backend server...")
+        
+        # Try to terminate the entire process group
+        os.killpg(os.getpgid(backend_process.pid), signal.SIGTERM)
+        
+        # Wait for graceful shutdown
+        try:
+            backend_process.wait(timeout=5)
+            print("Backend server stopped gracefully")
+        except subprocess.TimeoutExpired:
+            # Force kill if it doesn't stop gracefully
+            print("Force killing backend server...")
+            os.killpg(os.getpgid(backend_process.pid), signal.SIGKILL)
+            backend_process.wait()
+            print("Backend server force stopped")
+            
+    except Exception as e:
+        print(f"Error stopping backend server: {e}")
+    finally:
+        backend_process = None
+
+def cleanup_backend():
+    """Cleanup function to ensure backend is stopped on exit"""
+    stop_backend_server()
+
+# Register cleanup function to run on exit
+atexit.register(cleanup_backend)
+
+# Handle signals for graceful shutdown
+def signal_handler(signum, frame):
+    print(f"\nReceived signal {signum}, cleaning up...")
+    cleanup_backend()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 def get_unity_editor_path():
     """Get the path to the first available Unity editor from Unity Hub"""
@@ -241,22 +353,53 @@ def run_unity_tests_with_custom_script(unity_path, project_path="Unity"):
         return False
 
 def main():
-    print("Getting Unity editor path...")
-    unity_path = get_unity_editor_path()
+    print("="*60)
+    print("UNITY TEST RUNNER WITH BACKEND MANAGEMENT")
+    print("="*60)
     
-    if unity_path:
-        print("Running Unity tests...")
+    # Start backend server first
+    print("Step 1: Starting backend server...")
+    if not start_backend_server():
+        print("Failed to start backend server. Tests may fail.")
+        # Continue anyway - tests might still be useful
+    
+    try:
+        print("\nStep 2: Getting Unity editor path...")
+        unity_path = get_unity_editor_path()
+        
+        if not unity_path:
+            print("Could not find Unity editor path")
+            return False
+        
+        print("\nStep 3: Running Unity tests...")
         # Try the custom script approach first
         success = run_unity_tests_with_custom_script(unity_path)
+        
         if success:
-            print("Tests completed successfully!")
-            sys.exit(0)
+            print("\n" + "="*60)
+            print("TESTS COMPLETED SUCCESSFULLY!")
+            print("="*60)
+            return True
         else:
-            print("Tests failed!")
-            sys.exit(1)
-    else:
-        print("Could not find Unity editor path")
-        sys.exit(1)
+            print("\n" + "="*60)
+            print("TESTS FAILED!")
+            print("="*60)
+            return False
+            
+    finally:
+        # Always stop the backend server when done
+        print("\nStep 4: Cleaning up backend server...")
+        stop_backend_server()
 
 if __name__ == "__main__":
-    main()
+    try:
+        success = main()
+        sys.exit(0 if success else 1)
+    except KeyboardInterrupt:
+        print("\nInterrupted by user")
+        cleanup_backend()
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        cleanup_backend()
+        sys.exit(1)
