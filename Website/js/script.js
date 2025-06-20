@@ -51,13 +51,16 @@ function updateCountdown() {
 setInterval(updateCountdown, 1000);
 updateCountdown(); // initial run
 
-//------------------------------------------------------------------------- Next
+//------------------------------------------------------------------------- About button
 
 const container = document.querySelector('.box-container');
-const buttons = document.querySelectorAll('button');
+const rightButton = document.querySelector('.right-button');
+const leftButton = document.querySelector('.left-button');
 
-buttons.forEach(button =>
-    button.addEventListener('click', function () {
-        container.classList.toggle('right-open');
-    })
-);
+rightButton.addEventListener('click', () => {
+    container.classList.add('right-open');  // Open right panel
+});
+
+leftButton.addEventListener('click', () => {
+    container.classList.remove('right-open'); // Close right panel
+});
