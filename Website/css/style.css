@@ -341,6 +341,113 @@ footer {
     /* Or 0 if you want it flush */
 }
 
+/*About Section - About site and us*/
+.box-container {
+    margin: 100px auto;
+    width: 100%;
+    height: 650px;
+    display: flex;
+    align-items: stretch;
+    /* box-shadow: 0 0 3px 5px rgba(0, 0, 0, 0.03); */
+    transition: all 0.3s ease;
+}
+
+.box-container.right-open .box1-content {
+    flex: 0;
+    padding: 0;
+    opacity: 0;
+}
+
+.box-container.right-open .box1-side {
+    flex: 0;
+}
+
+.box-container.right-open .box2-side {
+    flex: 2;
+}
+
+.box-container.right-open .box2-content {
+    flex: 4;
+    padding: 30px 40px;
+    opacity: 1;
+}
+
+.box1-content,
+.box1-side,
+.box2-content,
+.box2-side {
+    transition: all 0.3s ease-out;
+    color: rgb(255, 255, 255);
+    overflow: hidden;
+    font-size: 1.2rem;
+    line-height: 1.6;
+}
+
+.box1-side,
+.box2-side {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.box1-content {
+    background: #25292C;
+    flex: 4;
+    padding: 30px 40px;
+}
+
+.box1-side {
+    background: #bac6d2;
+    flex: 2;
+}
+
+.box2-side {
+    background: #a6bdbd;
+    flex: 0;
+}
+
+.box2-content {
+    background: #25292C;
+    flex: 0;
+    opacity: 0;
+}
+
+.left-button,
+.right-button {
+    background: #db1f1f;
+    padding: 10px 50px;
+    border-radius: 5px;
+    border: none;
+    box-shadow: 1px 1px 8px 1px rgba(0, 0, 0, 0.32);
+    color: white;
+    margin: 30px 0;
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.box1-side {
+    background-image: url('images/banner.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex: 1;
+    /* reduced from 2 to 1 */
+}
+
+.box2-side {
+    background-image: url('images/banner.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex: 0;
+}
+
+
+.box-container.right-open .box2-side {
+    flex: 1;
+    /* reduced from 2 to 1 */
+}
 
 /*-------------------------------------------------------------------------Back to Top Button*/
 .back-to-top {
