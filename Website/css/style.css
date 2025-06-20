@@ -90,11 +90,10 @@ html {
 .download-btn {
     height: 45px;
     width: 110px;
-    /* cursor: pointer; */
-    background: #161a1d;
-    /*Should be: #fff*/
+    cursor: pointer;
+    background: #ffff;
     border: none;
-    background: #161a1d;
+    background: #25292C;
     /*Should be: #db1f1f*/
     border-radius: 30px;
     overflow: hidden;
@@ -116,7 +115,7 @@ html {
 
 .text-container .text {
     font-size: 15px;
-    color: #161a1d;
+    color: #ffffff;
     /*Should be: #fff*/
     font-weight: 600;
     opacity: 1;
@@ -126,7 +125,7 @@ html {
 .download-icon {
     height: 25px;
     width: 25px;
-    fill: #161a1d;
+    fill: #ffffff;
     /*Should be: #fff*/
     opacity: 0;
     transition: opacity ease-in-out 250ms;
@@ -381,8 +380,18 @@ footer {
     transition: all 0.3s ease-out;
     color: rgb(255, 255, 255);
     overflow: hidden;
-    font-size: 1.2rem;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.3rem;
     line-height: 1.6;
+    text-align: justify;
+}
+
+.box1-content b,
+.box2-content b,
+.box1-content strong,
+.box2-content strong {
+    color: #f27a69;
 }
 
 .box1-side,
@@ -429,7 +438,7 @@ footer {
 }
 
 .box1-side {
-    background-image: url('images/banner.png');
+    background-image: url('images/bikeimages\(1\).jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -438,7 +447,7 @@ footer {
 }
 
 .box2-side {
-    background-image: url('images/banner.png');
+    background-image: url('images/bikeimages\(2\).jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -969,20 +978,20 @@ textarea::placeholder {
 .card {
     width: fit-content;
     height: fit-content;
-    background-color: rgb(238, 238, 238);
+    background-color: #25292C;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 25px 25px;
+    padding: 20px 20px;
     gap: 20px;
-    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.055);
+    /* box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.055); */
 }
 
 /* for all social containers*/
 .socialContainer {
     width: 52px;
     height: 52px;
-    background-color: rgb(44, 44, 44);
+    background-color: #25292C;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -990,15 +999,15 @@ textarea::placeholder {
     transition-duration: .3s;
 }
 
-/* instagram*/
+/*github*/
 .containerOne:hover {
-    background-color: #d62976;
+    background-color: #000000;
     transition-duration: .3s;
 }
 
-/* twitter*/
+/*discord*/
 .containerTwo:hover {
-    background-color: #00acee;
+    background-color: #5865F2;
     transition-duration: .3s;
 }
 
@@ -1008,11 +1017,12 @@ textarea::placeholder {
     transition-duration: .3s;
 }
 
-/* Whatsapp*/
+/* 
+/* Whatsapp
 .containerFour:hover {
     background-color: #128C7E;
     transition-duration: .3s;
-}
+} */
 
 .socialContainer:active {
     transform: scale(0.9);
@@ -1020,7 +1030,7 @@ textarea::placeholder {
 }
 
 .socialSvg {
-    width: 17px;
+    width: 30px;
 }
 
 .socialSvg path {
@@ -1030,6 +1040,7 @@ textarea::placeholder {
 .socialContainer:hover .socialSvg {
     animation: slide-in-top 0.3s both;
 }
+
 
 @keyframes slide-in-top {
     0% {

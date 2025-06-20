@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------- Download Button Functionality
 function download() {
     // Placeholder download action
-    alert("Download started!");
+    alert("Download unavailable at the Moment. But we're working on it!");
     // You can also trigger an actual file download like this:
     // window.location.href = 'path/to/your/file.pdf';
 }
@@ -64,3 +64,41 @@ rightButton.addEventListener('click', () => {
 leftButton.addEventListener('click', () => {
     container.classList.remove('right-open'); // Close right panel
 });
+
+//------------------------------------------------------------------------- Sent Eamil
+
+const form = document.getElementById("contact_form");
+const popup = document.getElementById("popup");
+
+form.addEventListener("submit", function (e) {
+    e.preventDefault(); // prevent default submit
+
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: "POST",
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+        .then(response => {
+            if (response.ok) {
+                showPopup("✅ Message sent successfully!");
+                form.reset(); // Clear the form
+            } else {
+                showPopup("❌ Oops! Something went wrong.");
+            }
+        })
+        .catch(error => {
+            showPopup("❌ Network error. Try again later.");
+        });
+});
+
+function showPopup(message) {
+    popup.textContent = message;
+    popup.style.display = "block";
+    setTimeout(() => {
+        popup.style.display = "none";
+    }, 4000);
+}
