@@ -11,8 +11,8 @@ public class HomePageNavigation : MonoBehaviour
   public GameObject activePage;
 
   private int sidebarHeight = 1235;
-  private int pageButtonHeight = 115;
-  private int pageButtonGap = 25;
+  private int pageButtonHeight = 120;
+  private int pageButtonGap = 30;
   private int activePageIndex = 0;
 
   [Header("Animation")]
