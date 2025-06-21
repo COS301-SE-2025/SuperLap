@@ -11,8 +11,6 @@ public class HomePageNavigation : MonoBehaviour
 
   [Header("Sidebar")]
   public GameObject activePage;
-
-  private int sidebarHeight = 1235;
   private int pageButtonHeight = 120;
   private int pageButtonGap = 30;
   private int activePageIndex = 0;
@@ -26,7 +24,6 @@ public class HomePageNavigation : MonoBehaviour
   void Awake()
   {
     NavigateToDashboard();
-    UpdateActivePagePosition();
   }
 
   void Update()
@@ -63,6 +60,7 @@ public class HomePageNavigation : MonoBehaviour
     galleryPage.SetActive(false);
     analysisPage.SetActive(false);
     activePageIndex = 0;
+    UpdateActivePagePosition();
   }
 
   public void NavigateToUpload()
@@ -71,6 +69,7 @@ public class HomePageNavigation : MonoBehaviour
     uploadPage.SetActive(true);
     galleryPage.SetActive(false);
     analysisPage.SetActive(false);
+    UpdateActivePagePosition();
   }
 
   public void NavigateToGallery()
@@ -80,6 +79,7 @@ public class HomePageNavigation : MonoBehaviour
     galleryPage.SetActive(true);
     analysisPage.SetActive(false);
     activePageIndex = 1;
+    UpdateActivePagePosition();
   }
 
   public void NavigateToAnalysis()
@@ -89,6 +89,7 @@ public class HomePageNavigation : MonoBehaviour
     galleryPage.SetActive(false);
     analysisPage.SetActive(true);
     activePageIndex = 2;
+    UpdateActivePagePosition();
   }
 
   public void NavigateToPage(int pageIndex)
@@ -139,6 +140,7 @@ public class HomePageNavigation : MonoBehaviour
         analysisComponent.DisplayTrackByIndex(trackIndex);
       }
     }
+    activePageIndex = 2;
   }
 
   // Method to navigate to analysis with track object
