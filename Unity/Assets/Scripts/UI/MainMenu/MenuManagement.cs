@@ -39,6 +39,13 @@ public class MenuManagement : MonoBehaviour
   private int currentInputIndex = 0;
 
 
+  void Start()
+  {
+    MainMenuCanvas.SetActive(true);
+    LoginCanvas.SetActive(false);
+    RegisterCanvas.SetActive(false);
+  }
+
   void Update()
   {
     if (isTransitioningToLogin)
