@@ -116,9 +116,60 @@ def clone_repository(test_result, repo_info):
             )
             
             if checkout_result.returncode != 0:
-                error_msg = f"FAILED: Cannot checkout required commit {repo_info['commit_sha'][:8]}. Error: {checkout_result.stderr.strip()}"
-                log_message(test_result, error_msg)
-                raise Exception(error_msg)
+                # If direct checkout fails, this might be a GitHub Actions merge commit
+                # We need to fetch PR refs specifically
+                log_message(test_result, f"Direct checkout failed, fetching PR refs for commit {repo_info['commit_sha'][:8]}")
+                
+                # Fetch all PR refs to get GitHub Actions merge commits
+                fetch_result = subprocess.run(
+                    ["git", "fetch", "origin", "+refs/pull/*/merge:refs/remotes/origin/pr/*/merge"],
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+                
+                if fetch_result.returncode == 0:
+                    log_message(test_result, "Successfully fetched PR merge refs")
+                    
+                    # Try checkout again after fetching PR refs
+                    checkout_retry = subprocess.run(
+                        ["git", "checkout", repo_info['commit_sha']],
+                        capture_output=True,
+                        text=True,
+                        timeout=60
+                    )
+                    
+                    if checkout_retry.returncode != 0:
+                        # Last attempt: fetch everything and try again
+                        log_message(test_result, "PR refs checkout failed, fetching all refs")
+                        
+                        fetch_all_result = subprocess.run(
+                            ["git", "fetch", "origin", "+refs/*:refs/*"],
+                            capture_output=True,
+                            text=True,
+                            timeout=180
+                        )
+                        
+                        if fetch_all_result.returncode == 0:
+                            final_checkout = subprocess.run(
+                                ["git", "checkout", repo_info['commit_sha']],
+                                capture_output=True,
+                                text=True,
+                                timeout=60
+                            )
+                            
+                            if final_checkout.returncode != 0:
+                                error_msg = f"FAILED: Cannot checkout required commit {repo_info['commit_sha'][:8]} after fetching all refs. Error: {final_checkout.stderr.strip()}"
+                                log_message(test_result, error_msg)
+                                raise Exception(error_msg)
+                        else:
+                            error_msg = f"FAILED: Cannot fetch refs to access commit {repo_info['commit_sha'][:8]}. Error: {fetch_all_result.stderr.strip()}"
+                            log_message(test_result, error_msg)
+                            raise Exception(error_msg)
+                else:
+                    error_msg = f"FAILED: Cannot fetch PR refs for commit {repo_info['commit_sha'][:8]}. Error: {fetch_result.stderr.strip()}"
+                    log_message(test_result, error_msg)
+                    raise Exception(error_msg)
             
             log_message(test_result, f"SUCCESS: Checked out exact commit {repo_info['commit_sha'][:8]}")
             
