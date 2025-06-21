@@ -2,9 +2,9 @@ name: Unity Integration Tests with Backend
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [main, dev]
   pull_request:
-    branches: [ main, dev ]
+    branches: [main, dev]
   workflow_dispatch:
 
 jobs:
@@ -20,14 +20,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
           cache-dependency-path: Backend/API/package.json
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
       - name: Install jq for JSON parsing
         run: sudo apt-get update && sudo apt-get install -y jq
@@ -40,7 +40,7 @@ jobs:
           {
             "repository": "${{ github.repository }}",
             "branch": "${{ github.ref_name }}",
-            "commit_sha": "${{ github.sha }}",
+            "commit_sha": "${{ github.event.pull_request.head.sha || github.sha }}",
             "commit_message": $(echo '${{ github.event.head_commit.message }}' | jq -Rs . || echo '""'),
             "event_name": "${{ github.event_name }}",
             "pull_request": {
@@ -57,54 +57,54 @@ jobs:
           }
           EOF
           )
-          
+
           echo "Sending test request to external Unity test service..."
           echo "Payload: $PAYLOAD"
-          
+
           # Get response body separately from status code for clearer parsing
           RESPONSE_BODY=$(curl -s -X POST \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
             -d "$PAYLOAD" \
-            "${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:5000' }}/api/run-tests")
-          
+            "${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:5001' }}/api/run-tests")
+
           # Get status code separately
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
             -d "$PAYLOAD" \
-            "${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:5000' }}/api/run-tests")
-          
+            "${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:5001' }}/api/run-tests")
+
           echo "HTTP Response Code: $HTTP_CODE"
           echo "Response Body: $RESPONSE_BODY"
-          
+
           echo "response=$RESPONSE_BODY" >> $GITHUB_OUTPUT
           echo "http_code=$HTTP_CODE" >> $GITHUB_OUTPUT
-          
+
           if [ "$HTTP_CODE" != "200" ]; then
             echo "::error::Failed to trigger external Unity tests (HTTP $HTTP_CODE): $RESPONSE_BODY"
             exit 1
           fi
-          
+
           TEST_ID=$(echo "$RESPONSE_BODY" | jq -r '.testId')
           if [ -z "$TEST_ID" ] || [ "$TEST_ID" = "null" ]; then
             echo "::error::No test ID returned from service"
             exit 1
           fi
-          
+
           echo "test_id=$TEST_ID" >> $GITHUB_OUTPUT
           echo "✅ External Unity test started with ID: $TEST_ID"
 
       - name: Wait for Test Completion
         run: |
           TEST_ID=${{ steps.external-unity-test.outputs.test_id }}
-          SERVICE_URL="${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:8080' }}"
+          SERVICE_URL="${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:5001' }}"
           MAX_ATTEMPTS=60  # 10 minutes with 10s intervals
           ATTEMPT=0
-          
+
           echo "🔄 Polling test results for ID: $TEST_ID"
           echo "Service URL: $SERVICE_URL"
-          
+
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             sleep 10  # Wait 10 seconds between checks
             ATTEMPT=$((ATTEMPT + 1))
@@ -180,7 +180,7 @@ jobs:
                 ;;
             esac
           done
-          
+
           echo "⏰ Test polling timed out after $((MAX_ATTEMPTS * 10)) seconds!"
           echo "::error::Test polling timeout - Unity tests may still be running"
           exit 1
