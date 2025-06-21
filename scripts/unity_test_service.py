@@ -83,13 +83,13 @@ def clone_repository(test_result, repo_info):
         os.makedirs(workspace_path, exist_ok=True)
         test_result.workspace_path = workspace_path
         
-        # Clone the repository
+        # Clone the full repository (needed to access all commits, including PR merge commits)
         clone_cmd = [
-            "git", "clone", "--depth", "1", 
-            "--branch", repo_info['branch'],
+            "git", "clone", 
             repo_url, workspace_path
         ]
         
+        log_message(test_result, "Cloning full repository to access specific commit")
         result = subprocess.run(
             clone_cmd, 
             capture_output=True, 
@@ -100,19 +100,47 @@ def clone_repository(test_result, repo_info):
         if result.returncode != 0:
             raise Exception(f"Git clone failed: {result.stderr}")
         
-        # Checkout specific commit if different from branch head
+        # Change to repository directory
+        original_cwd = os.getcwd()
         os.chdir(workspace_path)
-        checkout_result = subprocess.run(
-            ["git", "checkout", repo_info['commit_sha']],
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
         
-        if checkout_result.returncode != 0:
-            log_message(test_result, f"Warning: Could not checkout specific commit, using branch head")
-        else:
-            log_message(test_result, f"Checked out commit: {repo_info['commit_sha'][:8]}")
+        try:
+            # STRICT: Must checkout the exact commit - this is critical for PR testing
+            log_message(test_result, f"STRICT: Checking out exact commit {repo_info['commit_sha'][:8]} (no fallbacks)")
+            
+            checkout_result = subprocess.run(
+                ["git", "checkout", repo_info['commit_sha']],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if checkout_result.returncode != 0:
+                error_msg = f"FAILED: Cannot checkout required commit {repo_info['commit_sha'][:8]}. Error: {checkout_result.stderr.strip()}"
+                log_message(test_result, error_msg)
+                raise Exception(error_msg)
+            
+            log_message(test_result, f"SUCCESS: Checked out exact commit {repo_info['commit_sha'][:8]}")
+            
+            # Verify we're on the correct commit
+            verify_result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if verify_result.returncode == 0:
+                current_commit = verify_result.stdout.strip()
+                if current_commit.startswith(repo_info['commit_sha']):
+                    log_message(test_result, f"VERIFIED: On correct commit {current_commit[:8]}")
+                else:
+                    error_msg = f"VERIFICATION FAILED: Expected {repo_info['commit_sha'][:8]} but got {current_commit[:8]}"
+                    log_message(test_result, error_msg)
+                    raise Exception(error_msg)
+            
+        finally:
+            os.chdir(original_cwd)
         
         log_message(test_result, "Repository cloned successfully")
         return True
