@@ -6,6 +6,7 @@ public class HomePageNavigation : MonoBehaviour
   [Header("Pages")]
   public GameObject dashboardPage;
   public GameObject uploadPage;
+  public GameObject galleryPage;
 
   [Header("Sidebar")]
   public GameObject activePage;
@@ -23,8 +24,7 @@ public class HomePageNavigation : MonoBehaviour
 
   void Awake()
   {
-    dashboardPage.SetActive(true);
-    uploadPage.SetActive(false);
+    NavigateToDashboard();
     activePageIndex = 0;
     UpdateActivePagePosition();
   }
@@ -60,12 +60,21 @@ public class HomePageNavigation : MonoBehaviour
   {
     dashboardPage.SetActive(true);
     uploadPage.SetActive(false);
+    galleryPage.SetActive(false);
   }
 
   public void NavigateToUpload()
   {
     dashboardPage.SetActive(false);
     uploadPage.SetActive(true);
+    galleryPage.SetActive(false);
+  }
+
+  public void NavigateToGallery()
+  {
+    dashboardPage.SetActive(false);
+    uploadPage.SetActive(false);
+    galleryPage.SetActive(true);
   }
 
   public void NavigateToPage(int pageIndex)
@@ -75,6 +84,10 @@ public class HomePageNavigation : MonoBehaviour
     if (pageIndex == 0)
     {
       NavigateToDashboard();
+    }
+    else if (pageIndex == 1)
+    {
+      NavigateToGallery();
     }
   }
 

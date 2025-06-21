@@ -18,10 +18,4 @@ public class DashboardGetInfo : MonoBehaviour
   {
     apiManager = APIManager.Instance;
   }
-
-  // Update is called once per frame
-  void Update()
-  {
-
-  }
 }
