@@ -21,6 +21,8 @@
     <!-- !-- Docker -> <img src="https://img.shields.io/badge/Docker-Containerized-blue?logo=docker&logoColor=white" alt="Docker Badge"> -->
 </p>
 
+Website at: [https://cos301-se-2025.github.io/SuperLap/](https://cos301-se-2025.github.io/SuperLap/)
+
 <h2 style="font-weight: bold; color: #E54B4B;">Project Description</h2>
 Hello! We’re Quintessential, the creators of the upcoming <span style="font-weight: bold; color: #FFA987;">SuperLap Racing Line Optimization System</span>. We’re developing a smart tool that will help superbike riders discover the fastest racing line on any track using Reinforcement Learning and Computer Vision.
 Our system will take a <span style="font-weight: bold; color: #FFA987;">top-down track image</span>, learn through trial and error, and generate a visual map of the optimal path—bringing pro-level telemetry insights to students, amateur racers, and motorsport enthusiasts.
