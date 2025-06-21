@@ -7,6 +7,7 @@ public class HomePageNavigation : MonoBehaviour
   public GameObject dashboardPage;
   public GameObject uploadPage;
   public GameObject galleryPage;
+  public GameObject analysisPage;
 
   [Header("Sidebar")]
   public GameObject activePage;
@@ -25,7 +26,6 @@ public class HomePageNavigation : MonoBehaviour
   void Awake()
   {
     NavigateToDashboard();
-    activePageIndex = 0;
     UpdateActivePagePosition();
   }
 
@@ -61,6 +61,8 @@ public class HomePageNavigation : MonoBehaviour
     dashboardPage.SetActive(true);
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
+    analysisPage.SetActive(false);
+    activePageIndex = 0;
   }
 
   public void NavigateToUpload()
@@ -68,6 +70,7 @@ public class HomePageNavigation : MonoBehaviour
     dashboardPage.SetActive(false);
     uploadPage.SetActive(true);
     galleryPage.SetActive(false);
+    analysisPage.SetActive(false);
   }
 
   public void NavigateToGallery()
@@ -75,6 +78,17 @@ public class HomePageNavigation : MonoBehaviour
     dashboardPage.SetActive(false);
     uploadPage.SetActive(false);
     galleryPage.SetActive(true);
+    analysisPage.SetActive(false);
+    activePageIndex = 1;
+  }
+
+  public void NavigateToAnalysis()
+  {
+    dashboardPage.SetActive(false);
+    uploadPage.SetActive(false);
+    galleryPage.SetActive(false);
+    analysisPage.SetActive(true);
+    activePageIndex = 2;
   }
 
   public void NavigateToPage(int pageIndex)
@@ -88,6 +102,59 @@ public class HomePageNavigation : MonoBehaviour
     else if (pageIndex == 1)
     {
       NavigateToGallery();
+    }
+    else if (pageIndex == 2)
+    {
+      NavigateToAnalysisWithTrackIndex(0);
+    }
+  }
+
+  // Method to navigate to analysis with specific track
+  public void NavigateToAnalysisWithTrack(string trackName)
+  {
+    NavigateToAnalysis();
+
+    // Get the AnalysisGetInfo component and display the specific track
+    if (analysisPage != null)
+    {
+      AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
+      if (analysisComponent != null)
+      {
+        analysisComponent.DisplayTrackByName(trackName);
+      }
+    }
+  }
+
+  // Method to navigate to analysis with track by index
+  public void NavigateToAnalysisWithTrackIndex(int trackIndex)
+  {
+    NavigateToAnalysis();
+
+    // Get the AnalysisGetInfo component and display the specific track
+    if (analysisPage != null)
+    {
+      AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
+      if (analysisComponent != null)
+      {
+        analysisComponent.DisplayTrackByIndex(trackIndex);
+      }
+    }
+  }
+
+  // Method to navigate to analysis with track object
+  public void NavigateToAnalysisWithTrack(APIManager.Track track)
+  {
+    NavigateToAnalysis();
+
+    // Get the AnalysisGetInfo component and display the specific track
+    if (analysisPage != null)
+    {
+      AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
+      if (analysisComponent != null)
+      {
+        // We'll need to add this method to AnalysisGetInfo
+        analysisComponent.DisplaySpecificTrack(track);
+      }
     }
   }
 

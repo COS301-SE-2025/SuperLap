@@ -16,6 +16,7 @@ public class GalleryGetInfo : MonoBehaviour
   [Header("Panel Content References")]
   public TextMeshProUGUI trackNameText;
   public Image trackImage;
+  public Button selectTrackButton;
 
   private APIManager apiManager;
   private List<GameObject> instantiatedPanels = new List<GameObject>();
@@ -119,7 +120,31 @@ public class GalleryGetInfo : MonoBehaviour
     {
       LoadTrackImage(track.name, image);
     }
+
+    // Configure button click to navigate to analysis with this track
+    if (button != null)
+    {
+      button.onClick.RemoveAllListeners();
+      button.onClick.AddListener(() => OnTrackSelected(track));
+    }
+
     panel.name = $"Track_{track.name}";
+  }
+
+  private void OnTrackSelected(APIManager.Track track)
+  {
+    Debug.Log($"Track selected: {track.name}");
+
+    // Find the HomePageNavigation component and navigate to analysis
+    HomePageNavigation navigation = FindObjectOfType<HomePageNavigation>();
+    if (navigation != null)
+    {
+      navigation.NavigateToAnalysisWithTrack(track.name);
+    }
+    else
+    {
+      Debug.LogError("HomePageNavigation component not found!");
+    }
   }
 
   private void LoadTrackImage(string trackName, Image targetImage)
