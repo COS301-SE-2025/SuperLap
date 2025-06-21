@@ -13,10 +13,13 @@ public class AnalysisGetInfo : MonoBehaviour
   public TMP_Text trackCityText;
   public TMP_Text trackCountryText;
 
+  [Header("Track Data")]
+  public GameObject trackDataPanel;
+
   public Image trackImage;
 
   private APIManager apiManager;
-  private int trackIndex = 0; // Which track to display (0 = first track)
+  private int trackIndex = 0;
 
   public void Awake()
   {
@@ -45,15 +48,12 @@ public class AnalysisGetInfo : MonoBehaviour
     }
 
     Debug.Log($"Successfully loaded {tracks.Count} tracks");
-
-    // Display the first track (or specific track based on trackIndex)
     if (trackIndex < tracks.Count)
     {
       DisplayTrackInfo(tracks[trackIndex]);
     }
     else
     {
-      // If trackIndex is out of range, display the first track
       DisplayTrackInfo(tracks[0]);
     }
   }
@@ -80,7 +80,6 @@ public class AnalysisGetInfo : MonoBehaviour
     {
       if (!string.IsNullOrEmpty(track.location))
       {
-        // Parse latitude and longitude from location string
         string[] coordinates = track.location.Split(',');
         if (coordinates.Length >= 2)
         {
@@ -91,12 +90,12 @@ public class AnalysisGetInfo : MonoBehaviour
           }
           else
           {
-            trackLocationText.text = track.location; // Show raw location if parsing fails
+            trackLocationText.text = track.location;
           }
         }
         else
         {
-          trackLocationText.text = track.location; // Show raw location if format is unexpected
+          trackLocationText.text = track.location;
         }
       }
       else
@@ -150,8 +149,6 @@ public class AnalysisGetInfo : MonoBehaviour
       }
     });
   }
-
-  // Method to display a specific track object directly
   public void DisplaySpecificTrack(APIManager.Track track)
   {
     if (track != null)
@@ -167,7 +164,6 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private void DisplayErrorMessage(string errorMsg)
   {
-    // Display error in the track name field as fallback
     if (trackNameText != null)
       trackNameText.text = errorMsg;
 
@@ -178,7 +174,6 @@ public class AnalysisGetInfo : MonoBehaviour
     if (trackCountryText != null) trackCountryText.text = "";
   }
 
-  // Public method to refresh the displayed track
   public void RefreshTrackInfo()
   {
     apiManager.GetAllTracks(OnTracksLoaded);

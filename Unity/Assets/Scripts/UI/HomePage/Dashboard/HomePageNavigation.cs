@@ -110,12 +110,10 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-  // Method to navigate to analysis with specific track
   public void NavigateToAnalysisWithTrack(string trackName)
   {
     NavigateToAnalysis();
 
-    // Get the AnalysisGetInfo component and display the specific track
     if (analysisPage != null)
     {
       AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
@@ -126,12 +124,10 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-  // Method to navigate to analysis with track by index
   public void NavigateToAnalysisWithTrackIndex(int trackIndex)
   {
     NavigateToAnalysis();
 
-    // Get the AnalysisGetInfo component and display the specific track
     if (analysisPage != null)
     {
       AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
@@ -143,18 +139,15 @@ public class HomePageNavigation : MonoBehaviour
     activePageIndex = 2;
   }
 
-  // Method to navigate to analysis with track object
   public void NavigateToAnalysisWithTrack(APIManager.Track track)
   {
     NavigateToAnalysis();
 
-    // Get the AnalysisGetInfo component and display the specific track
     if (analysisPage != null)
     {
       AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
       if (analysisComponent != null)
       {
-        // We'll need to add this method to AnalysisGetInfo
         analysisComponent.DisplaySpecificTrack(track);
       }
     }
@@ -167,15 +160,12 @@ public class HomePageNavigation : MonoBehaviour
       RectTransform activePageRect = activePage.GetComponent<RectTransform>();
       if (activePageRect != null)
       {
-        // Set anchors to top-left (1,1) so offsets work from the top
         activePageRect.anchorMin = new Vector2(0, 1);
         activePageRect.anchorMax = new Vector2(1, 1);
 
-        // Calculate target positions
         targetTopPosition = -(activePageIndex * (pageButtonHeight + pageButtonGap));
         targetBottomPosition = targetTopPosition - pageButtonHeight;
 
-        // Start the transition
         isTransitioning = true;
       }
     }

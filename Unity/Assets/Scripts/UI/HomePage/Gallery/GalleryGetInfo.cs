@@ -26,7 +26,6 @@ public class GalleryGetInfo : MonoBehaviour
   {
     apiManager = APIManager.Instance;
 
-    // Hide the default panel initially
     if (defaultPanel != null)
     {
       defaultPanel.SetActive(false);
@@ -35,7 +34,6 @@ public class GalleryGetInfo : MonoBehaviour
 
   private void Start()
   {
-    // Only load tracks when the GameObject is active
     LoadAllTracks();
   }
 
@@ -100,11 +98,9 @@ public class GalleryGetInfo : MonoBehaviour
 
   private void ConfigureTrackPanel(GameObject panel, APIManager.Track track)
   {
-    // Look for content panel first, then find components inside it
     Transform contentPanel = panel.transform.Find("Content");
     if (contentPanel == null)
     {
-      // Fallback: search directly in the panel if no Content found
       contentPanel = panel.transform;
     }
 
@@ -121,7 +117,6 @@ public class GalleryGetInfo : MonoBehaviour
       LoadTrackImage(track.name, image);
     }
 
-    // Configure button click to navigate to analysis with this track
     if (button != null)
     {
       button.onClick.RemoveAllListeners();
@@ -135,8 +130,7 @@ public class GalleryGetInfo : MonoBehaviour
   {
     Debug.Log($"Track selected: {track.name}");
 
-    // Find the HomePageNavigation component and navigate to analysis
-    HomePageNavigation navigation = FindObjectOfType<HomePageNavigation>();
+    HomePageNavigation navigation = FindAnyObjectByType<HomePageNavigation>();
     if (navigation != null)
     {
       navigation.NavigateToAnalysisWithTrack(track.name);
@@ -153,7 +147,6 @@ public class GalleryGetInfo : MonoBehaviour
     {
       if (success && texture != null)
       {
-        // Create sprite from texture
         Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f);
         targetImage.sprite = sprite;
       }
