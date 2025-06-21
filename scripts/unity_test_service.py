@@ -117,8 +117,19 @@ def clone_repository(test_result, repo_info):
             
             if checkout_result.returncode != 0:
                 # If direct checkout fails, this might be a GitHub Actions merge commit
-                # We need to fetch PR refs specifically
-                log_message(test_result, f"Direct checkout failed, fetching PR refs for commit {repo_info['commit_sha'][:8]}")
+                # Detach HEAD first to avoid fetch conflicts
+                log_message(test_result, f"Direct checkout failed, detaching HEAD and fetching PR refs for commit {repo_info['commit_sha'][:8]}")
+                
+                # Detach HEAD to avoid "refusing to fetch into branch" error
+                detach_result = subprocess.run(
+                    ["git", "checkout", "--detach", "HEAD"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                if detach_result.returncode != 0:
+                    log_message(test_result, f"Warning: Could not detach HEAD: {detach_result.stderr}")
                 
                 # Fetch all PR refs to get GitHub Actions merge commits
                 fetch_result = subprocess.run(
@@ -140,17 +151,17 @@ def clone_repository(test_result, repo_info):
                     )
                     
                     if checkout_retry.returncode != 0:
-                        # Last attempt: fetch everything and try again
-                        log_message(test_result, "PR refs checkout failed, fetching all refs")
+                        # Final attempt: fetch all pull request refs
+                        log_message(test_result, "PR merge refs checkout failed, fetching all PR refs")
                         
-                        fetch_all_result = subprocess.run(
-                            ["git", "fetch", "origin", "+refs/*:refs/*"],
+                        fetch_all_prs = subprocess.run(
+                            ["git", "fetch", "origin", "+refs/pull/*:refs/remotes/origin/pull/*"],
                             capture_output=True,
                             text=True,
                             timeout=180
                         )
                         
-                        if fetch_all_result.returncode == 0:
+                        if fetch_all_prs.returncode == 0:
                             final_checkout = subprocess.run(
                                 ["git", "checkout", repo_info['commit_sha']],
                                 capture_output=True,
@@ -159,15 +170,15 @@ def clone_repository(test_result, repo_info):
                             )
                             
                             if final_checkout.returncode != 0:
-                                error_msg = f"FAILED: Cannot checkout required commit {repo_info['commit_sha'][:8]} after fetching all refs. Error: {final_checkout.stderr.strip()}"
+                                error_msg = f"FAILED: Cannot checkout required commit {repo_info['commit_sha'][:8]} after all fetch attempts. Error: {final_checkout.stderr.strip()}"
                                 log_message(test_result, error_msg)
                                 raise Exception(error_msg)
                         else:
-                            error_msg = f"FAILED: Cannot fetch refs to access commit {repo_info['commit_sha'][:8]}. Error: {fetch_all_result.stderr.strip()}"
+                            error_msg = f"FAILED: Cannot fetch PR refs for commit {repo_info['commit_sha'][:8]}. Error: {fetch_all_prs.stderr.strip()}"
                             log_message(test_result, error_msg)
                             raise Exception(error_msg)
                 else:
-                    error_msg = f"FAILED: Cannot fetch PR refs for commit {repo_info['commit_sha'][:8]}. Error: {fetch_result.stderr.strip()}"
+                    error_msg = f"FAILED: Cannot fetch PR merge refs for commit {repo_info['commit_sha'][:8]}. Error: {fetch_result.stderr.strip()}"
                     log_message(test_result, error_msg)
                     raise Exception(error_msg)
             
