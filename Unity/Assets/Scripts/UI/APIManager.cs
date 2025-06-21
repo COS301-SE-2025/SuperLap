@@ -24,7 +24,7 @@ public class APIManager : MonoBehaviour
 {
     [Header("API Configuration")]
     public string baseURL = "http://localhost:3000";
-    
+
     private static APIManager _instance;
     public static APIManager Instance
     {
@@ -60,6 +60,7 @@ public class APIManager : MonoBehaviour
     // Register a new user
     public void RegisterUser(string username, string email, string password, System.Action<bool, string> callback)
     {
+        Debug.Log($"Registering user: {username}, Email: {email} with password: {password}");
         StartCoroutine(RegisterUserCoroutine(username, email, password, callback));
     }
 
@@ -100,6 +101,7 @@ public class APIManager : MonoBehaviour
                 {
                     errorMessage = request.error;
                 }
+                Debug.LogWarning("Registration error: " + errorMessage);
                 callback?.Invoke(false, errorMessage);
             }
         }
@@ -108,6 +110,7 @@ public class APIManager : MonoBehaviour
     // Login user (check if user exists)
     public void LoginUser(string username, string password, System.Action<bool, string, User> callback)
     {
+        Debug.Log($"Logging in user: {username} with password: {password}");
         StartCoroutine(LoginUserCoroutine(username, password, callback));
     }
 
@@ -116,7 +119,7 @@ public class APIManager : MonoBehaviour
         string loginUrl = $"{baseURL}/users/login";
 
         // Construct the login payload
-         User Login = new User
+        User Login = new User
         {
             username = username,
             password = password
@@ -188,7 +191,7 @@ public class APIManager : MonoBehaviour
                     // Unity's JsonUtility doesn't handle arrays directly, so we need to wrap it
                     string wrappedJson = "{\"users\":" + jsonResponse + "}";
                     UserListWrapper wrapper = JsonUtility.FromJson<UserListWrapper>(wrappedJson);
-                    
+
                     Debug.Log("Retrieved " + wrapper.users.Count + " users");
                     callback?.Invoke(true, "Users retrieved successfully", wrapper.users);
                 }
@@ -269,4 +272,4 @@ public class APIManager : MonoBehaviour
     {
         StartCoroutine(GetAllTracksCoroutine(callback));
     }
-} 
+}
