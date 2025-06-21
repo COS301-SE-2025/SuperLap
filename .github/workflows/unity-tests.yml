@@ -10,7 +10,7 @@ on:
 jobs:
   unity-tests:
     name: Unity Tests with Backend Integration
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 20
 
     steps:
