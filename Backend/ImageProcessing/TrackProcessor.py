@@ -683,6 +683,7 @@ class TrackProcessor:
             new_y = interp_y(adaptive_samples)
             
             norm_contour = np.column_stack([new_x, new_y]).astype(np.float32)
+            norm_contour = cv.approxPolyDP(norm_contour, epsilon=2.0, closed=True)
             
             final_curvatures = interp_curvature(adaptive_samples)
             high_curvature_points = np.sum(final_curvatures > np.mean(final_curvatures))
