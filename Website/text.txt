@@ -89,6 +89,7 @@
         </section>
 
         <!-- About Section -->
+        <!-- <section class="about-background layout-full" id="about"> -->
         <div class="box-container" id="about">
             <div class="box1-content content">
                 <h1>About SuperLap</h1>
@@ -120,28 +121,24 @@
                     prior data
                     required.
                 </p>
-                <div class="person">
-                    <div class="person-header">
-                        <h2></h2>
-                        <div class="so-card">
-                            <a href="#" class="socialContainer containerOne" title="GitHub Repository">
-                                <svg class="socialSvg gitHubSvg" viewBox="0 0 30 30">
-                                    <path
-                                        d="M15,3C8.373,3,3,8.373,3,15c0,5.623,3.872,10.328,9.092,11.63C12.036,26.468,12,26.28,12,26.047v-2.051 c-0.487,0-1.303,0-1.508,0c-0.821,0-1.551-0.353-1.905-1.009c-0.393-0.729-0.461-1.844-1.435-2.526 c-0.289-0.227-0.069-0.486,0.264-0.451c0.615,0.174,1.125,0.596,1.605,1.222c0.478,0.627,0.703,0.769,1.596,0.769 c0.433,0,1.081-0.025,1.691-0.121c0.328-0.833,0.895-1.6,1.588-1.962c-3.996-0.411-5.903-2.399-5.903-5.098 c0-1.162,0.495-2.286,1.336-3.233C9.053,10.647,8.706,8.73,9.435,8c1.798,0,2.885,1.166,3.146,1.481C13.477,9.174,14.461,9,15.495,9 c1.036,0,2.024,0.174,2.922,0.483C18.675,9.17,19.763,8,21.565,8c0.732,0.731,0.381,2.656,0.102,3.594 c0.836,0.945,1.328,2.066,1.328,3.226c0,2.697-1.904,4.684-5.894,5.097C18.199,20.49,19,22.1,19,23.313v2.734 c0,0.104-0.023,0.179-0.035,0.268C23.641,24.676,27,20.236,27,15C27,8.373,21.627,3,15,3z">
-                                    </path>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <a href="#" class="socialContainer containerOne" title="GitHub Repository">
+                    <svg class="socialSvg gitHubSvg" viewBox="0 0 30 30">
+                        <path
+                            d="M15,3C8.373,3,3,8.373,3,15c0,5.623,3.872,10.328,9.092,11.63C12.036,26.468,12,26.28,12,26.047v-2.051 c-0.487,0-1.303,0-1.508,0c-0.821,0-1.551-0.353-1.905-1.009c-0.393-0.729-0.461-1.844-1.435-2.526 c-0.289-0.227-0.069-0.486,0.264-0.451c0.615,0.174,1.125,0.596,1.605,1.222c0.478,0.627,0.703,0.769,1.596,0.769 c0.433,0,1.081-0.025,1.691-0.121c0.328-0.833,0.895-1.6,1.588-1.962c-3.996-0.411-5.903-2.399-5.903-5.098 c0-1.162,0.495-2.286,1.336-3.233C9.053,10.647,8.706,8.73,9.435,8c1.798,0,2.885,1.166,3.146,1.481C13.477,9.174,14.461,9,15.495,9 c1.036,0,2.024,0.174,2.922,0.483C18.675,9.17,19.763,8,21.565,8c0.732,0.731,0.381,2.656,0.102,3.594 c0.836,0.945,1.328,2.066,1.328,3.226c0,2.697-1.904,4.684-5.894,5.097C18.199,20.49,19,22.1,19,23.313v2.734 c0,0.104-0.023,0.179-0.035,0.268C23.641,24.676,27,20.236,27,15C27,8.373,21.627,3,15,3z">
+                        </path>
+                    </svg>
+                </a>
             </div>
             <div class="box1-side">
                 <button class="right-button">⟶</button>
             </div>
+            <div class="box2-side">
+                <button class="left-button">⟵</button>
+            </div>
 
-            <!-- First intermediate slide -->
-            <div class="box-middle-content content middle-1">
+            <div class="box2-content content">
                 <h1>About Quintessential</h1>
+
                 <div class="person">
                     <div class="person-header">
                         <h2>Amber Ann Werner</h2>
@@ -178,28 +175,9 @@
                     </a> -->
                         </div>
                     </div>
-                    <p>As a third-year Computer Science student, I’ve developed a strong foundation in data handling,
-                        software engineering, and cybersecurity. My academic journey and hands-on experience have
-                        allowed me to build confidence in working with technologies like C++, Python, Git, Postman,
-                        Express, and Node.js. I'm particularly drawn to understanding how systems work under the hood
-                        and enjoy exploring ways to use code more effectively and meaningfully. One of the highlights of
-                        my studies so far was working on a group project where we built a basic city builder game. It
-                        was a rewarding experience that pushed us to think creatively, collaborate effectively, and
-                        apply what we’d learned in a practical setting. I take pride in writing clean, readable code and
-                        have a knack for debugging and testing— skills I believe are just as critical as development
-                        itself. I’m always looking for opportunities that challenge me and help me grow, and this
-                        project genuinely excites me. It aligns perfectly with my interests and offers a chance to dive
-                        deeper into areas I'm passionate about.</p>
+                    <p>Some Text</p>
                 </div>
-            </div>
-            <div class="box-middle-side middle-1-side">
-                <button class="middle-left-button middle-1-left">⟵</button>
-                <button class="middle-right-button middle-1-right">⟶</button>
-            </div>
 
-            <!-- Second intermediate slide -->
-            <div class="box-middle-content content middle-2">
-                <h1>About Quintessential</h1>
                 <div class="person">
                     <div class="person-header">
                         <h2>Milan Kruger</h2>
@@ -236,28 +214,9 @@
                     </a> -->
                         </div>
                     </div>
-                    <p>I’m a final-year Computer Science student with a strong foundation in C++ and Java, with a
-                        particular preference for C++ due to its performance and versatility. Over the years, I’ve
-                        explored Unity, Unreal Engine, and Blender through self-taught projects, where I developed a
-                        deep appreciation for interactive, visual experiences and how code brings them to life. I’m
-                        especially fascinated by machine learning—watching systems adapt and evolve unique solutions
-                        feels like witnessing intelligence emerge. While I enjoy frontend and UI development for its
-                        visual creativity, I’m excited to deepen my understanding of AI and ML in this project. I've
-                        built small game AIs before and I’m eager to now contribute to a larger, more robust system.
-                        This project offers the perfect opportunity to collaborate in a team setting and build an
-                        industry-level AI solution that I'm proud of. I’m particularly drawn to the challenge of
-                        combining smart design with efficient problem-solving, and I look forward to helping bring our
-                        racing intelligence system to life.</p>
+                    <p>Some Text</p>
                 </div>
-            </div>
-            <div class="box-middle-side middle-2-side">
-                <button class="middle-left-button middle-2-left">⟵</button>
-                <button class="middle-right-button middle-2-right">⟶</button>
-            </div>
 
-            <!-- Third intermediate slide -->
-            <div class="box-middle-content content middle-3">
-                <h1>About Quintessential</h1>
                 <div class="person">
                     <div class="person-header">
                         <h2>Qwinton Knocklein</h2>
@@ -294,28 +253,9 @@
                     </a> -->
                         </div>
                     </div>
-                    <p>I’m a final-year BSc Information and Knowledge Systems student with strong skills in full-stack
-                        and backend development, and a passion for AI-driven solutions. I’ve contributed to a custom
-                        database management system and built various apps, games, and websites, blending technical and
-                        creative development. I'm most proficient in Java and C++, with additional experience in Python,
-                        React, Angular, .NET, Postman, Git, and Unity. I’m eager to expand my knowledge in areas like
-                        PyTorch and OpenCV.
-                        Though I don’t have formal industry experience, my role at the university library has honed my
-                        communication and teamwork skills. I’m especially excited to work on backend systems and AI
-                        integration for the SuperLap Racing Line Optimization System, focusing on reinforcement learning
-                        and track analysis. As a racing and F1 enthusiast, this project combines my interests and
-                        technical goals—particularly in machine learning, image processing, and cloud development—making
-                        it a dream opportunity.</p>
+                    <p>Some Text</p>
                 </div>
-            </div>
-            <div class="box-middle-side middle-3-side">
-                <button class="middle-left-button middle-3-left">⟵</button>
-                <button class="middle-right-button middle-3-right">⟶</button>
-            </div>
 
-            <!-- Fourth intermediate slide -->
-            <div class="box-middle-content content middle-4">
-                <h1>About Quintessential</h1>
                 <div class="person">
                     <div class="person-header">
                         <h2>Sean van der Merwe</h2>
@@ -352,27 +292,9 @@
                     </a> -->
                         </div>
                     </div>
-                    <p>I am a final-year BSc Computer Science student. I’m a curious programmer, always looking for my
-                        next programming project to learn new things. I have experience with C++, Java, Python, Nodejs.
-                        I’m Excited to delve into AI and learn more about deep learning and image processing. I learn
-                        quickly, and excel at doing research on projects, and how to implement features efficiently. I
-                        developed the database system and business management software for Simulator Cave. Thus, I have
-                        experience with working with clients and delivering a quality product based off their
-                        expectations. On the SuperLap Racing Line Optimization System, I am excited to work with proper
-                        machine learning algorithms, and use image processing to gather data. I’m excited to see the
-                        improvements to the model and learn from each issue that might arise.</p>
+                    <p>Some Text</p>
                 </div>
-            </div>
-            <div class="box-middle-side middle-4-side">
-                <button class="middle-left-button middle-4-left">⟵</button>
-                <button class="middle-right-button middle-4-right">⟶</button>
-            </div>
 
-            <div class="box2-side">
-                <button class="left-button">⟵</button>
-            </div>
-            <div class="box2-content content">
-                <h1>About Quintessential</h1>
                 <div class="person">
                     <div class="person-header">
                         <h2>Simon van der Merwe</h2>
@@ -408,21 +330,11 @@
                     </a> -->
                         </div>
                     </div>
-                    <p>I am a third-year Computer and Data Science student with academic experience in various
-                        programming languages, including C++, Java, JavaScript/TypeScript, and Python. In my personal
-                        time, I find myself working on projects mostly using Rust, Go, and Dart, whether that be for
-                        game development using bevy, backend work or frontend development with Flutter. Based on this
-                        background, I believe my skills in web development (JavaScript/TypeScript), Python, and my prior
-                        C# game development experience in particular are relevant to this project. During university
-                        recesses, I participate in voluntary vacation work at BBD Software. This role has provided
-                        invaluable experience in a fast-paced environment, significantly improving my communication and
-                        collaboration skills within both large and small teams. Furthermore, it has given me direct
-                        exposure to client interactions. I consider myself a fast learner and an effective
-                        problem-solver, ready for all challenges, and look forward to working on this project.</p>
+                    <p>Some Text</p>
                 </div>
             </div>
         </div>
-        </div>
+        <!-- </section> -->
 
         <!-- FAQ Section -->
         <!-- <section class="about-FAQ layout-full" id="faq"> -->

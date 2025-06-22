@@ -102,3 +102,62 @@ function showPopup(message) {
         popup.style.display = "none";
     }, 4000);
 }
+
+// Right button (starts the slider)
+document.querySelector('.right-button').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('middle-1-open');
+    document.querySelector('.box-container').classList.remove('middle-2-open', 'middle-3-open', 'middle-4-open', 'right-open');
+});
+
+// Slide 1: Back to home (removes all)
+document.querySelector('.middle-1-left').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.remove('middle-1-open', 'middle-2-open', 'middle-3-open', 'middle-4-open', 'right-open');
+});
+
+// Slide 1: Forward to Slide 2
+document.querySelector('.middle-1-right').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('middle-2-open');
+    document.querySelector('.box-container').classList.remove('middle-1-open', 'middle-3-open', 'middle-4-open', 'right-open');
+});
+
+// Slide 2: Back to Slide 1
+document.querySelector('.middle-2-left').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('middle-1-open');
+    document.querySelector('.box-container').classList.remove('middle-2-open', 'middle-3-open', 'middle-4-open', 'right-open');
+});
+
+// Slide 2: Forward to Slide 3
+document.querySelector('.middle-2-right').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('middle-3-open');
+    document.querySelector('.box-container').classList.remove('middle-1-open', 'middle-2-open', 'middle-4-open', 'right-open');
+});
+
+// Slide 3: Back to Slide 2
+document.querySelector('.middle-3-left').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('middle-2-open');
+    document.querySelector('.box-container').classList.remove('middle-1-open', 'middle-3-open', 'middle-4-open', 'right-open');
+});
+
+// Slide 3: Forward to Slide 4 (FIXED - was going to right-open)
+document.querySelector('.middle-3-right').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('middle-4-open');
+    document.querySelector('.box-container').classList.remove('middle-1-open', 'middle-2-open', 'middle-3-open', 'right-open');
+});
+
+// Slide 4: Back to Slide 3
+document.querySelector('.middle-4-left').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('middle-3-open');
+    document.querySelector('.box-container').classList.remove('middle-1-open', 'middle-2-open', 'middle-4-open', 'right-open');
+});
+
+// Slide 4: Forward to right-open (final slide)
+document.querySelector('.middle-4-right').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('right-open');
+    document.querySelector('.box-container').classList.remove('middle-1-open', 'middle-2-open', 'middle-3-open', 'middle-4-open');
+});
+
+// Left button (from final slide, goes back to Slide 4)
+document.querySelector('.left-button').addEventListener('click', function () {
+    document.querySelector('.box-container').classList.add('middle-4-open');
+    document.querySelector('.box-container').classList.remove('middle-1-open', 'middle-2-open', 'middle-3-open', 'right-open');
+});

@@ -2,7 +2,7 @@
     <img src="docs/images/temp.png" alt="Logo" width="100"/>
 </p>
 <p align="center">
-    <img src="docs/images/newbanner.png" alt="Banner"/>
+    <img src="docs/images/banner1.png" alt="Banner"/>
 </p>
 
 <p align="center">
@@ -10,15 +10,26 @@
     <!-- Code Coverage (Codecov) --> <a href="https://codecov.io/gh/COS301-SE-2025/SuperLap"> <img src="https://codecov.io/gh/COS301-SE-2025/SuperLap/branch/main/graph/badge.svg" alt="Code Coverage"> </a>
     <!-- Requirements (shields.io custom) --> <img src="https://img.shields.io/badge/requirements-met-brightgreen" alt="Requirements Status">
     <!-- GitHub Issues --> <a href="https://github.com/COS301-SE-2025/SuperLap/issues"> <img src="https://img.shields.io/github/issues/COS301-SE-2025/SuperLap?label=issues" alt="GitHub Issues"> </a>
-    <!-- Uptime Robot (customize as needed) --> <a href="https://status.uptimerobot.com/YOUR_STATUS_PAGE_ID"> <img src="https://img.shields.io/uptimerobot/status/m781234567-abc123456?label=Uptime" alt="Uptime Robot Status"> </a>
+    <!-- Uptime Robot (customize as needed) -->
+    <a href="https://stats.uptimerobot.com/XD5OBuBYwQ/800785604">
+    <img src="https://img.shields.io/uptimerobot/status/m800785604-6f8cc7d9250b3dd1881a4abc?label=Uptime" alt="Uptime Robot Status">
+    </a>
+
 </p>
+<!-- 
+[![Website Uptime](https://img.shields.io/uptimerobot/status/m800785604-6f8cc7d9250b3dd1881a4abc?style=for-the-badge&label=SuperLap%20Status)](https://stats.uptimerobot.com/XD5OBuBYwQ/800785604) -->
+
 <p align="center">
     <!-- Python --> <img src="https://img.shields.io/badge/Python-3.x-blue?logo=python&logoColor=white" alt="Python Badge">
+    <!-- Shell --> <img src="https://img.shields.io/badge/Shell-Scripting-yellow?logo=gnu-bash&logoColor=white" alt="Shell Badge">
     <!-- Unity --> <img src="https://img.shields.io/badge/Unity-Game%20Engine-black?logo=unity&logoColor=white" alt="Unity Badge">
     <!-- Node.js --> <img src="https://img.shields.io/badge/Node.js-Backend-green?logo=node.js&logoColor=white" alt="Node.js Badge">
     <!-- Express.js --> <img src="https://img.shields.io/badge/Express.js-Web%20Server-black?logo=express&logoColor=white" alt="Express Badge">
     <!-- Git --> <img src="https://img.shields.io/badge/Git-Version%20Control-orange?logo=git&logoColor=white" alt="Git Badge">
-    <!-- !-- Docker -> <img src="https://img.shields.io/badge/Docker-Containerized-blue?logo=docker&logoColor=white" alt="Docker Badge"> -->
+    <!-- Docker --> <img src="https://img.shields.io/badge/Docker-Containerized-blue?logo=docker&logoColor=white" alt="Docker Badge">
+    <!--!C# --> <img src="https://img.shields.io/badge/C%23-Programming%20Language-purple?logo=c-sharp&logoColor=white" alt="C# Badge">
+    <!-- ShaderLab--> <img src="https://img.shields.io/badge/ShaderLab-Shader%20Language-blue?logo=shaderlab&logoColor=white" alt="ShaderLab Badge">
+    <!-- HLSL --> <img src="https://img.shields.io/badge/HLSL-High%20Level%20Shader%20Language-blue?logo=hlsl&logoColor=white" alt="HLSL Badge">
 </p>
 
 Website at: [https://cos301-se-2025.github.io/SuperLap/](https://cos301-se-2025.github.io/SuperLap/)
@@ -42,6 +53,15 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 
 🔹 [Demo 1 Video](https://youtu.be/JzFT60XwmTg)  
 🔹 [Demo 1 Presentation](https://www.canva.com/design/DAGolqiGbpo/pvPyxXwBTqHanQH77_W3Yw/edit?utm_content=DAGolqiGbpo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+
+🔹 [Demo 2 Video](lk)  
+🔹 [Demo 2 Presentation](vd)
+
+<!-- 🔹 [Demo 3 Video](lk)  
+🔹 [Demo 3 Presentation](vd)
+
+🔹 [Demo 4 Video](lk)  
+🔹 [Demo 4 Presentation](vd) -->
 
 
 <h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
