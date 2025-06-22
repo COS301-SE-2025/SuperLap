@@ -469,7 +469,18 @@ class TrackProcessor:
         inner_points.append(inner_pt)
 
         print(f"Extracted {len(inner_points)} inner and {len(outer_points)} outer boundary points.")
-        
+
+        if show_debug and self.original_image is not None:
+            debug_img = self.original_image.copy()
+            for pt in outer_points:
+                cv.circle(debug_img, pt, 1, (0, 255, 0), -1)  # green
+            for pt in inner_points:
+                cv.circle(debug_img, pt, 1, (0, 0, 255), -1)  # red
+            for pt in centerline[::min_spacing]:
+                cv.circle(debug_img, pt, 1, (255, 255, 0), -1)  # yellow
+            cv.imshow("Precise Boundary Points", debug_img)
+            cv.waitKey(1)
+
         return {
             'outer': np.array(outer_points, dtype=np.int32).reshape(-1, 1, 2),
             'inner': np.array(inner_points, dtype=np.int32).reshape(-1, 1, 2),
