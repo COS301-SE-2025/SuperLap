@@ -451,7 +451,25 @@ class TrackProcessor:
                 continue
             # Perpendicular normal vector
             nx, ny = -dy / length, dx / length
-            
+
+            # Walk outward until track ends
+        def trace_outward(x, y, nx, ny, direction):
+            for step in range(1, step_limit):
+                tx = int(round(x + direction * step * nx))
+                ty = int(round(y + direction * step * ny))
+                if not is_inside(tx, ty):
+                    return (tx, ty)
+            return (int(round(x + direction * step_limit * nx)),
+                    int(round(y + direction * step_limit * ny)))
+
+        outer_pt = trace_outward(x0, y0, nx, ny, direction=+1)
+        inner_pt = trace_outward(x0, y0, nx, ny, direction=-1)
+
+        outer_points.append(outer_pt)
+        inner_points.append(inner_pt)
+
+        print(f"Extracted {len(inner_points)} inner and {len(outer_points)} outer boundary points.")
+        
         return {
             'outer': np.array(outer_points, dtype=np.int32).reshape(-1, 1, 2),
             'inner': np.array(inner_points, dtype=np.int32).reshape(-1, 1, 2),
