@@ -505,49 +505,63 @@ class TrackProcessor:
     
     def createBoundariesImproved(self, track_mask, main_contour, show_debug=False):
         img_area = track_mask.shape[0] * track_mask.shape[1]
-        
+
         # Create a clean mask from the main contour
         mask = np.zeros(track_mask.shape, dtype=np.uint8)
         cv.fillPoly(mask, [main_contour], 255)
-        
-        # Calculate adaptive kernel sizes
-        base_kernel_size = max(8, int(np.sqrt(img_area) / 120))
-        
-        # Create outer boundary (dilated)
-        outer_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (base_kernel_size * 2, base_kernel_size * 2))
+
+        # Estimate real track width from distance transform
+        distance_map = cv.distanceTransform(mask, cv.DIST_L2, 5)
+        non_zero_distances = distance_map[distance_map > 0]
+
+        if len(non_zero_distances) == 0:
+            print("Warning: Distance transform returned no non-zero pixels.")
+            return None
+
+        avg_half_width = np.mean(non_zero_distances)
+        print(f"Estimated average track half-width: {avg_half_width:.2f} px")
+
+        # Define kernel sizes dynamically based on estimated width
+        outer_kernel_size = max(3, int(2 * avg_half_width))
+        inner_kernel_size = max(3, int(avg_half_width))
+
+        print(f"Using outer kernel: {outer_kernel_size}, inner kernel: {inner_kernel_size}")
+
+        outer_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (outer_kernel_size, outer_kernel_size))
+        inner_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (inner_kernel_size, inner_kernel_size))
+
+        # Create boundary masks by dilation/erosion
         outer_mask = cv.dilate(mask, outer_kernel, iterations=1)
-        
-        # Create inner boundary (eroded)
-        inner_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (base_kernel_size, base_kernel_size))
         inner_mask = cv.erode(mask, inner_kernel, iterations=1)
-        
+
         # Extract contours from the boundary masks
         outer_contours, _ = cv.findContours(outer_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
         inner_contours, _ = cv.findContours(inner_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-        
+
         outer_boundary = max(outer_contours, key=cv.contourArea) if outer_contours else None
         inner_boundary = max(inner_contours, key=cv.contourArea) if inner_contours else None
-        
+
         # Validate boundaries
         if outer_boundary is None or inner_boundary is None:
             print("Warning: Could not create both boundaries")
-            # Try with different kernel sizes
+
+            # Fallback: Use main contour
             if outer_boundary is None:
                 outer_boundary = main_contour
             if inner_boundary is None:
-                # Create inner boundary from original contour with smaller erosion
                 small_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
                 small_inner_mask = cv.erode(mask, small_kernel, iterations=1)
                 small_inner_contours, _ = cv.findContours(small_inner_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
                 inner_boundary = max(small_inner_contours, key=cv.contourArea) if small_inner_contours else main_contour
-        
+
         print(f"Boundaries created - Outer: {len(outer_boundary)} points, Inner: {len(inner_boundary)} points")
-        
+
         return {
             'outer': outer_boundary,
             'inner': inner_boundary,
-            'method': 'improved_morphological'
+            'method': 'improved_morphological_adaptive'
         }
+
     
     def detectBoundariesFallback(self, img, show_debug=False):
         print("Using fallback edge-based boundary detection...")
