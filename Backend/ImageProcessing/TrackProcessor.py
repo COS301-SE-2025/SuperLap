@@ -651,6 +651,10 @@ class TrackProcessor:
 
         curvatures = self.calculateCurvature(points)
 
+        if np.mean(curvatures) > 1.2 or np.max(curvatures) > 2.5:
+            print("Rejected contour: too jagged or has sharp turns")
+            return np.array([])
+
         from scipy.ndimage import gaussian_filter1d
         curvatures_smooth = gaussian_filter1d(curvatures, sigma=2)
 
