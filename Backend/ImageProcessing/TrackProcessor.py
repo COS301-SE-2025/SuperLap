@@ -424,7 +424,34 @@ class TrackProcessor:
         return self.detectBoundariesImproved(img, show_debug)
     
     def generatePreciseBoundariesFromSkeleton(self, step_limit=20, min_spacing=5, show_debug=False):
+        if self.track_mask is None or self.centerline_smoothed is None:
+            print("Missing track mask or centerline")
+            return None
 
+        mask = self.track_mask
+        h, w = mask.shape
+
+        centerline = self.centerline_smoothed
+        inner_points = []
+        outer_points = []
+
+        def is_inside(x, y):
+            return 0 <= x < w and 0 <= y < h and mask[int(y), int(x)] > 0
+
+        for i in range(1, len(centerline) - 1, min_spacing):
+            x0, y0 = centerline[i]
+            x1, y1 = centerline[i - 1]
+            x2, y2 = centerline[i + 1]
+
+            # Tangent vector
+            dx = x2 - x1
+            dy = y2 - y1
+            length = np.hypot(dx, dy)
+            if length == 0:
+                continue
+            # Perpendicular normal vector
+            nx, ny = -dy / length, dx / length
+            
         return {
             'outer': np.array(outer_points, dtype=np.int32).reshape(-1, 1, 2),
             'inner': np.array(inner_points, dtype=np.int32).reshape(-1, 1, 2),
