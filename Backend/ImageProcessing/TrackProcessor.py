@@ -451,13 +451,15 @@ class TrackProcessor:
                 solidity = area / hull_area if hull_area > 0 else 0
                 
                 # Check if contour is reasonably complex (not just a simple shape)
+                rect = cv.minAreaRect(contour)
+                width, height = rect[1]
+                if width > 0 and height > 0:
+                    aspect_ratio = max(width, height) / (min(width, height) +1e-5)
+                    if aspect_ratio < 1.3 or min(width, height) < 15:  # Elongated shape typical of tracks
+                        continue
+
                 if solidity > 0.3 and solidity < 0.95:  # Not too simple, not too complex
-                    rect = cv.minAreaRect(contour)
-                    width, height = rect[1]
-                    if width > 0 and height > 0:
-                        aspect_ratio = max(width, height) / min(width, height)
-                        if aspect_ratio > 1.3:  # Elongated shape typical of tracks
-                            valid_contours.append(contour)
+                    valid_contours.append(contour)
         
         if not valid_contours:
             print("No valid track contours found")
