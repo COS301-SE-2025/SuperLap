@@ -1,5 +1,6 @@
 from pathlib import Path
 import cv2 as cv
+from networkx import astar_path
 import numpy as np
 import matplotlib.pyplot as plt
 import json
@@ -575,12 +576,22 @@ class TrackProcessor:
         
         valid_contours = [c for c in contours if cv.contourArea(c) > min_area]
         
-        if len(valid_contours) < 1:
+        filtered = []
+        for contour in valid_contours:
+            rect = cv.minAreaRect(contour)
+            width, height = rect[1]
+            if width > 0 and height > 0:
+                aspect_ratio = max(width, height) / (min(width, height) + 1e-5)
+                if aspect_ratio < 1.3:
+                    continue
+            filtered.append(contour)
+
+        if len(filtered) < 1:
             print("No valid contours found in fallback method")
             return None
         
         # Sort by area
-        valid_contours = sorted(valid_contours, key=cv.contourArea, reverse=True)
+        valid_contours = sorted(filtered, key=cv.contourArea, reverse=True)
         
         if show_debug:
             fallback_img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
