@@ -262,7 +262,7 @@ class TrackProcessor:
         masks['hsv'] = hsv_mask
         
         # Approach 2: Adaptive threshold with preprocessing
-        blurred = cv.GaussianBlur(gray, (5, 5), 0)
+        blurred = cv.GaussianBlur(gray, (3, 3), 0)
         _, otsu_thresh = cv.threshold(blurred, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
         masks['otsu'] = otsu_thresh
         
@@ -422,6 +422,14 @@ class TrackProcessor:
     def detectBoundaries(self, img, show_debug=False):
         print("Using improved boundary detection...")
         return self.detectBoundariesImproved(img, show_debug)
+    
+    def generatePreciseBoundariesFromSkeleton(self, step_limit=20, min_spacing=5, show_debug=False):
+
+        return {
+            'outer': np.array(outer_points, dtype=np.int32).reshape(-1, 1, 2),
+            'inner': np.array(inner_points, dtype=np.int32).reshape(-1, 1, 2),
+            'method': 'centerline_tracing'
+        }
 
     def detectBoundariesImproved(self, img, show_debug=False):
         if len(img.shape) == 3:
@@ -518,9 +526,9 @@ class TrackProcessor:
             print("Warning: Distance transform returned no values.")
             return None
 
-        # Use median or 60th percentile for a more typical width
-        estimated_half_width = np.percentile(non_zero, 60)
-        print(f"Estimated track half-width (60th percentile): {estimated_half_width:.2f} px")
+        # Use median or 80th percentile for a more typical width
+        estimated_half_width = np.percentile(non_zero, 80)
+        print(f"Estimated track half-width (80th percentile): {estimated_half_width:.2f} px")
 
         # Clamp width to avoid over-expansion
         clamped_half_width = np.clip(estimated_half_width, 5, 12)
