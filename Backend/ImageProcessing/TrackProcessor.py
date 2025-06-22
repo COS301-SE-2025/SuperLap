@@ -157,6 +157,13 @@ class TrackProcessor:
         # Clean gradient mask
         kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
         gradient_mask = cv.morphologyEx(gradient_mask, cv.MORPH_CLOSE, kernel, iterations=2)
+
+        corner_response = cv.cornerHarris(gray, 2, 3, 0.04)
+        corner_response = cv.dilate(corner_response, None)
+        _, corner_mask = cv.threshold(corner_response, 0.01 * corner_response.max(), 255, cv.THRESH_BINARY)
+        corner_mask = corner_mask.astype(np.uint8)
+
+        gradient_mask = cv.bitwise_and(gradient_mask, cv.bitwise_not(corner_mask))
         
         masks['gradient_enhanced'] = gradient_mask
         
