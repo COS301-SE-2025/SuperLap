@@ -9,7 +9,7 @@ namespace RacelineOptimizer
 {
     public static class PSOInterface
     {
-        public static bool Run(string edgeDataFilePath, int numParticles = 100, int iterations = 60000)
+        public static bool Run(string edgeDataFilePath, string outPath, int numParticles = 100, int iterations = 60000)
         {
             Console.WriteLine($"\nProcessing {Path.GetFileName(edgeDataFilePath)}...");
 
@@ -75,7 +75,7 @@ namespace RacelineOptimizer
                 Directory.CreateDirectory(outputDir);
             }
 
-            string racelineFilePath = $"{outputDir}/{fileNameNoExt}.bin";
+            string racelineFilePath = $"{outputPath}/{fileNameNoExt}.bin";
             RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline);
             Console.WriteLine("Raceline optimization completed and saved to " + racelineFilePath);
 
