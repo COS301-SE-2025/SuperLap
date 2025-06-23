@@ -1,4 +1,5 @@
-using System;
+using System.Numerics;
+using System.Drawing;
 using System.IO;
 
 namespace RacelineOptimizer
@@ -35,12 +36,31 @@ namespace RacelineOptimizer
                 foreach (string filePath in binFiles)
                 {
                     PSOInterface.Run(filePath, outputPath: "Output");
+                    string fileNameNoExt = Path.GetFileNameWithoutExtension(filePath);
+                    string outputDir = $"Output/{fileNameNoExt}";
+                    string racelineFilePath = $"{outputDir}/{fileNameNoExt}.bin";
+                    DebugImage(racelineFilePath, outputDir, fileNameNoExt);
                 }
             }
             else
             {
                 PSOInterface.Run(binFiles[choice - 1], outputPath: "Output");
+                string fileNameNoExt = Path.GetFileNameWithoutExtension(binFiles[choice - 1]);
+                string outputDir = $"Output/{fileNameNoExt}";
+                string racelineFilePath = $"{outputDir}/{fileNameNoExt}.bin";
+                DebugImage(racelineFilePath, outputDir, fileNameNoExt);
             }
+            Console.WriteLine("Processing complete. Check the Output directory for results.");
+        }
+
+        static void DebugImage(string binPath, string outputDir, string fileNameNoExt)
+        {
+            RacelineVisualizer.EdgeDataVisualizer.DrawEdgesToImage(
+                binPath: binPath,
+                outputPath: $"./{outputDir}/{fileNameNoExt}.png",
+                canvasSize: new Size(1920, 1080),
+                includeRaceline: true
+            );
         }
     }
 }
