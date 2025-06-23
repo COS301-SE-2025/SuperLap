@@ -544,8 +544,20 @@
       <HintPath>Library/PackageCache/com.unity.ext.nunit@b16e6d09cd93/net40/unity-custom/nunit.framework.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>Library/PackageCache/org.nuget.system.runtime.compilerservices.unsafe@bc6406dfdf63/lib/netstandard2.0/System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Python.Runtime">
+      <HintPath>Library/PackageCache/org.nuget.pythonnet@f3888a4d4c66/lib/netstandard2.0/Python.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Ookii.Dialogs">
       <HintPath>Assets/StandaloneFileBrowser/Plugins/Ookii.Dialogs.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Scriban">
+      <HintPath>Library/PackageCache/org.nuget.scriban@81e154a8dbf4/lib/netstandard2.0/Scriban.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">

@@ -9,7 +9,6 @@
     }
   ],
   "dependencies": {
-    "org.nuget.scriban": "2.1.0",
     "com.qiaozhilei.easy-text-effects": "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git",
     "com.unity.ai.navigation": "2.0.7",
     "com.unity.collab-proxy": "2.8.2",
@@ -23,6 +22,8 @@
     "com.unity.toolchain.linux-x86_64": "2.0.10",
     "com.unity.ugui": "2.0.0",
     "com.unity.visualscripting": "1.9.6",
+    "org.nuget.pythonnet": "3.0.5",
+    "org.nuget.scriban": "2.1.0",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
