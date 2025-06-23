@@ -1,15 +1,40 @@
 using System;
+using System.IO;
 using UnityEngine;
-using Python.Runtime; 
+using Python.Runtime;
+using SystemDiagnostics = System.Diagnostics;
 
-public class PythonNet : MonoBehaviour
-{    void Start()
+public class PythonNet
+{
+    private static PythonNet _instance;
+    public static PythonNet Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new PythonNet();
+                _instance.Init();
+            }
+            return _instance;
+        }
+    }
+    void Init()
     {
         // Initialize Python.NET
         try
         {
-            // Set the Python DLL path for Fedora
-            Runtime.PythonDLL = "/usr/lib64/libpython3.13.so.1.0";
+            // Automatically detect and set the Python DLL path
+            string pythonDllPath = DetectPythonDLL();
+            if (!string.IsNullOrEmpty(pythonDllPath))
+            {
+                Runtime.PythonDLL = pythonDllPath;
+                Debug.Log($"Using Python DLL: {pythonDllPath}");
+            }
+            else
+            {
+                Debug.LogWarning("Could not automatically detect Python DLL. Using default Python.NET behavior.");
+            }
             
             PythonEngine.Initialize();
             PythonEngine.BeginAllowThreads();
@@ -19,6 +44,212 @@ public class PythonNet : MonoBehaviour
         {
             Debug.LogError($"Failed to initialize Python.NET: {e.Message}");
         }
+    }
+
+    private string DetectPythonDLL()
+    {
+        try
+        {
+            if (Application.platform == RuntimePlatform.WindowsPlayer || 
+                Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                return DetectWindowsPythonDLL();
+            }
+            else if (Application.platform == RuntimePlatform.LinuxPlayer || 
+                     Application.platform == RuntimePlatform.LinuxEditor)
+            {
+                return DetectLinuxPythonDLL();
+            }
+            else
+            {
+                Debug.LogWarning($"Unsupported platform for automatic Python DLL detection: {Application.platform}");
+                return null;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error detecting Python DLL: {e.Message}");
+            return null;
+        }
+    }
+
+    private string DetectWindowsPythonDLL()
+    {
+        // Common Python installation paths on Windows
+        string[] commonPaths = {
+            @"C:\Python3*\python3*.dll",
+            @"C:\Program Files\Python3*\python3*.dll",
+            @"C:\Program Files (x86)\Python3*\python3*.dll",
+            @"C:\Users\{0}\AppData\Local\Programs\Python\Python3*\python3*.dll"
+        };        // Try to get Python version and path using python command
+        try
+        {
+            SystemDiagnostics.ProcessStartInfo startInfo = new SystemDiagnostics.ProcessStartInfo
+            {
+                FileName = "python",
+                Arguments = "-c \"import sys; print(sys.executable); print(f'{sys.version_info.major}.{sys.version_info.minor}')\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+
+            using (SystemDiagnostics.Process process = SystemDiagnostics.Process.Start(startInfo))
+            {
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                if (process.ExitCode == 0)
+                {
+                    string[] lines = output.Trim().Split('\n');
+                    if (lines.Length >= 2)
+                    {
+                        string pythonExePath = lines[0].Trim();
+                        string version = lines[1].Trim();
+                        
+                        // Try to find the DLL in the same directory as python.exe
+                        string pythonDir = Path.GetDirectoryName(pythonExePath);
+                        string dllPath = Path.Combine(pythonDir, $"python{version.Replace(".", "")}.dll");
+                        
+                        if (File.Exists(dllPath))
+                        {
+                            return dllPath;
+                        }
+                        
+                        // Alternative naming convention
+                        dllPath = Path.Combine(pythonDir, $"python{version[0]}{version[2]}.dll");
+                        if (File.Exists(dllPath))
+                        {
+                            return dllPath;
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Could not detect Python via command line: {e.Message}");
+        }
+
+        // Fallback: search common installation directories
+        foreach (string pathPattern in commonPaths)
+        {
+            try
+            {
+                string expandedPath = pathPattern.Replace("{0}", Environment.UserName);
+                string directory = Path.GetDirectoryName(expandedPath);
+                string pattern = Path.GetFileName(expandedPath);
+                
+                if (Directory.Exists(directory))
+                {
+                    string[] files = Directory.GetFiles(directory, pattern, SearchOption.AllDirectories);
+                    if (files.Length > 0)
+                    {
+                        return files[0]; // Return the first match
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Error searching path {pathPattern}: {e.Message}");
+            }
+        }
+
+        return null;
+    }
+
+    private string DetectLinuxPythonDLL()
+    {        // Try to get Python version and library path using python command
+        try
+        {
+            SystemDiagnostics.ProcessStartInfo startInfo = new SystemDiagnostics.ProcessStartInfo
+            {
+                FileName = "python3",
+                Arguments = "-c \"import sys, sysconfig; print(f'{sys.version_info.major}.{sys.version_info.minor}'); print(sysconfig.get_config_var('LIBDIR'))\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+
+            using (SystemDiagnostics.Process process = SystemDiagnostics.Process.Start(startInfo))
+            {
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                if (process.ExitCode == 0)
+                {
+                    string[] lines = output.Trim().Split('\n');
+                    if (lines.Length >= 2)
+                    {
+                        string version = lines[0].Trim();
+                        string libDir = lines[1].Trim();
+                        
+                        // Common naming patterns for Python shared libraries
+                        string[] patterns = {
+                            $"libpython{version}.so.1.0",
+                            $"libpython{version}.so",
+                            $"libpython{version}m.so.1.0",
+                            $"libpython{version}m.so"
+                        };
+                        
+                        foreach (string pattern in patterns)
+                        {
+                            string dllPath = Path.Combine(libDir, pattern);
+                            if (File.Exists(dllPath))
+                            {
+                                return dllPath;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Could not detect Python via python3 command: {e.Message}");
+        }
+
+        // Fallback: search common library directories
+        string[] commonLibDirs = {
+            "/usr/lib64",
+            "/usr/lib/x86_64-linux-gnu",
+            "/usr/lib",
+            "/usr/local/lib",
+            "/lib64",
+            "/lib"
+        };
+
+        foreach (string libDir in commonLibDirs)
+        {
+            try
+            {
+                if (Directory.Exists(libDir))
+                {
+                    // Search for Python shared libraries
+                    string[] files = Directory.GetFiles(libDir, "libpython*.so*", SearchOption.TopDirectoryOnly);
+                    
+                    // Prefer versioned libraries (e.g., libpython3.13.so.1.0)
+                    foreach (string file in files)
+                    {
+                        if (file.Contains(".so.") && (file.Contains("3.") || file.Contains("python3")))
+                        {
+                            return file;
+                        }
+                    }
+                    
+                    // Fallback to any Python library
+                    if (files.Length > 0)
+                    {
+                        return files[0];
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Error searching directory {libDir}: {e.Message}");
+            }
+        }
+
+        return null;
     }
 
 }
