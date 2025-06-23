@@ -36,6 +36,14 @@ This is the PSO algoritm for raceline optimization.
 
     - Select which file from the list you'd like to run the optimizer on.
 
+5. **Using the interface class**:
+    - Call the PSOInterface class to use this for integration
+    - Run(string edgeDataFilePath, string outPath, int numParticles = 100, int iterations = 60000)
+        - edgeDataFilePath: The path of the .bin file created by the image processing python script.
+        - outPath: The path of the output bin file that contains the racing line and the track borders.
+        - numParticles and iterations: Could be usefull at another time, but leave as default for now.
+
+
 ## Project Structure
 
 - `main.cs` - Debug main.
