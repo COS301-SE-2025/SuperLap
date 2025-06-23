@@ -79,14 +79,6 @@ namespace RacelineOptimizer
             RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline);
             Console.WriteLine("Raceline optimization completed and saved to " + racelineFilePath);
 
-            RacelineVisualizer.EdgeDataVisualizer.DrawEdgesToImage(
-                binPath: racelineFilePath,
-                outputPath: $"./{outputDir}/{fileNameNoExt}.png",
-                canvasSize: new Size(1920, 1080),
-                includeRaceline: true,
-                drawCenter: true
-            );
-
             return true;
         }
     }
