@@ -9,7 +9,7 @@ namespace RacelineOptimizer
 {
     public static class PSOInterface
     {
-        public static bool Run(string edgeDataFilePath, string outPath, int numParticles = 100, int iterations = 60000)
+        public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 60000)
         {
             Console.WriteLine($"\nProcessing {Path.GetFileName(edgeDataFilePath)}...");
 
