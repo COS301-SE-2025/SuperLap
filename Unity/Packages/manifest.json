@@ -1,5 +1,15 @@
 {
+  "scopedRegistries": [
+    {
+      "name": "Unity NuGet",
+      "url": "https://unitynuget-registry.openupm.com",
+      "scopes": [
+        "org.nuget"
+      ]
+    }
+  ],
   "dependencies": {
+    "org.nuget.scriban": "2.1.0",
     "com.qiaozhilei.easy-text-effects": "https://github.com/LeiQiaoZhi/Easy-Text-Effect.git",
     "com.unity.ai.navigation": "2.0.7",
     "com.unity.collab-proxy": "2.8.2",
