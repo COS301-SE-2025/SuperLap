@@ -252,4 +252,99 @@ public class PythonNet
         return null;
     }
 
+    /// <summary>
+    /// Execute a Python script and return its output as a string
+    /// </summary>
+    /// <param name="pythonScript">The Python code to execute</param>
+    /// <returns>The output from the Python script, or null if execution failed</returns>
+    public string RunPythonScript(string pythonScript)
+    {
+        try
+        {
+            using (Py.GIL())
+            {
+                using (var scope = Py.CreateScope())
+                {
+                    // Redirect stdout to capture output
+                    scope.Exec(@"
+import sys
+from io import StringIO
+_captured_output = StringIO()
+_original_stdout = sys.stdout
+sys.stdout = _captured_output
+");
+
+                    // Execute the user's Python script
+                    scope.Exec(pythonScript);
+
+                    // Restore stdout and get the captured output
+                    scope.Exec(@"
+sys.stdout = _original_stdout
+_result = _captured_output.getvalue()
+_captured_output.close()
+");
+
+                    // Get the result
+                    var result = scope.Get("_result");
+                    return result.ToString();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error executing Python script: {e.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Execute a Python script from a file and return its output
+    /// </summary>
+    /// <param name="scriptPath">Path to the Python script file</param>
+    /// <returns>The output from the Python script, or null if execution failed</returns>
+    public string RunPythonScriptFromFile(string scriptPath)
+    {
+        try
+        {
+            if (!File.Exists(scriptPath))
+            {
+                Debug.LogError($"Python script file not found: {scriptPath}");
+                return null;
+            }
+
+            string scriptContent = File.ReadAllText(scriptPath);
+            return RunPythonScript(scriptContent);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error reading or executing Python script file '{scriptPath}': {e.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Check if Python.NET is properly initialized
+    /// </summary>
+    /// <returns>True if Python.NET is initialized, false otherwise</returns>
+    public bool IsInitialized()
+    {
+        return PythonEngine.IsInitialized;
+    }    /// <summary>
+    /// Shutdown Python.NET (call this when your application is closing)
+    /// </summary>
+    public void Shutdown()
+    {
+        try
+        {
+            if (PythonEngine.IsInitialized)
+            {
+                PythonEngine.Shutdown();
+                Debug.Log("Python.NET shutdown successfully.");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error during Python.NET shutdown: {e.Message}");
+        }
+    }
 }
