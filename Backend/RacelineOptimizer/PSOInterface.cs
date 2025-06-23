@@ -14,6 +14,11 @@ namespace RacelineOptimizer
             Console.WriteLine($"\nProcessing {Path.GetFileName(edgeDataFilePath)}...");
 
             EdgeData edgeData = EdgeData.LoadFromBinary(edgeDataFilePath);
+            if (edgeData.OuterBoundary.Count == 0 || edgeData.InnerBoundary.Count == 0)
+            {
+                Console.WriteLine("Error: Edge data is empty or not loaded correctly.");
+                return false;
+            }
 
             float avgWidth = edgeData.GetAverageTrackWidth();
             float scaleFactor = 125 / avgWidth;
@@ -28,8 +33,19 @@ namespace RacelineOptimizer
             var cornerTrack = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, edgeData.InnerBoundary.Count);
             var corners = CornerDetector.DetectCorners(cornerTrack);
 
+            if (corners.Count == 0)
+            {
+                Console.WriteLine("Error: No corners detected in the track.");
+                return false;
+            }
+
             PSO pso = new PSO();
             float[] bestRatios = pso.Optimize(track, corners, numParticles, iterations);
+            if (bestRatios == null || bestRatios.Length == 0)
+            {
+                Console.WriteLine("Error: Optimization failed to find a valid solution.");
+                return false;
+            }
 
             var raceline = new List<Vector2>();
             for (int i = 0; i < track.Count; i++)
