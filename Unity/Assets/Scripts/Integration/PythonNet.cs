@@ -323,6 +323,112 @@ _captured_output.close()
     }
 
     /// <summary>
+    /// Execute a Python script and return a Python object
+    /// </summary>
+    /// <param name="pythonScript">The Python code to execute</param>
+    /// <param name="returnVariable">The name of the variable to return</param>
+    /// <returns>The Python object, or null if execution failed</returns>
+    public PyObject RunPythonScriptWithReturn(string pythonScript, string returnVariable)
+    {
+        try
+        {
+            using (Py.GIL())
+            {
+                using (var scope = Py.CreateScope())
+                {
+                    // Execute the user's Python script
+                    scope.Exec(pythonScript);
+
+                    // Get the specified variable
+                    if (scope.Contains(returnVariable))
+                    {
+                        return scope.Get(returnVariable);
+                    }
+                    else
+                    {
+                        Debug.LogError($"Variable '{returnVariable}' not found in Python scope");
+                        return null;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error executing Python script: {e.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Execute a Python function with parameters and return the result
+    /// </summary>
+    /// <param name="pythonScript">The Python code containing the function</param>
+    /// <param name="functionName">The name of the function to call</param>
+    /// <param name="parameters">Parameters to pass to the function</param>
+    /// <returns>The function result as a Python object</returns>
+    public PyObject CallPythonFunction(string pythonScript, string functionName, params object[] parameters)
+    {
+        try
+        {
+            using (Py.GIL())
+            {
+                using (var scope = Py.CreateScope())
+                {
+                    // Execute the script to define the function
+                    scope.Exec(pythonScript);
+
+                    // Get the function
+                    if (scope.Contains(functionName))
+                    {
+                        var func = scope.Get(functionName);
+                        
+                        // Convert parameters to Python objects
+                        PyObject[] pyParams = new PyObject[parameters.Length];
+                        for (int i = 0; i < parameters.Length; i++)
+                        {
+                            pyParams[i] = parameters[i].ToPython();
+                        }
+
+                        // Call the function
+                        return func.Invoke(pyParams);
+                    }
+                    else
+                    {
+                        Debug.LogError($"Function '{functionName}' not found in Python scope");
+                        return null;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error calling Python function: {e.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Import a Python module and return it
+    /// </summary>
+    /// <param name="moduleName">The name of the module to import</param>
+    /// <returns>The imported module as a Python object</returns>
+    public PyObject ImportModule(string moduleName)
+    {
+        try
+        {
+            using (Py.GIL())
+            {
+                return Py.Import(moduleName);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error importing module '{moduleName}': {e.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Check if Python.NET is properly initialized
     /// </summary>
     /// <returns>True if Python.NET is initialized, false otherwise</returns>
