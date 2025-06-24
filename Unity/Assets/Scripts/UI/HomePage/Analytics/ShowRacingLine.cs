@@ -226,7 +226,9 @@ public class ShowRacingLine : MonoBehaviour
 
   private Vector2 TransformPoint(Vector2 point, Vector2 min, float scale, Vector2 offset)
   {
-    return (point - min) * scale + offset;
+    Vector2 transformed = (point - min) * scale + offset;
+    transformed.y = textureHeight - transformed.y;
+    return transformed;
   }
 
   private void DrawPixelLine(Color[] pixels, int width, int height, Vector2 from, Vector2 to, Color color)
