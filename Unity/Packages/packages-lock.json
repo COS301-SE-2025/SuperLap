@@ -244,6 +244,31 @@
       },
       "url": "https://packages.unity.com"
     },
+    "org.nuget.pythonnet": {
+      "version": "3.0.5",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "org.nuget.system.reflection.emit": "4.6.0"
+      },
+      "url": "https://unitynuget-registry.openupm.com"
+    },
+    "org.nuget.system.reflection.emit": {
+      "version": "4.6.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "org.nuget.system.reflection.emit.ilgeneration": "4.6.0"
+      },
+      "url": "https://unitynuget-registry.openupm.com"
+    },
+    "org.nuget.system.reflection.emit.ilgeneration": {
+      "version": "4.6.0",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unitynuget-registry.openupm.com"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
