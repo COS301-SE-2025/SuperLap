@@ -16,7 +16,11 @@ public class AnalysisGetInfo : MonoBehaviour
   [Header("Track Data")]
   public GameObject trackDataPanel;
 
-  public Image trackImage;
+  [Header("Racing Line Preview")]
+  public Image trackPreviewImage;
+  private ShowRacingLine racingLinePreview;
+
+  private HomePageNavigation homePageNavigation;
 
   private APIManager apiManager;
   private int trackIndex = 0;
@@ -24,12 +28,16 @@ public class AnalysisGetInfo : MonoBehaviour
   public void Awake()
   {
     apiManager = APIManager.Instance;
+    homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
+    racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
   }
 
   public void Start()
   {
     apiManager.GetAllTracks(OnTracksLoaded);
   }
+
+
 
   private void OnTracksLoaded(bool success, string message, List<APIManager.Track> tracks)
   {
@@ -104,29 +112,7 @@ public class AnalysisGetInfo : MonoBehaviour
       }
     }
 
-    if (trackImage != null && !string.IsNullOrEmpty(track.name))
-    {
-      LoadTrackImage(track.name);
-    }
-
-    Debug.Log($"Displaying track info for: {track.name}");
-  }
-
-  private void LoadTrackImage(string trackName)
-  {
-    apiManager.GetTrackImage(trackName, (success, message, texture) =>
-    {
-      if (success && texture != null)
-      {
-        Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f);
-        trackImage.sprite = sprite;
-        Debug.Log($"Successfully loaded image for track: {trackName}");
-      }
-      else
-      {
-        Debug.LogWarning($"Failed to load image for track {trackName}: {message}");
-      }
-    });
+    LoadRacingLinePreview();
   }
 
   public void DisplayTrackByIndex(int index)
@@ -177,5 +163,62 @@ public class AnalysisGetInfo : MonoBehaviour
   public void RefreshTrackInfo()
   {
     apiManager.GetAllTracks(OnTracksLoaded);
+  }
+
+  public string GetCurrentTrackName()
+  {
+    if (trackNameText != null && !string.IsNullOrEmpty(trackNameText.text))
+    {
+      return trackNameText.text;
+    }
+
+    return "Unknown Track";
+  }
+
+  public void OpenRacingLineForCurrentTrack()
+  {
+    if (homePageNavigation != null)
+    {
+      string trackName = "test1";
+      homePageNavigation.NavigateToRacingLineWithTrack(trackName);
+      Debug.Log($"Opening racing line for test track: {trackName}");
+    }
+    else
+    {
+      Debug.LogError("HomePageNavigation reference not set in AnalysisGetInfo");
+    }
+  }
+
+  public void OpenRacingLineForCurrentTrackAuto()
+  {
+    if (homePageNavigation != null)
+    {
+      string trackName = "test1";
+      homePageNavigation.NavigateToRacingLineWithTrack(trackName);
+      Debug.Log($"Opening racing line for test track: {trackName}");
+    }
+    else
+    {
+      Debug.LogError("HomePageNavigation component not found in scene");
+    }
+  }
+
+  private void LoadRacingLinePreview()
+  {
+    if (racingLinePreview != null)
+    {
+      string trackName = "test1";
+      racingLinePreview.InitializeWithTrack(trackName);
+      Debug.Log($"Loading racing line preview for: {trackName}");
+    }
+    else
+    {
+      Debug.LogWarning("Racing line preview component not assigned");
+    }
+  }
+
+  public void RefreshRacingLinePreview()
+  {
+    LoadRacingLinePreview();
   }
 }

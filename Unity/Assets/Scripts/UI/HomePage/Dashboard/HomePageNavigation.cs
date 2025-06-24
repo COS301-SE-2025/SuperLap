@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class HomePageNavigation : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class HomePageNavigation : MonoBehaviour
   public GameObject uploadPage;
   public GameObject galleryPage;
   public GameObject analysisPage;
+  public GameObject racingLinePage;
 
   [Header("Sidebar")]
   public GameObject activePage;
@@ -59,8 +61,14 @@ public class HomePageNavigation : MonoBehaviour
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
     analysisPage.SetActive(false);
+    racingLinePage.SetActive(false);
     activePageIndex = 0;
     UpdateActivePagePosition();
+  }
+
+  public void GoToScene(string sceneName)
+  {
+    SceneManager.LoadScene(sceneName);
   }
 
   public void NavigateToUpload()
@@ -69,6 +77,7 @@ public class HomePageNavigation : MonoBehaviour
     uploadPage.SetActive(true);
     galleryPage.SetActive(false);
     analysisPage.SetActive(false);
+    racingLinePage.SetActive(false);
     UpdateActivePagePosition();
   }
 
@@ -78,6 +87,7 @@ public class HomePageNavigation : MonoBehaviour
     uploadPage.SetActive(false);
     galleryPage.SetActive(true);
     analysisPage.SetActive(false);
+    racingLinePage.SetActive(false);
     activePageIndex = 1;
     UpdateActivePagePosition();
   }
@@ -88,8 +98,62 @@ public class HomePageNavigation : MonoBehaviour
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
     analysisPage.SetActive(true);
+    racingLinePage.SetActive(false);
     activePageIndex = 2;
     UpdateActivePagePosition();
+  }
+
+  public void NavigateToRacingLine()
+  {
+    dashboardPage.SetActive(false);
+    uploadPage.SetActive(false);
+    galleryPage.SetActive(false);
+    analysisPage.SetActive(false);
+    racingLinePage.SetActive(true);
+  }
+
+  public void NavigateToRacingLineWithTrack(string trackName)
+  {
+    NavigateToRacingLine();
+
+    if (racingLinePage != null)
+    {
+      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      if (racingLineComponent != null)
+      {
+        racingLineComponent.InitializeWithTrack(trackName);
+      }
+    }
+  }
+
+  public void NavigateToRacingLineWithTrack(APIManager.Track track)
+  {
+    NavigateToRacingLine();
+
+    if (racingLinePage != null)
+    {
+      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      if (racingLineComponent != null)
+      {
+        racingLineComponent.InitializeWithTrack(track.name);
+      }
+    }
+  }
+
+  public void NavigateToRacingLineFromAnalysis()
+  {
+    string currentTrackName = "Unknown Track";
+
+    if (analysisPage != null)
+    {
+      AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
+      if (analysisComponent != null)
+      {
+        currentTrackName = analysisComponent.GetCurrentTrackName();
+      }
+    }
+
+    NavigateToRacingLineWithTrack(currentTrackName);
   }
 
   public void NavigateToPage(int pageIndex)
@@ -149,6 +213,20 @@ public class HomePageNavigation : MonoBehaviour
       if (analysisComponent != null)
       {
         analysisComponent.DisplaySpecificTrack(track);
+      }
+    }
+  }
+
+  public void NavigateToRacingLineWithTrackIndex(int trackIndex)
+  {
+    NavigateToRacingLine();
+
+    if (racingLinePage != null)
+    {
+      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      if (racingLineComponent != null)
+      {
+        racingLineComponent.InitializeWithTrackByIndex(trackIndex);
       }
     }
   }
