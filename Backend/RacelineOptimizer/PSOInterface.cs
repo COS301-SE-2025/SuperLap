@@ -69,10 +69,9 @@ namespace RacelineOptimizer
             }
 
             string fileNameNoExt = Path.GetFileNameWithoutExtension(edgeDataFilePath);
-            string outputDir = $"Output/{fileNameNoExt}";
-            if (!Directory.Exists(outputDir))
+            if (!Directory.Exists(outputPath))
             {
-                Directory.CreateDirectory(outputDir);
+                Directory.CreateDirectory(outputPath);
             }
 
             string racelineFilePath = $"{outputPath}/{fileNameNoExt}.bin";
