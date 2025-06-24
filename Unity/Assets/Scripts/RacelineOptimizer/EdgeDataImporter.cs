@@ -1,4 +1,7 @@
 //Used for getting the edge data from a binary file
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 
 public class EdgeData

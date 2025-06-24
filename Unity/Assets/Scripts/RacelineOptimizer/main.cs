@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Drawing;
 using System.IO;
+using System;
 
 namespace RacelineOptimizer
 {
@@ -55,12 +56,13 @@ namespace RacelineOptimizer
 
         static void DebugImage(string binPath, string outputDir, string fileNameNoExt)
         {
-            RacelineVisualizer.EdgeDataVisualizer.DrawEdgesToImage(
-                binPath: binPath,
-                outputPath: $"./{outputDir}/{fileNameNoExt}.png",
-                canvasSize: new Size(1920, 1080),
-                includeRaceline: true
-            );
+            Console.WriteLine($"Generating debug image for {fileNameNoExt}...");
+            // RacelineVisualizer.EdgeDataVisualizer.DrawEdgesToImage(
+            //     binPath: binPath,
+            //     outputPath: $"./{outputDir}/{fileNameNoExt}.png",
+            //     canvasSize: new Size(1920, 1080),
+            //     includeRaceline: true
+            // );
         }
     }
 }
