@@ -2,14 +2,15 @@ using UnityEngine;
 using System;
 using System.IO;
 using Python.Runtime;
+using System.Collections.Generic;
 
 public class ImageProcessing
 {
     [Serializable]
     public class TrackBoundaries
     {
-        public Vector2[] outerBoundary;
-        public Vector2[] innerBoundary;
+        public List<Vector2> outerBoundary;
+        public List<Vector2> innerBoundary;
         public bool success;
         public string errorMessage;
     }
@@ -73,17 +74,17 @@ result_data = process_track_for_csharp(r'{imagePath.Replace("\\", "\\\\")}')
                 {
                     // Extract outer boundary
                     PyObject outerBoundaryPy = pythonResult["outer_boundary"];
-                    Vector2[] outerBoundary = ConvertPythonListToVector2Array(outerBoundaryPy);
+                    List<Vector2> outerBoundary = ConvertPythonListToVector2List(outerBoundaryPy);
                     
                     // Extract inner boundary
                     PyObject innerBoundaryPy = pythonResult["inner_boundary"];
-                    Vector2[] innerBoundary = ConvertPythonListToVector2Array(innerBoundaryPy);
+                    List<Vector2> innerBoundary = ConvertPythonListToVector2List(innerBoundaryPy);
                     
                     result.outerBoundary = outerBoundary;
                     result.innerBoundary = innerBoundary;
                     result.success = true;
 
-                    Debug.Log($"Successfully processed track image. Outer boundary: {result.outerBoundary.Length} points, Inner boundary: {result.innerBoundary.Length} points");
+                    Debug.Log($"Successfully processed track image. Outer boundary: {result.outerBoundary.Count} points, Inner boundary: {result.innerBoundary.Count} points");
                 }
                 else
                 {
@@ -101,7 +102,7 @@ result_data = process_track_for_csharp(r'{imagePath.Replace("\\", "\\\\")}')
         return result;
     }
 
-    private static Vector2[] ConvertPythonListToVector2Array(PyObject pythonList)
+    private static List<Vector2> ConvertPythonListToVector2List(PyObject pythonList)
     {
         try
         {
@@ -109,11 +110,11 @@ result_data = process_track_for_csharp(r'{imagePath.Replace("\\", "\\\\")}')
             {
                 if (pythonList == null || !pythonList.HasAttr("__len__"))
                 {
-                    return new Vector2[0];
+                    return new List<Vector2>();
                 }
 
                 long length = pythonList.Length();
-                Vector2[] result = new Vector2[length];
+                List<Vector2> result = new List<Vector2>();
 
                 for (int i = 0; i < length; i++)
                 {
@@ -122,7 +123,7 @@ result_data = process_track_for_csharp(r'{imagePath.Replace("\\", "\\\\")}')
                     {
                         float x = point[0].As<float>();
                         float y = point[1].As<float>();
-                        result[i] = new Vector2(x, y);
+                        result.Add(new Vector2(x, y));
                     }
                 }
 
@@ -132,7 +133,7 @@ result_data = process_track_for_csharp(r'{imagePath.Replace("\\", "\\\\")}')
         catch (Exception ex)
         {
             Debug.LogError($"Error converting Python list to Vector2 array: {ex.Message}");
-            return new Vector2[0];
+            return new List<Vector2>();
         }
     }
 

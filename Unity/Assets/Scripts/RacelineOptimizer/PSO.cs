@@ -4,6 +4,9 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
+using Random = System.Random;
+using Vector2 = System.Numerics.Vector2;
 
 namespace RacelineOptimizer
 {
@@ -161,6 +164,19 @@ namespace RacelineOptimizer
 
         public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, int numParticles = 30, int iterations = 100)
         {
+            // Validate input parameters
+            if (track == null || track.Count == 0)
+            {
+                Debug.Log("Error: Track data is null or empty");
+                return null;
+            }
+
+            if (corners == null || corners.Count == 0)
+            {
+                Debug.Log("Error: Corner data is null or empty");
+                return null;
+            }
+
             object globalLock = new();
             ThreadLocal<Random> threadRand = new(() => new Random(Guid.NewGuid().GetHashCode()));
             int dimensions = track.Count;
@@ -279,13 +295,13 @@ namespace RacelineOptimizer
                     float improvement = MathF.Abs(oldest - globalBestCost);
                     if (improvement < 0.01f)
                     {
-                        Console.WriteLine($"Early stopping at iteration {iter}, BestCost = {globalBestCost:F4}");
+                        Debug.Log($"Early stopping at iteration {iter}, BestCost = {globalBestCost:F4}");
                         break;
                     }
                 }
 
                 if (iter % 1000 == 0)
-                    Console.WriteLine($"Iteration {iter}, BestCost = {globalBestCost:F4}");
+                    Debug.Log($"Iteration {iter}, BestCost = {globalBestCost:F4}");
             }
 
             return globalBest;

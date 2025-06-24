@@ -23,6 +23,16 @@ public class EdgeData
         return edgeData;
     }
 
+        public static EdgeData LoadFromLists(List<Vector2> outerBoundary, List<Vector2> innerBoundary)
+    {
+        var edgeData = new EdgeData();
+
+        edgeData.OuterBoundary = new List<Vector2>(outerBoundary);
+        edgeData.InnerBoundary = new List<Vector2>(innerBoundary);
+
+        return edgeData;
+    }
+
     public float GetAverageTrackWidth()
     {
         int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
