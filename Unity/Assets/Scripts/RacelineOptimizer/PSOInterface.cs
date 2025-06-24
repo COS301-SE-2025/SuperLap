@@ -83,7 +83,14 @@ namespace RacelineOptimizer
             return true;
         }
 
-        public static List<Vector2> GetRaceline(List<Vector2> innerBoundary, List<Vector2> outerBoundary, string trackName = "track", int numParticles = 100, int iterations = 60000)
+        public class RacelineResult
+        {
+            public List<Vector2> InnerBoundary { get; set; }
+            public List<Vector2> OuterBoundary { get; set; }
+            public List<Vector2> Raceline { get; set; }
+        }
+
+        public static RacelineResult GetRaceline(List<Vector2> innerBoundary, List<Vector2> outerBoundary, string trackName = "track", int numParticles = 100, int iterations = 60000)
         {
             Debug.Log($"Processing track: {trackName}...");
 
@@ -172,7 +179,17 @@ namespace RacelineOptimizer
                 raceline[i] = new Vector2(smoothedX[i], smoothedY[i]);
             }
 
-            return raceline;
+            innerBoundary = edgeData.InnerBoundary;
+            outerBoundary = edgeData.OuterBoundary;
+
+            RacelineResult result = new RacelineResult
+            {
+                InnerBoundary = innerBoundary,
+                OuterBoundary = outerBoundary,
+                Raceline = raceline
+            };
+
+            return result;
         }
     }
 }
