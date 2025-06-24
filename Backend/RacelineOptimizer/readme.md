@@ -36,6 +36,14 @@ This is the PSO algoritm for raceline optimization.
 
     - Select which file from the list you'd like to run the optimizer on.
 
+## Using the interface class ##
+- Call the PSOInterface class to use this for integration
+- Run(string edgeDataFilePath, string outPath, int numParticles = 100, int iterations = 60000)
+    - edgeDataFilePath: The path of the .bin file created by the image processing python script.
+    - outPath: The path of the output bin file that contains the racing line and the track borders.
+    - numParticles and iterations: Could be usefull at another time, but leave as default for now.
+
+
 ## Project Structure
 
 - `main.cs` - Debug main.
@@ -54,3 +62,58 @@ This is the PSO algoritm for raceline optimization.
 
 - For additional commands, see the [official .NET CLI documentation](https://docs.microsoft.com/dotnet/core/tools/).
 - This is starting to optimize race lines properly. It just needs some minor tuning.
+
+## Example reader for output .bin file
+```C#
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Numerics;
+
+namespace RacelineOptimizer
+{
+    public class RacelineData
+    {
+        public List<Vector2> OuterBoundary { get; set; }
+        public List<Vector2> InnerBoundary { get; set; }
+        public List<Vector2> Raceline { get; set; }
+    }
+
+    public static class RacelineImporter
+    {
+        public static RacelineData LoadFromBinary(string filePath)
+        {
+            var data = new RacelineData();
+
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using (var br = new BinaryReader(fs))
+            {
+                data.OuterBoundary = ReadPoints(br);
+                data.InnerBoundary = ReadPoints(br);
+                data.Raceline = ReadPoints(br);
+
+                int trailing = br.ReadInt32();
+                if (trailing != 0)
+                {
+                    Console.WriteLine("Warning: trailing value is not zero. File format may be corrupted.");
+                }
+            }
+
+            return data;
+        }
+
+        private static List<Vector2> ReadPoints(BinaryReader br)
+        {
+            int count = br.ReadInt32();
+            var list = new List<Vector2>(count);
+            for (int i = 0; i < count; i++)
+            {
+                float x = br.ReadSingle();
+                float y = br.ReadSingle();
+                list.Add(new Vector2(x, y));
+            }
+            return list;
+        }
+    }
+}
+```
