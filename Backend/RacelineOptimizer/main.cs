@@ -1,7 +1,6 @@
-using System;
-using System.IO;
 using System.Numerics;
-using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 
 namespace RacelineOptimizer
 {
@@ -9,36 +8,59 @@ namespace RacelineOptimizer
     {
         static void Main(string[] args)
         {
-            //Use EdgeDataImporter to load edge data
-            string edgeDataFilePath = "Input/edge_data.bin"; // Replace with actual path
-            EdgeData edgeData = EdgeData.LoadFromBinary(edgeDataFilePath);
-            if (edgeData.OuterBoundary.Count == 0 || edgeData.InnerBoundary.Count == 0)
+            string inputDir = "Input";
+            string[] binFiles = Directory.GetFiles(inputDir, "*.bin");
+
+            if (binFiles.Length == 0)
             {
-                Console.WriteLine("Error: Edge data is empty or not loaded correctly.");
+                Console.WriteLine("No .bin files found in the Input directory.");
                 return;
             }
-            // Sample the track using TrackSampler
-            int numSamples = 200; // Adjust as needed
-            List<(Vector2 inner, Vector2 outer)> track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, numSamples);
 
-            // Initialize PSO optimizer
-            PSO pso = new PSO();
-            int numParticles = 50; // Number of particles in the swarm
-            int iterations = 200; // Number of iterations for optimization
-            float[] bestRatios = pso.Optimize(track, numParticles, iterations);
-            if (bestRatios == null || bestRatios.Length == 0)
+            Console.WriteLine("Select a .bin file to process:");
+            for (int i = 0; i < binFiles.Length; i++)
             {
-                Console.WriteLine("Error: Optimization failed to find a valid solution.");
+                Console.WriteLine($"{i + 1}: {Path.GetFileName(binFiles[i])}");
+            }
+            Console.WriteLine($"{binFiles.Length + 1}: Run all files");
+
+            Console.Write("Enter your choice (1 to " + (binFiles.Length + 1) + "): ");
+            if (!int.TryParse(Console.ReadLine(), out int choice) || choice < 1 || choice > binFiles.Length + 1)
+            {
+                Console.WriteLine("Invalid choice.");
                 return;
             }
-            // Generate the optimized raceline
-            List<Vector2> raceline = pso.GenerateRaceline(track, bestRatios);
 
-            // Save the raceline to a binary file
-            string racelineFilePath = "Output/raceline.bin"; // Replace with actual path
-            RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline);
-            Console.WriteLine("Raceline optimization completed and saved to " + racelineFilePath);
+            if (choice == binFiles.Length + 1)
+            {
+                foreach (string filePath in binFiles)
+                {
+                    PSOInterface.Run(filePath, outputPath: "Output");
+                    string fileNameNoExt = Path.GetFileNameWithoutExtension(filePath);
+                    string outputDir = $"Output/{fileNameNoExt}";
+                    string racelineFilePath = $"{outputDir}/{fileNameNoExt}.bin";
+                    DebugImage(racelineFilePath, outputDir, fileNameNoExt);
+                }
+            }
+            else
+            {
+                PSOInterface.Run(binFiles[choice - 1], outputPath: "Output");
+                string fileNameNoExt = Path.GetFileNameWithoutExtension(binFiles[choice - 1]);
+                string outputDir = $"Output/{fileNameNoExt}";
+                string racelineFilePath = $"{outputDir}/{fileNameNoExt}.bin";
+                DebugImage(racelineFilePath, outputDir, fileNameNoExt);
+            }
+            Console.WriteLine("Processing complete. Check the Output directory for results.");
+        }
 
+        static void DebugImage(string binPath, string outputDir, string fileNameNoExt)
+        {
+            RacelineVisualizer.EdgeDataVisualizer.DrawEdgesToImage(
+                binPath: binPath,
+                outputPath: $"./{outputDir}/{fileNameNoExt}.png",
+                canvasSize: new Size(1920, 1080),
+                includeRaceline: true
+            );
         }
     }
 }
