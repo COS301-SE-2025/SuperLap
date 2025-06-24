@@ -69,10 +69,11 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 + [Project Board](https://github.com/orgs/COS301-SE-2025/projects/227?query=is%3Aopen)
 - [Functional Requirements (SRS)](docs/FunctionalRequirements.pdf)
 - [Architectural Requirements](docs/ArchitecturalRequirements.pdf)
-+ [Architecture Diagram](docs/ArchitectureDiagram.pdf)
+<!-- + [Architecture Diagram](docs/ArchitectureDiagram.pdf) -->
 + [Class Diagram](docs/ClassDiagram.pdf)
 + [Domain Model](docs/DomainModel.pdf)
 + [Deployment Diagram](docs/DeploymentDiagram.pdf)
++ [Use Case Diagrams](docs/UseCaseDiagrams.pdf)
 - [Installation Manual](docs/InstallationManual.pdf)
 - [Technical Installation Manual](docs/TechnicalInstallationManual.pdf)
 - [User Manual](docs/UserManualnual.pdf)
@@ -81,6 +82,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 - [Coding Standards](docs/CodingStandards.pdf)
 - [Testing Policy](docs/TestingPolicy.pdf)
 - [Contributing](docs/Contributing.pdf)
++ [Appendix: Old Versions of SRS](docs/Appendix.pdf)
 
 <h2 style="font-weight: bold; color: #E54B4B;">Meet the Quintessential Team</h2>
 
