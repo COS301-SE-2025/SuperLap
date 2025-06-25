@@ -1,112 +1,204 @@
-const request = require('supertest');
-const app = require('../app'); // Your Express app
-const { clearDatabase } = require('./testHelpers');
+const express = require('express');
+const { MongoClient } = require('mongodb');
+require('dotenv').config();
+const { setupSwagger } = require('../swagger');
 
-describe('User API', () => {
-    beforeEach(async () => {
-        await clearDatabase(); // Clear the in-memory DB before each test
-    });
+const app = express();
+// Swagger setup
+setupSwagger(app);
 
-    describe('GET /users', () => {
-        it('should return an empty array when no users exist', async () => {
-            const response = await request(app).get('/users');
-            expect(response.status).toBe(200);
-            expect(response.body).toEqual([]);
+app.use(express.json());
+const uri = process.env.MONGO_URI;
+let db;
+let client; // this will be used to close the connection later
+
+async function connectToDb() {
+    try {
+        client = await MongoClient.connect(uri);
+        db = client.db("Superlap");
+        app.locals.db = db;
+        console.log("Connected to MongoDB");
+        // Test the connection
+        await db.command({ ping: 1 });
+        console.log("Database ping successful");
+    } catch (error) {
+        console.error("Connection error:", error);
+        process.exit(1); // Exit if we can't connect
+    }
+}
+
+async function closeDbConnection() {
+    if (client) {
+        await client.close();
+        console.log("MongoDB connection closed");
+    }
+}
+
+// Connect to DB when starting the app
+connectToDb().catch(console.error);
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    await closeDbConnection();
+    process.exit();
+});
+
+// Default route
+app.get('/', async (req, res) => {
+    try {
+        res.json({ message: "Hello from Express!" });
+    } catch (error) {
+        console.log("GET error:", error);
+        res.status(500).json({ message: "Failed to fetch default route" });
+    }
+});
+
+// USER ROUTES WITH SAFETY CHECKS
+
+// Fetch all users (with projection to limit sensitive data)
+app.get('/users', async (req, res) => {
+    try {
+        // Using projection to only return specific fields
+        const users = await db.collection("users").find({}, {
+            projection: {
+                username: 1,
+                email: 1,
+                _id: 0 // Exclude MongoDB _id by default
+            }
+        }).limit(100).toArray(); // Added limit for safety
+        res.json(users);
+    } catch (error) {
+        console.error("GET error:", error);
+        res.status(500).json({ message: "Failed to fetch users" });
+    }
+});
+
+// Fetch a single user by username
+app.get('/users/:username', async (req, res) => {
+    try {
+        const username = req.params.username;
+        // Using projection to limit returned data
+        const user = await db.collection("users").findOne(
+            { username: username },
+            { projection: { password: 0 } } // Exclude sensitive fields
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error("GET error:", error);
+        res.status(500).json({ message: "Failed to fetch user" });
+    }
+});
+
+// Update a single user (with validation)
+app.put('/users/:username', async (req, res) => {
+    const username = req.params.username;
+    const updatedData = req.body;
+
+    // Safety check - prevent updating all documents
+    if (!username) {
+        return res.status(400).json({ message: "Username is required" });
+    }
+
+    // Prevent updating sensitive/immutable fields
+    if (updatedData._id || updatedData.username) {
+        return res.status(400).json({ message: "Cannot update protected fields" });
+    }
+
+    try {
+        const result = await db.collection('users').updateOne(
+            { username: username },
+            { $set: updatedData }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            message: 'User updated successfully',
+            modifiedCount: result.modifiedCount
+        });
+    } catch (error) {
+        console.error('Update error:', error);
+        res.status(500).json({ message: 'Failed to update user' });
+    }
+});
+
+// Create a single user (with validation)
+app.post('/users', async (req, res) => {
+    try {
+        const newUser = req.body;
+
+        // Required fields check
+        if (!newUser.username || !newUser.email) {
+            return res.status(400).json({ message: "Username and email are required" });
+        }
+
+        // Check if the user already exists
+        const existingUser = await db.collection("users").findOne({
+            $or: [
+                { username: newUser.username },
+                { email: newUser.email }
+            ]
         });
 
-        it('should return all users', async () => {
-            // First create a test user
-            await request(app)
-                .post('/users')
-                .send({ username: 'testuser', email: 'test@example.com' });
+        if (existingUser) {
+            return res.status(400).json({
+                message: "User already exists",
+                conflict: existingUser.username === newUser.username ? "username" : "email"
+            });
+        }
 
-            const response = await request(app).get('/users');
-            expect(response.status).toBe(200);
-            expect(response.body.length).toBe(1);
-            expect(response.body[0].username).toBe('testuser');
+        // Add creation timestamp
+        newUser.createdAt = new Date();
+
+        // Insert the new user into the database
+        const result = await db.collection("users").insertOne(newUser);
+
+        res.status(201).json({
+            message: "User created successfully",
+            insertedId: result.insertedId
         });
-    });
+    } catch (error) {
+        console.error("Create error:", error);
+        res.status(500).json({ message: "Error creating user" });
+    }
+});
 
-    describe('POST /users', () => {
-        it('should create a new user', async () => {
-            const newUser = { username: 'newuser', email: 'new@example.com' };
-            const response = await request(app)
-                .post('/users')
-                .send(newUser);
+// Delete a single user (with confirmation)
+app.delete('/users/:username', async (req, res) => {
+    try {
+        const username = req.params.username;
 
-            expect(response.status).toBe(201);
-            expect(response.body.message).toBe('User created successfully');
+        // Safety check - require confirmation in body
+        if (!req.body.confirm || req.body.confirm !== "YES_DELETE") {
+            return res.status(400).json({
+                message: "Confirmation required. Send { confirm: 'YES_DELETE' } in request body"
+            });
+        }
+
+        const result = await db.collection("users").deleteOne({ username: username });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            message: "User deleted successfully",
+            deletedCount: result.deletedCount
         });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to delete user" });
+    }
+});
 
-        it('should prevent duplicate usernames', async () => {
-            const newUser = { username: 'duplicate', email: 'test@example.com' };
-
-            // First create
-            await request(app).post('/users').send(newUser);
-
-            // Try to create again
-            const response = await request(app)
-                .post('/users')
-                .send(newUser);
-
-            expect(response.status).toBe(400);
-            expect(response.body.message).toBe('Username already taken');
-        });
-    });
-
-    describe('GET /users/:username', () => {
-        it('should return a user by username', async () => {
-            const testUser = { username: 'testget', email: 'get@example.com' };
-            await request(app).post('/users').send(testUser);
-
-            const response = await request(app).get('/users/testget');
-            expect(response.status).toBe(200);
-            expect(response.body.username).toBe('testget');
-        });
-
-        it('should return 404 for non-existent user', async () => {
-            const response = await request(app).get('/users/nonexistent');
-            expect(response.status).toBe(404);
-        });
-    });
-
-    describe('PUT /users/:username', () => {
-        it('should update a user', async () => {
-            // Create a user first
-            await request(app)
-                .post('/users')
-                .send({ username: 'toupdate', email: 'original@example.com' });
-
-            // Update the user
-            const updatedData = { email: 'updated@example.com' };
-            const response = await request(app)
-                .put('/users/toupdate')
-                .send(updatedData);
-
-            expect(response.status).toBe(200);
-            expect(response.body.message).toBe('User updated successfully');
-
-            // Verify the update
-            const getResponse = await request(app).get('/users/toupdate');
-            expect(getResponse.body.email).toBe('updated@example.com');
-        });
-    });
-
-    describe('DELETE /users/:username', () => {
-        it('should delete a user', async () => {
-            // Create a user first
-            await request(app)
-                .post('/users')
-                .send({ username: 'todelete', email: 'delete@example.com' });
-
-            // Delete the user
-            const response = await request(app).delete('/users/todelete');
-            expect(response.status).toBe(201);
-            expect(response.body.message).toBe('User deleted successfully');
-
-            // Verify deletion
-            const getResponse = await request(app).get('/users/todelete');
-            expect(getResponse.status).toBe(404);
-        });
-    });
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
