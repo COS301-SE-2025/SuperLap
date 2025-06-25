@@ -190,6 +190,29 @@ class TestIntegration(unittest.TestCase):
         self.track_path = os.path.join(self.test_dir, 'test_track.png')
         cv.imwrite(self.track_path, track_img)
 
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    @patch('cv2.imshow')
+    @patch('cv2.waitKey')
+    @patch('cv2.destroyAllWindows')
+    def test_full_pipeline(self, mock_destroy, mock_waitkey, mock_imshow):
+        # Test the complete pipeline
+        mock_waitkey.return_value = ord('q')
+        
+        with tempfile.TemporaryDirectory() as output_dir:
+            result = processTrack(
+                self.track_path, 
+                output_dir, 
+                show_debug=True,
+                extract_centerline=False
+            )
+            
+            self.assertIsNotNone(result)
+            self.assertTrue(result['processing_successful'])
+            self.assertGreater(len(result['processed_files']), 0)
+
 if __name__ == '__main__':
     # Configure test discovery and execution
     unittest.main(verbosity=2)
