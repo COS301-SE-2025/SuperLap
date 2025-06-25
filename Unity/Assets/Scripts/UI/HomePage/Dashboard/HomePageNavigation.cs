@@ -10,6 +10,8 @@ public class HomePageNavigation : MonoBehaviour
   public GameObject galleryPage;
   public GameObject analysisPage;
   public GameObject racingLinePage;
+  public GameObject teamPage;
+  public GameObject supportPage;
 
   [Header("Sidebar")]
   public GameObject activePage;
@@ -62,6 +64,8 @@ public class HomePageNavigation : MonoBehaviour
     galleryPage.SetActive(false);
     analysisPage.SetActive(false);
     racingLinePage.SetActive(false);
+    teamPage.SetActive(false);
+    supportPage.SetActive(false);
     activePageIndex = 0;
     UpdateActivePagePosition();
   }
@@ -78,6 +82,8 @@ public class HomePageNavigation : MonoBehaviour
     galleryPage.SetActive(false);
     analysisPage.SetActive(false);
     racingLinePage.SetActive(false);
+    teamPage.SetActive(false);
+    supportPage.SetActive(false);
     UpdateActivePagePosition();
   }
 
@@ -88,6 +94,8 @@ public class HomePageNavigation : MonoBehaviour
     galleryPage.SetActive(true);
     analysisPage.SetActive(false);
     racingLinePage.SetActive(false);
+    teamPage.SetActive(false);
+    supportPage.SetActive(false);
     activePageIndex = 1;
     UpdateActivePagePosition();
   }
@@ -99,7 +107,35 @@ public class HomePageNavigation : MonoBehaviour
     galleryPage.SetActive(false);
     analysisPage.SetActive(true);
     racingLinePage.SetActive(false);
+    teamPage.SetActive(false);
+    supportPage.SetActive(false);
     activePageIndex = 2;
+    UpdateActivePagePosition();
+  }
+
+  public void NavigateToTeam()
+  {
+    dashboardPage.SetActive(false);
+    uploadPage.SetActive(false);
+    galleryPage.SetActive(false);
+    analysisPage.SetActive(false);
+    racingLinePage.SetActive(false);
+    teamPage.SetActive(true);
+    supportPage.SetActive(false);
+    activePageIndex = 3;
+    UpdateActivePagePosition();
+  }
+
+  public void NavigateToSupport()
+  {
+    dashboardPage.SetActive(false);
+    uploadPage.SetActive(false);
+    galleryPage.SetActive(false);
+    analysisPage.SetActive(false);
+    racingLinePage.SetActive(false);
+    teamPage.SetActive(false);
+    supportPage.SetActive(true);
+    activePageIndex = 4;
     UpdateActivePagePosition();
   }
 
@@ -110,6 +146,10 @@ public class HomePageNavigation : MonoBehaviour
     galleryPage.SetActive(false);
     analysisPage.SetActive(false);
     racingLinePage.SetActive(true);
+    teamPage.SetActive(false);
+    supportPage.SetActive(false);
+    activePageIndex = 3;
+    UpdateActivePagePosition();
   }
 
   public void NavigateToRacingLineWithTrack(string trackName)
@@ -171,6 +211,14 @@ public class HomePageNavigation : MonoBehaviour
     else if (pageIndex == 2)
     {
       NavigateToAnalysisWithTrackIndex(0);
+    }
+    else if (pageIndex == 3)
+    {
+      NavigateToTeam();
+    }
+    else if (pageIndex == 4)
+    {
+      NavigateToSupport();
     }
   }
 

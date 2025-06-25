@@ -67,7 +67,11 @@ public class ShowRacingLine : MonoBehaviour
   [Header("Track Colors")]
   public Color outerBoundaryColor = Color.blue;
   public Color innerBoundaryColor = Color.red;
+  public Color racelineColor = Color.green;
   public Color backgroundColor = new Color(54f / 255f, 54f / 255f, 54f / 255f, 1.0f);
+
+  [Header("Static Display Mode")]
+  public bool staticDisplayMode = false;
 
   private RacelineDisplayData currentTrackData;
   private string currentTrackName = "";
@@ -85,7 +89,7 @@ public class ShowRacingLine : MonoBehaviour
 
   void Update()
   {
-    if (isAnimating && currentTrackData != null && currentTrackData.Raceline != null &&
+    if (!staticDisplayMode && isAnimating && currentTrackData != null && currentTrackData.Raceline != null &&
         currentTrackData.Raceline.Count > 0 && baseTexture != null)
     {
       float deltaTime = Time.deltaTime * animationSpeed;
@@ -160,11 +164,17 @@ public class ShowRacingLine : MonoBehaviour
       Sprite sprite = Sprite.Create(baseTexture, new Rect(0, 0, baseTexture.width, baseTexture.height), Vector2.one * 0.5f);
       racelineImage.sprite = sprite;
 
-      if (currentTrackData.Raceline != null && currentTrackData.Raceline.Count > 0)
+      // Only start animation if not in static display mode
+      if (!staticDisplayMode && currentTrackData.Raceline != null && currentTrackData.Raceline.Count > 0)
       {
         isAnimating = true;
         animationTime = 0f;
         Debug.Log($"Racing line animation started for track: {currentTrackName}");
+      }
+      else if (staticDisplayMode)
+      {
+        isAnimating = false;
+        Debug.Log($"Static racing line display mode enabled for track: {currentTrackName}");
       }
     }
     else
@@ -239,6 +249,12 @@ public class ShowRacingLine : MonoBehaviour
     if (trackData.InnerBoundary != null && trackData.InnerBoundary.Count > 0)
     {
       DrawLine(pixels, textureWidth, textureHeight, trackData.InnerBoundary, innerBoundaryColor, min, scale, offset);
+    }
+
+    // Draw racing line if in static display mode
+    if (staticDisplayMode && trackData.Raceline != null && trackData.Raceline.Count > 0)
+    {
+      DrawLine(pixels, textureWidth, textureHeight, trackData.Raceline, racelineColor, min, scale, offset);
     }
 
     texture.SetPixels(pixels);
@@ -434,6 +450,43 @@ public class ShowRacingLine : MonoBehaviour
   {
     isReverse = !isReverse;
     Debug.Log($"Animation direction toggled. Reverse: {isReverse}");
+  }
+
+  public void ToggleStaticDisplay()
+  {
+    staticDisplayMode = !staticDisplayMode;
+    Debug.Log($"Static display mode toggled: {staticDisplayMode}");
+
+    // Refresh the display when mode changes
+    if (currentTrackData != null)
+    {
+      RefreshDisplay();
+    }
+  }
+
+  public void SetStaticDisplayMode(bool isStatic)
+  {
+    staticDisplayMode = isStatic;
+    Debug.Log($"Static display mode set to: {staticDisplayMode}");
+
+    // Refresh the display when mode changes
+    if (currentTrackData != null)
+    {
+      RefreshDisplay();
+    }
+  }
+
+  public bool IsStaticDisplayMode()
+  {
+    return staticDisplayMode;
+  }
+
+  private void RefreshDisplay()
+  {
+    if (currentTrackData != null)
+    {
+      DisplayRacelineData(currentTrackData, currentTrackName);
+    }
   }
 
   public void SetReverseDirection(bool reverse)
@@ -646,10 +699,34 @@ public class ShowRacingLine : MonoBehaviour
       Debug.Log($"Inner Boundary Points: {currentTrackData.InnerBoundary?.Count ?? 0}");
       Debug.Log($"Raceline Points: {currentTrackData.Raceline?.Count ?? 0}");
       Debug.Log($"Animation Active: {isAnimating}");
+      Debug.Log($"Static Display Mode: {staticDisplayMode}");
     }
     else
     {
       Debug.Log("No track data loaded");
     }
+  }
+
+  /// <summary>
+  /// Displays all track lines in static mode (inner boundary, outer boundary, and racing line)
+  /// Similar to the PSOTest.cs DrawLines functionality
+  /// </summary>
+  public void DisplayStaticLines()
+  {
+    SetStaticDisplayMode(true);
+    Debug.Log("Displaying all track lines in static mode: inner boundary, outer boundary, and racing line");
+  }
+
+  /// <summary>
+  /// Returns to animated racing line display mode
+  /// </summary>
+  public void DisplayAnimatedRaceline()
+  {
+    SetStaticDisplayMode(false);
+    if (currentTrackData != null && currentTrackData.Raceline != null && currentTrackData.Raceline.Count > 0)
+    {
+      StartAnimation();
+    }
+    Debug.Log("Displaying animated racing line mode");
   }
 }
