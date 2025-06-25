@@ -113,6 +113,39 @@ class TestTrackProcessor(unittest.TestCase):
         
         self.assertIsNone(result)
 
+    def test_skeletonToPoints(self):
+        # Test skeleton to points conversion
+        # Create a simple skeleton image
+        skeleton = np.zeros((50, 50), dtype=np.uint8)
+        skeleton[25, 10:40] = 255  # Horizontal line
+        
+        points = self.processor.skeletonToPoints(skeleton)
+        
+        self.assertGreater(len(points), 0)
+        self.assertIsInstance(points[0], tuple)
+        self.assertEqual(len(points[0]), 2)
+
+    def test_orderPoints(self):
+        # Test point ordering functionality
+        unordered_points = [(50, 30), (10, 10), (30, 20), (20, 15), (40, 25)]
+        
+        ordered = self.processor.orderPoints(unordered_points)
+        
+        self.assertEqual(len(ordered), len(unordered_points))
+        # First point should remain the same
+        self.assertEqual(ordered[0], unordered_points[0])
+
+    def test_orderPoints_empty(self):
+        # Test point ordering with empty input
+        result = self.processor.orderPoints([])
+        self.assertEqual(result, [])
+
+    def test_orderPoints_single_point(self):
+        # Test point ordering with single point
+        single_point = [(10, 10)]
+        result = self.processor.orderPoints(single_point)
+        self.assertEqual(result, single_point)
+
     def test_smoothCenterline(self):
         # Test centerline smoothing
         points = [(0, 0), (10, 5), (20, 10), (30, 15), (40, 20)]
