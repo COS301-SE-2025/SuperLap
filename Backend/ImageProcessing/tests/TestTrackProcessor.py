@@ -115,6 +115,33 @@ class TestTrackProcessor(unittest.TestCase):
 
     @patch('cv2.imwrite')
     @patch('os.makedirs')
+    def test_drawEdgesFromBin(self, mock_makedirs, mock_imwrite):
+        # Test drawing edges from binary file
+        # Create test binary file
+        outer_points = [(10, 20), (30, 40), (50, 60)]
+        inner_points = [(15, 25), (35, 45)]
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.bin') as tmp_file:
+            tmp_path = tmp_file.name
+            
+            with open(tmp_path, 'wb') as f:
+                for points in [outer_points, inner_points]:
+                    f.write(struct.pack('<I', len(points)))
+                    for x, y in points:
+                        f.write(struct.pack('<ff', float(x), float(y)))
+        
+        try:
+            result = self.processor.drawEdgesFromBin(tmp_path)
+            
+            self.assertIsInstance(result, str)
+            mock_imwrite.assert_called_once()
+            
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+    @patch('cv2.imwrite')
+    @patch('os.makedirs')
     def test_saveProcessedImages(self, mock_makedirs, mock_imwrite):
         # Test saving processed images
         self.processor.original_image = self.test_image
