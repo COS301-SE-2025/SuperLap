@@ -113,46 +113,60 @@ public class APIManager : MonoBehaviour
 
     private IEnumerator LoginUserCoroutine(string username, string password, System.Action<bool, string, User> callback)
     {
-        using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/users/{username}"))
+        string loginUrl = $"{baseURL}/users/login";
+
+        // Construct the login payload
+         User Login = new User
         {
+            username = username,
+            password = password
+        };
+
+        string jsonData = JsonUtility.ToJson(Login);
+
+        // Set up the POST request
+        using (UnityWebRequest request = new UnityWebRequest(loginUrl, "POST"))
+        {
+            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
             yield return request.SendWebRequest();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
                 string responseText = request.downloadHandler.text;
-                
-                // Check if user exists (API returns null if user doesn't exist)
-                if (responseText == "null" || string.IsNullOrEmpty(responseText))
+
+                try
                 {
-                    callback?.Invoke(false, "User not found", null);
+                    User user = JsonUtility.FromJson<User>(responseText);
+                    Debug.Log("User logged in successfully: " + user.username);
+                    callback?.Invoke(true, "Login successful", user);
                 }
-                else
+                catch (Exception e)
                 {
-                    try
-                    {
-                        User user = JsonUtility.FromJson<User>(responseText);
-                        if (user.password == password)
-                        {
-                            Debug.Log("User logged in successfully: " + user.username);
-                            callback?.Invoke(true, "Login successful", user);
-                        }
-                        else
-                        {
-                            callback?.Invoke(false, "Invalid password", null);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        callback?.Invoke(false, "Error parsing user data", null);
-                    }
+                    Debug.LogError("Error parsing login response: " + e.Message);
+                    callback?.Invoke(false, "Error parsing server response", null);
                 }
             }
             else
             {
-                callback?.Invoke(false, request.error, null);
+                string message = "Login failed";
+
+                if (request.responseCode == 404)
+                    message = "User not found";
+                else if (request.responseCode == 401)
+                    message = "Invalid password";
+                else if (!string.IsNullOrEmpty(request.error))
+                    message = request.error;
+
+                Debug.LogWarning("Login error: " + message);
+                callback?.Invoke(false, message, null);
             }
         }
     }
+
 
     // Get all users (for testing purposes)
     public void GetAllUsers(System.Action<bool, string, List<User>> callback)
@@ -195,5 +209,64 @@ public class APIManager : MonoBehaviour
     private class UserListWrapper
     {
         public List<User> users;
+    }
+
+    //Track routes
+
+    [System.Serializable]
+    public class Track
+    {
+        public string id;
+        public string name;
+    }
+
+    [System.Serializable]
+    public class TrackList
+    {
+        public List<Track> tracks;
+    }
+
+    public static class JsonHelper
+    {
+        public static T[] FromJson<T>(string json)
+        {
+            string wrapped = "{\"Items\":" + json + "}";
+            Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(wrapped);
+            return wrapper.Items;
+        }
+
+        [System.Serializable]
+        private class Wrapper<T>
+        {
+            public T[] Items;
+        }
+    }
+
+    private IEnumerator GetAllTracksCoroutine(System.Action<bool, string, List<Track>> callback)
+    {
+        using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/tracks"))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                string json = request.downloadHandler.text;
+
+                Track[] tracks = JsonHelper.FromJson<Track>(json);
+                callback?.Invoke(true, "Tracks loaded successfully", new List<Track>(tracks));
+            }
+            else
+            {
+                string errorMessage = request.error ?? "Unknown error occurred";
+                callback?.Invoke(false, errorMessage, null);
+            }
+        }
+    }
+
+    public void GetAllTracks(System.Action<bool, string, List<Track>> callback)
+    {
+        StartCoroutine(GetAllTracksCoroutine(callback));
     }
 } 
