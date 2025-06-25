@@ -5,9 +5,11 @@ import tempfile
 import os
 import struct
 import json
+import sys
 from unittest.mock import patch, MagicMock, mock_open
 from pathlib import Path
-import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from TrackProcessor import TrackProcessor, processTrack, processAllTracks
 
@@ -101,3 +103,12 @@ class TestTrackProcessor(unittest.TestCase):
         # Verify mock calls
         mock_canny.assert_called_once()
         mock_findContours.assert_called_once()
+
+    @patch('cv2.findContours')
+    def test_detectBoundaries_insufficient_contours(self, mock_findContours):
+        # Test boundary detection with insufficient contours.
+        mock_findContours.return_value = ([np.array([[[10, 10]]])], None)  # Only 1 contour
+        
+        result = self.processor.detectBoundaries(self.test_image, show_debug=False)
+        
+        self.assertIsNone(result)
