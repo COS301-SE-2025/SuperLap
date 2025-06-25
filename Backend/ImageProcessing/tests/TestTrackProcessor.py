@@ -73,3 +73,31 @@ class TestTrackProcessor(unittest.TestCase):
 
         # Verify debug was displayed
         mock_imshow.assert_called()
+
+    @patch('cv2.imshow')
+    @patch('cv2.findContours')
+    @patch('cv2.Canny')
+    def test_detectBoundaries_success(self, mock_canny, mock_findContours, mock_imshow):
+        # Test successful boundary detection
+        mock_canny.return_value = np.zeros((100, 100), dtype=np.uint8)
+
+        # Create mock contours
+        contour1 = np.array([[[10, 10]], [[20, 10]], [[20, 20]], [[10, 20]]])
+        contour2 = np.array([[[15, 15]], [[18, 15]], [[18, 18]], [[15, 18]]])
+        contour3 = np.array([[[12, 12]], [[17, 12]], [[17, 17]], [[12, 17]]])
+
+        mock_findContours.return_value = ([contour1, contour2, contour3], None)
+
+        # Set up processor
+        self.processor.original_image = self.test_image
+
+        result = self.processor.detectBoundaries(self.test_image, show_debug=True)
+
+        self.assertIsNotNone(result)
+        self.assertIn('outer', result)
+        self.assertIn('inner', result)
+        self.assertIsNotNone(self.processor.track_boundaries)
+
+        # Verify mock calls
+        mock_canny.assert_called_once()
+        mock_findContours.assert_called_once()
