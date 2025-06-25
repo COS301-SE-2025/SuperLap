@@ -113,6 +113,34 @@ class TestTrackProcessor(unittest.TestCase):
         
         self.assertIsNone(result)
 
+    def test_readEdgesFromBin(self):
+        # Test reading edges from binary file
+        # Create test data
+        outer_points = [(10, 20), (30, 40), (50, 60)]
+        inner_points = [(15, 25), (35, 45)]
+        
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+            
+            # Write test data
+            with open(tmp_path, 'wb') as f:
+                for points in [outer_points, inner_points]:
+                    f.write(struct.pack('<I', len(points)))
+                    for x, y in points:
+                        f.write(struct.pack('<ff', float(x), float(y)))
+        
+        try:
+            result = self.processor.readEdgesFromBin(tmp_path)
+            
+            self.assertIn('outer_boundary', result)
+            self.assertIn('inner_boundary', result)
+            self.assertEqual(len(result['outer_boundary']), len(outer_points))
+            self.assertEqual(len(result['inner_boundary']), len(inner_points))
+            
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
     @patch('cv2.imwrite')
     @patch('os.makedirs')
     def test_drawEdgesFromBin(self, mock_makedirs, mock_imwrite):
