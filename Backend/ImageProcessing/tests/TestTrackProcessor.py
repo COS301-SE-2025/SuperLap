@@ -113,6 +113,22 @@ class TestTrackProcessor(unittest.TestCase):
         
         self.assertIsNone(result)
 
+    def test_visualizeCenterline(self):
+        # Test centerline visualization
+        self.processor.original_image = self.test_image
+        self.processor.centerline = self.test_points
+        self.processor.centerline_smoothed = self.test_points
+        
+        result = self.processor.visualizeCenterline()
+        
+        self.assertIsInstance(result, np.ndarray)
+        self.assertEqual(result.shape, self.test_image.shape)
+
+    def test_visualizeCenterline_no_image(self):
+        # Test visualization without original image
+        result = self.processor.visualizeCenterline()
+        self.assertIsNone(result)
+
     def test_saveCenterlineToBin(self):
         # Test saving centerline to binary file
         self.processor.centerline = self.test_points
