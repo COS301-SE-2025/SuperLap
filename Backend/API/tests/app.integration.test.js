@@ -52,4 +52,27 @@ describe('Integration: MongoDB Connection & User API', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.username).toBe('testuser');
     });
+
+    test('PUT /users/:username should update user data', async () => {
+        const res = await request(app)
+            .put('/users/testuser')
+            .send({ email: 'updated@example.com' });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toBe('User updated successfully');
+
+        // Verify update
+        const userRes = await request(app).get('/users/testuser');
+        expect(userRes.body.email).toBe('updated@example.com');
+    });
+
+    test('DELETE /users/:username should delete the user', async () => {
+        const res = await request(app).delete('/users/testuser');
+        expect(res.statusCode).toBe(201);
+        expect(res.body.message).toBe('User deleted successfully');
+
+        // Verify deletion
+        const userRes = await request(app).get('/users/testuser');
+        expect(userRes.body).toBeNull();
+    });
 });
