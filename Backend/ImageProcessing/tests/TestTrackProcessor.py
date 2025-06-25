@@ -25,3 +25,15 @@ class TestTrackProcessor(unittest.TestCase):
         cv.rectangle(self.test_mask, (30, 40), (70, 60), 255, -1)
 
         self.test_points = [(10, 10), (20, 15), (30, 20), (40, 25), (50, 30)]
+
+    def tearDown(self):
+        cv.destroyAllWindows()
+
+    def test_init(self):
+        processor = TrackProcessor()
+        self.assertIsNone(processor.original_image)
+        self.assertIsNone(processor.processed_image)
+        self.assertIsNone(processor.track_mask)
+        self.assertIsNone(processor.track_boundaries)
+        self.assertIsNone(processor.centerline)
+        self.assertIsNone(processor.centerline_smoothed)
