@@ -7,7 +7,7 @@ Ensure that you are set up with MONGO DB and have the necessary environment vari
 You will need a .env with the details are in the **💾-general-backend** pinned message.
 
 ```bash
-    cd API
+    cd Backend/API
     npm install dotenv
 ```
 
@@ -15,6 +15,8 @@ You will need a .env with the details are in the **💾-general-backend** pinned
     npm install
     npm start
 ```
+
+If you have an issue use sudo.
 
 ## How to run API Tests
 ```bash
