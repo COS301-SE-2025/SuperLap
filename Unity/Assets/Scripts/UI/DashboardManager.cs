@@ -1,10 +1,12 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class DashboardManager : MonoBehaviour
 {
   public GameObject dashboard;
   public GameObject importTrack;
-
+    
   public void showDashboard()
   {
     dashboard.SetActive(true);
@@ -16,6 +18,4 @@ public class DashboardManager : MonoBehaviour
     dashboard.SetActive(false);
     importTrack.SetActive(true);
   }
-  
-  
 }

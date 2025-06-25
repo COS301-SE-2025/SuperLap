@@ -1,0 +1,186 @@
+name: Unity Integration Tests with Backend
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+jobs:
+  unity-tests:
+    name: Unity Tests with Backend Integration
+    runs-on: self-hosted
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: Backend/API/package.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install jq for JSON parsing
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Call External Unity Test Service
+        id: external-unity-test
+        run: |
+          # Prepare payload with GitHub context
+          PAYLOAD=$(cat <<EOF
+          {
+            "repository": "${{ github.repository }}",
+            "branch": "${{ github.ref_name }}",
+            "commit_sha": "${{ github.event.pull_request.head.sha || github.sha }}",
+            "commit_message": $(echo '${{ github.event.head_commit.message }}' | jq -Rs . || echo '""'),
+            "event_name": "${{ github.event_name }}",
+            "pull_request": {
+              "number": "${{ github.event.pull_request.number || '' }}",
+              "title": $(echo '${{ github.event.pull_request.title || '' }}' | jq -Rs . || echo '""'),
+              "base_branch": "${{ github.event.pull_request.base.ref || '' }}",
+              "head_branch": "${{ github.event.pull_request.head.ref || '' }}",
+              "url": "${{ github.event.pull_request.html_url || '' }}"
+            },
+            "actor": "${{ github.actor }}",
+            "run_id": "${{ github.run_id }}",
+            "run_number": "${{ github.run_number }}",
+            "workflow": "${{ github.workflow }}"
+          }
+          EOF
+          )
+
+          echo "Sending test request to external Unity test service..."
+          echo "Payload: $PAYLOAD"
+
+          # Get response body separately from status code for clearer parsing
+          RESPONSE_BODY=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
+            -d "$PAYLOAD" \
+            "${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:5001' }}/api/run-tests")
+
+          # Get status code separately
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
+            -d "$PAYLOAD" \
+            "${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:5001' }}/api/run-tests")
+
+          echo "HTTP Response Code: $HTTP_CODE"
+          echo "Response Body: $RESPONSE_BODY"
+
+          echo "response=$RESPONSE_BODY" >> $GITHUB_OUTPUT
+          echo "http_code=$HTTP_CODE" >> $GITHUB_OUTPUT
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Failed to trigger external Unity tests (HTTP $HTTP_CODE): $RESPONSE_BODY"
+            exit 1
+          fi
+
+          TEST_ID=$(echo "$RESPONSE_BODY" | jq -r '.testId')
+          if [ -z "$TEST_ID" ] || [ "$TEST_ID" = "null" ]; then
+            echo "::error::No test ID returned from service"
+            exit 1
+          fi
+
+          echo "test_id=$TEST_ID" >> $GITHUB_OUTPUT
+          echo "✅ External Unity test started with ID: $TEST_ID"
+
+      - name: Wait for Test Completion
+        run: |
+          TEST_ID=${{ steps.external-unity-test.outputs.test_id }}
+          SERVICE_URL="${{ secrets.UNITY_TEST_SERVICE_URL || 'http://localhost:5001' }}"
+          MAX_ATTEMPTS=60  # 10 minutes with 10s intervals
+          ATTEMPT=0
+
+          echo "🔄 Polling test results for ID: $TEST_ID"
+          echo "Service URL: $SERVICE_URL"
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            sleep 10  # Wait 10 seconds between checks
+            ATTEMPT=$((ATTEMPT + 1))
+            
+            echo "📡 Checking test status (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+            
+            RESPONSE=$(curl -s \
+              -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
+              "$SERVICE_URL/api/test-status/$TEST_ID")
+            
+            if [ $? -ne 0 ]; then
+              echo "⚠️  Failed to connect to test service"
+              continue
+            fi
+            
+            echo "Response: $RESPONSE"
+            STATUS=$(echo "$RESPONSE" | jq -r '.status // "unknown"')
+            
+            case "$STATUS" in
+              "completed")
+                SUCCESS=$(echo "$RESPONSE" | jq -r '.success // false')
+                TOTAL_TESTS=$(echo "$RESPONSE" | jq -r '.totalTests // 0')
+                FAILED_TESTS=$(echo "$RESPONSE" | jq -r '.failedTests // 0')
+                PASSED_TESTS=$(echo "$RESPONSE" | jq -r '.passedTests // 0')
+                
+                echo ""
+                echo "🎯 Unity Tests Completed!"
+                echo "📊 Results Summary:"
+                echo "   • Total Tests: $TOTAL_TESTS"
+                echo "   • Passed: $PASSED_TESTS"
+                echo "   • Failed: $FAILED_TESTS"
+                echo ""
+                
+                # Get detailed logs
+                echo "📋 Test Logs:"
+                LOGS_RESPONSE=$(curl -s \
+                  -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
+                  "$SERVICE_URL/api/logs/$TEST_ID")
+                
+                LOGS=$(echo "$LOGS_RESPONSE" | jq -r '.logs[]? // empty')
+                if [ -n "$LOGS" ]; then
+                  echo "$LOGS"
+                fi
+                
+                if [ "$SUCCESS" = "true" ] && [ "$FAILED_TESTS" = "0" ] && [ "$TOTAL_TESTS" != "0" ]; then
+                  echo "✅ All Unity tests passed!"
+                  exit 0
+                else
+                  echo "❌ Unity tests failed!"
+                  echo "::error::Unity tests failed ($FAILED_TESTS/$TOTAL_TESTS failed)"
+                  exit 1
+                fi
+                ;;
+              "failed"|"error")
+                ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error // "Unknown error"')
+                echo "❌ Test execution failed: $ERROR_MSG"
+                echo "::error::Unity test execution failed: $ERROR_MSG"
+                exit 1
+                ;;
+              "timeout")
+                echo "⏰ Tests timed out on the external service"
+                echo "::error::Unity tests timed out"
+                exit 1
+                ;;
+              "running")
+                echo "🔄 Tests still running..."
+                ;;
+              "queued")
+                echo "⏳ Tests queued, waiting to start..."
+                ;;
+              *)
+                echo "❓ Unknown status: $STATUS"
+                ;;
+            esac
+          done
+
+          echo "⏰ Test polling timed out after $((MAX_ATTEMPTS * 10)) seconds!"
+          echo "::error::Test polling timeout - Unity tests may still be running"
+          exit 1

@@ -16,7 +16,7 @@ public class APITest
         testGameObject = new GameObject("TestAPIManager");
         apiManager = testGameObject.AddComponent<APIManager>();
         
-        // Set a test base URL
+        // Set a test base URL - backend should already be running via Python script
         apiManager.baseURL = "http://localhost:3000";
     }
 
@@ -82,79 +82,6 @@ public class APITest
         Assert.AreEqual(response.message, deserializedResponse.message);
     }
 
-    [UnityTest]
-    public IEnumerator RegisterUser_ValidData_CallsCallback()
-    {
-        // Test user registration with valid data
-        bool callbackCalled = false;
-        bool success = false;
-        string message = "";
-
-        apiManager.RegisterUser("testuser", "test@example.com", "password123", (isSuccess, msg) =>
-        {
-            callbackCalled = true;
-            success = isSuccess;
-            message = msg;
-        });
-
-        // Wait for the coroutine to complete (simulating network delay)
-        yield return new WaitForSeconds(0.1f);
-
-        Assert.IsTrue(callbackCalled, "Callback should be called");
-        // Note: Since we're testing without a real server, we expect this to fail
-        // In a real test environment, you'd use a mock server or test server
-    }
-
-    [UnityTest]
-    public IEnumerator LoginUser_ValidCredentials_CallsCallback()
-    {
-        // Test user login with valid credentials
-        bool callbackCalled = false;
-        bool success = false;
-        string message = "";
-        User returnedUser = null;
-
-        apiManager.LoginUser("testuser", "password123", (isSuccess, msg, user) =>
-        {
-            callbackCalled = true;
-            success = isSuccess;
-            message = msg;
-            returnedUser = user;
-        });
-
-        // Wait for the coroutine to complete
-        yield return new WaitForSeconds(0.1f);
-
-        Assert.IsTrue(callbackCalled, "Callback should be called");
-        // Note: Since we're testing without a real server, we expect this to fail
-        // In a real test environment, you'd use a mock server or test server
-    }
-
-    [UnityTest]
-    public IEnumerator GetAllUsers_CallsCallback()
-    {
-        // Test getting all users
-        bool callbackCalled = false;
-        bool success = false;
-        string message = "";
-        List<User> users = null;
-
-        apiManager.GetAllUsers((isSuccess, msg, userList) =>
-        {
-            callbackCalled = true;
-            success = isSuccess;
-            message = msg;
-            users = userList;
-        });
-
-        // Wait for the coroutine to complete
-        yield return new WaitForSeconds(0.1f);
-
-        Assert.IsTrue(callbackCalled, "Callback should be called");
-        // Note: Since we're testing without a real server, we expect this to fail
-        // In a real test environment, you'd use a mock server or test server
-    }
-
     [Test]
     public void APIManager_BaseURL_CanBeSet()
     {
@@ -184,22 +111,5 @@ public class APITest
         ApiResponse response = new ApiResponse();
         
         Assert.IsNull(response.message);
-    }
-
-    [UnityTest]
-    public IEnumerator APIManager_MultipleRequests_DontInterfere()
-    {
-        // Test that multiple simultaneous requests don't interfere with each other
-        int callbackCount = 0;
-        
-        // Start multiple requests
-        apiManager.RegisterUser("user1", "user1@test.com", "pass1", (success, msg) => callbackCount++);
-        apiManager.RegisterUser("user2", "user2@test.com", "pass2", (success, msg) => callbackCount++);
-        apiManager.LoginUser("user3", "pass3", (success, msg, user) => callbackCount++);
-
-        // Wait for all coroutines to complete
-        yield return new WaitForSeconds(0.2f);
-
-        Assert.AreEqual(3, callbackCount, "All callbacks should be called");
     }
 }

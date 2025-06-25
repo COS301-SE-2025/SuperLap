@@ -24,7 +24,7 @@ public class APIManager : MonoBehaviour
 {
     [Header("API Configuration")]
     public string baseURL = "http://localhost:3000";
-    
+
     private static APIManager _instance;
     public static APIManager Instance
     {
@@ -60,6 +60,7 @@ public class APIManager : MonoBehaviour
     // Register a new user
     public void RegisterUser(string username, string email, string password, System.Action<bool, string> callback)
     {
+        Debug.Log($"Registering user: {username}, Email: {email} with password: {password}");
         StartCoroutine(RegisterUserCoroutine(username, email, password, callback));
     }
 
@@ -100,6 +101,7 @@ public class APIManager : MonoBehaviour
                 {
                     errorMessage = request.error;
                 }
+                Debug.LogWarning("Registration error: " + errorMessage);
                 callback?.Invoke(false, errorMessage);
             }
         }
@@ -108,51 +110,66 @@ public class APIManager : MonoBehaviour
     // Login user (check if user exists)
     public void LoginUser(string username, string password, System.Action<bool, string, User> callback)
     {
+        Debug.Log($"Logging in user: {username} with password: {password}");
         StartCoroutine(LoginUserCoroutine(username, password, callback));
     }
 
     private IEnumerator LoginUserCoroutine(string username, string password, System.Action<bool, string, User> callback)
     {
-        using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/users/{username}"))
+        string loginUrl = $"{baseURL}/users/login";
+
+        // Construct the login payload
+        User Login = new User
         {
+            username = username,
+            password = password
+        };
+
+        string jsonData = JsonUtility.ToJson(Login);
+
+        // Set up the POST request
+        using (UnityWebRequest request = new UnityWebRequest(loginUrl, "POST"))
+        {
+            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
             yield return request.SendWebRequest();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
                 string responseText = request.downloadHandler.text;
-                
-                // Check if user exists (API returns null if user doesn't exist)
-                if (responseText == "null" || string.IsNullOrEmpty(responseText))
+
+                try
                 {
-                    callback?.Invoke(false, "User not found", null);
+                    User user = JsonUtility.FromJson<User>(responseText);
+                    Debug.Log("User logged in successfully: " + user.username);
+                    callback?.Invoke(true, "Login successful", user);
                 }
-                else
+                catch (Exception e)
                 {
-                    try
-                    {
-                        User user = JsonUtility.FromJson<User>(responseText);
-                        if (user.password == password)
-                        {
-                            Debug.Log("User logged in successfully: " + user.username);
-                            callback?.Invoke(true, "Login successful", user);
-                        }
-                        else
-                        {
-                            callback?.Invoke(false, "Invalid password", null);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        callback?.Invoke(false, "Error parsing user data", null);
-                    }
+                    Debug.LogError("Error parsing login response: " + e.Message);
+                    callback?.Invoke(false, "Error parsing server response", null);
                 }
             }
             else
             {
-                callback?.Invoke(false, request.error, null);
+                string message = "Login failed";
+
+                if (request.responseCode == 404)
+                    message = "User not found";
+                else if (request.responseCode == 401)
+                    message = "Invalid password";
+                else if (!string.IsNullOrEmpty(request.error))
+                    message = request.error;
+
+                Debug.LogWarning("Login error: " + message);
+                callback?.Invoke(false, message, null);
             }
         }
     }
+
 
     // Get all users (for testing purposes)
     public void GetAllUsers(System.Action<bool, string, List<User>> callback)
@@ -174,7 +191,7 @@ public class APIManager : MonoBehaviour
                     // Unity's JsonUtility doesn't handle arrays directly, so we need to wrap it
                     string wrappedJson = "{\"users\":" + jsonResponse + "}";
                     UserListWrapper wrapper = JsonUtility.FromJson<UserListWrapper>(wrappedJson);
-                    
+
                     Debug.Log("Retrieved " + wrapper.users.Count + " users");
                     callback?.Invoke(true, "Users retrieved successfully", wrapper.users);
                 }
@@ -255,4 +272,4 @@ public class APIManager : MonoBehaviour
     {
         StartCoroutine(GetAllTracksCoroutine(callback));
     }
-} 
+}

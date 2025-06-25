@@ -24,7 +24,7 @@ public class TrackDropdownManager : MonoBehaviour
             }
             else
             {
-                Debug.LogError("Failed to load tracks: " + message);
+                Debug.Log("Failed to load tracks: " + message);
             }
         });
     }
