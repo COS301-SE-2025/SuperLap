@@ -122,7 +122,8 @@ class TestProcessTrackFunction(unittest.TestCase):
     @patch('json.dump')
     def test_processTrack_success(self, mock_json_dump, mock_file_open, 
                                  mock_makedirs, mock_processor_class):
-        """Test successful track processing."""
+        # Test successful track processing.
+
         # Mock the processor instance
         mock_processor = mock_processor_class.return_value
         mock_processor.loadImg.return_value = np.zeros((100, 100, 3))
@@ -140,6 +141,16 @@ class TestProcessTrackFunction(unittest.TestCase):
             self.assertIsNotNone(result)
             self.assertIn('processing_successful', result)
             self.assertTrue(result['processing_successful'])
+
+    @patch('TrackProcessor.TrackProcessor')
+    def test_processTrack_exception(self, mock_processor_class):
+        """Test processTrack with exception."""
+        mock_processor = mock_processor_class.return_value
+        mock_processor.loadImg.side_effect = Exception("Test error")
+        
+        result = processTrack('nonexistent.jpg', show_debug=False)
+        
+        self.assertIsNone(result)
 
 if __name__ == '__main__':
     # Configure test discovery and execution
