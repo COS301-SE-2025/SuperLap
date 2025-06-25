@@ -152,6 +152,21 @@ class TestProcessTrackFunction(unittest.TestCase):
         
         self.assertIsNone(result)
 
+class TestProcessAllTracksFunction(unittest.TestCase):
+    # Test the processAllTracks function
+
+    @patch('glob.glob')
+    @patch('TrackProcessor.processTrack')
+    def test_processAllTracks_success(self, mock_processTrack, mock_glob):
+        """Test processing multiple tracks."""
+        mock_glob.return_value = ['track1.jpg', 'track2.png']
+        mock_processTrack.return_value = {'processing_successful': True}
+        
+        results = processAllTracks(show_debug=False)
+        
+        self.assertEqual(len(results), 2)
+        self.assertEqual(mock_processTrack.call_count, 2)
+
 if __name__ == '__main__':
     # Configure test discovery and execution
     unittest.main(verbosity=2)
