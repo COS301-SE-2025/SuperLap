@@ -34,3 +34,5 @@ build/
 
 
 act/
+/Unity/CodeCoverage/Report
+/Unity/CodeCoverage/Report-history
