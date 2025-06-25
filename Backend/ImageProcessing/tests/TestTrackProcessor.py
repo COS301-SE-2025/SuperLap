@@ -176,6 +176,20 @@ class TestProcessAllTracksFunction(unittest.TestCase):
         
         self.assertEqual(len(results), 0)
 
+class TestIntegration(unittest.TestCase):
+    # Integration tests for the full pipeline
+
+    def setUp(self):
+        # Create test images
+        self.test_dir = tempfile.mkdtemp()
+        # Create test track img
+        track_img = np.ones((200, 300, 3), dtype=np.uint8) * 255
+        cv.ellipse(track_img, (150, 100), (120, 80), 0, 0, 360, (50, 50, 50), 20)
+        cv.ellipse(track_img, (150, 100), (80, 50), 0, 0, 360, (0, 0, 0), 15)
+
+        self.track_path = os.path.join(self.test_dir, 'test_track.png')
+        cv.imwrite(self.track_path, track_img)
+
 if __name__ == '__main__':
     # Configure test discovery and execution
     unittest.main(verbosity=2)
