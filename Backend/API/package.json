@@ -19,7 +19,9 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "jest": "^30.0.3",
     "mocha": "^11.4.0",
+    "mongodb-memory-server": "^10.1.4",
     "supertest": "^7.1.1"
   }
 }

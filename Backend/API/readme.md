@@ -28,6 +28,12 @@ If you have an issue use sudo.
 
 ```
 
+If the unit tests give you an issue, run:
+```bash
+    npm install --save-dev jest supertest mongodb-memory-server
+```
+ And then run them again.
+
 ## Tasks to be done
 - [X] Add API readme
 - [ ] Add API running instructions
