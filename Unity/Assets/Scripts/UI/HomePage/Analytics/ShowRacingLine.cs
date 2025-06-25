@@ -72,6 +72,8 @@ public class ShowRacingLine : MonoBehaviour
   private RacelineDisplayData currentTrackData;
   private string currentTrackName = "";
   private Texture2D baseTexture;
+  private Texture2D animatedTexture;
+  private Color[] basePixels;
   private bool isAnimating = false;
   private float animationTime = 0f;
   private bool isReverse = false;
@@ -108,6 +110,32 @@ public class ShowRacingLine : MonoBehaviour
       UpdateAnimatedTexture();
     }
   }
+  void OnDestroy()
+  {
+    CleanupTextures();
+  }
+
+  void OnDisable()
+  {
+    CleanupTextures();
+  }
+
+  private void CleanupTextures()
+  {
+    if (baseTexture != null)
+    {
+      DestroyImmediate(baseTexture);
+      baseTexture = null;
+    }
+
+    if (animatedTexture != null)
+    {
+      DestroyImmediate(animatedTexture);
+      animatedTexture = null;
+    }
+
+    basePixels = null;
+  }
 
   public void DisplayRacelineData(RacelineDisplayData trackData, string trackName = "")
   {
@@ -117,12 +145,18 @@ public class ShowRacingLine : MonoBehaviour
       return;
     }
 
+    CleanupTextures();
+
     currentTrackData = trackData;
     currentTrackName = trackName;
     baseTexture = GenerateTrackTexture(currentTrackData);
 
     if (baseTexture != null && racelineImage != null)
     {
+      basePixels = baseTexture.GetPixels();
+
+      animatedTexture = new Texture2D(baseTexture.width, baseTexture.height);
+
       Sprite sprite = Sprite.Create(baseTexture, new Rect(0, 0, baseTexture.width, baseTexture.height), Vector2.one * 0.5f);
       racelineImage.sprite = sprite;
 
@@ -287,8 +321,14 @@ public class ShowRacingLine : MonoBehaviour
 
   private void UpdateAnimatedTexture()
   {
-    Texture2D animatedTexture = new Texture2D(baseTexture.width, baseTexture.height);
-    Color[] pixels = baseTexture.GetPixels();
+    if (animatedTexture == null || basePixels == null)
+    {
+      Debug.LogError("Animated texture or base pixels not initialized");
+      return;
+    }
+
+    Color[] pixels = new Color[basePixels.Length];
+    System.Array.Copy(basePixels, pixels, basePixels.Length);
 
     int currentPointIndex = Mathf.FloorToInt(animationTime);
     float t = animationTime - currentPointIndex;
@@ -309,11 +349,11 @@ public class ShowRacingLine : MonoBehaviour
 
     Vector2 animatedPosition = Vector2.Lerp(currentPoint, nextPoint, t);
 
-    DrawAnimatedTrail(pixels, baseTexture.width, baseTexture.height, currentPointIndex, t);
+    DrawAnimatedTrail(pixels, animatedTexture.width, animatedTexture.height, currentPointIndex, t);
 
     Vector2 texturePos = TransformPoint(animatedPosition, trackMin, trackScale, trackOffset);
 
-    DrawCursor(pixels, baseTexture.width, baseTexture.height, texturePos, cursorColor, cursorSize);
+    DrawCursor(pixels, animatedTexture.width, animatedTexture.height, texturePos, cursorColor, cursorSize);
 
     animatedTexture.SetPixels(pixels);
     animatedTexture.Apply();
