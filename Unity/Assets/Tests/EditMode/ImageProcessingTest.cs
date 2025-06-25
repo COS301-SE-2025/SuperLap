@@ -297,4 +297,103 @@ public class ImageProcessingIntegrationTest
             Debug.Log($"Image processing failed (expected if Python environment not set up): {result.errorMessage}");
         }
     }
+
+    [Test]
+    public void ImageProcessing_ProcessMultipleTestImages_RunsWithoutErrors()
+    {
+        // Test processing with multiple test images
+        string[] testImageNames = { "test1.png", "test2.png", "test3.png" };
+        string baseImagePath = Path.GetDirectoryName(testImagePath);
+        
+        foreach (string imageName in testImageNames)
+        {
+            string imagePath = Path.Combine(baseImagePath, imageName);
+            
+            if (File.Exists(imagePath))
+            {
+                Debug.Log($"Testing image processing with: {imageName}");
+                
+                ImageProcessing.TrackBoundaries result = null;
+                Assert.DoesNotThrow(() => {
+                    result = ImageProcessing.ProcessImage(imagePath);
+                }, $"Processing {imageName} should not throw exceptions");
+                
+                Assert.IsNotNull(result, $"Result should not be null for {imageName}");
+                
+                if (result.success)
+                {
+                    Debug.Log($"Successfully processed {imageName}. Outer: {result.outerBoundary?.Count ?? 0} points, Inner: {result.innerBoundary?.Count ?? 0} points");
+                    
+                    // Basic validation - ensure boundaries are not null if success is true
+                    Assert.IsNotNull(result.outerBoundary, $"Outer boundary should not be null for successful processing of {imageName}");
+                    Assert.IsNotNull(result.innerBoundary, $"Inner boundary should not be null for successful processing of {imageName}");
+                }
+                else
+                {
+                    Debug.Log($"Processing {imageName} failed (expected if Python not configured): {result.errorMessage}");
+                    Assert.IsNotNull(result.errorMessage, $"Failed processing of {imageName} should provide error message");
+                }
+            }
+            else
+            {
+                Debug.Log($"Test image {imageName} not found at {imagePath} - skipping");
+                Assert.Inconclusive($"Test image {imageName} not found. Test requires multiple test images to be present.");
+            }
+        }
+    }
+
+    [Test]
+    public void ImageProcessing_BatchProcessTestImages_HandlesMultipleFiles()
+    {
+        // Test batch processing of all available test images
+        string[] testImageNames = { "test.png", "test1.png", "test2.png", "test3.png" };
+        string baseImagePath = Path.GetDirectoryName(testImagePath);
+        
+        List<string> existingImagePaths = new List<string>();
+        
+        // Collect all existing test images
+        foreach (string imageName in testImageNames)
+        {
+            string imagePath = Path.Combine(baseImagePath, imageName);
+            if (File.Exists(imagePath))
+            {
+                existingImagePaths.Add(imagePath);
+            }
+        }
+        
+        if (existingImagePaths.Count == 0)
+        {
+            Assert.Inconclusive("No test images found for batch processing test");
+            return;
+        }
+        
+        Debug.Log($"Batch processing {existingImagePaths.Count} test images");
+        
+        ImageProcessing.TrackBoundaries[] results = null;
+        Assert.DoesNotThrow(() => {
+            results = ImageProcessing.ProcessMultipleImages(existingImagePaths.ToArray());
+        }, "Batch processing should not throw exceptions");
+        
+        Assert.IsNotNull(results, "Batch processing results should not be null");
+        Assert.AreEqual(existingImagePaths.Count, results.Length, "Results count should match input count");
+        
+        // Validate each result
+        for (int i = 0; i < results.Length; i++)
+        {
+            string imageName = Path.GetFileName(existingImagePaths[i]);
+            ImageProcessing.TrackBoundaries result = results[i];
+            
+            Assert.IsNotNull(result, $"Result for {imageName} should not be null");
+            
+            if (result.success)
+            {
+                Debug.Log($"Batch processing succeeded for {imageName}. Outer: {result.outerBoundary?.Count ?? 0} points, Inner: {result.innerBoundary?.Count ?? 0} points");
+            }
+            else
+            {
+                Debug.Log($"Batch processing failed for {imageName}: {result.errorMessage}");
+                Assert.IsNotNull(result.errorMessage, $"Failed processing of {imageName} should provide error message");
+            }
+        }
+    }
 }
