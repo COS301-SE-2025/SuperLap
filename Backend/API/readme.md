@@ -23,7 +23,7 @@ If you have an issue use sudo.
     npm install --save-dev jest
     npm install --save-dev supertest
 
-    cd API
+    cd Backend/API
     npx jest
 
 ```
