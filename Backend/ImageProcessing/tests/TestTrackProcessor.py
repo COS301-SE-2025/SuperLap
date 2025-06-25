@@ -113,6 +113,25 @@ class TestTrackProcessor(unittest.TestCase):
         
         self.assertIsNone(result)
 
+    @patch('cv2.imwrite')
+    @patch('os.makedirs')
+    def test_saveProcessedImages(self, mock_makedirs, mock_imwrite):
+        # Test saving processed images
+        self.processor.original_image = self.test_image
+        
+        results = {
+            'processed_image': self.test_image,
+            'mask': self.test_mask
+        }
+        
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            saved_files = self.processor.saveProcessedImages(
+                results, tmp_dir, 'test_track'
+            )
+            
+            self.assertIsInstance(saved_files, list)
+            self.assertGreater(len(saved_files), 0)
+
 class TestProcessTrackFunction(unittest.TestCase):
     # Test the processTrack function
 
