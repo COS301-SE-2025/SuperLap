@@ -167,6 +167,15 @@ class TestProcessAllTracksFunction(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(mock_processTrack.call_count, 2)
 
+    @patch('glob.glob')
+    def test_processAllTracks_no_files(self, mock_glob):
+        # Test processing with no image files found.
+        mock_glob.return_value = []
+        
+        results = processAllTracks(show_debug=False)
+        
+        self.assertEqual(len(results), 0)
+
 if __name__ == '__main__':
     # Configure test discovery and execution
     unittest.main(verbosity=2)
