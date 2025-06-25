@@ -40,7 +40,7 @@ class TestTrackProcessor(unittest.TestCase):
 
     @patch('cv.imread')
     def test_loadImg_success(self, mock_imread):
-        # Test img loading
+        # Test img loading success
         mock_imread.return_value = self.test_image
         
         result = self.processor.loadImg('test_image.jpg')
@@ -49,4 +49,14 @@ class TestTrackProcessor(unittest.TestCase):
         np.testing.assert_array_equal(result, self.test_image)
         np.testing.assert_array_equal(self.processor.original_image, self.test_image)
 
+    @patch('cv2.imread')
+    def test_loadImg_failure(self, mock_imread):
+        # Test img loading failure
+        mock_imread.return_value = None
+
+        with self.assertRaises(ValueError) as context:
+            self.processor.loadImg('nonexistent.jpg')
+
+        self.assertIn("Could not load image", str(context.exception))
+    
     
