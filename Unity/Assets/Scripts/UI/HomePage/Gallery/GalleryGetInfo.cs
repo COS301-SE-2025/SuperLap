@@ -16,8 +16,9 @@ public class GalleryGetInfo : MonoBehaviour
   [Header("Panel Content References")]
   public TextMeshProUGUI trackNameText;
   public Image trackImage;
-  public Button selectTrackButton;
 
+  [Header("Backup Panel")]
+  public GameObject backupPanel;
   private APIManager apiManager;
   private List<GameObject> instantiatedPanels = new List<GameObject>();
   private int currentColumn = 0;
@@ -29,6 +30,11 @@ public class GalleryGetInfo : MonoBehaviour
     if (defaultPanel != null)
     {
       defaultPanel.SetActive(false);
+    }
+
+    if (backupPanel != null)
+    {
+      backupPanel.SetActive(false);
     }
   }
 
@@ -43,6 +49,7 @@ public class GalleryGetInfo : MonoBehaviour
     if (apiManager == null)
     {
       Debug.LogError("APIManager instance not found!");
+      backupPanel.SetActive(true);
       return;
     }
     ClearAllPanels();
@@ -55,12 +62,14 @@ public class GalleryGetInfo : MonoBehaviour
     if (!success)
     {
       Debug.LogError($"Failed to load tracks: {message}");
+      backupPanel.SetActive(true);
       return;
     }
 
     if (tracks == null || tracks.Count == 0)
     {
       Debug.LogWarning("No tracks found in the database");
+      backupPanel.SetActive(true);
       return;
     }
 
