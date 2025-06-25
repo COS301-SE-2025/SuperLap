@@ -37,3 +37,16 @@ class TestTrackProcessor(unittest.TestCase):
         self.assertIsNone(processor.track_boundaries)
         self.assertIsNone(processor.centerline)
         self.assertIsNone(processor.centerline_smoothed)
+
+    @patch('cv.imread')
+    def test_loadImg_success(self, mock_imread):
+        # Test img loading
+        mock_imread.return_value = self.test_image
+        
+        result = self.processor.loadImg('test_image.jpg')
+
+        mock_imread.assert_called_once_with('test_image.jpg')
+        np.testing.assert_array_equal(result, self.test_image)
+        np.testing.assert_array_equal(self.processor.original_image, self.test_image)
+
+    
