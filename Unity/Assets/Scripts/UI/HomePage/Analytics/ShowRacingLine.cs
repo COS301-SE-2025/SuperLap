@@ -62,6 +62,7 @@ public class ShowRacingLine : MonoBehaviour
   public int cursorSize = 8;
   public Color trailColor = Color.green;
   public float trailFadeLength = 50f;
+  public bool reverseAnimation = false;
 
   [Header("Track Colors")]
   public Color outerBoundaryColor = Color.blue;
@@ -73,6 +74,7 @@ public class ShowRacingLine : MonoBehaviour
   private Texture2D baseTexture;
   private bool isAnimating = false;
   private float animationTime = 0f;
+  private bool isReverse = false;
   private Vector2 trackMin, trackMax;
   private float trackScale;
   private Vector2 trackOffset;
@@ -84,11 +86,23 @@ public class ShowRacingLine : MonoBehaviour
     if (isAnimating && currentTrackData != null && currentTrackData.Raceline != null &&
         currentTrackData.Raceline.Count > 0 && baseTexture != null)
     {
-      animationTime += Time.deltaTime * animationSpeed;
+      float deltaTime = Time.deltaTime * animationSpeed;
 
-      if (animationTime >= currentTrackData.Raceline.Count)
+      if (isReverse)
       {
-        animationTime = 0f;
+        animationTime -= deltaTime;
+        if (animationTime < 0f)
+        {
+          animationTime = currentTrackData.Raceline.Count - 1;
+        }
+      }
+      else
+      {
+        animationTime += deltaTime;
+        if (animationTime >= currentTrackData.Raceline.Count)
+        {
+          animationTime = 0f;
+        }
       }
 
       UpdateAnimatedTexture();
@@ -280,7 +294,18 @@ public class ShowRacingLine : MonoBehaviour
     float t = animationTime - currentPointIndex;
 
     Vector2 currentPoint = currentTrackData.Raceline[currentPointIndex];
-    Vector2 nextPoint = currentTrackData.Raceline[(currentPointIndex + 1) % currentTrackData.Raceline.Count];
+    Vector2 nextPoint;
+
+    if (isReverse)
+    {
+      int prevIndex = (currentPointIndex - 1 + currentTrackData.Raceline.Count) % currentTrackData.Raceline.Count;
+      nextPoint = currentTrackData.Raceline[prevIndex];
+      t = 1.0f - t;
+    }
+    else
+    {
+      nextPoint = currentTrackData.Raceline[(currentPointIndex + 1) % currentTrackData.Raceline.Count];
+    }
 
     Vector2 animatedPosition = Vector2.Lerp(currentPoint, nextPoint, t);
 
@@ -304,8 +329,18 @@ public class ShowRacingLine : MonoBehaviour
 
     for (int i = 0; i < trailLength; i++)
     {
-      int pointIndex = (currentPointIndex - i + totalPoints) % totalPoints;
-      int nextPointIndex = (pointIndex + 1) % totalPoints;
+      int pointIndex, nextPointIndex;
+
+      if (isReverse)
+      {
+        pointIndex = (currentPointIndex + i) % totalPoints;
+        nextPointIndex = (pointIndex + 1) % totalPoints;
+      }
+      else
+      {
+        pointIndex = (currentPointIndex - i + totalPoints) % totalPoints;
+        nextPointIndex = (pointIndex + 1) % totalPoints;
+      }
 
       float fadeIntensity = 1.0f - (float)i / trailLength;
 
@@ -353,6 +388,23 @@ public class ShowRacingLine : MonoBehaviour
   {
     isAnimating = !isAnimating;
     Debug.Log($"Animation toggled: {isAnimating}");
+  }
+
+  public void ToggleDirection()
+  {
+    isReverse = !isReverse;
+    Debug.Log($"Animation direction toggled. Reverse: {isReverse}");
+  }
+
+  public void SetReverseDirection(bool reverse)
+  {
+    isReverse = reverse;
+    Debug.Log($"Animation direction set to reverse: {isReverse}");
+  }
+
+  public bool IsReverse()
+  {
+    return isReverse;
   }
 
   public void SetAnimationSpeed(float speed)
