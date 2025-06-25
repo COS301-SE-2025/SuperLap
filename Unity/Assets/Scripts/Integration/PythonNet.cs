@@ -24,10 +24,27 @@ public class PythonNet
     // Initialize Python.NET
     try
     {
-      // Automatically detect and set the Python DLL path
-      string pythonDllPath = @"C:\Users\milan\AppData\Local\Programs\Python\Python313\python313.dll";
+      // Try to automatically detect the Python DLL path
+      string pythonDllPath = DetectPythonDLL();
+      
+      if (string.IsNullOrEmpty(pythonDllPath))
+      {
+        // Fallback to hardcoded path if detection fails
+        pythonDllPath = @"C:\Users\milan\AppData\Local\Programs\Python\Python313\python313.dll";
+        Debug.LogWarning($"Could not auto-detect Python DLL. Falling back to hardcoded path: {pythonDllPath}");
+        
+        if (!File.Exists(pythonDllPath))
+        {
+          Debug.LogError($"Python DLL not found at hardcoded path: {pythonDllPath}. Please ensure Python is installed.");
+          return;
+        }
+      }
+      else
+      {
+        Debug.Log($"Auto-detected Python DLL: {pythonDllPath}");
+      }
+      
       Runtime.PythonDLL = pythonDllPath;
-      Debug.Log($"Using hardcoded Python DLL: {pythonDllPath}");
 
       PythonEngine.Initialize();
       PythonEngine.BeginAllowThreads();
