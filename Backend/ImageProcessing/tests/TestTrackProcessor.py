@@ -112,3 +112,35 @@ class TestTrackProcessor(unittest.TestCase):
         result = self.processor.detectBoundaries(self.test_image, show_debug=False)
         
         self.assertIsNone(result)
+
+class TestProcessTrackFunction(unittest.TestCase):
+    # Test the processTrack function
+
+    @patch('TrackProcessor.TrackProcessor')
+    @patch('os.makedirs')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('json.dump')
+    def test_processTrack_success(self, mock_json_dump, mock_file_open, 
+                                 mock_makedirs, mock_processor_class):
+        """Test successful track processing."""
+        # Mock the processor instance
+        mock_processor = mock_processor_class.return_value
+        mock_processor.loadImg.return_value = np.zeros((100, 100, 3))
+        mock_processor.processImg.return_value = {'processed_image': np.zeros((100, 100))}
+        mock_processor.detectBoundaries.return_value = {
+            'outer': np.array([[[10, 10]], [[20, 20]]]),
+            'inner': np.array([[[15, 15]], [[18, 18]]])
+        }
+        mock_processor.saveProcessedImages.return_value = ['file1.png', 'file2.png']
+        mock_processor.centerline = None
+        
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as tmp_img:
+            result = processTrack(tmp_img.name, show_debug=False)
+            
+            self.assertIsNotNone(result)
+            self.assertIn('processing_successful', result)
+            self.assertTrue(result['processing_successful'])
+
+if __name__ == '__main__':
+    # Configure test discovery and execution
+    unittest.main(verbosity=2)
