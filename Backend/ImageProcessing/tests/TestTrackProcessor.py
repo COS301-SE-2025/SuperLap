@@ -113,6 +113,25 @@ class TestTrackProcessor(unittest.TestCase):
         
         self.assertIsNone(result)
 
+    def test_smoothCenterline(self):
+        # Test centerline smoothing
+        points = [(0, 0), (10, 5), (20, 10), (30, 15), (40, 20)]
+        
+        smoothed = self.processor.smoothCenterline(points)
+        
+        self.assertIsInstance(smoothed, list)
+        self.assertGreater(len(smoothed), 0)
+        # Should have more points due to interpolation
+        self.assertGreaterEqual(len(smoothed), len(points))
+
+    def test_smoothCenterline_insufficient_points(self):
+        # Test smoothing with insufficient points
+        few_points = [(0, 0), (10, 10)]
+        
+        result = self.processor.smoothCenterline(few_points)
+        
+        self.assertEqual(result, few_points)
+
     @patch('cv2.imshow')
     @patch('TrackProcessor.skeletonize')
     def test_extractCenterline_skeleton(self, mock_skeletonize, mock_imshow):
