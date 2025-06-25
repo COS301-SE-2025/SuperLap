@@ -59,4 +59,17 @@ class TestTrackProcessor(unittest.TestCase):
 
         self.assertIn("Could not load image", str(context.exception))
     
-    
+    @patch('cv2.imshow')
+    def test_processImg(self, mock_imshow):
+        # Set up processor with a test image
+        self.processor.original_image = self.test_image
+        result = self.processor.processImg(self.test_image, show_debug=True)
+
+        self.assertIn('processed_image', result)
+
+        # Check processed_image is set
+        self.assertIsNotNone(self.processor.processed_image)
+        self.assertIsNotNone(self.processor.track_mask)
+
+        # Verify debug was displayed
+        mock_imshow.assert_called()
