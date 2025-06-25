@@ -113,6 +113,45 @@ class TestTrackProcessor(unittest.TestCase):
         
         self.assertIsNone(result)
 
+    def test_saveCenterlineToBin(self):
+        # Test saving centerline to binary file
+        self.processor.centerline = self.test_points
+        
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+        
+        try:
+            result = self.processor.saveCenterlineToBin(tmp_path)
+            
+            self.assertTrue(result)
+            self.assertTrue(os.path.exists(tmp_path))
+            
+            # Verify file contents
+            with open(tmp_path, 'rb') as f:
+                num_points = struct.unpack('<I', f.read(4))[0]
+                self.assertEqual(num_points, len(self.test_points))
+                
+                for i, (expected_x, expected_y) in enumerate(self.test_points):
+                    x, y = struct.unpack('<ff', f.read(8))
+                    self.assertAlmostEqual(x, expected_x, places=5)
+                    self.assertAlmostEqual(y, expected_y, places=5)
+        
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+    def test_saveCenterlineToBin_no_points(self):
+        # Test saving centerline with no points
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+        
+        try:
+            result = self.processor.saveCenterlineToBin(tmp_path)
+            self.assertFalse(result)
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
     def test_readEdgesFromBin(self):
         # Test reading edges from binary file
         # Create test data
