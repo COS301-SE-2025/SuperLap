@@ -79,11 +79,6 @@ public class ShowRacingLine : MonoBehaviour
   private int textureWidth = 1024;
   private int textureHeight = 1024;
 
-  void Start()
-  {
-
-  }
-
   void Update()
   {
     if (isAnimating && currentTrackData != null && currentTrackData.Raceline != null &&
