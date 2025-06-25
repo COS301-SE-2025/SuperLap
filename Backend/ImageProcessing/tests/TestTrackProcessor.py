@@ -113,6 +113,30 @@ class TestTrackProcessor(unittest.TestCase):
         
         self.assertIsNone(result)
 
+    @patch('cv2.imshow')
+    @patch('TrackProcessor.skeletonize')
+    def test_extractCenterline_skeleton(self, mock_skeletonize, mock_imshow):
+        # Test centerline extraction using skeleton method
+        # Set up mock
+        mock_skeleton = np.zeros((100, 100), dtype=np.uint8)
+        mock_skeleton[50, 20:80] = 1  # Horizontal line
+        mock_skeletonize.return_value = mock_skeleton
+        
+        # Set up processor
+        self.processor.track_mask = self.test_mask
+        
+        result = self.processor.extractCenterline(method='skeleton', show_debug=True)
+        
+        self.assertIsNotNone(result)
+        self.assertIn('centerline_raw', result)
+        self.assertIn('centerline_smoothed', result)
+        self.assertIn('skeleton_image', result)
+
+    def test_extractCenterline_no_mask(self):
+        # Test centerline extraction without track mask
+        result = self.processor.extractCenterline()
+        self.assertIsNone(result)
+
     def test_visualizeCenterline(self):
         # Test centerline visualization
         self.processor.original_image = self.test_image
