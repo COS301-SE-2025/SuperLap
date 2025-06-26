@@ -54,8 +54,8 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 🔹 [Demo 1 Video](https://youtu.be/JzFT60XwmTg)  
 🔹 [Demo 1 Presentation](https://www.canva.com/design/DAGolqiGbpo/pvPyxXwBTqHanQH77_W3Yw/edit?utm_content=DAGolqiGbpo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
-🔹 [Demo 2 Video](lk)  
-🔹 [Demo 2 Presentation](vd)
+🔹 [Demo 2 Video](https://www.youtube.com/watch?v=1qIO83R0MSg)  
+🔹 [Demo 2 Presentation](https://www.canva.com/design/DAGrRB9FtQU/wg4VrVYik9MhCpSTy4eLzA/edit?utm_content=DAGrRB9FtQU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 <!-- 🔹 [Demo 3 Video](lk)  
 🔹 [Demo 3 Presentation](vd)
