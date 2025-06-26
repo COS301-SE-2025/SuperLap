@@ -298,6 +298,88 @@ class TrackProcessor:
 
         return saved_files
     
+    def processImageForCSharp(self, img_path):
+        """
+        Process a track image and return boundary coordinates in a format suitable for C# integration.
+        
+        Args:
+            img_path (str): Path to the track image file
+            
+        Returns:
+            dict: Dictionary containing success status, boundary coordinates, and error information
+        """
+        try:
+            # Load the image
+            img = self.loadImg(img_path)
+            if img is None:
+                return {
+                    'success': False,
+                    'outer_boundary': [],
+                    'inner_boundary': [],
+                    'error': 'Failed to load image'
+                }
+            
+            # Process the image
+            processed_result = self.processImg(img, show_debug=False)
+            if processed_result is None:
+                return {
+                    'success': False,
+                    'outer_boundary': [],
+                    'inner_boundary': [],
+                    'error': 'Failed to process image'
+                }
+            
+            # Detect boundaries
+            boundaries = self.detectBoundaries(processed_result['processed_image'], show_debug=False)
+            if boundaries is None:
+                return {
+                    'success': False,
+                    'outer_boundary': [],
+                    'inner_boundary': [],
+                    'error': 'Failed to detect track boundaries'
+                }
+            
+            # Extract boundary coordinates and convert to simple lists
+            outer_coords = []
+            inner_coords = []
+            
+            if boundaries['outer'] is not None:
+                # Convert OpenCV contour to list of [x, y] coordinates
+                outer_coords = boundaries['outer'].reshape(-1, 2).tolist()
+            
+            if boundaries['inner'] is not None:
+                # Convert OpenCV contour to list of [x, y] coordinates  
+                inner_coords = boundaries['inner'].reshape(-1, 2).tolist()
+            
+            return {
+                'success': True,
+                'outer_boundary': outer_coords,
+                'inner_boundary': inner_coords,
+                'error': None
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'outer_boundary': [],
+                'inner_boundary': [],
+                'error': str(e)
+            }
+
+# Standalone function for direct C# integration
+def process_track_for_csharp(img_path):
+    """
+    Standalone function to process a track image for C# integration.
+    
+    Args:
+        img_path (str): Path to the track image file
+        
+    Returns:
+        dict: Dictionary containing success status, boundary coordinates, and error information
+    """
+    processor = TrackProcessor()
+    return processor.processImageForCSharp(img_path)
+
 def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, centerline_method='skeleton', extract_centerline=False):
     processor = TrackProcessor()
     base_filename = Path(img_path).stem
