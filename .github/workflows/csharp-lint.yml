@@ -8,7 +8,7 @@ on:
 jobs:
   run-linters:
     name: Run linters
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Check out Git repository

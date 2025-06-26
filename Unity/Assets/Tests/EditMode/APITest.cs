@@ -16,7 +16,7 @@ public class APITest
         testGameObject = new GameObject("TestAPIManager");
         apiManager = testGameObject.AddComponent<APIManager>();
         
-        // Set a test base URL
+        // Set a test base URL - backend should already be running via Python script
         apiManager.baseURL = "http://localhost:3000";
     }
 

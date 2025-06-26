@@ -8,7 +8,7 @@ on:
 jobs:
   test:
     name: Run Jest Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     services:
       # Set up MongoDB service for testing
