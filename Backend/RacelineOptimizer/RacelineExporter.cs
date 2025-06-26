@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.IO;
 using System.Numerics;
 
 namespace RacelineOptimizer
@@ -14,6 +12,8 @@ namespace RacelineOptimizer
                 WritePoints(bw, outer);     // First: OuterBoundary
                 WritePoints(bw, inner);     // Second: InnerBoundary
                 WritePoints(bw, raceline);  // Third: Raceline
+
+                bw.Write(0);
             }
         }
 
