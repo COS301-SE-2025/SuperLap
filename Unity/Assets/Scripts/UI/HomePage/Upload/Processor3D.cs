@@ -29,7 +29,7 @@ public class Processor3D
         // Create a mesh from the inner and outer points
         Mesh mesh = new Mesh();
         Vector3[] vertices = new Vector3[innerPoints.Count * 2];
-        int[] triangles = new int[(innerPoints.Count - 1) * 6];
+        int[] triangles = new int[innerPoints.Count * 6]; // Changed to include all segments including the closing one
         Vector2[] uv = new Vector2[vertices.Length];
 
         for (int i = 0; i < innerPoints.Count; i++)
@@ -39,17 +39,19 @@ public class Processor3D
             uv[i] = new Vector2(0, (float)i / (innerPoints.Count - 1));
             uv[i + innerPoints.Count] = new Vector2(1, (float)i / (outerPoints.Count - 1));
 
-            if (i < innerPoints.Count - 1)
-            {
-                int baseIndex = i * 6;
-                triangles[baseIndex] = i;
-                triangles[baseIndex + 1] = i + innerPoints.Count;
-                triangles[baseIndex + 2] = i + 1;
+            // Create triangles for each segment, including the last one that connects back to the first
+            int nextI = (i + 1) % innerPoints.Count; // Use modulo to wrap around to 0 for the last segment
+            int baseIndex = i * 6;
+            
+            // First triangle (corrected winding order for proper normals)
+            triangles[baseIndex] = i;
+            triangles[baseIndex + 1] = nextI + innerPoints.Count;
+            triangles[baseIndex + 2] = i + innerPoints.Count;
 
-                triangles[baseIndex + 3] = i + 1;
-                triangles[baseIndex + 4] = i + innerPoints.Count;
-                triangles[baseIndex + 5] = i + innerPoints.Count + 1;
-            }
+            // Second triangle (corrected winding order for proper normals)
+            triangles[baseIndex + 3] = i;
+            triangles[baseIndex + 4] = nextI;
+            triangles[baseIndex + 5] = nextI + innerPoints.Count;
         }
 
         mesh.vertices = vertices;
