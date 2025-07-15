@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Processor3D
 {
-    public static void GenerateOutputTrack(TrackImageProcessor.ProcessingResults lastResults, int pointCount)
+    public static Mesh GenerateOutputMesh(TrackImageProcessor.ProcessingResults lastResults, int pointCount)
     {
         // get total distances of inner and outer boundaries
         float innerDistance = GetTotalLineDistance(lastResults.innerBoundary);
@@ -25,6 +25,41 @@ public class Processor3D
             innerPoints.Add(innerPoint);
             outerPoints.Add(outerPoint);
         }
+
+        // Create a mesh from the inner and outer points
+        Mesh mesh = new Mesh();
+        Vector3[] vertices = new Vector3[innerPoints.Count * 2];
+        int[] triangles = new int[(innerPoints.Count - 1) * 6];
+        Vector2[] uv = new Vector2[vertices.Length];
+
+        for (int i = 0; i < innerPoints.Count; i++)
+        {
+            vertices[i] = new Vector3(innerPoints[i].x, 0, innerPoints[i].y);
+            vertices[i + innerPoints.Count] = new Vector3(outerPoints[i].x, 0, outerPoints[i].y);
+            uv[i] = new Vector2(0, (float)i / (innerPoints.Count - 1));
+            uv[i + innerPoints.Count] = new Vector2(1, (float)i / (outerPoints.Count - 1));
+
+            if (i < innerPoints.Count - 1)
+            {
+                int baseIndex = i * 6;
+                triangles[baseIndex] = i;
+                triangles[baseIndex + 1] = i + innerPoints.Count;
+                triangles[baseIndex + 2] = i + 1;
+
+                triangles[baseIndex + 3] = i + 1;
+                triangles[baseIndex + 4] = i + innerPoints.Count;
+                triangles[baseIndex + 5] = i + innerPoints.Count + 1;
+            }
+        }
+
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.uv = uv;
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        mesh.name = "TrackMesh";
+
+        return mesh;
     }
 
     private static Vector2 GetInterpolatedPoint(List<Vector2> points, float distance)

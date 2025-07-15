@@ -32,6 +32,8 @@ public class TrackImageProcessor : MonoBehaviour
   [SerializeField] private Color racelineColor = Color.green;
   [SerializeField] private int lineThickness = 3;
   [SerializeField] private int pointCount = 100;
+  [SerializeField] private GameObject meshHolder;
+
 
   // Results data
 
@@ -192,7 +194,11 @@ public class TrackImageProcessor : MonoBehaviour
 
     // Generate output image
     // GenerateOutputImage();
-    Processor3D.GenerateOutputTrack(lastResults, pointCount);
+    Mesh m = Processor3D.GenerateOutputMesh(lastResults, pointCount);
+    MeshFilter meshFilter = meshHolder.AddComponent<MeshFilter>();
+    meshFilter.mesh = m;
+    MeshRenderer meshRenderer = meshHolder.AddComponent<MeshRenderer>();
+    meshRenderer.material.color = Color.white;
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
