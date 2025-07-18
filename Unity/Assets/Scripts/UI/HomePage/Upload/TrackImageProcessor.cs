@@ -194,11 +194,8 @@ public class TrackImageProcessor : MonoBehaviour
 
     // Generate output image
     // GenerateOutputImage();
-    Mesh m = Processor3D.GenerateOutputMesh(lastResults, pointCount);
-    MeshFilter meshFilter = meshHolder.AddComponent<MeshFilter>();
-    meshFilter.mesh = m;
-    MeshRenderer meshRenderer = meshHolder.AddComponent<MeshRenderer>();
-    meshRenderer.material.color = Color.white;
+
+    TrackMaster.LoadTrack(lastResults);
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
