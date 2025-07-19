@@ -504,7 +504,20 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
         
         return [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
 
-
+    def savgolSmooth(self, points, window_size=15, poly_order=3):
+        """Apply Savitzky-Golay smoothing"""
+        if len(points) < window_size:
+            return points
+        
+        points_arr = np.array(points)
+        window_size = min(window_size, len(points) - 1)
+        if window_size % 2 == 0:  # window size must be odd
+            window_size -= 1
+        
+        x_smooth = savgol_filter(points_arr[:, 0], window_size, poly_order)
+        y_smooth = savgol_filter(points_arr[:, 1], window_size, poly_order)
+        
+        return [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
 
 
 def main():
