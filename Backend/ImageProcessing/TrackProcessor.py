@@ -580,6 +580,27 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
         self.track_boundaries['outer'] = self.track_boundaries['outer'].reshape(-1, 1, 2).astype(np.int32)
         self.track_boundaries['inner'] = self.track_boundaries['inner'].reshape(-1, 1, 2).astype(np.int32)
 
+    # Visualization function added
+    def compareSmoothing(self, points, methods=['original', 'gaussian', 'savgol', 'bspline'], **kwargs):
+        """Compare different smoothing methods visually"""
+        if not isinstance(points, np.ndarray):
+            points = np.array(points)
+        
+        plt.figure(figsize=(12, 8))
+        
+        for method in methods:
+            if method == 'original':
+                plt.plot(points[:, 0], points[:, 1], 'k-', alpha=0.3, label='Original')
+            else:
+                smoothed = self.smoothCenterline(points, method=method, **kwargs)
+                smoothed_arr = np.array(smoothed)
+                plt.plot(smoothed_arr[:, 0], smoothed_arr[:, 1], '-', label=method.capitalize())
+        
+        plt.legend()
+        plt.title('Smoothing Method Comparison')
+        plt.axis('equal')
+        plt.show()
+
 
 def main():
     parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
