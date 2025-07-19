@@ -397,7 +397,8 @@ def process_track_for_csharp(img_path):
     processor = TrackProcessor()
     return processor.processImageForCSharp(img_path)
 
-def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, centerline_method='skeleton', extract_centerline=False,
+def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, 
+                 centerline_method='skeleton', extract_centerline=False,
                  smooth_method='bspline', smooth_boundaries=True, **smooth_kwargs):
     processor = TrackProcessor()
     base_filename = Path(img_path).stem
@@ -415,10 +416,20 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
         boundaries = processor.detectBoundaries(results['processed_image'], show_debug)
 
         if boundaries:
+            # Smooth boundaries if requested
+            if smooth_boundaries:
+                print(f"Smoothing boundaries using {smooth_method} method...")
+                boundaries = processor.smoothBoundaries(method=smooth_method, **smooth_kwargs)
             
             if extract_centerline:
                 print(f"Extracting centerline using {centerline_method} method...")
-                centerline_results = processor.extractCenterline(method=centerline_method, show_debug=show_debug)
+                centerline_results = processor.extractCenterline(
+                    method=centerline_method, 
+                    show_debug=show_debug,
+                    smooth=True,
+                    smooth_method=smooth_method,
+                    **smooth_kwargs
+                )
 
                 if centerline_results:
                     results.update(centerline_results)
@@ -467,7 +478,8 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
             'processing_successful': True,
             'centerline_extracted': extract_centerline and processor.centerline is not None,
             'centerline_points': len(processor.centerline) if processor.centerline else 0,
-
+            'boundaries_smoothed': smooth_boundaries,
+            'smoothing_method': smooth_method if smooth_boundaries else None
         }
 
         summary_path = os.path.join(output_dir, f"{base_filename}_summary.json")
