@@ -589,14 +589,42 @@ def main():
     parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing and generate edge visualization')
     parser.add_argument('--extract-centerline', '-e', action='store_true', help='Extract centerline data (disabled by default)')
     parser.add_argument('--centerline-method', '-c', choices=['skeleton', 'distance_transform', 'medial_axis'], default='skeleton', help='Method for centerline extraction (Default: skeleton)')
+    
+    # Add smoothing arguments
+    parser.add_argument('--smooth-method', choices=['gaussian', 'savgol', 'bspline', 'interp'], 
+                       default='bspline', help='Smoothing method to use')
+    parser.add_argument('--smooth-boundaries', action='store_true', 
+                       help='Apply smoothing to track boundaries')
+    parser.add_argument('--smooth-sigma', type=float, default=2.0,
+                       help='Sigma parameter for Gaussian smoothing')
+    parser.add_argument('--savgol-window', type=int, default=15,
+                       help='Window size for Savitzky-Golay filter')
+    parser.add_argument('--spline-smoothness', type=float, default=0.1,
+                       help='Smoothness factor for spline methods')
 
     args = parser.parse_args()
+
+    # Prepare smoothing kwargs
+    smooth_kwargs = {
+        'sigma': args.smooth_sigma,
+        'window_size': args.savgol_window,
+        'smooth_factor': args.spline_smoothness
+    }
 
     os.makedirs(args.output, exist_ok=True)
 
     if args.file:
         if os.path.exists(args.file):
-            result = processTrack(args.file, args.output, args.debug)
+            result = processTrack(
+                args.file, 
+                args.output, 
+                args.debug,
+                args.centerline_method,
+                args.extract_centerline,
+                args.smooth_method,
+                args.smooth_boundaries,
+                **smooth_kwargs
+            )
             if result:
                 print(f"\nSingle file processing complete")
                 if args.extract_centerline and result['centerline_extracted']:
@@ -605,12 +633,23 @@ def main():
                     print("Centerline extraction failed")
                 else:
                     print("Centerline extraction skipped")
+                if args.smooth_boundaries:
+                    print(f"Boundaries smoothed using {args.smooth_method} method")
             else:
                 print(f"\nFailed to process {args.file}")
         else:
             print(f"File not found: {args.file}")
     else:
-        results = processAllTracks(args.input, args.output, args.debug, args.centerline_method, args.extract_centerline)
+        results = processAllTracks(
+            args.input, 
+            args.output, 
+            args.debug, 
+            args.centerline_method, 
+            args.extract_centerline,
+            args.smooth_method,
+            args.smooth_boundaries,
+            **smooth_kwargs
+        )
 
         print(f"\n{'='*50}")
         print(f"PROCESSING SUMMARY")
@@ -620,10 +659,14 @@ def main():
         print(f"Centerline extraction: {'Enabled' if args.extract_centerline else 'Disabled'}")
         if args.extract_centerline:
             print(f"Centerline method used: {args.centerline_method}")
+        print(f"Boundary smoothing: {'Enabled' if args.smooth_boundaries else 'Disabled'}")
+        if args.smooth_boundaries:
+            print(f"Smoothing method used: {args.smooth_method}")
 
         if results:
             print(f"\nProcessed tracks:")
             centerline_success = 0
+            smoothing_applied = args.smooth_boundaries
 
             for result in results:
                 trackName = Path(result['original_image']).stem
@@ -634,6 +677,9 @@ def main():
                     status_info.append(f"{result['centerline_points']} centerline points")
                 elif args.extract_centerline:
                     status_info.append("Centerline extraction failed")
+                
+                if smoothing_applied:
+                    status_info.append("boundaries smoothed")
 
                 status_str = ", ".join(status_info) if status_info else "basic processing only"
                 print(f" - {trackName}: {len(result['processed_files'])} files generated ({status_str})")
