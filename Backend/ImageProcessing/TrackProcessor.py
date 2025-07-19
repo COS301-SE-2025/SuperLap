@@ -519,6 +519,18 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
         
         return [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
 
+    def bsplineSmooth(self, points, degree=3, smooth_factor=0.1):
+        """Apply B-spline smoothing"""
+        if len(points) < 4:
+            return points
+        
+        points_arr = np.array(points)
+        tck, u = splprep([points_arr[:, 0], [points_arr[:, 1]], s=smooth_factor*len(points), k=degree)
+        u_new = np.linspace(u.min(), u.max(), len(points)*2)
+        x_smooth, y_smooth = splev(u_new, tck)
+        
+        return [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
+
 
 def main():
     parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
