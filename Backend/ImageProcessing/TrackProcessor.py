@@ -397,7 +397,8 @@ def process_track_for_csharp(img_path):
     processor = TrackProcessor()
     return processor.processImageForCSharp(img_path)
 
-def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, centerline_method='skeleton', extract_centerline=False):
+def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, centerline_method='skeleton', extract_centerline=False,
+                 smooth_method='bspline', smooth_boundaries=True, **smooth_kwargs):
     processor = TrackProcessor()
     base_filename = Path(img_path).stem
     output_dir = os.path.join(output_base_dir, base_filename)
