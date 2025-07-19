@@ -548,6 +548,25 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
         
         return [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
 
+    # This one will be used to smooth the boundaries
+    def smoothBoundaries(self, method='bspline', **kwargs):
+        """Smooth both inner and outer boundaries"""
+        if self.track_boundaries is None:
+            print("No boundaries to smooth")
+            return
+        
+        # Convert contours to point lists
+        outer_points = self.track_boundaries['outer'].squeeze().tolist()
+        inner_points = self.track_boundaries['inner'].squeeze().tolist()
+        
+        # Apply smoothing
+        self.track_boundaries['outer'] = np.array(self.smoothCenterline(outer_points, method, **kwargs))
+        self.track_boundaries['inner'] = np.array(self.smoothCenterline(inner_points, method, **kwargs))
+        
+        # Convert back to contour format
+        self.track_boundaries['outer'] = self.track_boundaries['outer'].reshape(-1, 1, 2).astype(np.int32)
+        self.track_boundaries['inner'] = self.track_boundaries['inner'].reshape(-1, 1, 2).astype(np.int32)
+
 
 def main():
     parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
