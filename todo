@@ -1,2 +1,21 @@
 Hey Amber! Sean tells me you are looking for some coding stuff to do. I have an issue with the points that get extracted from the image processing. Since they are now just the pixel coordinates, the lines are very jagged as you can see in this screenshot. We can fix this with some smoothing functions, but I will be focusing on the RL for now, so if you would like to have a crack at it lemme know
 
+
+docker-compose down --remove-orphans
+docker-compose build --no-cache
+docker-compose up
+docker-compose up --build
+npm --prefix daemon test
+
+npm --prefix api test -- dbRouter.test.ts
+npm --prefix api test -- db.test.ts
+
+docker-compose up imageprocessing
+
+
+this is what i have to do:
+
+I have an issue with the points that get extracted from the image processing. Since they are now just the pixel coordinates, the lines are very jagged as you can see in this screenshot. We can fix this with some smoothing functions
+
+can you confirim where the pixel coordinates are being extracted and storied (unless i dudn't share the function with you, sorry)
+and also let's start smoothing the lines
