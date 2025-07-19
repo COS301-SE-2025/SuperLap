@@ -168,30 +168,47 @@ class TrackProcessor:
         
         return ordered
     
-    def smoothCenterline(self, points, factor=0.1):
+    # def smoothCenterline(self, points, factor=0.1):
+    #     if len(points) < 4:
+    #         return points
+        
+    #     points_arr = np.array(points)
+    #     x_coords = points_arr[:, 0]
+    #     y_coords = points_arr[:, 1]
+
+    #     t = np.linspace(0, 1, len(points))
+
+    #     try:
+    #         interp_x = interp1d(t, x_coords, kind='cubic', fill_value='extrapolate')
+    #         interp_y = interp1d(t, y_coords, kind='cubic', fill_value='extrapolate')
+
+    #         t_smooth = np.linspace(0, 1, len(points) * 2)
+    #         x_smooth = interp_x(t_smooth)
+    #         y_smooth = interp_y(t_smooth)
+
+    #         smoothed_points = [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
+    #         return smoothed_points
+
+    #     except Exception as e:
+    #         print(f"Smoothing failed: {e}. Returning original points")
+    #         return points
+
+    def smoothCenterline(self, points, method='bspline', **kwargs):
+        """Smooth centerline with specified method"""
         if len(points) < 4:
             return points
         
-        points_arr = np.array(points)
-        x_coords = points_arr[:, 0]
-        y_coords = points_arr[:, 1]
-
-        t = np.linspace(0, 1, len(points))
-
-        try:
-            interp_x = interp1d(t, x_coords, kind='cubic', fill_value='extrapolate')
-            interp_y = interp1d(t, y_coords, kind='cubic', fill_value='extrapolate')
-
-            t_smooth = np.linspace(0, 1, len(points) * 2)
-            x_smooth = interp_x(t_smooth)
-            y_smooth = interp_y(t_smooth)
-
-            smoothed_points = [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
-            return smoothed_points
-
-        except Exception as e:
-            print(f"Smoothing failed: {e}. Returning original points")
-            return points
+        if method == 'gaussian':
+            return self.gaussianSmooth(points, **kwargs)
+        elif method == 'savgol':
+            return self.savgolSmooth(points, **kwargs)
+        elif method == 'bspline':
+            return self.bsplineSmooth(points, **kwargs)
+        elif method == 'interp':
+            return self.interpSmooth(points, **kwargs)
+        else:
+            print(f"Unknown smoothing method: {method}. Using B-spline as default")
+            return self.bsplineSmooth(points, **kwargs)
 
     
     def visualizeCenterline(self, use_smoothed=True):
@@ -525,7 +542,7 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
             return points
         
         points_arr = np.array(points)
-        tck, u = splprep([points_arr[:, 0], [points_arr[:, 1]], s=smooth_factor*len(points), k=degree)
+        tck, u = splprep([points_arr[:, 0], points_arr[:, 1]], s=smooth_factor*len(points), k=degree)
         u_new = np.linspace(u.min(), u.max(), len(points)*2)
         x_smooth, y_smooth = splev(u_new, tck)
         
