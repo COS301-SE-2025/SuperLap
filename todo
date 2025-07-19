@@ -11,11 +11,3 @@ npm --prefix api test -- dbRouter.test.ts
 npm --prefix api test -- db.test.ts
 
 docker-compose up imageprocessing
-
-
-this is what i have to do:
-
-I have an issue with the points that get extracted from the image processing. Since they are now just the pixel coordinates, the lines are very jagged as you can see in this screenshot. We can fix this with some smoothing functions
-
-can you confirim where the pixel coordinates are being extracted and storied (unless i dudn't share the function with you, sorry)
-and also let's start smoothing the lines

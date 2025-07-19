@@ -491,6 +491,21 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
 
     return results
 
+#--------------------------------------------------------------------------------Smoothing functions added below
+
+    def gaussianSmooth(self, points, sigma=2.0):
+        """Apply Gaussian smoothing to a set of points"""
+        if len(points) < 3:
+            return points
+        
+        points_arr = np.array(points)
+        x_smooth = ndimage.gaussian_filter1d(points_arr[:, 0], sigma=sigma)
+        y_smooth = ndimage.gaussian_filter1d(points_arr[:, 1], sigma=sigma)
+        
+        return [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
+
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
