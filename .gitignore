@@ -63,3 +63,6 @@ Backend/RacelineOptimizer/Input
 
 # Ignore Unit Test files
 Unity/TestResults/
+
+# Ignore personal files
+todo

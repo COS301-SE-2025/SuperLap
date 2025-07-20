@@ -10,6 +10,8 @@ import struct
 from scipy import ndimage
 from scipy.interpolate import interp1d, splprep, splev
 from skimage.morphology import skeletonize
+from scipy.signal import savgol_filter  # ADD THIS
+
 
 class TrackProcessor:
     def __init__(self):
@@ -418,7 +420,23 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True,
         if boundaries:
             # Smooth boundaries if requested
             if smooth_boundaries:
+                print(f"Smoothing boundaries using {smooth_method} method...")
                 processor.smoothBoundaries(method=smooth_method, **smooth_kwargs)
+
+            # Save smoothed edge coordinates
+            smoothed_edge_bin_path = os.path.join(output_dir, f'{base_filename}_smoothed_edge_coords.bin')
+            with open(smoothed_edge_bin_path, 'wb') as f:
+                for key in ['outer', 'inner']:
+                    contour = processor.track_boundaries[key]
+                    points = contour.squeeze().tolist()
+                    f.write(struct.pack('<I', len(points)))  # number of points
+                    for x, y in points:
+                        f.write(struct.pack('<ff', float(x), float(y)))
+            print(f"Smoothed edge coordinates saved to: {smoothed_edge_bin_path}")
+
+            # Optional: save image showing smoothed boundaries
+            edge_viz_path = processor.drawEdgesFromBin(smoothed_edge_bin_path)
+            results['smoothed_edge_visualization'] = cv.imread(edge_viz_path)
             
             if extract_centerline:
                 print(f"Extracting centerline using {centerline_method} method...")
