@@ -398,8 +398,8 @@ def process_track_for_csharp(img_path):
     return processor.processImageForCSharp(img_path)
 
 def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, 
-                 centerline_method='skeleton', extract_centerline=False,
-                 smooth_method='bspline', smooth_boundaries=True, **smooth_kwargs):
+                centerline_method='skeleton', extract_centerline=False,
+                smooth_method='bspline', smooth_boundaries=False, **smooth_kwargs):
     processor = TrackProcessor()
     base_filename = Path(img_path).stem
     output_dir = os.path.join(output_base_dir, base_filename)
@@ -418,8 +418,7 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True,
         if boundaries:
             # Smooth boundaries if requested
             if smooth_boundaries:
-                print(f"Smoothing boundaries using {smooth_method} method...")
-                boundaries = processor.smoothBoundaries(method=smooth_method, **smooth_kwargs)
+                processor.smoothBoundaries(method=smooth_method, **smooth_kwargs)
             
             if extract_centerline:
                 print(f"Extracting centerline using {centerline_method} method...")
@@ -498,7 +497,10 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True,
         print(f"Error processing track image {img_path}: {str(e)}")
         return None
     
-def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True, centerline_method='skeleton', extract_centerline=False):
+def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', 
+                   show_debug=True, centerline_method='skeleton', 
+                   extract_centerline=False, smooth_method='bspline',
+                   smooth_boundaries=False, **smooth_kwargs):
     extensions = ['*.png', '*.jpg', '*.bmp', '*.tiff']
 
     image_files = []
@@ -515,7 +517,10 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
     results = []
     for img_path in image_files:
         print(f"\n{'='*50}")
-        result = processTrack(img_path, output_base_dir, show_debug, centerline_method, extract_centerline)
+        result = processTrack(img_path, output_base_dir, show_debug, 
+                            centerline_method, extract_centerline,
+                            smooth_method, smooth_boundaries,
+                            **smooth_kwargs)
         if result:
             results.append(result)
 
