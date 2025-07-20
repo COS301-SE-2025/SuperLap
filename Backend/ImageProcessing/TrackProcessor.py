@@ -586,7 +586,8 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
         self.track_boundaries['inner'] = self.track_boundaries['inner'].reshape(-1, 1, 2).astype(np.int32)
 
     # Visualization function added
-    def compareSmoothing(self, points, methods=['original', 'gaussian', 'savgol', 'bspline'], **kwargs):
+    def compareSmoothing(self, points, methods=['original', 'gaussian', 'savgol', 'bspline'], 
+                        output_path=None, **kwargs):
         """Compare different smoothing methods visually"""
         if not isinstance(points, np.ndarray):
             points = np.array(points)
@@ -595,16 +596,22 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
         
         for method in methods:
             if method == 'original':
-                plt.plot(points[:, 0], points[:, 1], 'k-', alpha=0.3, label='Original')
+                plt.plot(points[:, 0], points[:, 1], 'k-', alpha=0.3, label='Original', linewidth=2)
             else:
                 smoothed = self.smoothCenterline(points, method=method, **kwargs)
                 smoothed_arr = np.array(smoothed)
-                plt.plot(smoothed_arr[:, 0], smoothed_arr[:, 1], '-', label=method.capitalize())
+                plt.plot(smoothed_arr[:, 0], smoothed_arr[:, 1], '-', label=method.capitalize(), linewidth=2)
         
         plt.legend()
         plt.title('Smoothing Method Comparison')
         plt.axis('equal')
-        plt.show()
+        plt.grid(True)
+        
+        if output_path:
+            plt.savefig(output_path)
+            print(f"Saved smoothing comparison to {output_path}")
+        else:
+            plt.show()
 
 
 def main():
@@ -641,31 +648,57 @@ def main():
 
     if args.file:
         if os.path.exists(args.file):
-            result = processTrack(
-                args.file, 
-                args.output, 
-                args.debug,
-                args.centerline_method,
-                args.extract_centerline,
-                args.smooth_method,
-                args.smooth_boundaries,
-                **smooth_kwargs
+            # New TrackProcessor approach for single file
+            processor = TrackProcessor(
+                output_dir=args.output,
+                debug=args.debug,
+                centerline_method=args.centerline_method
             )
-            if result:
-                print(f"\nSingle file processing complete")
-                if args.extract_centerline and result['centerline_extracted']:
-                    print(f"Centerline extracted with {result['centerline_points']} points")
-                elif args.extract_centerline:
-                    print("Centerline extraction failed")
-                else:
-                    print("Centerline extraction skipped")
-                if args.smooth_boundaries:
-                    print(f"Boundaries smoothed using {args.smooth_method} method")
+            processor.loadImg(args.file)
+            processor.processImg(processor.original_image)
+            boundaries = processor.detectBoundaries(processor.processed_image)
+            
+            centerline_extracted = False
+            centerline_points = 0
+            
+            if args.extract_centerline:
+                centerline_results = processor.extractCenterline()
+                if centerline_results:
+                    centerline_extracted = True
+                    centerline_points = len(processor.centerline)
+                    # Generate smoothing comparison visualization
+                    comparison_path = os.path.join(args.output, 'smoothing_comparison.png')
+                    processor.compareSmoothing(
+                        processor.centerline,
+                        methods=['original', 'gaussian', 'savgol', 'bspline'],
+                        output_path=comparison_path,
+                        sigma=args.smooth_sigma,
+                        window_size=args.savgol_window,
+                        smooth_factor=args.spline_smoothness
+                    )
+                    print(f"Smoothing comparison saved to: {comparison_path}")
+            
+            # Save results to maintain compatibility with existing output
+            result = {
+                'original_image': args.file,
+                'processed_files': processor.get_output_files(),
+                'centerline_extracted': centerline_extracted,
+                'centerline_points': centerline_points
+            }
+            
+            print(f"\nSingle file processing complete")
+            if args.extract_centerline and result['centerline_extracted']:
+                print(f"Centerline extracted with {result['centerline_points']} points")
+            elif args.extract_centerline:
+                print("Centerline extraction failed")
             else:
-                print(f"\nFailed to process {args.file}")
+                print("Centerline extraction skipped")
+            if args.smooth_boundaries:
+                print(f"Boundaries smoothed using {args.smooth_method} method")
         else:
             print(f"File not found: {args.file}")
     else:
+        # Keep original batch processing approach
         results = processAllTracks(
             args.input, 
             args.output, 
