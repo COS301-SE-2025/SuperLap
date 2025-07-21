@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using TMPro;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -86,6 +88,10 @@ public class MotorcyclePlayer : MonoBehaviour
     [Tooltip("How quickly the FOV adjusts to changes.")]
     [SerializeField] private float fovAdjustSpeed = 3f;
 
+    [Header("GUI")]
+    [Tooltip("Displays the current speed of the motorcycle.")]
+    [SerializeField] private TextMeshProUGUI speedText;
+
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
     [ReadOnly] [SerializeField] private float currentSpeedKmh = 0f;
@@ -114,8 +120,12 @@ public class MotorcyclePlayer : MonoBehaviour
         UpdateTurning(Time.deltaTime);
         UpdateMotorcycleLeaning(Time.deltaTime);
         UpdateCameraFOV(Time.deltaTime);
-        
+
         currentSpeedKmh = currentSpeed * 3.6f;
+        if (speedText != null)
+        {
+            speedText.text = $"{currentSpeedKmh:F1} km/h";
+        }
     }
 
     private void HandleInput()
@@ -127,12 +137,12 @@ public class MotorcyclePlayer : MonoBehaviour
     private void UpdateMovement(float dt)
     {
         previousSpeed = currentSpeed;
-        
+
         float drivingForce = CalculateDrivingForce();
         float resistanceForces = CalculateResistanceForces();
 
         float netForce = (drivingForce * throttleInput) - resistanceForces;
-        
+
         if (throttleInput < 0)
         {
             netForce = -brakingForce - resistanceForces;
