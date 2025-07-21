@@ -62,15 +62,45 @@ public class MotorcyclePlayer : MonoBehaviour
     [Tooltip("Controls how aggressively steering reduces with speed. Higher = more reduction. (0.1-2.0 recommended)")]
     [SerializeField] private float steeringIntensity = 0.5f;
 
+    [Header("Motorcycle Banking/Leaning")]
+    [Tooltip("Reference to the motorcycle model that will tilt. Should be a child transform.")]
+    [SerializeField] private Transform motorcycleModel;
+    [Tooltip("Maximum lean angle in degrees.")]
+    [SerializeField] private float maxLeanAngle = 45f;
+    [Tooltip("Speed (m/s) at which maximum lean is achieved.")]
+    [SerializeField] private float optimalLeanSpeed = 15f;
+    [Tooltip("How quickly the bike leans into turns (0-1 range).")]
+    [SerializeField] private float leanSpeed = 5f;
+
+    [Header("Dynamic Camera")]
+    [Tooltip("Optional camera to adjust FOV based on speed and acceleration.")]
+    [SerializeField] private Camera dynamicCamera;
+    [Tooltip("Minimum field of view when stationary.")]
+    [SerializeField] private float minFOV = 60f;
+    [Tooltip("Maximum field of view at top speed.")]
+    [SerializeField] private float maxFOV = 90f;
+    [Tooltip("Speed (m/s) at which maximum FOV is reached.")]
+    [SerializeField] private float maxFOVSpeed = 50f;
+    [Tooltip("Additional FOV boost per m/s² of acceleration.")]
+    [SerializeField] private float accelerationFOVBoost = 2f;
+    [Tooltip("How quickly the FOV adjusts to changes.")]
+    [SerializeField] private float fovAdjustSpeed = 3f;
+
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
     [ReadOnly] [SerializeField] private float currentSpeedKmh = 0f;
+    [ReadOnly] [SerializeField] private float currentAcceleration = 0f;
     [ReadOnly] [SerializeField] private float currentTurnAngle = 0f;
+    [ReadOnly] [SerializeField] private float currentLeanAngle = 0f;
+    [ReadOnly] [SerializeField] private float currentFOV = 0f;
     [ReadOnly] [SerializeField] private float theoreticalTopSpeed = 0f;
 
     // Input values
     private float throttleInput = 0f;
     private float steerInput = 0f;
+    
+    // Internal tracking
+    private float previousSpeed = 0f;
 
     void Start()
     {
@@ -82,6 +112,8 @@ public class MotorcyclePlayer : MonoBehaviour
         HandleInput();
         UpdateMovement(Time.deltaTime);
         UpdateTurning(Time.deltaTime);
+        UpdateMotorcycleLeaning(Time.deltaTime);
+        UpdateCameraFOV(Time.deltaTime);
         
         currentSpeedKmh = currentSpeed * 3.6f;
     }
@@ -94,6 +126,8 @@ public class MotorcyclePlayer : MonoBehaviour
 
     private void UpdateMovement(float dt)
     {
+        previousSpeed = currentSpeed;
+        
         float drivingForce = CalculateDrivingForce();
         float resistanceForces = CalculateResistanceForces();
 
@@ -105,6 +139,7 @@ public class MotorcyclePlayer : MonoBehaviour
         }
 
         float acceleration = netForce / mass;
+        currentAcceleration = acceleration;
 
         currentSpeed += acceleration * dt;
 
@@ -122,6 +157,28 @@ public class MotorcyclePlayer : MonoBehaviour
         currentTurnAngle *= Mathf.Pow(steeringDecay, dt);
 
         transform.Rotate(Vector3.up * currentTurnAngle * dt);
+    }
+
+    private void UpdateMotorcycleLeaning(float dt)
+    {
+        if (motorcycleModel == null) return;
+
+        float targetLeanAngle = CalculateTargetLeanAngle();
+        
+        currentLeanAngle = Mathf.Lerp(currentLeanAngle, targetLeanAngle, leanSpeed * dt);
+        
+        motorcycleModel.localRotation = Quaternion.Euler(0, 0, -currentLeanAngle);
+    }
+
+    private void UpdateCameraFOV(float dt)
+    {
+        if (dynamicCamera == null) return;
+
+        float targetFOV = CalculateTargetFOV();
+        
+        currentFOV = Mathf.Lerp(currentFOV, targetFOV, fovAdjustSpeed * dt);
+        
+        dynamicCamera.fieldOfView = currentFOV;
     }
 
     private float CalculateDrivingForce()
@@ -154,6 +211,48 @@ public class MotorcyclePlayer : MonoBehaviour
         float fadeInMultiplier = Mathf.Clamp01((currentSpeed - minSteeringSpeed) / (fullSteeringSpeed - minSteeringSpeed));
         
         return steeringMultiplier * fadeInMultiplier;
+    }
+
+    private float CalculateTargetLeanAngle()
+    {
+        if (currentSpeed < minSteeringSpeed || Mathf.Abs(currentTurnAngle) < 0.1f)
+        {
+            return 0f;
+        }
+
+        float speedMultiplier = CalculateSpeedLeanMultiplier();
+        
+        float turnIntensity = Mathf.Abs(currentTurnAngle) / turnRate;
+        turnIntensity = Mathf.Clamp01(turnIntensity);
+        
+        float baseLeanAngle = turnIntensity * maxLeanAngle * speedMultiplier;
+        
+        return Mathf.Sign(currentTurnAngle) * baseLeanAngle;
+    }
+
+    private float CalculateSpeedLeanMultiplier()
+    {
+        if (currentSpeed <= optimalLeanSpeed)
+        {
+            return Mathf.Lerp(0.2f, 1f, currentSpeed / optimalLeanSpeed);
+        }
+        else
+        {
+            float excessSpeed = currentSpeed - optimalLeanSpeed;
+            float reductionFactor = 1f / (1f + excessSpeed * 0.02f);
+            return Mathf.Max(0.3f, reductionFactor);
+        }
+    }
+
+    private float CalculateTargetFOV()
+    {
+        float speedBasedFOV = Mathf.Lerp(minFOV, maxFOV, currentSpeed / maxFOVSpeed);
+        
+        float accelerationBoost = Mathf.Max(0f, currentAcceleration) * accelerationFOVBoost;
+        
+        float targetFOV = speedBasedFOV + accelerationBoost;
+        
+        return Mathf.Clamp(targetFOV, minFOV, maxFOV + (accelerationFOVBoost * 10f));
     }
 
     private void CalculateTheoreticalTopSpeed()

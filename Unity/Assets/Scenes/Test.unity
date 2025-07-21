@@ -149,6 +149,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1288741572}
+  - {fileID: 1736691630}
   m_Father: {fileID: 1613572070}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1155266264
@@ -352,7 +353,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1736691630}
   - {fileID: 739871328}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 73.5, z: 0}
@@ -376,10 +376,26 @@ MonoBehaviour:
   frontalArea: 0.6
   rollingResistanceCoefficient: 0.015
   turnRate: 120
-  steeringDecay: 0.9
+  steeringDecay: 0.1
+  minSteeringSpeed: 2
+  fullSteeringSpeed: 5
+  steeringIntensity: 0.1
+  motorcycleModel: {fileID: 739871328}
+  maxLeanAngle: 60
+  optimalLeanSpeed: 60
+  leanSpeed: 20
+  dynamicCamera: {fileID: 1736691629}
+  minFOV: 60
+  maxFOV: 75
+  maxFOVSpeed: 10
+  accelerationFOVBoost: 1
+  fovAdjustSpeed: 2
   currentSpeed: 0
   currentSpeedKmh: 0
+  currentAcceleration: 0
   currentTurnAngle: 0
+  currentLeanAngle: 0
+  currentFOV: 0
   theoreticalTopSpeed: 0
 --- !u!1 &1734401129
 GameObject:
@@ -589,11 +605,11 @@ Transform:
   m_GameObject: {fileID: 1736691627}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.5, z: -1.6}
+  m_LocalPosition: {x: 0, y: 4.4, z: -1.6000061}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1613572070}
+  m_Father: {fileID: 739871328}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1736691631
 MonoBehaviour:
