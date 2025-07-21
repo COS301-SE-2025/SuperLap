@@ -12435,7 +12435,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3700212e0190405e2b8b6bc5202e9d7d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pointCount: 100
+  meshResolution: 1000
+  splitCount: 50
+  splitMeshScale: 25
 --- !u!1 &1224448439
 GameObject:
   m_ObjectHideFlags: 0

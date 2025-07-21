@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class TrackMaster : MonoBehaviour
@@ -30,7 +31,14 @@ public class TrackMaster : MonoBehaviour
         meshRenderer.material.color = Color.white;
         instance.GetComponent<MeshFilter>().mesh = mesh;
 
+        // Add mesh collider to the track
+        MeshCollider meshCollider = instance.gameObject.AddComponent<MeshCollider>();
+        meshCollider.sharedMesh = mesh;
+
         CreateSplits(results.raceline);
+
+        AssetDatabase.CreateAsset(mesh, "Assets/GeneratedMeshes/TrackMesh.asset");
+        // AssetDatabase.SaveAssets();
     }
 
     private static void CreateSplits(List<Vector2> raceline)
@@ -43,6 +51,7 @@ public class TrackMaster : MonoBehaviour
             splitPoint.transform.position = new Vector3(point.x, 0, point.y);
             splitPoint.transform.localScale = Vector3.one * instance.splitMeshScale; // Adjust size as needed
             splitPoint.GetComponent<Renderer>().material.color = Color.red;
+            splitPoint.GetComponent<Collider>().isTrigger = true; // Make collider a trigger
             splitPoint.transform.SetParent(instance.transform); // Set parent to keep hierarchy clean
             splitPoint.name = $"SplitPoint_{i}";
         }
