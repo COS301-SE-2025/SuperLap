@@ -55,6 +55,12 @@ public class MotorcyclePlayer : MonoBehaviour
     [SerializeField] private float turnRate = 100f;
     [Tooltip("How quickly the steering returns to center (0-1 range).")]
     [SerializeField] private float steeringDecay = 0.9f;
+    [Tooltip("Minimum speed (m/s) required to steer.")]
+    [SerializeField] private float minSteeringSpeed = 0.5f;
+    [Tooltip("Speed (m/s) at which steering becomes fully responsive.")]
+    [SerializeField] private float fullSteeringSpeed = 5f;
+    [Tooltip("Controls how aggressively steering reduces with speed. Higher = more reduction. (0.1-2.0 recommended)")]
+    [SerializeField] private float steeringIntensity = 0.5f;
 
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
@@ -109,7 +115,9 @@ public class MotorcyclePlayer : MonoBehaviour
 
     private void UpdateTurning(float dt)
     {
-        currentTurnAngle += steerInput * turnRate * dt;
+        float steeringMultiplier = CalculateSteeringMultiplier();
+        
+        currentTurnAngle += steerInput * turnRate * steeringMultiplier * dt;
         
         currentTurnAngle *= Mathf.Pow(steeringDecay, dt);
 
@@ -130,6 +138,22 @@ public class MotorcyclePlayer : MonoBehaviour
         float rollingForce = rollingResistanceCoefficient * mass * GRAVITY;
 
         return dragForce + rollingForce;
+    }
+
+    private float CalculateSteeringMultiplier()
+    {
+        if (currentSpeed < minSteeringSpeed)
+        {
+            return 0f;
+        }
+
+        float normalizedSpeed = currentSpeed / fullSteeringSpeed;
+        
+        float steeringMultiplier = 1f / (1f + normalizedSpeed * steeringIntensity);
+        
+        float fadeInMultiplier = Mathf.Clamp01((currentSpeed - minSteeringSpeed) / (fullSteeringSpeed - minSteeringSpeed));
+        
+        return steeringMultiplier * fadeInMultiplier;
     }
 
     private void CalculateTheoreticalTopSpeed()
