@@ -20,6 +20,15 @@ public class EdgeData
         return edgeData;
     }
 
+    public void Translate(Vector2 offset)
+    {
+        for (int i = 0; i < OuterBoundary.Count; i++)
+            OuterBoundary[i] -= offset;
+
+        for (int i = 0; i < InnerBoundary.Count; i++)
+            InnerBoundary[i] -= offset;
+    }
+
     public float GetAverageTrackWidth()
     {
         int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);

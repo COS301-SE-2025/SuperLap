@@ -25,7 +25,7 @@ public class PythonNet
     try
     {
       // Automatically detect and set the Python DLL path
-      string pythonDllPath = @"C:\Users\milan\AppData\Local\Programs\Python\Python313\python313.dll";
+      string pythonDllPath = @"C:\Python313\Python313.dll";
       Runtime.PythonDLL = pythonDllPath;
       Debug.Log($"Using hardcoded Python DLL: {pythonDllPath}");
 
