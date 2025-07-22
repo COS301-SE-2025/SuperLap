@@ -1,0 +1,38 @@
+#pragma kernel CSMain
+
+RWStructuredBuffer<float> positions;
+RWStructuredBuffer<float> velocities;
+
+int numParticles;
+int dimensions;
+
+// Dummy random function
+float rand(uint seed)
+{
+    seed = (seed << 13u) ^ seed;
+    return 1.0 - ((seed * (seed * seed * 15731u + 789221u) + 1376312589u) & 0x7fffffff) / 1073741824.0;
+}
+
+[numthreads(64, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    uint particleId = id.x;
+    if (particleId >= numParticles) return;
+
+    uint offset = particleId * dimensions;
+
+    for (uint d = 0; d < dimensions; d++)
+    {
+        uint idx = offset + d;
+
+        float pos = positions[idx];
+        float vel = velocities[idx];
+
+        // Example basic update
+        vel = clamp(vel + 0.01 * (rand(particleId + d) - 0.5), -0.01, 0.01);
+        pos = clamp(pos + vel, 0.0, 1.0);
+
+        positions[idx] = pos;
+        velocities[idx] = vel;
+    }
+}
