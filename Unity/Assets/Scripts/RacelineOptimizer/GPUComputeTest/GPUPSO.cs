@@ -8,6 +8,8 @@ public class GPUPSO : MonoBehaviour
 
     private ComputeBuffer positionBuffer;
     private ComputeBuffer velocityBuffer;
+    private ComputeBuffer bestCostBuffer;
+    private ComputeBuffer bestPositionBuffer;
 
     void Start()
     {
@@ -16,7 +18,7 @@ public class GPUPSO : MonoBehaviour
         ReadBackData();
         Debug.Log("GPUPSO Start() called");
     }
-    
+
     public void ManualRun()
     {
         Debug.Log("GPUPSO ManualRun called");
@@ -25,6 +27,7 @@ public class GPUPSO : MonoBehaviour
         DispatchCompute();
         ReadBackData();
     }
+
     void InitBuffers()
     {
         int total = numParticles * dimensions;
@@ -43,6 +46,16 @@ public class GPUPSO : MonoBehaviour
 
         positionBuffer.SetData(initPositions);
         velocityBuffer.SetData(initVelocities);
+
+        bestCostBuffer = new ComputeBuffer(1, sizeof(uint)); // changed from float to uint
+        bestPositionBuffer = new ComputeBuffer(dimensions, sizeof(float));
+
+        // Set initial best cost to a very high sortable uint
+        uint[] initBestCost = { FloatToSortableUint(float.MaxValue) };
+        float[] initBestPos = new float[dimensions]; // Empty initial position
+
+        bestCostBuffer.SetData(initBestCost);
+        bestPositionBuffer.SetData(initBestPos);
     }
 
     void DispatchCompute()
@@ -55,6 +68,9 @@ public class GPUPSO : MonoBehaviour
         psoShader.SetBuffer(kernel, "positions", positionBuffer);
         psoShader.SetBuffer(kernel, "velocities", velocityBuffer);
 
+        psoShader.SetBuffer(kernel, "globalBestCost", bestCostBuffer);
+        psoShader.SetBuffer(kernel, "globalBestPosition", bestPositionBuffer);
+
         int threadGroups = Mathf.CeilToInt(numParticles / 64f);
         psoShader.Dispatch(kernel, threadGroups, 1, 1);
     }
@@ -64,7 +80,16 @@ public class GPUPSO : MonoBehaviour
         float[] results = new float[numParticles * dimensions];
         positionBuffer.GetData(results);
 
-        // Example debug: print first particle's first few dimensions
+        uint[] raw = new uint[1];
+        bestCostBuffer.GetData(raw);
+        float bestCost = SortableUintToFloat(raw[0]);
+
+        float[] bestPosition = new float[dimensions];
+        bestPositionBuffer.GetData(bestPosition);
+
+        Debug.Log($"Best cost from GPU: {bestCost}");
+        Debug.Log($"Best position (first 3 dims): {bestPosition[0]}, {bestPosition[1]}, {bestPosition[2]}");
+
         Debug.Log($"First particle: {results[0]}, {results[1]}, {results[2]}");
     }
 
@@ -72,5 +97,20 @@ public class GPUPSO : MonoBehaviour
     {
         positionBuffer?.Release();
         velocityBuffer?.Release();
+        bestCostBuffer?.Release();
+        bestPositionBuffer?.Release();
+    }
+
+    // Conversion helpers
+    private static uint FloatToSortableUint(float f)
+    {
+        uint i = (uint)System.BitConverter.SingleToInt32Bits(f);
+        return (i & 0x80000000u) != 0 ? ~i : i ^ 0x80000000u;
+    }
+
+    private static float SortableUintToFloat(uint i)
+    {
+        int restored = (i & 0x80000000u) != 0 ? (int)(i ^ 0x80000000u) : ~((int)i);
+        return System.BitConverter.Int32BitsToSingle(restored);
     }
 }

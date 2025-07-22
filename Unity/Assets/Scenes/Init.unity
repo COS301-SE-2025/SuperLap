@@ -270,29 +270,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13070dcdab1256c4ab08b76958544db6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  autoFindTarget: 1
-  orbitSpeed: 5
-  zoomSpeed: 1
-  panSpeed: 2
-  minDistance: 2
-  maxDistance: 100
-  defaultDistance: 20
-  minVerticalAngle: -80
-  maxVerticalAngle: 80
-  panKey: 304
-  resetKey: 114
-  enableSmoothing: 1
-  smoothingSpeed: 10
-  currentDistance: 0
-  horizontalAngle: 0
-  verticalAngle: 0
-  targetPosition: {x: 0, y: 0, z: 0}
-  lastMousePosition: {x: 0, y: 0, z: 0}
-  isDragging: 0
-  isPanning: 0
-  cam: {fileID: 0}
-  trackExtractor: {fileID: 0}
 --- !u!114 &45441861
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -305,15 +282,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e603d86ccf062a43bbde3f37f3f465f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orbitSpeed: 5
-  panSpeed: 2
-  zoomSpeed: 3
-  minDistance: 2
-  maxDistance: 50
-  target: {fileID: 0}
-  targetOffset: {x: 0, y: 0, z: 0}
-  autoFocusOnStart: 1
-  focusDistance: 15
 --- !u!1 &784184666
 GameObject:
   m_ObjectHideFlags: 0
@@ -444,6 +412,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1184377256}
+  - component: {fileID: 1184377257}
   - component: {fileID: 1184377255}
   m_Layer: 0
   m_Name: init
@@ -479,6 +448,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1184377257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1184377254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b80e2b4c91e2164f92764fdc646d408, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  psoShader: {fileID: 7200000, guid: 6f18cc2d8d02f5c42b7599762fbb5292, type: 3}
+  numParticles: 1024
+  dimensions: 100
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
