@@ -11,6 +11,7 @@ namespace RacelineVisualizer
             public List<Point> OuterBoundary { get; set; } = new();
             public List<Point> InnerBoundary { get; set; } = new();
             public List<Point> Raceline { get; set; } = new();
+            public List<Point> Playerline { get; set; } = new(); // ✅ New playerline support
             public List<CornerSegment> Corners { get; set; } = new();
         }
 
@@ -22,7 +23,7 @@ namespace RacelineVisualizer
             public Point OuterEnd;
         }
 
-        public static EdgeData ReadEdgesFromBin(string path, bool includeRaceline = false, bool includeCorners = false)
+        public static EdgeData ReadEdgesFromBin(string path, bool includeRaceline = false, bool includeCorners = false, bool includePlayerline = false)
         {
             EdgeData data = new();
 
@@ -36,10 +37,69 @@ namespace RacelineVisualizer
 
                 if (includeCorners && reader.BaseStream.Position < reader.BaseStream.Length)
                     data.Corners = ReadCorners(reader);
+
+                if (includePlayerline && reader.BaseStream.Position < reader.BaseStream.Length)
+                    data.Playerline = ReadPoints(reader); // ✅
             }
 
             return data;
         }
+
+        private static void DrawGrid(Graphics g, Size canvasSize, RectangleF dataBounds, float gridSpacing = 50f, Color? gridColor = null)
+        {
+            Color color = gridColor ?? Color.LightGray;
+            using Pen pen = new(color, 1);
+            pen.DashStyle = DashStyle.Dot;
+
+            using Font font = new Font("Arial", 8);
+            using Brush textBrush = new SolidBrush(Color.Gray);
+
+            // Helper to convert data point to pixel point (same as before)
+            Point DataToPixel(float x, float y)
+            {
+                float scaleX = (canvasSize.Width - 20) / dataBounds.Width;  // 10px margin each side
+                float scaleY = (canvasSize.Height - 30) / dataBounds.Height; // Add extra top margin (30)
+                float scale = Math.Min(scaleX, scaleY);
+
+                float px = (x - dataBounds.Left) * scale + 10;
+                float py = (y - dataBounds.Top) * scale + 30; // shift down by 30 to leave top margin
+                return new Point((int)px, (int)py);
+            }
+
+            // Draw vertical grid lines and rotated labels
+            for (float x = (float)(Math.Floor(dataBounds.Left / gridSpacing) * gridSpacing); x <= dataBounds.Right; x += gridSpacing)
+            {
+                Point p1 = DataToPixel(x, dataBounds.Top);
+                Point p2 = DataToPixel(x, dataBounds.Bottom);
+                g.DrawLine(pen, p1.X, p1.Y, p2.X, p2.Y);
+
+                string label = x.ToString("0.##");
+                SizeF size = g.MeasureString(label, font);
+
+                g.TranslateTransform(p1.X, p1.Y - 5); // position for text: slightly above the top line
+                g.RotateTransform(-45); // rotate text
+
+                // Draw text with offset to center it after rotation
+                g.DrawString(label, font, textBrush, -size.Width / 2, -size.Height / 2);
+
+                g.ResetTransform();
+            }
+
+            // Draw horizontal grid lines and labels (no rotation)
+            for (float y = (float)(Math.Floor(dataBounds.Top / gridSpacing) * gridSpacing); y <= dataBounds.Bottom; y += gridSpacing)
+            {
+                Point p1 = DataToPixel(dataBounds.Left, y);
+                Point p2 = DataToPixel(dataBounds.Right, y);
+                g.DrawLine(pen, p1.X, p1.Y, p2.X, p2.Y);
+
+                string label = y.ToString("0.##");
+                SizeF size = g.MeasureString(label, font);
+
+                // Draw label slightly right of left edge, centered vertically on the line
+                g.DrawString(label, font, textBrush, p1.X + 2, p1.Y - size.Height / 2);
+            }
+        }
+
 
         private static List<Point> ReadPoints(BinaryReader reader)
         {
@@ -177,12 +237,14 @@ namespace RacelineVisualizer
             g.DrawString("Direction →", font, textBrush, legendRect.Right - 60, legendRect.Bottom + 2);
         }
 
-        public static void DrawEdgesToImage(string binPath, string outputPath, Size canvasSize, bool includeRaceline = false, bool includeCorners = true, bool showDirectionGradient = true)
+        public static void DrawEdgesToImage(string binPath, string outputPath, Size canvasSize, bool includeRaceline = false, bool includeCorners = true, bool showDirectionGradient = true, bool includePlayerline = false)
         {
-            EdgeData edges = ReadEdgesFromBin(binPath, includeRaceline, includeCorners);
+            EdgeData edges = ReadEdgesFromBin(binPath, includeRaceline, includeCorners, includePlayerline);
 
             var allPoints = edges.OuterBoundary.Concat(edges.InnerBoundary);
             if (includeRaceline) allPoints = allPoints.Concat(edges.Raceline);
+            if (includePlayerline) allPoints = allPoints.Concat(edges.Playerline);
+
             var allXs = allPoints.Select(p => p.X);
             var allYs = allPoints.Select(p => p.Y);
 
@@ -196,6 +258,7 @@ namespace RacelineVisualizer
             edges.OuterBoundary = TransformPoints(edges.OuterBoundary, bounds, canvasSize);
             edges.InnerBoundary = TransformPoints(edges.InnerBoundary, bounds, canvasSize);
             if (includeRaceline) edges.Raceline = TransformPoints(edges.Raceline, bounds, canvasSize);
+            if (includePlayerline) edges.Playerline = TransformPoints(edges.Playerline, bounds, canvasSize);
 
             if (includeCorners)
             {
@@ -215,6 +278,7 @@ namespace RacelineVisualizer
             using Bitmap bitmap = new(canvasSize.Width, canvasSize.Height);
             using Graphics g = Graphics.FromImage(bitmap);
             g.Clear(Color.White);
+            DrawGrid(g, canvasSize, bounds, 50f);
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
             DrawContour(g, edges.OuterBoundary, Color.Blue);
@@ -226,6 +290,13 @@ namespace RacelineVisualizer
                     DrawRacelineWithStartGradient(g, edges.Raceline, gradientSegments: 100, thickness: 3);
                 else
                     DrawContour(g, edges.Raceline, Color.Green, closed: false);
+            }
+
+            if (includePlayerline && edges.Playerline.Count > 1)
+            {
+                using Pen playerPen = new(Color.Magenta, 2);
+                for (int i = 1; i < edges.Playerline.Count; i++)
+                    g.DrawLine(playerPen, edges.Playerline[i - 1], edges.Playerline[i]);
             }
 
             if (includeCorners && edges.Corners.Count > 0)
