@@ -21,6 +21,7 @@ namespace RacelineOptimizer
             if (corners != null && corners.Count > 0)
             {
                 bw.Write(corners.Count); // Fourth block: Corner count
+                Console.WriteLine($"Exporting {corners.Count} corners");
                 foreach (var corner in corners)
                 {
                     WriteVec2(bw, corner.InnerStart);

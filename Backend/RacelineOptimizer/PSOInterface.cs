@@ -75,6 +75,8 @@ namespace RacelineOptimizer
             }
 
             string racelineFilePath = $"{outputPath}/{fileNameNoExt}.bin";
+            Console.WriteLine($"Exporting {corners.Count} corners");
+
             RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline, corners);
             Console.WriteLine("Raceline optimization completed and saved to " + racelineFilePath);
 
