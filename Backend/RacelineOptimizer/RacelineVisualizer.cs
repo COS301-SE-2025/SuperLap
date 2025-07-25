@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
+using System.Linq;
 
 namespace RacelineVisualizer
 {
@@ -20,26 +24,60 @@ namespace RacelineVisualizer
             public Point InnerEnd;
             public Point OuterStart;
             public Point OuterEnd;
+
+            public float Angle;
+            public bool IsLeftTurn;
+            public int StartIndex;
+            public int EndIndex;
         }
 
-        public static EdgeData ReadEdgesFromBin(string path, bool includeRaceline = false, bool includeCorners = false)
+       public static EdgeData ReadEdgesFromBin(string path, bool includeRaceline = false, bool includeCorners = false)
         {
             EdgeData data = new();
 
-            using (var reader = new BinaryReader(File.OpenRead(path)))
-            {
-                data.OuterBoundary = ReadPoints(reader);
-                data.InnerBoundary = ReadPoints(reader);
+            using var reader = new BinaryReader(File.OpenRead(path));
 
-                if (includeRaceline && reader.BaseStream.Position < reader.BaseStream.Length)
-                    data.Raceline = ReadPoints(reader);
+            try
+            {
+                data.OuterBoundary = ReadPoints(reader); // always read
+                data.InnerBoundary = ReadPoints(reader); // always read
+                var rawRaceline = ReadPoints(reader);    // always read
+
+                if (includeRaceline)
+                    data.Raceline = rawRaceline;
 
                 if (includeCorners && reader.BaseStream.Position < reader.BaseStream.Length)
-                    data.Corners = ReadCorners(reader);
+                {
+                    int cornerCount = reader.ReadInt32();
+
+                    if (cornerCount <= 0)
+                    {
+                        Console.WriteLine("Corner count is 0, skipping corners.");
+                        return data;
+                    }
+
+                    long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
+                    const int approxSize = 4 * 8 + 4 + 1 + 4 + 4;
+                    long required = (long)cornerCount * approxSize;
+
+                    if (remaining < required)
+                    {
+                        Console.WriteLine($"Declared corner count {cornerCount} requires ~{required} bytes, but only {remaining} remain. Skipping corners.");
+                        return data;
+                    }
+
+                    data.Corners = ReadCorners(reader, cornerCount);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading binary file: {ex.Message}");
             }
 
             return data;
         }
+
+
 
         private static List<Point> ReadPoints(BinaryReader reader)
         {
@@ -54,9 +92,8 @@ namespace RacelineVisualizer
             return points;
         }
 
-        private static List<CornerSegment> ReadCorners(BinaryReader reader)
+        private static List<CornerSegment> ReadCorners(BinaryReader reader, int count)
         {
-            int count = reader.ReadInt32();
             var corners = new List<CornerSegment>(count);
             for (int i = 0; i < count; i++)
             {
@@ -75,6 +112,10 @@ namespace RacelineVisualizer
                     InnerEnd = new Point((int)Math.Round(ix1), (int)Math.Round(iy1)),
                     OuterStart = new Point((int)Math.Round(ox0), (int)Math.Round(oy0)),
                     OuterEnd = new Point((int)Math.Round(ox1), (int)Math.Round(oy1)),
+                    Angle = angle,
+                    IsLeftTurn = isLeft,
+                    StartIndex = startIdx,
+                    EndIndex = endIdx,
                 });
             }
             return corners;
@@ -170,7 +211,7 @@ namespace RacelineVisualizer
             g.FillRectangle(gradientBrush, legendRect);
             g.DrawRectangle(Pens.Black, legendRect);
 
-            using Font font = new Font("Arial", 8);
+            using Font font = new("Arial", 8);
             using Brush textBrush = new SolidBrush(Color.Black);
 
             g.DrawString("START", font, textBrush, legendRect.Left, legendRect.Bottom + 2);
@@ -204,10 +245,14 @@ namespace RacelineVisualizer
                     var c = edges.Corners[i];
                     edges.Corners[i] = new CornerSegment
                     {
-                        InnerStart = TransformPoints([c.InnerStart], bounds, canvasSize)[0],
-                        InnerEnd = TransformPoints([c.InnerEnd], bounds, canvasSize)[0],
-                        OuterStart = TransformPoints([c.OuterStart], bounds, canvasSize)[0],
-                        OuterEnd = TransformPoints([c.OuterEnd], bounds, canvasSize)[0],
+                        InnerStart = TransformPoints(new List<Point> { c.InnerStart }, bounds, canvasSize)[0],
+                        InnerEnd = TransformPoints(new List<Point> { c.InnerEnd }, bounds, canvasSize)[0],
+                        OuterStart = TransformPoints(new List<Point> { c.OuterStart }, bounds, canvasSize)[0],
+                        OuterEnd = TransformPoints(new List<Point> { c.OuterEnd }, bounds, canvasSize)[0],
+                        Angle = c.Angle,
+                        IsLeftTurn = c.IsLeftTurn,
+                        StartIndex = c.StartIndex,
+                        EndIndex = c.EndIndex,
                     };
                 }
             }
@@ -233,6 +278,7 @@ namespace RacelineVisualizer
                 using Pen cornerPen = new(Color.Purple, 2);
                 foreach (var corner in edges.Corners)
                 {
+                    Console.WriteLine($"Drawing corner: {corner.InnerStart} to {corner.InnerEnd}, {corner.OuterStart} to {corner.OuterEnd}");
                     g.DrawLine(cornerPen, corner.InnerStart, corner.InnerEnd);
                     g.DrawLine(cornerPen, corner.OuterStart, corner.OuterEnd);
                 }

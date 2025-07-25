@@ -59,7 +59,7 @@ namespace RacelineOptimizer
                 binPath: binPath,
                 outputPath: $"./{outputDir}/{fileNameNoExt}.png",
                 canvasSize: new Size(1920, 1080),
-                includeRaceline: false,
+                includeRaceline: true,
                 includeCorners: true
 
             );
