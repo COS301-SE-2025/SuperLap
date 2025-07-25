@@ -9,7 +9,7 @@ namespace RacelineOptimizer
 {
     public static class PSOInterface
     {
-        public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 60000)
+        public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 10000)
         {
             Console.WriteLine($"\nProcessing {Path.GetFileName(edgeDataFilePath)}...");
 
@@ -29,7 +29,7 @@ namespace RacelineOptimizer
                 ? 700
                 : (int)(edgeData.InnerBoundary.Count - (500 * scaleFactor));
 
-            var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, numSamples);
+            var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, 300);
             var cornerTrack = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, edgeData.InnerBoundary.Count);
             var corners = CornerDetector.DetectCorners(cornerTrack);
 
@@ -75,7 +75,7 @@ namespace RacelineOptimizer
             }
 
             string racelineFilePath = $"{outputPath}/{fileNameNoExt}.bin";
-            RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline);
+            RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline, corners);
             Console.WriteLine("Raceline optimization completed and saved to " + racelineFilePath);
 
             return true;
