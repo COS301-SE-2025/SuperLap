@@ -186,22 +186,68 @@ class TrackProcessor:
             print("No centerline points provided, falling back to adaptive mask")
             return self.createAdaptiveMask(img, show_debug=show_debug)
         
+        self.analyzeImageCharacteristics(img)
+        
         h, w = img.shape[:2]
+        
+        # Get better track width estimate
+        actual_width = self.estimateTrackWidth(centerline_points, img)
+        
+        # Create initial ROI mask with proper width
+        roi_mask = np.zeros((h, w), dtype=np.uint8)
+        
+        # Draw thick line along centerline with estimated width
+        for i in range(1, len(centerline_points)):
+            cv.line(roi_mask, centerline_points[i-1], centerline_points[i], 255, actual_width)
+        
+        # Expand ROI slightly to ensure we capture track edges
+        expand_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
+        roi_mask = cv.dilate(roi_mask, expand_kernel, iterations=1)
+        
+        # Apply adaptive masking to the entire image first
+        full_adaptive_mask = self.createAdaptiveMask(img, show_debug=False)
+        
+        # Create distance-based weights within ROI
+        roi_distance = cv.distanceTransform(roi_mask, cv.DIST_L2, 5)
+        roi_distance_norm = roi_distance / (roi_distance.max() + 1e-6)
+        
+        # Create guided mask by combining adaptive mask with ROI weighting
         guided_mask = np.zeros((h, w), dtype=np.uint8)
         
-        # Create a thick line along the centerline
-        centerline_mask = np.zeros((h, w), dtype=np.uint8)
+        # Strong inclusion within core ROI area
+        core_roi = roi_distance > actual_width * 0.2
+        guided_mask[core_roi] = full_adaptive_mask[core_roi]
         
-        # Draw the centerline with thickness based on estimated track width
-        for i in range(1, len(centerline_points)):
-            cv.line(centerline_mask, centerline_points[i-1], centerline_points[i], 255, track_width_estimate)
+        # Gradual inclusion in peripheral areas
+        peripheral_roi = (roi_distance > 0) & (roi_distance <= actual_width * 0.2)
+        peripheral_weight = roi_distance_norm[peripheral_roi]
+        peripheral_mask = full_adaptive_mask[peripheral_roi] * peripheral_weight
+        guided_mask[peripheral_roi] = (peripheral_mask > 0.3 * 255).astype(np.uint8) * 255
         
-        # Use the centerline area as a region of interest
-        roi_mask = centerline_mask > 0
-        adaptive_mask = self.createAdaptiveMask(img, show_debug=False)
-        guided_mask = cv.bitwise_and(adaptive_mask, roi_mask)
-        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
-        guided_mask = cv.morphologyEx(guided_mask, cv.MORPH_DILATE, kernel, iterations=2)
+        # Also include any strong track features outside ROI that connect to the main track
+        # This helps capture track areas that might have been missed by the centerline
+        contours, _ = cv.findContours(full_adaptive_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            area = cv.contourArea(contour)
+            if area > 1000:  # Reasonably sized contour
+                # Check if this contour intersects with our guided mask
+                contour_mask = np.zeros((h, w), dtype=np.uint8)
+                cv.fillPoly(contour_mask, [contour], 255)
+                
+                intersection = cv.bitwise_and(guided_mask, contour_mask)
+                intersection_ratio = np.sum(intersection > 0) / np.sum(contour_mask > 0)
+                
+                if intersection_ratio > 0.1:  # If 10% of the contour intersects with our mask
+                    guided_mask = cv.bitwise_or(guided_mask, contour_mask)
+        
+        # Clean up the mask with morphological operations
+        # Fill small holes
+        close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+        guided_mask = cv.morphologyEx(guided_mask, cv.MORPH_CLOSE, close_kernel, iterations=2)
+        
+        # Remove small noise
+        open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+        guided_mask = cv.morphologyEx(guided_mask, cv.MORPH_OPEN, open_kernel, iterations=1)
         
         if show_debug:
             debug_img = img.copy()
@@ -210,7 +256,9 @@ class TrackProcessor:
                 cv.line(debug_img, centerline_points[i-1], centerline_points[i], (0, 255, 255), 2)
             
             cv.imshow("Manual Centerline", debug_img)
-            cv.imshow("Centerline ROI", centerline_mask)
+            cv.imshow("ROI Mask", roi_mask)
+            cv.imshow("Full Adaptive Mask", full_adaptive_mask)
+            cv.imshow("Distance Transform", (roi_distance_norm * 255).astype(np.uint8))
             cv.imshow("Guided Mask", guided_mask)
             cv.waitKey(1)
         
