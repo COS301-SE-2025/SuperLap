@@ -122,8 +122,37 @@ class InteractiveCenterlineDrawer:
         print("- Press ENTER when finished")
         print("- Press ESC to cancel")
         
+        while True:
+            key = cv.waitKey(1) & 0xFF
+            
+            if key == ord('\r') or key == ord('\n'):  # Enter key
+                if len(self.centerline_points) > 10:
+                    print(f"Centerline drawing completed with {len(self.centerline_points)} points")
+                    break
+                else:
+                    print("Please draw a longer centerline (at least 10 points)")
+                    
+            elif key == ord('c'):  # Clear
+                self.centerline_points = []
+                self.current_stroke = []
+                self.image = self.original_image.copy()
+                cv.imshow(self.window_name, self.image)
+                print("Centerline cleared")
+                
+            elif key == ord('s'):  # Smooth
+                if len(self.centerline_points) > 4:
+                    print("Smoothing centerline...")
+                    self.centerline_points = self.smooth_centerline(self.centerline_points)
+                    self.redraw_centerline()
+                    print(f"Centerline smoothed to {len(self.centerline_points)} points")
+                else:
+                    print("Need at least 4 points to smooth")
+                    
+            elif key == 27:  # ESC key
+                print("Centerline drawing cancelled")
+                self.centerline_points = []
+                break
 
-        
         cv.destroyWindow(self.window_name)
         return self.centerline_points if len(self.centerline_points) > 10 else None
 
