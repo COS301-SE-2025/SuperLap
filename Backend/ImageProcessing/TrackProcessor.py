@@ -214,6 +214,70 @@ class TrackProcessor:
             cv.waitKey(1)
         
         return guided_mask
+    
+    def estimateTrackWidth(self, centerline_points, img):
+        if len(centerline_points) < 3:
+            return 50  # Default width
+        
+        widths = []
+        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
+
+        # Sample at several points along the centerline
+        sample_indices = np.linspace(10, len(centerline_points)-10, min(10, len(centerline_points)//3))
+        
+        for idx in sample_indices:
+            idx = int(idx)
+            if idx >= len(centerline_points) - 1:
+                continue
+
+            p1 = np.array(centerline_points[max(0, idx-2)])
+            p2 = np.array(centerline_points[min(len(centerline_points)-1, idx+2)])
+            
+            direction = p2 - p1
+            if np.linalg.norm(direction) == 0:
+                continue
+                
+            direction = direction / np.linalg.norm(direction)
+            perpendicular = np.array([-direction[1], direction[0]])
+            
+            center = np.array(centerline_points[idx])
+            
+            # Sample along perpendicular line to find track edges
+            max_search = 100
+            left_edge = None
+            right_edge = None
+            
+            for dist in range(5, max_search, 2):
+                # Check both sides
+                for side, perp_dir in [(-1, -perpendicular), (1, perpendicular)]:
+                    sample_point = center + dist * perp_dir
+                    x, y = int(sample_point[0]), int(sample_point[1])
+                    
+                    if 0 <= x < gray.shape[1] and 0 <= y < gray.shape[0]:
+                        # Look for significant brightness change (edge)
+                        if dist > 5:  # Skip points too close to centerline
+                            prev_point = center + (dist-5) * perp_dir
+                            px, py = int(prev_point[0]), int(prev_point[1])
+                            
+                            if 0 <= px < gray.shape[1] and 0 <= py < gray.shape[0]:
+                                brightness_change = abs(int(gray[y, x]) - int(gray[py, px]))
+                                if brightness_change > 30:  # Threshold for edge detection
+                                    if side == -1 and left_edge is None:
+                                        left_edge = dist
+                                    elif side == 1 and right_edge is None:
+                                        right_edge = dist
+            
+            if left_edge and right_edge:
+                total_width = left_edge + right_edge
+                widths.append(total_width)
+        
+        if widths:
+            estimated_width = int(np.median(widths))
+            print(f"Estimated track width: {estimated_width} pixels (from {len(widths)} samples)")
+            return max(20, min(150, estimated_width))  # Clamp to reasonable range
+        else:
+            print("Could not estimate track width, using default of 50 pixels")
+            return 50
 
     def analyzeImageCharacteristics(self, img):
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
