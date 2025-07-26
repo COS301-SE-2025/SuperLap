@@ -39,6 +39,44 @@ class InteractiveCenterlineDrawer:
                 self.centerline_points.extend(self.current_stroke)
                 print(f"Stroke added with {len(self.current_stroke)} points. Total points: {len(self.centerline_points)}")
             self.current_stroke = []
+        
+    def smooth_centerline(self, points, smoothing_factor=0.1):
+        if len(points) < 4:
+            return points
+            
+        points_array = np.array(points)
+        
+        # Remove duplicate consecutive points
+        unique_points = [points_array[0]]
+        for i in range(1, len(points_array)):
+            if np.linalg.norm(points_array[i] - points_array[i-1]) > 2:  # Minimum distance threshold
+                unique_points.append(points_array[i])
+        
+        if len(unique_points) < 4:
+            return points
+            
+        unique_points = np.array(unique_points)
+        
+        try:
+            # Use parametric spline fitting
+            t = np.linspace(0, 1, len(unique_points))
+            
+            # Fit splines for x and y coordinates
+            from scipy.interpolate import UnivariateSpline
+            spline_x = UnivariateSpline(t, unique_points[:, 0], s=len(unique_points) * smoothing_factor)
+            spline_y = UnivariateSpline(t, unique_points[:, 1], s=len(unique_points) * smoothing_factor)
+            
+            # Generate smoothed points
+            t_smooth = np.linspace(0, 1, len(unique_points) * 2)
+            smooth_x = spline_x(t_smooth)
+            smooth_y = spline_y(t_smooth)
+            
+            smoothed_points = [(int(x), int(y)) for x, y in zip(smooth_x, smooth_y)]
+            return smoothed_points
+            
+        except Exception as e:
+            print(f"Smoothing failed: {e}. Returning original points.")
+            return points
 
 class TrackProcessor:
     def __init__(self):
