@@ -1399,13 +1399,14 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
+    parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm with optional manual centerline guidance")
     parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
     parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
     parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
     parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing and generate edge visualization')
     parser.add_argument('--extract-centerline', '-e', action='store_true', help='Extract centerline data (disabled by default)')
     parser.add_argument('--centerline-method', '-c', choices=['skeleton', 'distance_transform', 'medial_axis'], default='skeleton', help='Method for centerline extraction (Default: skeleton)')
+    parser.add_argument('--manual-centerline', '-m', action='store_true', help='Enable manual centerline drawing to guide track extraction')
 
     args = parser.parse_args()
 
@@ -1413,11 +1414,14 @@ def main():
 
     if args.file:
         if os.path.exists(args.file):
-            result = processTrack(args.file, args.output, args.debug, args.centerline_method, args.extract_centerline)
+            result = processTrack(args.file, args.output, args.debug, args.centerline_method, args.extract_centerline, args.manual_centerline)
             if result:
                 print(f"\nSingle file processing complete")
                 print(f"Boundaries normalized to {result['outer_boundary_points']} outer and {result['inner_boundary_points']} inner points")
 
+                if args.manual_centerline and result['manual_centerline_used']:
+                    print(f"Manual centerline guidance used with {result['manual_centerline_points']} points")
+                
                 if args.extract_centerline and result['centerline_extracted']:
                     print(f"Centerline extracted with {result['centerline_points']} points")
                 elif args.extract_centerline:
@@ -1429,13 +1433,14 @@ def main():
         else:
             print(f"File not found: {args.file}")
     else:
-        results = processAllTracks(args.input, args.output, args.debug, args.centerline_method, args.extract_centerline)
+        results = processAllTracks(args.input, args.output, args.debug, args.centerline_method, args.extract_centerline, args.manual_centerline)
 
         print(f"\n{'='*50}")
         print(f"PROCESSING SUMMARY")
         print(f"\n{'='*50}")
         print(f"Total files processed: {len(results)}")
         print(f"Output directory: {args.output}")
+        print(f"Manual centerline guidance: {'Enabled' if args.manual_centerline else 'Disabled'}")
         print(f"Centerline extraction: {'Enabled' if args.extract_centerline else 'Disabled'}")
         if args.extract_centerline:
             print(f"Centerline method used: {args.centerline_method}")
@@ -1443,11 +1448,16 @@ def main():
         if results:
             print(f"\nProcessed tracks:")
             centerline_success = 0
+            manual_centerline_used = 0
 
             for result in results:
                 trackName = Path(result['original_image']).stem
                 status_info = []
                 status_info.append(f"Boundaries normalized to 1800 points each")
+
+                if args.manual_centerline and result['manual_centerline_used']:
+                    manual_centerline_used += 1
+                    status_info.append(f"Manual centerline: {result['manual_centerline_points']} points")
 
                 if args.extract_centerline and result['centerline_extracted']:
                     centerline_success += 1
@@ -1458,8 +1468,11 @@ def main():
                 status_str = ", ".join(status_info) if status_info else "basic processing only"
                 print(f" - {trackName}: {len(result['processed_files'])} files generated ({status_str})")
 
+            if args.manual_centerline:
+                print(f"\nManual centerline guidance success rate: {manual_centerline_used}/{len(results)} tracks")
+            
             if args.extract_centerline:
-                print(f"\nCenterline extraction success rate: {centerline_success}/{len(results)} tracks")
+                print(f"Centerline extraction success rate: {centerline_success}/{len(results)} tracks")
 
                 
 if __name__ == "__main__":
