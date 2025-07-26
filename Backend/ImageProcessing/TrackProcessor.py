@@ -176,6 +176,10 @@ class TrackProcessor:
         print(f"Image loaded successfully.")
         return self.original_image
     
+    def setManualCenterline(self, centerline_points):
+        self.manual_centerline = centerline_points
+        print(f"Manual centerline set with {len(centerline_points)} points")
+    
     def analyzeImageCharacteristics(self, img):
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
