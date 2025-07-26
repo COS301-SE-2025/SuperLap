@@ -21,6 +21,25 @@ class InteractiveCenterlineDrawer:
         self.current_stroke = []
         self.window_name = "Draw Centerline - Left click and drag to draw, 'c' to clear, 's' to smooth, ENTER to finish"
 
+    def mouse_callback(self, event, x, y):
+        if event == cv.EVENT_LBUTTONDOWN:
+            self.drawing = True
+            self.current_stroke = [(x, y)]
+            
+        elif event == cv.EVENT_MOUSEMOVE and self.drawing:
+            self.current_stroke.append((x, y))
+            cv.circle(self.image, (x, y), 3, (0, 255, 255), -1)  # Yellow dots
+            if len(self.current_stroke) > 1:
+                cv.line(self.image, self.current_stroke[-2], self.current_stroke[-1], (0, 255, 255), 2)
+            cv.imshow(self.window_name, self.image)
+            
+        elif event == cv.EVENT_LBUTTONUP:
+            self.drawing = False
+            if len(self.current_stroke) > 1:
+                self.centerline_points.extend(self.current_stroke)
+                print(f"Stroke added with {len(self.current_stroke)} points. Total points: {len(self.centerline_points)}")
+            self.current_stroke = []
+
 class TrackProcessor:
     def __init__(self):
         #initialize track values
