@@ -186,203 +186,67 @@ class TrackProcessor:
             print("No centerline points provided, falling back to adaptive mask")
             return self.createAdaptiveMask(img, show_debug=show_debug)
         
-        self.analyzeImageCharacteristics(img)
-        
         h, w = img.shape[:2]
         
-        # Get better track width estimate
+        # Estimate track width simply
         actual_width = self.estimateTrackWidth(centerline_points, img)
+        print(f"Using estimated track width: {actual_width} pixels")
         
-        # Create initial ROI mask with proper width
+        # Create a simple region of interest mask around the centerline
         roi_mask = np.zeros((h, w), dtype=np.uint8)
         
-        # Draw thick line along centerline with estimated width
+        # Draw thick lines along centerline to create ROI
         for i in range(1, len(centerline_points)):
-            cv.line(roi_mask, centerline_points[i-1], centerline_points[i], 255, actual_width)
+            cv.line(roi_mask, centerline_points[i-1], centerline_points[i], 255, actual_width//2)
         
-        # Expand ROI slightly to ensure we capture track edges
-        expand_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
-        roi_mask = cv.dilate(roi_mask, expand_kernel, iterations=1)
+        # Slightly expand the ROI
+        expand_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
+        roi_mask = cv.dilate(roi_mask, expand_kernel, iterations=2)
         
-        # Apply adaptive masking to the entire image first
-        full_adaptive_mask = self.createAdaptiveMask(img, show_debug=False)
+        # Now apply the normal adaptive mask processing, but only within the ROI
+        full_adaptive_mask = self.createAdaptiveMask(img, method='enhanced_multi_approach', show_debug=False)
         
-        # Create distance-based weights within ROI
-        roi_distance = cv.distanceTransform(roi_mask, cv.DIST_L2, 5)
-        roi_distance_norm = roi_distance / (roi_distance.max() + 1e-6)
+        # Combine: keep adaptive mask results only within ROI
+        guided_mask = cv.bitwise_and(full_adaptive_mask, roi_mask)
         
-        # Create guided mask by combining adaptive mask with ROI weighting
-        guided_mask = np.zeros((h, w), dtype=np.uint8)
+        # Ensure we always include the centerline itself
+        centerline_mask = np.zeros((h, w), dtype=np.uint8)
+        for i in range(1, len(centerline_points)):
+            cv.line(centerline_mask, centerline_points[i-1], centerline_points[i], 255, max(5, actual_width//4))
         
-        # Strong inclusion within core ROI area
-        core_roi = roi_distance > actual_width * 0.2
-        guided_mask[core_roi] = full_adaptive_mask[core_roi]
-        
-        # Gradual inclusion in peripheral areas
-        peripheral_roi = (roi_distance > 0) & (roi_distance <= actual_width * 0.2)
-        peripheral_weight = roi_distance_norm[peripheral_roi]
-        peripheral_mask = full_adaptive_mask[peripheral_roi] * peripheral_weight
-        guided_mask[peripheral_roi] = (peripheral_mask > 0.3 * 255).astype(np.uint8) * 255
-        
-        # Also include any strong track features outside ROI that connect to the main track
-        # This helps capture track areas that might have been missed by the centerline
-        contours, _ = cv.findContours(full_adaptive_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        for contour in contours:
-            area = cv.contourArea(contour)
-            if area > 1000:  # Reasonably sized contour
-                # Check if this contour intersects with our guided mask
-                contour_mask = np.zeros((h, w), dtype=np.uint8)
-                cv.fillPoly(contour_mask, [contour], 255)
-                
-                intersection = cv.bitwise_and(guided_mask, contour_mask)
-                intersection_ratio = np.sum(intersection > 0) / np.sum(contour_mask > 0)
-                
-                if intersection_ratio > 0.1:  # If 10% of the contour intersects with our mask
-                    guided_mask = cv.bitwise_or(guided_mask, contour_mask)
-        
-        # Clean up the mask with morphological operations
-        # Fill small holes
-        close_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
-        guided_mask = cv.morphologyEx(guided_mask, cv.MORPH_CLOSE, close_kernel, iterations=2)
-        
-        # Remove small noise
-        open_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
-        guided_mask = cv.morphologyEx(guided_mask, cv.MORPH_OPEN, open_kernel, iterations=1)
+        # Final result: combine guided mask with centerline guarantee
+        final_mask = cv.bitwise_or(guided_mask, centerline_mask)
         
         if show_debug:
             debug_img = img.copy()
-            # Draw the centerline
             for i in range(1, len(centerline_points)):
-                cv.line(debug_img, centerline_points[i-1], centerline_points[i], (0, 255, 255), 2)
+                cv.line(debug_img, centerline_points[i-1], centerline_points[i], (0, 255, 255), 3)
             
-            cv.imshow("Manual Centerline", debug_img)
+            cv.imshow("Manual Centerline on Image", debug_img)
             cv.imshow("ROI Mask", roi_mask)
-            cv.imshow("Full Adaptive Mask", full_adaptive_mask)
-            cv.imshow("Distance Transform", (roi_distance_norm * 255).astype(np.uint8))
             cv.imshow("Guided Mask", guided_mask)
+            cv.imshow("Full Adaptive Mask", full_adaptive_mask)
+            cv.imshow("Final Guided Mask", final_mask)
             cv.waitKey(1)
         
         return guided_mask
-    
+
     def estimateTrackWidth(self, centerline_points, img):
-        if len(centerline_points) < 3:
-            return 50  # Default width
+        if len(centerline_points) < 10:
+            return 50
         
-        widths = []
-        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
+        # Just use image size as a baseline
+        img_diagonal = np.sqrt(img.shape[0]**2 + img.shape[1]**2)
         
-        # Apply edge detection to help find track boundaries
-        edges = cv.Canny(gray, 30, 100)
+        # Estimate based on typical track proportions (3-8% of diagonal)
+        estimated_width = int(img_diagonal * 0.05)  # 5% of diagonal as default
         
-        # Sample at several points along the centerline
-        sample_indices = np.linspace(10, len(centerline_points)-10, min(15, len(centerline_points)//2))
+        # Clamp to reasonable bounds
+        estimated_width = max(20, min(100, estimated_width))
         
-        for idx in sample_indices:
-            idx = int(idx)
-            if idx >= len(centerline_points) - 2:
-                continue
-                
-            # Get point and calculate direction using a wider window for stability
-            window_size = min(5, len(centerline_points)//10)
-            start_idx = max(0, idx - window_size)
-            end_idx = min(len(centerline_points), idx + window_size)
-            
-            if end_idx - start_idx < 2:
-                continue
-                
-            p1 = np.array(centerline_points[start_idx])
-            p2 = np.array(centerline_points[end_idx-1])
-            
-            # Calculate perpendicular direction
-            direction = p2 - p1
-            length = np.linalg.norm(direction)
-            if length == 0:
-                continue
-                
-            direction = direction / length
-            perpendicular = np.array([-direction[1], direction[0]])
-            
-            center = np.array(centerline_points[idx])
-            
-            # Sample along perpendicular line to find track edges
-            max_search = 150
-            left_distances = []
-            right_distances = []
-            
-            # Search for edges on both sides
-            for side, perp_dir in [(-1, -perpendicular), (1, perpendicular)]:
-                edge_found = False
-                prev_brightness = None
-                
-                for dist in range(5, max_search, 2):
-                    sample_point = center + dist * perp_dir
-                    x, y = int(sample_point[0]), int(sample_point[1])
-                    
-                    if not (0 <= x < gray.shape[1] and 0 <= y < gray.shape[0]):
-                        break
-                    
-                    current_brightness = int(gray[y, x])
-                    
-                    # Method 1: Look for significant brightness change
-                    if prev_brightness is not None:
-                        brightness_change = abs(current_brightness - prev_brightness)
-                        if brightness_change > 25:  # Edge threshold
-                            if side == -1:
-                                left_distances.append(dist)
-                            else:
-                                right_distances.append(dist)
-                            edge_found = True
-                            break
-                    
-                    # Method 2: Check if we hit a strong edge from Canny
-                    if edges[y, x] > 0:
-                        if side == -1:
-                            left_distances.append(dist)
-                        else:
-                            right_distances.append(dist)
-                        edge_found = True
-                        break
-                    
-                    prev_brightness = current_brightness
-                
-                # If no edge found, use maximum search distance (track might extend to image boundary)
-                if not edge_found:
-                    if side == -1:
-                        left_distances.append(max_search - 10)
-                    else:
-                        right_distances.append(max_search - 10)
+        print(f"Simple width estimation: {estimated_width} pixels (based on image diagonal: {img_diagonal:.0f})")
         
-        # Calculate track width from the collected measurements
-        all_distances = left_distances + right_distances
-        
-        if all_distances:
-            # Use median of all half-widths and double it
-            median_half_width = np.median(all_distances)
-            estimated_width = int(median_half_width * 2)
-            
-            # Also calculate based on left+right pairs if we have them
-            if left_distances and right_distances:
-                paired_widths = []
-                min_pairs = min(len(left_distances), len(right_distances))
-                for i in range(min_pairs):
-                    paired_widths.append(left_distances[i] + right_distances[i])
-                
-                if paired_widths:
-                    paired_width = int(np.median(paired_widths))
-                    # Use the more conservative estimate
-                    estimated_width = min(estimated_width, paired_width)
-            
-            # Clamp to reasonable range
-            estimated_width = max(30, min(200, estimated_width))
-            
-            print(f"Estimated track width: {estimated_width} pixels")
-            print(f"  - From {len(all_distances)} edge measurements")
-            print(f"  - Left edges found: {len(left_distances)}, Right edges found: {len(right_distances)}")
-            
-            return estimated_width
-        else:
-            print("Could not estimate track width, using default of 60 pixels")
-            return 60
+        return estimated_width
 
     def analyzeImageCharacteristics(self, img):
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
