@@ -615,11 +615,17 @@ class TrackProcessor:
         plt.show()
         plt.close()
     
-    def processImg(self, img, mask_method='enhanced_multi_approach', show_debug=False):
+    def processImg(self, img, mask_method='enhanced_multi_approach', show_debug=False, use_manual_centerline=True):
         print(f"Processing image with method: {mask_method}")
         
-        # Create adaptive mask
-        adaptive_mask = self.createAdaptiveMask(img, method=mask_method, show_debug=show_debug)
+        # Create mask - use guided mask if manual centerline is available
+        if use_manual_centerline and self.manual_centerline:
+            print("Using manual centerline to guide mask creation...")
+            track_width = self.estimateTrackWidth(self.manual_centerline, img)
+            adaptive_mask = self.createGuidedMask(img, self.manual_centerline, track_width, show_debug=show_debug)
+        else:
+            print("Using automatic mask creation...")
+            adaptive_mask = self.createAdaptiveMask(img, method=mask_method, show_debug=show_debug)
 
         # Apply bilateral filter to reduce noise while preserving edges
         bi_lat_filter = cv.bilateralFilter(adaptive_mask, 9, 80, 80)
