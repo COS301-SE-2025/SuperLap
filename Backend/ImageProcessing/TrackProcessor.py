@@ -20,8 +20,8 @@ class InteractiveCenterlineDrawer:
         self.centerline_points = []
         self.current_stroke = []
         self.window_name = "Draw Centerline - Left click and drag to draw, 'c' to clear, 's' to smooth, ENTER to finish"
-
-    def mouse_callback(self, event, x, y):
+        
+    def mouse_callback(self, event, x, y, flags, param):
         if event == cv.EVENT_LBUTTONDOWN:
             self.drawing = True
             self.current_stroke = [(x, y)]
@@ -39,7 +39,7 @@ class InteractiveCenterlineDrawer:
                 self.centerline_points.extend(self.current_stroke)
                 print(f"Stroke added with {len(self.current_stroke)} points. Total points: {len(self.centerline_points)}")
             self.current_stroke = []
-        
+    
     def smooth_centerline(self, points, smoothing_factor=0.1):
         if len(points) < 4:
             return points
@@ -77,7 +77,7 @@ class InteractiveCenterlineDrawer:
         except Exception as e:
             print(f"Smoothing failed: {e}. Returning original points.")
             return points
-        
+    
     def redraw_centerline(self):
         self.image = self.original_image.copy()
         if len(self.centerline_points) > 1:
@@ -87,7 +87,7 @@ class InteractiveCenterlineDrawer:
             for point in self.centerline_points[::5]:  # Draw every 5th point to avoid clutter
                 cv.circle(self.image, point, 2, (0, 255, 0), -1)
         cv.imshow(self.window_name, self.image)
-
+    
     def draw_centerline(self):
         cv.namedWindow(self.window_name, cv.WINDOW_NORMAL)
         cv.resizeWindow(self.window_name, 1200, 800)
@@ -152,7 +152,7 @@ class InteractiveCenterlineDrawer:
                 print("Centerline drawing cancelled")
                 self.centerline_points = []
                 break
-
+        
         cv.destroyWindow(self.window_name)
         return self.centerline_points if len(self.centerline_points) > 10 else None
 
@@ -165,6 +165,7 @@ class TrackProcessor:
         self.track_boundaries = None
         self.centerline = None
         self.centerline_smoothed = None
+        self.manual_centerline = None
         self.distance_transform = None
         self.adaptive_mask_params = None
 
@@ -194,11 +195,11 @@ class TrackProcessor:
         # Draw the centerline with thickness based on estimated track width
         for i in range(1, len(centerline_points)):
             cv.line(centerline_mask, centerline_points[i-1], centerline_points[i], 255, track_width_estimate)
-
+        
+        # Use the centerline area as a region of interest
         roi_mask = centerline_mask > 0
         adaptive_mask = self.createAdaptiveMask(img, show_debug=False)
-        guided_mask = cv.bitwise_and(adaptive_mask, centerline_mask)
-        
+        guided_mask = cv.bitwise_and(adaptive_mask, roi_mask)
         kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
         guided_mask = cv.morphologyEx(guided_mask, cv.MORPH_DILATE, kernel, iterations=2)
         
@@ -221,63 +222,119 @@ class TrackProcessor:
         
         widths = []
         gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
-
+        
+        # Apply edge detection to help find track boundaries
+        edges = cv.Canny(gray, 30, 100)
+        
         # Sample at several points along the centerline
-        sample_indices = np.linspace(10, len(centerline_points)-10, min(10, len(centerline_points)//3))
+        sample_indices = np.linspace(10, len(centerline_points)-10, min(15, len(centerline_points)//2))
         
         for idx in sample_indices:
             idx = int(idx)
-            if idx >= len(centerline_points) - 1:
-                continue
-
-            p1 = np.array(centerline_points[max(0, idx-2)])
-            p2 = np.array(centerline_points[min(len(centerline_points)-1, idx+2)])
-            
-            direction = p2 - p1
-            if np.linalg.norm(direction) == 0:
+            if idx >= len(centerline_points) - 2:
                 continue
                 
-            direction = direction / np.linalg.norm(direction)
+            # Get point and calculate direction using a wider window for stability
+            window_size = min(5, len(centerline_points)//10)
+            start_idx = max(0, idx - window_size)
+            end_idx = min(len(centerline_points), idx + window_size)
+            
+            if end_idx - start_idx < 2:
+                continue
+                
+            p1 = np.array(centerline_points[start_idx])
+            p2 = np.array(centerline_points[end_idx-1])
+            
+            # Calculate perpendicular direction
+            direction = p2 - p1
+            length = np.linalg.norm(direction)
+            if length == 0:
+                continue
+                
+            direction = direction / length
             perpendicular = np.array([-direction[1], direction[0]])
             
             center = np.array(centerline_points[idx])
             
             # Sample along perpendicular line to find track edges
-            max_search = 100
-            left_edge = None
-            right_edge = None
+            max_search = 150
+            left_distances = []
+            right_distances = []
             
-            for dist in range(5, max_search, 2):
-                # Check both sides
-                for side, perp_dir in [(-1, -perpendicular), (1, perpendicular)]:
+            # Search for edges on both sides
+            for side, perp_dir in [(-1, -perpendicular), (1, perpendicular)]:
+                edge_found = False
+                prev_brightness = None
+                
+                for dist in range(5, max_search, 2):
                     sample_point = center + dist * perp_dir
                     x, y = int(sample_point[0]), int(sample_point[1])
                     
-                    if 0 <= x < gray.shape[1] and 0 <= y < gray.shape[0]:
-                        # Look for significant brightness change (edge)
-                        if dist > 5:  # Skip points too close to centerline
-                            prev_point = center + (dist-5) * perp_dir
-                            px, py = int(prev_point[0]), int(prev_point[1])
-                            
-                            if 0 <= px < gray.shape[1] and 0 <= py < gray.shape[0]:
-                                brightness_change = abs(int(gray[y, x]) - int(gray[py, px]))
-                                if brightness_change > 30:  # Threshold for edge detection
-                                    if side == -1 and left_edge is None:
-                                        left_edge = dist
-                                    elif side == 1 and right_edge is None:
-                                        right_edge = dist
-            
-            if left_edge and right_edge:
-                total_width = left_edge + right_edge
-                widths.append(total_width)
+                    if not (0 <= x < gray.shape[1] and 0 <= y < gray.shape[0]):
+                        break
+                    
+                    current_brightness = int(gray[y, x])
+                    
+                    # Method 1: Look for significant brightness change
+                    if prev_brightness is not None:
+                        brightness_change = abs(current_brightness - prev_brightness)
+                        if brightness_change > 25:  # Edge threshold
+                            if side == -1:
+                                left_distances.append(dist)
+                            else:
+                                right_distances.append(dist)
+                            edge_found = True
+                            break
+                    
+                    # Method 2: Check if we hit a strong edge from Canny
+                    if edges[y, x] > 0:
+                        if side == -1:
+                            left_distances.append(dist)
+                        else:
+                            right_distances.append(dist)
+                        edge_found = True
+                        break
+                    
+                    prev_brightness = current_brightness
+                
+                # If no edge found, use maximum search distance (track might extend to image boundary)
+                if not edge_found:
+                    if side == -1:
+                        left_distances.append(max_search - 10)
+                    else:
+                        right_distances.append(max_search - 10)
         
-        if widths:
-            estimated_width = int(np.median(widths))
-            print(f"Estimated track width: {estimated_width} pixels (from {len(widths)} samples)")
-            return max(20, min(150, estimated_width))  # Clamp to reasonable range
+        # Calculate track width from the collected measurements
+        all_distances = left_distances + right_distances
+        
+        if all_distances:
+            # Use median of all half-widths and double it
+            median_half_width = np.median(all_distances)
+            estimated_width = int(median_half_width * 2)
+            
+            # Also calculate based on left+right pairs if we have them
+            if left_distances and right_distances:
+                paired_widths = []
+                min_pairs = min(len(left_distances), len(right_distances))
+                for i in range(min_pairs):
+                    paired_widths.append(left_distances[i] + right_distances[i])
+                
+                if paired_widths:
+                    paired_width = int(np.median(paired_widths))
+                    # Use the more conservative estimate
+                    estimated_width = min(estimated_width, paired_width)
+            
+            # Clamp to reasonable range
+            estimated_width = max(30, min(200, estimated_width))
+            
+            print(f"Estimated track width: {estimated_width} pixels")
+            print(f"  - From {len(all_distances)} edge measurements")
+            print(f"  - Left edges found: {len(left_distances)}, Right edges found: {len(right_distances)}")
+            
+            return estimated_width
         else:
-            print("Could not estimate track width, using default of 50 pixels")
-            return 50
+            print("Could not estimate track width, using default of 60 pixels")
+            return 60
 
     def analyzeImageCharacteristics(self, img):
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
@@ -706,20 +763,20 @@ class TrackProcessor:
             nx, ny = -dy / length, dx / length
 
             # Walk outward until track ends
-        def trace_outward(x, y, nx, ny, direction):
-            for step in range(1, step_limit):
-                tx = int(round(x + direction * step * nx))
-                ty = int(round(y + direction * step * ny))
-                if not is_inside(tx, ty):
-                    return (tx, ty)
-            return (int(round(x + direction * step_limit * nx)),
-                    int(round(y + direction * step_limit * ny)))
+            def trace_outward(x, y, nx, ny, direction):
+                for step in range(1, step_limit):
+                    tx = int(round(x + direction * step * nx))
+                    ty = int(round(y + direction * step * ny))
+                    if not is_inside(tx, ty):
+                        return (tx, ty)
+                return (int(round(x + direction * step_limit * nx)),
+                        int(round(y + direction * step_limit * ny)))
 
-        outer_pt = trace_outward(x0, y0, nx, ny, direction=+1)
-        inner_pt = trace_outward(x0, y0, nx, ny, direction=-1)
+            outer_pt = trace_outward(x0, y0, nx, ny, direction=+1)
+            inner_pt = trace_outward(x0, y0, nx, ny, direction=-1)
 
-        outer_points.append(outer_pt)
-        inner_points.append(inner_pt)
+            outer_points.append(outer_pt)
+            inner_points.append(inner_pt)
 
         print(f"Extracted {len(inner_points)} inner and {len(outer_points)} outer boundary points.")
 
@@ -873,8 +930,6 @@ class TrackProcessor:
             'method': 'improved_morphological_conservative'
         }
 
-
-    
     def detectBoundariesFallback(self, img, show_debug=False):
         print("Using fallback edge-based boundary detection...")
         
@@ -988,10 +1043,6 @@ class TrackProcessor:
 
         curvatures = self.calculateCurvature(points)
 
-        #if np.mean(curvatures) > 1.2 or np.max(curvatures) > 2.5:
-        #    print("Rejected contour: too jagged or has sharp turns")
-        #    return np.array([])
-
         from scipy.ndimage import gaussian_filter1d
         curvatures_smooth = gaussian_filter1d(curvatures, sigma=2)
 
@@ -1058,21 +1109,15 @@ class TrackProcessor:
         
         track_bin = (self.track_mask > 0).astype(bool)
 
-        #if method == 'skeleton':
-        skeleton = skeletonize(track_bin)
-        skeleton_img = (skeleton * 255).astype(np.uint8)
-        centerline_points = self.skeletonToPoints(skeleton_img)
-
-        #elif method == 'distance_transform':
-            #dist_transform = cv.distanceTransform(track_bin, cv.DIST_L2, 5)
-
-
-        #elif method == 'medial_axis':
-            #dist_transform = cv.distanceTransform(track_bin, cv.DIST_L2, 5)
-
-        #else:
-            #print(f"{method} not recognised, defaulting to geometric")
-
+        if method == 'skeleton':
+            skeleton = skeletonize(track_bin)
+            skeleton_img = (skeleton * 255).astype(np.uint8)
+            centerline_points = self.skeletonToPoints(skeleton_img)
+        else:
+            print(f"{method} not implemented, defaulting to skeleton")
+            skeleton = skeletonize(track_bin)
+            skeleton_img = (skeleton * 255).astype(np.uint8)
+            centerline_points = self.skeletonToPoints(skeleton_img)
 
         if not centerline_points:
             print(f"No centerline points found with method: {method}")
@@ -1143,7 +1188,6 @@ class TrackProcessor:
             print(f"Smoothing failed: {e}. Returning original points")
             return points
 
-    
     def visualizeCenterline(self, use_smoothed=True):
         if self.original_image is None:
             return None
@@ -1374,7 +1418,7 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
         print(f"Error processing track image {img_path}: {str(e)}")
         return None
     
-def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True, centerline_method='skeleton', extract_centerline=False):
+def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True, centerline_method='skeleton', extract_centerline=False, manual_centerline=False):
     extensions = ['*.png', '*.jpg', '*.bmp', '*.tiff']
 
     image_files = []
@@ -1391,7 +1435,7 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
     results = []
     for img_path in image_files:
         print(f"\n{'='*50}")
-        result = processTrack(img_path, output_base_dir, show_debug, centerline_method, extract_centerline)
+        result = processTrack(img_path, output_base_dir, show_debug, centerline_method, extract_centerline, manual_centerline)
         if result:
             results.append(result)
 
