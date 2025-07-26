@@ -77,6 +77,16 @@ class InteractiveCenterlineDrawer:
         except Exception as e:
             print(f"Smoothing failed: {e}. Returning original points.")
             return points
+        
+    def redraw_centerline(self):
+        self.image = self.original_image.copy()
+        if len(self.centerline_points) > 1:
+            for i in range(1, len(self.centerline_points)):
+                cv.line(self.image, self.centerline_points[i-1], self.centerline_points[i], (0, 255, 255), 2)
+            # Draw points
+            for point in self.centerline_points[::5]:  # Draw every 5th point to avoid clutter
+                cv.circle(self.image, point, 2, (0, 255, 0), -1)
+        cv.imshow(self.window_name, self.image)
 
 class TrackProcessor:
     def __init__(self):
