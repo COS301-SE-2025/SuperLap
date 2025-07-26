@@ -180,6 +180,41 @@ class TrackProcessor:
         self.manual_centerline = centerline_points
         print(f"Manual centerline set with {len(centerline_points)} points")
     
+    def createGuidedMask(self, img, centerline_points, track_width_estimate=50, show_debug=False):
+        if not centerline_points:
+            print("No centerline points provided, falling back to adaptive mask")
+            return self.createAdaptiveMask(img, show_debug=show_debug)
+        
+        h, w = img.shape[:2]
+        guided_mask = np.zeros((h, w), dtype=np.uint8)
+        
+        # Create a thick line along the centerline
+        centerline_mask = np.zeros((h, w), dtype=np.uint8)
+        
+        # Draw the centerline with thickness based on estimated track width
+        for i in range(1, len(centerline_points)):
+            cv.line(centerline_mask, centerline_points[i-1], centerline_points[i], 255, track_width_estimate)
+
+        roi_mask = centerline_mask > 0
+        adaptive_mask = self.createAdaptiveMask(img, show_debug=False)
+        guided_mask = cv.bitwise_and(adaptive_mask, centerline_mask)
+        
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+        guided_mask = cv.morphologyEx(guided_mask, cv.MORPH_DILATE, kernel, iterations=2)
+        
+        if show_debug:
+            debug_img = img.copy()
+            # Draw the centerline
+            for i in range(1, len(centerline_points)):
+                cv.line(debug_img, centerline_points[i-1], centerline_points[i], (0, 255, 255), 2)
+            
+            cv.imshow("Manual Centerline", debug_img)
+            cv.imshow("Centerline ROI", centerline_mask)
+            cv.imshow("Guided Mask", guided_mask)
+            cv.waitKey(1)
+        
+        return guided_mask
+
     def analyzeImageCharacteristics(self, img):
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
