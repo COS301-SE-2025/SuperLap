@@ -12,6 +12,15 @@ from scipy import ndimage
 from scipy.interpolate import interp1d, splprep, splev
 from skimage.morphology import skeletonize
 
+class InteractiveCenterlineDrawer:
+    def __init__(self, image):
+        self.image = image.copy()
+        self.original_image = image.copy()
+        self.drawing = False
+        self.centerline_points = []
+        self.current_stroke = []
+        self.window_name = "Draw Centerline - Left click and drag to draw, 'c' to clear, 's' to smooth, ENTER to finish"
+
 class TrackProcessor:
     def __init__(self):
         #initialize track values
