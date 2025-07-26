@@ -1241,7 +1241,7 @@ class TrackProcessor:
 
         return saved_files
     
-def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, centerline_method='skeleton', extract_centerline=False):
+def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, centerline_method='skeleton', extract_centerline=False, manual_centerline=False):
     processor = TrackProcessor()
     base_filename = Path(img_path).stem
     output_dir = os.path.join(output_base_dir, base_filename)
@@ -1251,8 +1251,35 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
         print(f"Loading Image: {img_path}")
         processor.loadImg(img_path)
         
+        # Handle manual centerline drawing
+        if manual_centerline:
+            print("\n" + "="*60)
+            print("MANUAL CENTERLINE DRAWING")
+            print("="*60)
+            print("You will now draw the centerline for track extraction.")
+            print("This will help guide the automatic track detection algorithms.")
+            
+            drawer = InteractiveCenterlineDrawer(processor.original_image)
+            drawn_centerline = drawer.draw_centerline()
+            
+            if drawn_centerline:
+                processor.setManualCenterline(drawn_centerline)
+                print(f"Manual centerline captured with {len(drawn_centerline)} points")
+                
+                # Save the manual centerline
+                manual_centerline_path = os.path.join(output_dir, f'{base_filename}_manual_centerline.bin')
+                with open(manual_centerline_path, 'wb') as f:
+                    f.write(struct.pack('<I', len(drawn_centerline)))
+                    for x, y in drawn_centerline:
+                        f.write(struct.pack('<ff', float(x), float(y)))
+                print(f"Manual centerline saved to: {manual_centerline_path}")
+            else:
+                print("No centerline was drawn. Proceeding with automatic processing.")
+                manual_centerline = False
+        
         print(f"Processing Image: {base_filename}")
-        results = processor.processImg(processor.original_image, show_debug=show_debug)
+        results = processor.processImg(processor.original_image, show_debug=show_debug, 
+                                     use_manual_centerline=manual_centerline)
 
         print("Generating boundaries...")
         boundaries = processor.detectBoundaries(results['processed_image'], show_debug=show_debug)
@@ -1304,6 +1331,13 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
                     centerline_img = processor.visualizeCenterline()
                     if centerline_img is not None:
                         results['centerline_visualization'] = centerline_img
+                
+                # Add manual centerline visualization if it exists
+                if manual_centerline and processor.manual_centerline:
+                    manual_viz = processor.original_image.copy()
+                    for i in range(1, len(processor.manual_centerline)):
+                        cv.line(manual_viz, processor.manual_centerline[i-1], processor.manual_centerline[i], (0, 255, 255), 3)
+                    results['manual_centerline_visualization'] = manual_viz
 
         saved_files = processor.saveProcessedImages(results, output_dir, base_filename)
 
@@ -1316,7 +1350,9 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
             'outer_boundary_points': 1800 if boundaries else 0,
             'inner_boundary_points': 1800 if boundaries else 0,
             'centerline_extracted': extract_centerline and processor.centerline is not None,
-            'centerline_points': len(processor.centerline) if processor.centerline else 0
+            'centerline_points': len(processor.centerline) if processor.centerline else 0,
+            'manual_centerline_used': manual_centerline and processor.manual_centerline is not None,
+            'manual_centerline_points': len(processor.manual_centerline) if processor.manual_centerline else 0
         }
 
         summary_path = os.path.join(output_dir, f"{base_filename}_summary.json")
@@ -1324,6 +1360,9 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
             json.dump(summary, f, indent=2)
 
         print(f"Processing complete. Files saved to: {output_dir}")
+        
+        if manual_centerline and processor.manual_centerline:
+            print(f"Manual centerline guidance: {len(processor.manual_centerline)} points used")
 
         if show_debug:
             cv.waitKey(0)
