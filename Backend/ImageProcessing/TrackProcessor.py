@@ -88,6 +88,45 @@ class InteractiveCenterlineDrawer:
                 cv.circle(self.image, point, 2, (0, 255, 0), -1)
         cv.imshow(self.window_name, self.image)
 
+    def draw_centerline(self):
+        cv.namedWindow(self.window_name, cv.WINDOW_NORMAL)
+        cv.resizeWindow(self.window_name, 1200, 800)
+        cv.setMouseCallback(self.window_name, self.mouse_callback)
+        
+        # Add instructions text overlay
+        instructions = [
+            "Instructions:",
+            "- Left click and drag to draw centerline",
+            "- Press 'c' to clear and start over",
+            "- Press 's' to smooth the current centerline",
+            "- Press ENTER when finished drawing",
+            "- Press ESC to cancel"
+        ]
+        
+        img_with_instructions = self.image.copy()
+        y_offset = 30
+        for instruction in instructions:
+            cv.putText(img_with_instructions, instruction, (10, y_offset), 
+                      cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            cv.putText(img_with_instructions, instruction, (10, y_offset), 
+                      cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1)
+            y_offset += 25
+            
+        cv.imshow(self.window_name, img_with_instructions)
+        
+        print("Interactive centerline drawing started.")
+        print("Instructions:")
+        print("- Left click and drag to draw the track centerline")
+        print("- Press 'c' to clear and start over")
+        print("- Press 's' to smooth the centerline")
+        print("- Press ENTER when finished")
+        print("- Press ESC to cancel")
+        
+
+        
+        cv.destroyWindow(self.window_name)
+        return self.centerline_points if len(self.centerline_points) > 10 else None
+
 class TrackProcessor:
     def __init__(self):
         #initialize track values
