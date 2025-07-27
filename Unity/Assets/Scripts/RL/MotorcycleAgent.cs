@@ -74,6 +74,15 @@ public class MotorcycleAgent : Agent
     [Tooltip("Starting rotation for episode reset.")]
     [SerializeField] private Vector3 startingRotation;
 
+    [Header("Ray Visualization")]
+    [Tooltip("Number of rays to cast for visualization/sensing.")]
+    [SerializeField] private int rayCount = 5;
+    [Tooltip("Angle spread of rays in degrees (0-180). 0 = straight forward, 180 = full hemisphere.")]
+    [Range(0f, 180f)]
+    [SerializeField] private float rayAngle = 100f;
+    [Tooltip("Maximum length of rays in meters.")]
+    [SerializeField] private float maxRayLength = 10f;
+
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
     [ReadOnly] [SerializeField] private float currentSpeedKmh = 0f;
@@ -355,5 +364,57 @@ public class MotorcycleAgent : Agent
         
         Debug.Log($"Theoretical Top Speed: {theoreticalTopSpeed * 3.6f:F1} km/h");
         Debug.Log($"Cd x A = {dragCoefficient * frontalArea:F3}");
+    }
+
+    private void OnDrawGizmos()
+    {
+        DrawRays();
+    }
+
+    private void DrawRays()
+    {
+        if (rayCount <= 0 || maxRayLength <= 0f) return;
+
+        Vector3 startPosition = transform.position;
+        Vector3 forward = transform.forward;
+        Vector3 up = transform.up;
+
+        // Set gizmo color
+        Gizmos.color = Color.green;
+
+        if (rayCount == 1)
+        {
+            // Single ray straight forward
+            Vector3 rayDirection = forward;
+            Gizmos.DrawRay(startPosition, rayDirection * maxRayLength);
+        }
+        else
+        {
+            // Multiple rays spread across the angle
+            float halfAngle = rayAngle * 0.5f;
+            
+            for (int i = 0; i < rayCount; i++)
+            {
+                float angle;
+                
+                if (rayCount == 1)
+                {
+                    angle = 0f; // Straight forward
+                }
+                else
+                {
+                    // Distribute rays evenly across the angle range
+                    float t = (float)i / (rayCount - 1); // 0 to 1
+                    angle = Mathf.Lerp(-halfAngle, halfAngle, t);
+                }
+
+                // Create rotation around the Y-axis (horizontal rotation)
+                Quaternion rotation = Quaternion.AngleAxis(angle, up);
+                Vector3 rayDirection = rotation * forward;
+                
+                // Draw the ray
+                Gizmos.DrawRay(startPosition, rayDirection * maxRayLength);
+            }
+        }
     }
 }
