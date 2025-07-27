@@ -548,6 +548,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1613572070}
   - component: {fileID: 1613572071}
+  - component: {fileID: 1613572073}
+  - component: {fileID: 1613572072}
   m_Layer: 0
   m_Name: Motorcycle
   m_TagString: Untagged
@@ -578,7 +580,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1613572066}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 40208e8f529a7ce1688e6e79219eae09, type: 3}
   m_Name: 
@@ -613,6 +615,85 @@ MonoBehaviour:
   currentLeanAngle: 0
   currentFOV: 0
   theoreticalTopSpeed: 0
+--- !u!114 &1613572072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1613572066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf63596f43b0d0347846604b292977d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agentParameters:
+    maxStep: 0
+  hasUpgradedFromAgentParameters: 1
+  MaxStep: 0
+  enginePower: 150000
+  maxTractionForce: 7000
+  brakingForce: 8000
+  mass: 200
+  dragCoefficient: 0.6
+  frontalArea: 0.48
+  rollingResistanceCoefficient: 0.012
+  turnRate: 100
+  steeringDecay: 0.9
+  minSteeringSpeed: 0.5
+  fullSteeringSpeed: 5
+  steeringIntensity: 0.5
+  motorcycleModel: {fileID: 739871328}
+  maxLeanAngle: 45
+  optimalLeanSpeed: 15
+  leanSpeed: 5
+  dynamicCamera: {fileID: 1736691629}
+  minFOV: 60
+  maxFOV: 90
+  maxFOVSpeed: 50
+  accelerationFOVBoost: 2
+  fovAdjustSpeed: 3
+  speedText: {fileID: 1045266071}
+  startingPosition: {x: 565.96, y: 0, z: 108.36}
+  startingRotation: {x: 0, y: 73.5, z: 0}
+  currentSpeed: 0
+  currentSpeedKmh: 0
+  currentAcceleration: 0
+  currentTurnAngle: 0
+  currentLeanAngle: 0
+  currentFOV: 0
+  theoreticalTopSpeed: 0
+--- !u!114 &1613572073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1613572066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d1c4e0b1822b495aa52bc52839ecb30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_BrainParameters:
+    VectorObservationSize: 1
+    NumStackedVectorObservations: 1
+    m_ActionSpec:
+      m_NumContinuousActions: 0
+      BranchSizes: 0100000001000000
+    VectorActionSize: 0100000001000000
+    VectorActionDescriptions: []
+    VectorActionSpaceType: 0
+    hasUpgradedBrainParametersWithActionSpec: 1
+  m_Model: {fileID: 0}
+  m_InferenceDevice: 0
+  m_BehaviorType: 0
+  m_BehaviorName: My Behavior
+  TeamId: 0
+  m_UseChildSensors: 1
+  m_UseChildActuators: 1
+  m_DeterministicInference: 0
+  m_ObservableAttributeHandling: 0
 --- !u!1 &1734401129
 GameObject:
   m_ObjectHideFlags: 0
