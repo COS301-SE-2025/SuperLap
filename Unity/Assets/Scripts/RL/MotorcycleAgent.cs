@@ -82,6 +82,8 @@ public class MotorcycleAgent : Agent
     [SerializeField] private float rayAngle = 100f;
     [Tooltip("Maximum length of rays in meters.")]
     [SerializeField] private float maxRayLength = 10f;
+    [Tooltip("Vertical offset for ray starting position (in meters).")]
+    [SerializeField] private float rayVerticalOffset = 0f;
 
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
@@ -177,7 +179,14 @@ public class MotorcycleAgent : Agent
         sensor.AddObservation(throttleInput);
         sensor.AddObservation(steerInput);
         
-        // Total: 21 observations
+        // Raycast observations (rayCount observations)
+        float[] rayDistances = PerformRaycasts();
+        for (int i = 0; i < rayDistances.Length; i++)
+        {
+            sensor.AddObservation(rayDistances[i] / maxRayLength); // Normalized by max ray length
+        }
+        
+        // Total: 21 + rayCount observations
     }
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
@@ -366,6 +375,61 @@ public class MotorcycleAgent : Agent
         Debug.Log($"Cd x A = {dragCoefficient * frontalArea:F3}");
     }
 
+    private float[] PerformRaycasts()
+    {
+        if (rayCount <= 0 || maxRayLength <= 0f) 
+            return new float[0];
+
+        float[] rayDistances = new float[rayCount];
+        Vector3 startPosition = transform.position + (transform.up * rayVerticalOffset);
+        Vector3 forward = transform.forward;
+        Vector3 up = transform.up;
+
+        if (rayCount == 1)
+        {
+            // Single ray straight forward
+            Vector3 rayDirection = forward;
+            if (Physics.Raycast(startPosition, rayDirection, out RaycastHit hit, maxRayLength))
+            {
+                rayDistances[0] = hit.distance;
+            }
+            else
+            {
+                rayDistances[0] = maxRayLength; // No hit, return max distance
+            }
+        }
+        else
+        {
+            // Multiple rays spread across the angle
+            float halfAngle = rayAngle * 0.5f;
+            
+            for (int i = 0; i < rayCount; i++)
+            {
+                float angle;
+                
+                // Distribute rays evenly across the angle range
+                float t = (float)i / (rayCount - 1); // 0 to 1
+                angle = Mathf.Lerp(-halfAngle, halfAngle, t);
+
+                // Create rotation around the Y-axis (horizontal rotation)
+                Quaternion rotation = Quaternion.AngleAxis(angle, up);
+                Vector3 rayDirection = rotation * forward;
+                
+                // Perform the raycast
+                if (Physics.Raycast(startPosition, rayDirection, out RaycastHit hit, maxRayLength))
+                {
+                    rayDistances[i] = hit.distance;
+                }
+                else
+                {
+                    rayDistances[i] = maxRayLength; // No hit, return max distance
+                }
+            }
+        }
+
+        return rayDistances;
+    }
+
     private void OnDrawGizmos()
     {
         DrawRays();
@@ -375,7 +439,7 @@ public class MotorcycleAgent : Agent
     {
         if (rayCount <= 0 || maxRayLength <= 0f) return;
 
-        Vector3 startPosition = transform.position;
+        Vector3 startPosition = transform.position + (transform.up * rayVerticalOffset);
         Vector3 forward = transform.forward;
         Vector3 up = transform.up;
 
