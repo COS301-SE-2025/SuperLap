@@ -84,6 +84,8 @@ public class MotorcycleAgent : Agent
     [SerializeField] private float maxRayLength = 10f;
     [Tooltip("Vertical offset for ray starting position (in meters).")]
     [SerializeField] private float rayVerticalOffset = 0f;
+    [Tooltip("Maximum distance to check downward for track detection.")]
+    [SerializeField] private float trackCheckDistance = 5f;
 
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
@@ -186,7 +188,11 @@ public class MotorcycleAgent : Agent
             sensor.AddObservation(rayDistances[i] / maxRayLength); // Normalized by max ray length
         }
         
-        // Total: 21 + rayCount observations
+        // Track detection observation (1 observation)
+        bool isOnTrack = IsOnTrack();
+        sensor.AddObservation(isOnTrack ? 1f : 0f); // 1 if on track, 0 if off track
+        
+        // Total: 22 + rayCount observations
     }
 
     public override void OnActionReceived(ActionBuffers actionBuffers)
@@ -220,6 +226,22 @@ public class MotorcycleAgent : Agent
         // Example reward (you should customize this based on your training goals):
         float speedReward = currentSpeed > 5f ? 0.1f : -0.1f; // Encourage movement
         AddReward(speedReward * Time.fixedDeltaTime);
+        
+        // Track detection rewards/penalties
+        bool isOnTrack = IsOnTrack();
+        if (isOnTrack)
+        {
+            // Small reward for staying on track
+            AddReward(0.1f * Time.fixedDeltaTime);
+        }
+        else
+        {
+            // Significant penalty for going off track
+            AddReward(-1.0f * Time.fixedDeltaTime);
+            
+            // Optional: End episode if off track for too long (uncomment if desired)
+            // EndEpisode();
+        }
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
@@ -430,6 +452,17 @@ public class MotorcycleAgent : Agent
         return rayDistances;
     }
 
+    private bool IsOnTrack()
+    {
+        Vector3 startPosition = transform.position;
+        Vector3 downDirection = -transform.up; // Straight down relative to the motorcycle
+        
+        // Perform downward raycast to check for track/ground
+        bool hitSomething = Physics.Raycast(startPosition, downDirection, out RaycastHit hit, trackCheckDistance);
+        
+        return hitSomething;
+    }
+
     private void OnDrawGizmos()
     {
         DrawRays();
@@ -480,5 +513,10 @@ public class MotorcycleAgent : Agent
                 Gizmos.DrawRay(startPosition, rayDirection * maxRayLength);
             }
         }
+        
+        // Draw downward track detection ray
+        Gizmos.color = Color.red;
+        Vector3 downDirection = -transform.up;
+        Gizmos.DrawRay(transform.position, downDirection * trackCheckDistance);
     }
 }
