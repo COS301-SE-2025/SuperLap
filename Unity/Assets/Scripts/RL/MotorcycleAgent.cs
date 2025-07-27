@@ -2,34 +2,10 @@ using System;
 using UnityEngine;
 using TMPro;
 using Unity.MLAgents;
+using Unity.MLAgents.Sensors;
+using Unity.MLAgents.Actuators;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
-public class ReadOnlyAttribute : PropertyAttribute
-{
-}
-
-#if UNITY_EDITOR
-[CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
-public class ReadOnlyDrawer : PropertyDrawer
-{
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-    {
-        return EditorGUI.GetPropertyHeight(property, label, true);
-    }
-
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-    {
-        GUI.enabled = false;
-        EditorGUI.PropertyField(position, property, label, true);
-        GUI.enabled = true;
-    }
-}
-#endif
-
-public class MotorcyclePlayer : MonoBehaviour
+public class MotorcycleAgent : Agent
 {
     private const float AIR_DENSITY = 1.225f;
     private const float GRAVITY = 9.81f;
@@ -92,6 +68,12 @@ public class MotorcyclePlayer : MonoBehaviour
     [Tooltip("Displays the current speed of the motorcycle.")]
     [SerializeField] private TextMeshProUGUI speedText;
 
+    [Header("ML-Agents Training")]
+    [Tooltip("Starting position for episode reset.")]
+    [SerializeField] private Vector3 startingPosition;
+    [Tooltip("Starting rotation for episode reset.")]
+    [SerializeField] private Vector3 startingRotation;
+
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
     [ReadOnly] [SerializeField] private float currentSpeedKmh = 0f;
@@ -101,37 +83,136 @@ public class MotorcyclePlayer : MonoBehaviour
     [ReadOnly] [SerializeField] private float currentFOV = 0f;
     [ReadOnly] [SerializeField] private float theoreticalTopSpeed = 0f;
 
-    // Input values
+    // Input values (now controlled by ML-Agents or heuristic)
     private float throttleInput = 0f;
     private float steerInput = 0f;
     
     // Internal tracking
     private float previousSpeed = 0f;
 
-    void Start()
+    // Store initial values for episode reset
+    private Vector3 initialPosition;
+    private Quaternion initialRotation;
+
+    public override void Initialize()
     {
+        // Store initial transform values for episode resets
+        initialPosition = transform.position;
+        initialRotation = transform.rotation;
+        
+        // Use custom starting position/rotation if provided
+        if (startingPosition != Vector3.zero)
+            initialPosition = startingPosition;
+        if (startingRotation != Vector3.zero)
+            initialRotation = Quaternion.Euler(startingRotation);
+
         CalculateTheoreticalTopSpeed();
     }
 
-    void Update()
+    public override void OnEpisodeBegin()
     {
-        HandleInput();
-        UpdateMovement(Time.deltaTime);
-        UpdateTurning(Time.deltaTime);
-        UpdateMotorcycleLeaning(Time.deltaTime);
-        UpdateCameraFOV(Time.deltaTime);
+        // Reset motorcycle state for new episode
+        transform.position = initialPosition;
+        transform.rotation = initialRotation;
+        
+        // Reset physics state
+        currentSpeed = 0f;
+        currentAcceleration = 0f;
+        currentTurnAngle = 0f;
+        currentLeanAngle = 0f;
+        previousSpeed = 0f;
+        
+        // Reset inputs
+        throttleInput = 0f;
+        steerInput = 0f;
+        
+        // Reset motorcycle model rotation if available
+        if (motorcycleModel != null)
+        {
+            motorcycleModel.localRotation = Quaternion.identity;
+        }
+        
+        // Reset camera FOV if available
+        if (dynamicCamera != null)
+        {
+            currentFOV = minFOV;
+            dynamicCamera.fieldOfView = currentFOV;
+        }
+    }
 
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        // Add current motorcycle state as observations
+        // These observations will be fed to the neural network
+        
+        // Speed and acceleration (2 observations)
+        sensor.AddObservation(currentSpeed / 50f); // Normalized by approximate max speed
+        sensor.AddObservation(currentAcceleration / 10f); // Normalized by reasonable acceleration range
+        
+        // Turn angle and lean angle (2 observations)
+        sensor.AddObservation(currentTurnAngle / turnRate); // Normalized by max turn rate
+        sensor.AddObservation(currentLeanAngle / maxLeanAngle); // Normalized by max lean angle
+        
+        // Position and rotation (6 observations)
+        sensor.AddObservation(transform.position); // x, y, z position
+        sensor.AddObservation(transform.rotation); // x, y, z rotation (quaternion converted to 3 values)
+        
+        // Relative position to starting point (3 observations)
+        Vector3 relativePosition = transform.position - initialPosition;
+        sensor.AddObservation(relativePosition);
+        
+        // Forward direction vector (3 observations)
+        sensor.AddObservation(transform.forward);
+        
+        // Previous inputs (2 observations) - helps with temporal understanding
+        sensor.AddObservation(throttleInput);
+        sensor.AddObservation(steerInput);
+        
+        // Total: 21 observations
+    }
+
+    public override void OnActionReceived(ActionBuffers actionBuffers)
+    {
+        // Extract actions from the neural network
+        // Continuous actions: [throttle, steering]
+        throttleInput = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f);
+        steerInput = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f);
+        
+        // Update motorcycle physics using the ML-Agent actions
+        UpdateMovement(Time.fixedDeltaTime);
+        UpdateTurning(Time.fixedDeltaTime);
+        UpdateMotorcycleLeaning(Time.fixedDeltaTime);
+        UpdateCameraFOV(Time.fixedDeltaTime);
+
+        // Update display
         currentSpeedKmh = currentSpeed * 3.6f;
         if (speedText != null)
         {
             speedText.text = $"{currentSpeedKmh:F1} km/h";
         }
+        
+        // Add rewards based on performance
+        // This is where you would implement your reward function
+        // For example:
+        // - Reward for maintaining speed
+        // - Reward for smooth turning
+        // - Penalty for going too slow or too fast
+        // - Penalty for excessive lean angles
+        
+        // Example reward (you should customize this based on your training goals):
+        float speedReward = currentSpeed > 5f ? 0.1f : -0.1f; // Encourage movement
+        AddReward(speedReward * Time.fixedDeltaTime);
     }
 
-    private void HandleInput()
+    public override void Heuristic(in ActionBuffers actionsOut)
     {
-        throttleInput = Input.GetAxis("Vertical");
-        steerInput = Input.GetAxis("Horizontal");
+        // This method provides manual control for testing and demonstration
+        // It should map human input to the same action space as the neural network
+        
+        // Get human input from keyboard/controller
+        var continuousActionsOut = actionsOut.ContinuousActions;
+        continuousActionsOut[0] = Input.GetAxis("Vertical");   // Throttle (W/S or Up/Down arrows)
+        continuousActionsOut[1] = Input.GetAxis("Horizontal"); // Steering (A/D or Left/Right arrows)
     }
 
     private void UpdateMovement(float dt)
