@@ -31,6 +31,9 @@ public class TrackImageProcessor : MonoBehaviour
   [SerializeField] private Color outerBoundaryColor = Color.blue;
   [SerializeField] private Color racelineColor = Color.green;
   [SerializeField] private int lineThickness = 3;
+  [SerializeField] private int pointCount = 100;
+  [SerializeField] private GameObject meshHolder;
+
 
   // Results data
 
@@ -190,7 +193,9 @@ public class TrackImageProcessor : MonoBehaviour
     Debug.Log($"Track processing completed successfully in {processingTime:F2} seconds.");
 
     // Generate output image
-    GenerateOutputImage();
+    // GenerateOutputImage();
+
+    TrackMaster.LoadTrack(lastResults);
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
