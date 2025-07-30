@@ -11,6 +11,10 @@ from scipy import ndimage
 from scipy.interpolate import interp1d, splprep, splev
 from skimage.morphology import skeletonize
 
+NUM_EDGE_POINTS = 4550  # Fixed number of points for each boundary
+
+
+
 class TrackProcessor:
     def __init__(self):
         #initialize track values
@@ -20,6 +24,31 @@ class TrackProcessor:
         self.track_boundaries = None
         self.centerline = None
         self.centerline_smoothed = None
+    
+    def resampleContour(self, contour, target_points=NUM_EDGE_POINTS):
+        if len(contour) < 2:
+            return contour.squeeze().tolist()
+
+        contour = contour.squeeze()
+        if contour.ndim != 2:
+            contour = contour.reshape(-1, 2)
+
+        x = contour[:, 0]
+        y = contour[:, 1]
+        dist = np.sqrt(np.diff(x)**2 + np.diff(y)**2)
+        dist = np.concatenate([[0], np.cumsum(dist)])
+
+        if dist[-1] == 0:
+            return contour.tolist()
+
+        interp_dist = np.linspace(0, dist[-1], target_points)
+        interp_func_x = interp1d(dist, x, kind='linear')
+        interp_func_y = interp1d(dist, y, kind='linear')
+        x_interp = interp_func_x(interp_dist)
+        y_interp = interp_func_y(interp_dist)
+
+        return list(zip(map(float, x_interp), map(float, y_interp)))
+
 
     def loadImg(self, img_path):
         # Load and convert the image
@@ -410,16 +439,17 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
             else:
                 print("Skipping centerline extraction")
 
-            def contour_to_list(contour):
-                return contour.squeeze().tolist() if contour.ndim == 3 else contour.tolist()
+            outer_resampled = processor.resampleContour(boundaries['outer'], NUM_EDGE_POINTS)
+            inner_resampled = processor.resampleContour(boundaries['inner'], NUM_EDGE_POINTS)
 
             edge_data = {
-                'outer_boundary': contour_to_list(boundaries['outer']),
-                'inner_boundary': contour_to_list(boundaries['inner'])
+                'outer_boundary': outer_resampled,
+                'inner_boundary': inner_resampled
             }
 
+
             # Save binary edge coordinates
-            edge_bin_path = os.path.join(output_dir, f'{base_filename}_edge_coords.bin')
+            edge_bin_path = os.path.join(output_dir, f'{base_filename}.bin')
             os.makedirs(output_dir, exist_ok=True)
             with open(edge_bin_path, 'wb') as f:
                 for key in ['outer_boundary', 'inner_boundary']:
