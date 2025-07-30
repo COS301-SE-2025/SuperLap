@@ -147,6 +147,58 @@ public class CornerDetector
         return corners;
     }
 
+    private struct CornerCandidate
+    {
+        public int Start { get; set; }
+        public int End { get; set; }
+        public float TotalAngle { get; set; }
+        public float AngleChange { get; set; }
+        public bool IsLeftTurn { get; set; }
+
+        public CornerCandidate(int start, int end, float totalAngle, float AngleChange, bool isLeftTurn)
+        {
+            Start = start;
+            End = end;
+            TotalAngle = totalAngle;
+            this.AngleChange = AngleChange;
+            IsLeftTurn = isLeftTurn;
+        }
+    }
+
+    private static List<CornerCandidate> IdentifyCornerCandidates(List<float> angleChanges)
+    {
+        List<CornerCandidate> candidates = new List<CornerCandidate>();
+        int windowSize = CandidateWindowSize;
+        float threshold = CandidateAngleThreshold;
+
+        for (int i = 0; i <= angleChanges.Count - windowSize; i++)
+        {
+            float windowAngle = 0f;
+            for (int j = i; j < i + windowSize; j++)
+                windowAngle += angleChanges[j];
+
+            if (MathF.Abs(windowAngle) >= threshold)
+            {
+                bool isLeftTurn = windowAngle > 0;
+                float AngleChange = windowAngle;
+                int start = ExtendCornerStart(angleChanges, i, isLeftTurn);
+                int end = ExtendCornerEnd(angleChanges, i + windowSize - 1, isLeftTurn);
+
+                float totalAngle = 0f;
+                for (int j = start; j <= end && j < angleChanges.Count; j++)
+                {
+                    if ((angleChanges[j] > 0) == isLeftTurn || MathF.Abs(angleChanges[j]) < 1f)
+                        totalAngle += angleChanges[j];
+                }
+
+                candidates.Add(new CornerCandidate(start, end, totalAngle, AngleChange, isLeftTurn));
+                i = end;
+            }
+        }
+
+        return candidates;
+    }
+
     
 
     private static float ComputeSignedAngle(Vector2 from, Vector2 to)
