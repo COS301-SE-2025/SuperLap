@@ -38,14 +38,14 @@ public class CornerDetector
 
         public CornerSegment(Vector2 innerStart, Vector2 innerEnd,
                             Vector2 outerStart, Vector2 outerEnd,
-                            float Angle, bool isLeftTurn,
+                            float angle, bool isLeftTurn,
                             int startIndex, int endIndex, float length)
         {
             InnerStart = innerStart;
             InnerEnd = innerEnd;
             OuterStart = outerStart;
             OuterEnd = outerEnd;
-            this.Angle = Angle;
+            Angle = angle;
             IsLeftTurn = isLeftTurn;
             StartIndex = startIndex;
             EndIndex = endIndex;
@@ -155,12 +155,12 @@ public class CornerDetector
         public float AngleChange { get; set; }
         public bool IsLeftTurn { get; set; }
 
-        public CornerCandidate(int start, int end, float totalAngle, float AngleChange, bool isLeftTurn)
+        public CornerCandidate(int start, int end, float totalAngle, float angleChange, bool isLeftTurn)
         {
             Start = start;
             End = end;
             TotalAngle = totalAngle;
-            this.AngleChange = AngleChange;
+            AngleChange = angleChange;
             IsLeftTurn = isLeftTurn;
         }
     }
@@ -180,7 +180,7 @@ public class CornerDetector
             if (MathF.Abs(windowAngle) >= threshold)
             {
                 bool isLeftTurn = windowAngle > 0;
-                float AngleChange = windowAngle;
+                float angleChange = windowAngle;
                 int start = ExtendCornerStart(angleChanges, i, isLeftTurn);
                 int end = ExtendCornerEnd(angleChanges, i + windowSize - 1, isLeftTurn);
 
@@ -191,7 +191,7 @@ public class CornerDetector
                         totalAngle += angleChanges[j];
                 }
 
-                candidates.Add(new CornerCandidate(start, end, totalAngle, AngleChange, isLeftTurn));
+                candidates.Add(new CornerCandidate(start, end, totalAngle, angleChange, isLeftTurn));
                 i = end;
             }
         }

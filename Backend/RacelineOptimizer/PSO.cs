@@ -165,7 +165,7 @@ namespace RacelineOptimizer
         }
 
 
-        public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> CornerTrack, int numParticles = 30, int iterations = 100)
+        public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> cornerTrack, int numParticles = 30, int iterations = 100)
         {
             object globalLock = new();
             ThreadLocal<Random> threadRand = new(() => new Random(Guid.NewGuid().GetHashCode()));
@@ -184,7 +184,7 @@ namespace RacelineOptimizer
                 p.Position[^1] = p.Position[0];
                 p.BestPosition[^1] = p.BestPosition[0];
 
-                p.BestCost = EvaluateCost(track, p.Position, corners, CornerTrack);
+                p.BestCost = EvaluateCost(track, p.Position, corners, cornerTrack);
                 if (p.BestCost < globalBestCost)
                 {
                     globalBestCost = p.BestCost;
@@ -213,7 +213,7 @@ namespace RacelineOptimizer
                     }
                     p.Position[^1] = p.Position[0]; // Ensure loop closure
 
-                    float cost = EvaluateCost(track, p.Position, corners, CornerTrack);
+                    float cost = EvaluateCost(track, p.Position, corners, cornerTrack);
                     if (cost < p.BestCost)
                     {
                         p.BestCost = cost;
@@ -250,7 +250,7 @@ namespace RacelineOptimizer
                         worst.Randomize(rand);
                         worst.Position[^1] = worst.Position[0];
                         worst.BestPosition[^1] = worst.BestPosition[0];
-                        worst.BestCost = EvaluateCost(track, worst.Position, corners, CornerTrack);
+                        worst.BestCost = EvaluateCost(track, worst.Position, corners, cornerTrack);
                         if (worst.BestCost < globalBestCost)
                         {
                             globalBestCost = worst.BestCost;
