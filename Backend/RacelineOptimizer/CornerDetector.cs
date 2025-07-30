@@ -259,6 +259,45 @@ public class CornerDetector
         return extended;
     }
 
+    private static List<CornerCandidate> MergeAndValidateCandidates(
+        List<CornerCandidate> candidates,
+        List<Vector2> centerline,
+        List<float> angleChanges)
+    {
+        if (candidates.Count == 0) return candidates;
+
+        candidates.Sort((a, b) => a.Start.CompareTo(b.Start));
+        List<CornerCandidate> merged = new List<CornerCandidate>();
+
+        CornerCandidate current = candidates[0];
+
+        for (int i = 1; i < candidates.Count; i++)
+        {
+            CornerCandidate next = candidates[i];
+            int gap = next.Start - current.End;
+
+            if (gap <= MergeGap && current.IsLeftTurn == next.IsLeftTurn)
+            {
+                float combinedAngle = current.TotalAngle;
+                for (int j = current.End + 1; j <= next.End && j < angleChanges.Count; j++)
+                {
+                    if ((angleChanges[j] > 0) == current.IsLeftTurn || MathF.Abs(angleChanges[j]) < 1f)
+                        combinedAngle += angleChanges[j];
+                }
+
+                current = new CornerCandidate(current.Start, next.End, combinedAngle, current.AngleChange, current.IsLeftTurn);
+            }
+            else
+            {
+                merged.Add(current);
+                current = next;
+            }
+        }
+
+        merged.Add(current);
+        return merged;
+    }
+
     
 
     private static float ComputeSignedAngle(Vector2 from, Vector2 to)
