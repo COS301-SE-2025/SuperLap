@@ -298,7 +298,59 @@ public class CornerDetector
         return merged;
     }
 
+    private static bool IsValidCorner(List<Vector2> centerline, int start, int end, float accumulatedAngle)
+    {
+        float length = CalculateSegmentLength(centerline, start, end);
+        if (length < MinCornerSegments) return false;
+        if (MathF.Abs(accumulatedAngle) < NetCornerAngleThreshold) return false;
+
+        int segmentCount = end - start;
+        if (segmentCount < MinCornerSegmentsCount) return false;
+        if (segmentCount > MaxCornerSegmentsCount) return false;
+
+        if (start >= centerline.Count - 1 || end >= centerline.Count - 1) return false;
+        
+        float startEndAngleChange = CalculateStartEndAngleChange(centerline, start, end);
+        if (MathF.Abs(startEndAngleChange) < MinStartEndAngleChange) return false;
+
+        return true;
+    }
+
     
+
+    public static List<Vector2> GetCenterline(List<(Vector2 inner, Vector2 outer)> track)
+    {
+        List<Vector2> centerline = new List<Vector2>();
+        foreach (var segment in track)
+            centerline.Add((segment.inner + segment.outer) * 0.5f);
+        return centerline;
+    }
+
+    private static List<Vector2> SmoothCenterline(List<Vector2> raw, int windowSize = 3)
+    {
+        List<Vector2> smoothed = new List<Vector2>();
+        int half = windowSize / 2;
+
+        for (int i = 0; i < raw.Count; i++)
+        {
+            Vector2 sum = Vector2.Zero;
+            int count = 0;
+
+            for (int j = -half; j <= half; j++)
+            {
+                int idx = i + j;
+                if (idx >= 0 && idx < raw.Count)
+                {
+                    sum += raw[idx];
+                    count++;
+                }
+            }
+
+            smoothed.Add(sum / count);
+        }
+
+        return smoothed;
+    }
 
     private static float ComputeSignedAngle(Vector2 from, Vector2 to)
     {
