@@ -316,7 +316,22 @@ public class CornerDetector
         return true;
     }
 
-    
+    private static float CalculateStartEndAngleChange(List<Vector2> centerline, int start, int end)
+    {
+        Vector2 startDirection;
+        if (start > 0)
+            startDirection = Vector2.Normalize(centerline[start] - centerline[start - 1]);
+        else
+            startDirection = Vector2.Normalize(centerline[start + 1] - centerline[start]);
+
+        Vector2 endDirection;
+        if (end < centerline.Count - 1)
+            endDirection = Vector2.Normalize(centerline[end + 1] - centerline[end]);
+        else
+            endDirection = Vector2.Normalize(centerline[end] - centerline[end - 1]);
+
+        return ComputeSignedAngle(startDirection, endDirection);
+    }
 
     public static List<Vector2> GetCenterline(List<(Vector2 inner, Vector2 outer)> track)
     {
