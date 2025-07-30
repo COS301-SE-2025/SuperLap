@@ -25,11 +25,7 @@ namespace RacelineOptimizer
             Vector2 center = edgeData.GetCenter();
             edgeData.ScaleTrack(center, scaleFactor);
 
-            int numSamples = edgeData.OuterBoundary.Count < 500 || edgeData.InnerBoundary.Count < 500
-                ? 700
-                : (int)(edgeData.InnerBoundary.Count - (500 * scaleFactor));
-
-            var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, 300);
+            var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, 400);
             var cornerTrack = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, edgeData.InnerBoundary.Count);
             var corners = CornerDetector.DetectCorners(cornerTrack);
 
@@ -40,7 +36,7 @@ namespace RacelineOptimizer
             }
 
             PSO pso = new PSO();
-            float[] bestRatios = pso.Optimize(track, corners, numParticles, iterations);
+            float[] bestRatios = pso.Optimize(track, corners, cornerTrack, numParticles, iterations);
             if (bestRatios == null || bestRatios.Length == 0)
             {
                 Console.WriteLine("Error: Optimization failed to find a valid solution.");

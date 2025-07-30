@@ -278,7 +278,6 @@ namespace RacelineVisualizer
                 using Pen cornerPen = new(Color.Purple, 2);
                 foreach (var corner in edges.Corners)
                 {
-                    Console.WriteLine($"Drawing corner: {corner.InnerStart} to {corner.InnerEnd}, {corner.OuterStart} to {corner.OuterEnd}");
                     g.DrawLine(cornerPen, corner.InnerStart, corner.InnerEnd);
                     g.DrawLine(cornerPen, corner.OuterStart, corner.OuterEnd);
                 }
