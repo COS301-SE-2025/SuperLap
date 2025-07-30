@@ -21,22 +21,74 @@ public class AnalysisGetInfo : MonoBehaviour
   private ShowRacingLine racingLinePreview;
 
   private HomePageNavigation homePageNavigation;
+  private ShowData showData;
 
   private APIManager apiManager;
   private int trackIndex = 0;
 
   public void Awake()
   {
-    apiManager = APIManager.Instance;
-    homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
-    racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
+    try
+    {
+      apiManager = APIManager.Instance;
+      homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
+      racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
+      showData = FindAnyObjectByType<ShowData>();
+    }
+    catch (System.Exception e)
+    {
+      Debug.LogError($"Failed to initialize components: {e.Message}");
+      SetDefaultValues();
+    }
   }
 
   public void Start()
   {
-    apiManager.GetAllTracks(OnTracksLoaded);
+    try
+    {
+      if (apiManager != null)
+      {
+        apiManager.GetAllTracks(OnTracksLoaded);
+      }
+      else
+      {
+        Debug.LogError("APIManager is null");
+        SetDefaultValues();
+      }
+
+      if (showData != null)
+      {
+        Vector2[] dataPoints = new Vector2[50];
+        for (int i = 0; i < dataPoints.Length; i++)
+        {
+          float x = i;
+          float y = Mathf.Sin(i * 0.2f) * 5f + 5f; // Y range: 0 to 10
+          dataPoints[i] = new Vector2(x, y);
+        }
+
+        showData.UpdateGraphData(dataPoints);
+      }
+      else
+      {
+        Debug.LogWarning("ShowData component is null");
+      }
+    }
+    catch (System.Exception e)
+    {
+      Debug.LogError($"Error in Start: {e.Message}");
+      SetDefaultValues();
+    }
   }
 
+  private void SetDefaultValues()
+  {
+    if (trackNameText != null) trackNameText.text = "Default Track";
+    if (trackTypeText != null) trackTypeText.text = "Default Type";
+    if (trackCityText != null) trackCityText.text = "Default City";
+    if (trackCountryText != null) trackCountryText.text = "Default Country";
+    if (trackDescriptionText != null) trackDescriptionText.text = "Default track description";
+    if (trackLocationText != null) trackLocationText.text = "Lat: 0.000000, Lon: 0.000000";
+  }
 
 
   private void OnTracksLoaded(bool success, string message, List<APIManager.Track> tracks)
@@ -117,23 +169,55 @@ public class AnalysisGetInfo : MonoBehaviour
 
   public void DisplayTrackByIndex(int index)
   {
-    trackIndex = index;
-    apiManager.GetAllTracks(OnTracksLoaded);
-  }
-  public void DisplayTrackByName(string trackName)
-  {
-    apiManager.GetTrackByName(trackName, (success, message, track) =>
+    try
     {
-      if (success && track != null)
+      if (apiManager != null)
       {
-        DisplayTrackInfo(track);
+        trackIndex = index;
+        apiManager.GetAllTracks(OnTracksLoaded);
       }
       else
       {
-        Debug.LogError($"Failed to load track '{trackName}': {message}");
-        DisplayErrorMessage($"Track '{trackName}' not found");
+        Debug.LogError("APIManager is null in DisplayTrackByIndex");
+        SetDefaultValues();
       }
-    });
+    }
+    catch (System.Exception e)
+    {
+      Debug.LogError($"Error in DisplayTrackByIndex: {e.Message}");
+      SetDefaultValues();
+    }
+  }
+  public void DisplayTrackByName(string trackName)
+  {
+    try
+    {
+      if (apiManager != null)
+      {
+        apiManager.GetTrackByName(trackName, (success, message, track) =>
+        {
+          if (success && track != null)
+          {
+            DisplayTrackInfo(track);
+          }
+          else
+          {
+            Debug.LogError($"Failed to load track '{trackName}': {message}");
+            SetDefaultValues();
+          }
+        });
+      }
+      else
+      {
+        Debug.LogError("APIManager is null in DisplayTrackByName");
+        SetDefaultValues();
+      }
+    }
+    catch (System.Exception e)
+    {
+      Debug.LogError($"Error in DisplayTrackByName: {e.Message}");
+      SetDefaultValues();
+    }
   }
   public void DisplaySpecificTrack(APIManager.Track track)
   {
@@ -162,7 +246,23 @@ public class AnalysisGetInfo : MonoBehaviour
 
   public void RefreshTrackInfo()
   {
-    apiManager.GetAllTracks(OnTracksLoaded);
+    try
+    {
+      if (apiManager != null)
+      {
+        apiManager.GetAllTracks(OnTracksLoaded);
+      }
+      else
+      {
+        Debug.LogError("APIManager is null in RefreshTrackInfo");
+        SetDefaultValues();
+      }
+    }
+    catch (System.Exception e)
+    {
+      Debug.LogError($"Error in RefreshTrackInfo: {e.Message}");
+      SetDefaultValues();
+    }
   }
 
   public string GetCurrentTrackName()
