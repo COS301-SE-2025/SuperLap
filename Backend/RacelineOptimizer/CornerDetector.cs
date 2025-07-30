@@ -53,5 +53,114 @@ public class CornerDetector
         }
     }
 
-   
+    public static List<CornerSegment> DetectCorners(List<(Vector2 inner, Vector2 outer)> track)
+    {
+        if (track == null || track.Count < 20)
+            return new List<CornerSegment>();
+
+        List<Vector2> centerline = GetCenterline(track);
+        List<Vector2> smoothedCenterline = SmoothCenterline(centerline, SmoothingWindow);
+        List<float> angleChanges = CalculateAngleChanges(smoothedCenterline);
+        List<float> smoothedAngles = SmoothAngles(angleChanges, AngleSmoothWindow);
+        return FindCornerRegions(track, smoothedCenterline, smoothedAngles);
+    }
+
+    private static List<float> CalculateAngleChanges(List<Vector2> centerline)
+    {
+        List<float> angleChanges = new List<float>();
+        int half = AngleWindowSize / 2;
+
+        for (int i = 0; i < centerline.Count; i++)
+        {
+            if (i < half || i >= centerline.Count - half)
+            {
+                angleChanges.Add(0f);
+                continue;
+            }
+
+            Vector2 vec1 = Vector2.Normalize(centerline[i] - centerline[i - half]);
+            Vector2 vec2 = Vector2.Normalize(centerline[i + half] - centerline[i]);
+
+            float angleChange = ComputeSignedAngle(vec1, vec2);
+            angleChanges.Add(angleChange);
+        }
+
+        return angleChanges;
+    }
+
+    private static List<float> SmoothAngles(List<float> angles, int windowSize)
+    {
+        List<float> smoothed = new List<float>();
+        int half = windowSize / 2;
+
+        for (int i = 0; i < angles.Count; i++)
+        {
+            float sum = 0f;
+            int count = 0;
+
+            for (int j = -half; j <= half; j++)
+            {
+                int idx = i + j;
+                if (idx >= 0 && idx < angles.Count)
+                {
+                    sum += angles[idx];
+                    count++;
+                }
+            }
+
+            smoothed.Add(sum / count);
+        }
+
+        return smoothed;
+    }
+
+    private static List<CornerSegment> FindCornerRegions(
+        List<(Vector2 inner, Vector2 outer)> track,
+        List<Vector2> centerline,
+        List<float> angleChanges)
+    {
+        List<CornerSegment> corners = new List<CornerSegment>();
+        List<CornerCandidate> candidates = IdentifyCornerCandidates(angleChanges);
+        List<CornerCandidate> mergedCandidates = MergeAndValidateCandidates(candidates, centerline, angleChanges);
+
+        foreach (var candidate in mergedCandidates)
+        {
+            if (IsValidCorner(centerline, candidate.Start, candidate.End, candidate.TotalAngle))
+            {
+                float cornerLength = CalculateSegmentLength(centerline, candidate.Start, candidate.End);
+
+                CornerSegment corner = new CornerSegment(
+                    track[candidate.Start].inner,
+                    track[candidate.End].inner,
+                    track[candidate.Start].outer,
+                    track[candidate.End].outer,
+                    MathF.Abs(candidate.AngleChange),
+                    !candidate.IsLeftTurn,
+                    candidate.Start,
+                    candidate.End,
+                    cornerLength
+                );
+                corners.Add(corner);
+            }
+        }
+
+        return corners;
+    }
+
+    
+
+    private static float ComputeSignedAngle(Vector2 from, Vector2 to)
+    {
+        float dot = Vector2.Dot(from, to);
+        float det = from.X * to.Y - from.Y * to.X;
+        return MathF.Atan2(det, dot) * (180f / MathF.PI);
+    }
+
+    private static float CalculateSegmentLength(List<Vector2> points, int start, int end)
+    {
+        float length = 0f;
+        for (int i = start; i < end; i++)
+            length += Vector2.Distance(points[i], points[i + 1]);
+        return length;
+    }
 }
