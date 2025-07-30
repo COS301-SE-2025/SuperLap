@@ -199,6 +199,66 @@ public class CornerDetector
         return candidates;
     }
 
+    private static int ExtendCornerStart(List<float> angleChanges, int start, bool isLeftTurn)
+    {
+        int extended = start;
+        int flats = 0;
+
+        for (int i = start - 1; i >= 0; i--)
+        {
+            float angle = angleChanges[i];
+            bool sameDirection = angle > 0 == isLeftTurn;
+
+            if (MathF.Abs(angle) >= 2f)
+            {
+                if (sameDirection)
+                {
+                    extended = i;
+                    flats = 0;
+                }
+                else if (MathF.Abs(angle) >= AngleChangeThreshold)
+                    break;
+            }
+            else
+            {
+                flats++;
+                if (flats >= FlatLimit) break;
+            }
+        }
+
+        return extended;
+    }
+
+    private static int ExtendCornerEnd(List<float> angleChanges, int end, bool isLeftTurn)
+    {
+        int extended = end;
+        int flats = 0;
+
+        for (int i = end + 1; i < angleChanges.Count; i++)
+        {
+            float angle = angleChanges[i];
+            bool sameDirection = angle > 0 == isLeftTurn;
+
+            if (MathF.Abs(angle) >= 2f)
+            {
+                if (sameDirection)
+                {
+                    extended = i;
+                    flats = 0;
+                }
+                else if (MathF.Abs(angle) >= AngleChangeThreshold)
+                    break;
+            }
+            else
+            {
+                flats++;
+                if (flats >= FlatLimit) break;
+            }
+        }
+
+        return extended;
+    }
+
     
 
     private static float ComputeSignedAngle(Vector2 from, Vector2 to)
