@@ -8,12 +8,23 @@ public class TrackMaster : MonoBehaviour
     [SerializeField] private int meshResolution = 1000;
     [SerializeField] private int splitCount = 50;
     [SerializeField] private float splitMeshScale = 25f;
+    [SerializeField] private Material splitMaterial;
+
+
+    [Header("Checkpoint Settings")]
+    [SerializeField] private GameObject checkpointPrefab;
+    [SerializeField] private Material[] checkpointMaterials = new Material[3];
 
     [Header("Agent Spawning")]
     [SerializeField] private GameObject motorcycleAgentPrefab;
     [SerializeField] private float agentSpawnHeight = 1.0f;
     [SerializeField] private int startingPositionIndex = 0; // Index along raceline for starting position
     [SerializeField] private bool spawnAtRandomPosition = false;
+
+    [Header("Player Mode")]
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private GameObject screen;
+
 
     public static TrackMaster instance;
     private static List<Vector2> currentRaceline;
@@ -26,7 +37,20 @@ public class TrackMaster : MonoBehaviour
 
     void Update()
     {
-
+        if(Input.GetKeyDown(KeyCode.P) && spawnedAgent != null)
+        {
+            // switch to player mode
+            if (mainCamera != null)
+            {
+                mainCamera.gameObject.SetActive(false);
+                screen.SetActive(false);
+                Debug.Log("Switched to Player Mode with camera: " + mainCamera.name);
+            }
+            else
+            {
+                Debug.LogWarning("Main camera not assigned in TrackMaster!");
+            }
+        }
     }
 
     public static void LoadTrack(TrackImageProcessor.ProcessingResults results)
@@ -45,7 +69,7 @@ public class TrackMaster : MonoBehaviour
         MeshCollider meshCollider = instance.gameObject.AddComponent<MeshCollider>();
         meshCollider.sharedMesh = mesh;
 
-        CreateSplits(results.raceline);
+        CreateCheckpoints(results.raceline);
 
         // Spawn the motorcycle agent on the raceline
         SpawnMotorcycleAgent();
@@ -54,6 +78,8 @@ public class TrackMaster : MonoBehaviour
         // AssetDatabase.SaveAssets();
     }
 
+    // Legacy split creation method - replaced by checkpoint system
+    /*
     private static void CreateSplits(List<Vector2> raceline)
     {
         // Create red spheres at split points
@@ -63,10 +89,53 @@ public class TrackMaster : MonoBehaviour
             GameObject splitPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             splitPoint.transform.position = new Vector3(point.x, 0, point.y);
             splitPoint.transform.localScale = Vector3.one * instance.splitMeshScale; // Adjust size as needed
-            splitPoint.GetComponent<Renderer>().material.color = Color.red;
+            splitPoint.GetComponent<Renderer>().material = instance.splitMaterial;
             splitPoint.GetComponent<Collider>().isTrigger = true; // Make collider a trigger
             splitPoint.transform.SetParent(instance.transform); // Set parent to keep hierarchy clean
             splitPoint.name = $"SplitPoint_{i}";
+        }
+    }
+    */
+
+    private static void CreateCheckpoints(List<Vector2> raceline)
+    {
+        if (instance.checkpointPrefab == null)
+        {
+            Debug.LogWarning("Checkpoint prefab not assigned in TrackMaster!");
+            return;
+        }
+
+        // Create checkpoints at split points
+        int checkpointId = 0;
+        for (int i = 0; i < raceline.Count; i += instance.meshResolution / instance.splitCount)
+        {
+            Vector2 point = raceline[i];
+            GameObject checkpointObj = Instantiate(instance.checkpointPrefab);
+            checkpointObj.transform.position = new Vector3(point.x, instance.agentSpawnHeight, point.y);
+            checkpointObj.transform.SetParent(instance.transform);
+            checkpointObj.name = $"Checkpoint_{checkpointId}";
+
+            // Configure the checkpoint component
+            Checkpoint checkpoint = checkpointObj.GetComponent<Checkpoint>();
+            if (checkpoint != null)
+            {
+                checkpoint.SetCheckpointId(checkpointId);
+            }
+            else
+            {
+                // Add checkpoint component if it doesn't exist
+                checkpoint = checkpointObj.AddComponent<Checkpoint>();
+                checkpoint.SetCheckpointId(checkpointId);
+            }
+
+            checkpointId++;
+        }
+
+        // Configure the checkpoint manager materials
+        CheckpointManager manager = FindAnyObjectByType<CheckpointManager>();
+        if (manager != null && instance.checkpointMaterials != null && instance.checkpointMaterials.Length > 0)
+        {
+            manager.SetCheckpointMaterials(instance.checkpointMaterials);
         }
     }
 
