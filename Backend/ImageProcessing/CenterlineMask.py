@@ -83,6 +83,39 @@ class CenterlineMask:
         if len(self.centerline_points) > 0:
             cv.putText(self.image, f"Points: {len(self.centerline_points)}", 
                       (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            
+    def create_mask_from_centerline(self):
+        if len(self.centerline_points) < 2:
+            print("Need at least 2 points to create a mask")
+            return None
+            
+        # Create binary mask with original image dimensions
+        height, width = self.original_image.shape[:2]
+        binary_mask = np.zeros((height, width), dtype=np.uint8)
+        
+        # Create a thicker line along the centerline
+        for i in range(1, len(self.centerline_points)):
+            cv.line(binary_mask, self.centerline_points[i-1], self.centerline_points[i], 
+                   255, thickness=self.mask_width)
+            
+        # Optional: Apply morphological operations to smooth the mask
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+        binary_mask = cv.morphologyEx(binary_mask, cv.MORPH_CLOSE, kernel)
+        binary_mask = cv.morphologyEx(binary_mask, cv.MORPH_OPEN, kernel)
+        
+        # Convert original image to grayscale for better contrast
+        if len(self.original_image.shape) == 3:
+            gray_image = cv.cvtColor(self.original_image, cv.COLOR_BGR2GRAY)
+        else:
+            gray_image = self.original_image.copy()
+            
+        # Create the final mask by combining the binary mask with the original image
+        combined_mask = np.zeros_like(gray_image)
+        combined_mask[binary_mask == 255] = gray_image[binary_mask == 255]
+        
+        self.mask = combined_mask
+        self.binary_mask = binary_mask
+        return combined_mask
 
 def main():
     parser = argparse.ArgumentParser(description="Interactive centerline drawing tool for race tracks")
