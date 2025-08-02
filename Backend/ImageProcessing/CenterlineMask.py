@@ -67,6 +67,23 @@ class CenterlineMask:
             self.drawing = False
             print(f"Centerline drawn with {len(self.centerline_points)} points")
 
+    def update_display(self):
+        self.image = self.display_image.copy()
+        
+        if len(self.centerline_points) > 1:
+            # Draw centerline on display image (scaled coordinates)
+            for i in range(1, len(self.centerline_points)):
+                pt1 = (int(self.centerline_points[i-1][0] * self.scale_factor),
+                       int(self.centerline_points[i-1][1] * self.scale_factor))
+                pt2 = (int(self.centerline_points[i][0] * self.scale_factor),
+                       int(self.centerline_points[i][1] * self.scale_factor))
+                cv.line(self.image, pt1, pt2, (0, 255, 0), 2)
+                
+        # Show current point count
+        if len(self.centerline_points) > 0:
+            cv.putText(self.image, f"Points: {len(self.centerline_points)}", 
+                      (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
 def main():
     parser = argparse.ArgumentParser(description="Interactive centerline drawing tool for race tracks")
     parser.add_argument('image_path', help='Path to the track image')
