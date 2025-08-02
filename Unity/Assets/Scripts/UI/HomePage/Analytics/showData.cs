@@ -5,7 +5,7 @@ public class ShowData : MonoBehaviour
 {
   [Header("Graph Panel")]
   [SerializeField] private Image graphPanelImage; // Assign your UI Image here
-  [SerializeField] private RectTransform graphPanel;
+  //[SerializeField] private RectTransform graphPanel;
   [SerializeField] private int textureWidth = 400;
   [SerializeField] private int textureHeight = 300;
 
@@ -28,6 +28,8 @@ public class ShowData : MonoBehaviour
   private int superWidth;
   private int superHeight;
 
+  private APIManager apiManager;
+
   private void Awake()
   {
     // Initialize sizes for supersampling
@@ -45,8 +47,10 @@ public class ShowData : MonoBehaviour
     ClearTexture(superSampleTexture, backgroundColor);
 
     // Set initial sprite
-    graphPanelImage.sprite = Sprite.Create(graphTexture, new Rect(0, 0, textureWidth, textureHeight), new Vector2(0.5f, 0.5f));
-    graphPanel.GetComponent<Image>().color = backgroundColor;
+    //graphPanelImage.sprite = Sprite.Create(graphTexture, new Rect(0, 0, textureWidth, textureHeight), new Vector2(0.5f, 0.5f));
+    //graphPanel.GetComponent<Image>().color = backgroundColor;
+
+    UpdateGraphData(APIManager.Instance.GetDataPoints());
   }
 
   public void UpdateGraphData(Vector2[] dataPoints)

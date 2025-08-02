@@ -374,4 +374,9 @@ public class APIManager : MonoBehaviour
       }
     }
   }
+
+  public Vector2[] GetDataPoints()
+  {
+    return new Vector2[] { new Vector2(1, 1), new Vector2(2, 2), new Vector2(3, 3) };
+  }
 }

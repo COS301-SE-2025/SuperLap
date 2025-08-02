@@ -21,7 +21,6 @@ public class AnalysisGetInfo : MonoBehaviour
   private ShowRacingLine racingLinePreview;
 
   private HomePageNavigation homePageNavigation;
-  private ShowData showData;
 
   private APIManager apiManager;
   private int trackIndex = 0;
@@ -33,7 +32,6 @@ public class AnalysisGetInfo : MonoBehaviour
       apiManager = APIManager.Instance;
       homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
       racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
-      showData = FindAnyObjectByType<ShowData>();
     }
     catch (System.Exception e)
     {
@@ -56,22 +54,6 @@ public class AnalysisGetInfo : MonoBehaviour
         SetDefaultValues();
       }
 
-      if (showData != null)
-      {
-        Vector2[] dataPoints = new Vector2[50];
-        for (int i = 0; i < dataPoints.Length; i++)
-        {
-          float x = i;
-          float y = Mathf.Sin(i * 0.2f) * 5f + 5f; // Y range: 0 to 10
-          dataPoints[i] = new Vector2(x, y);
-        }
-
-        showData.UpdateGraphData(dataPoints);
-      }
-      else
-      {
-        Debug.LogWarning("ShowData component is null");
-      }
     }
     catch (System.Exception e)
     {
