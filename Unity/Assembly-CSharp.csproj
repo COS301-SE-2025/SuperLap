@@ -561,6 +561,10 @@
       <HintPath>Library\PackageCache\com.unity.ml-agents@2b4ded88494d\Plugins\System.IO.Abstractions.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="RLMatrix.Toolkit">
+      <HintPath>Assets\Plugins\RLMatrix.Toolkit.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.Collections.LowLevel.ILSupport">
       <HintPath>Library\PackageCache\com.unity.collections@56bff8827a7e\Unity.Collections.LowLevel.ILSupport\Unity.Collections.LowLevel.ILSupport.dll</HintPath>
       <Private>False</Private>

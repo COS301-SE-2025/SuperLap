@@ -11,7 +11,11 @@
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Python.Runtime.dll"
+        "Python.Runtime.dll",
+        "RLMatrix.dll",
+        "RLMatrix.Common.dll",
+        "RLMatrix.Toolkit.dll",
+        "TorchSharp.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],
