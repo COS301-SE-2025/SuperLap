@@ -196,6 +196,89 @@ class CenterlineMask:
         cv.imwrite(output_path, viz)
         print(f"Visualization saved to {output_path}")
         return True
+    
+    def run_interactive(self, image_path, output_dir=None):
+        if not self.load_image(image_path):
+            return False
+            
+        if output_dir is None:
+            output_dir = os.path.join(os.path.dirname(image_path), "centerline_output")
+        os.makedirs(output_dir, exist_ok=True)
+        
+        base_name = Path(image_path).stem
+        
+        # Setup window and mouse callback
+        cv.namedWindow(self.window_name, cv.WINDOW_AUTOSIZE)
+        cv.setMouseCallback(self.window_name, self.mouse_callback)
+        
+        print("\nInstructions:")
+        print("- Left click and drag to draw the centerline")
+        print("- Press 'r' to reset and start over")
+        print("- Press 's' to save the centerline and mask")
+        print("- Press 'w' to adjust mask width (current: {})".format(self.mask_width))
+        print("- Press 'ESC' to exit")
+        
+        while True:
+            cv.imshow(self.window_name, self.image)
+            key = cv.waitKey(1) & 0xFF
+            
+            if key == 27:  # ESC key
+                break
+            elif key == ord('r'):  # Reset
+                self.centerline_points = []
+                self.mask = None
+                self.image = self.display_image.copy()
+                print("Reset centerline")
+            elif key == ord('s'):  # Save
+                if len(self.centerline_points) > 1:
+                    # Create mask
+                    self.create_mask_from_centerline()
+                    
+                    # Save files
+                    centerline_path = os.path.join(output_dir, f"{base_name}_centerline.bin")
+                    mask_path = os.path.join(output_dir, f"{base_name}_combined_mask.png")
+                    binary_mask_path = os.path.join(output_dir, f"{base_name}_binary_mask.png")
+                    viz_path = os.path.join(output_dir, f"{base_name}_visualization.png")
+                    
+                    self.save_centerline(centerline_path)
+                    self.save_mask(mask_path)
+                    
+                    # Also save the binary mask
+                    if hasattr(self, 'binary_mask'):
+                        cv.imwrite(binary_mask_path, self.binary_mask)
+                        print(f"Binary mask saved to {binary_mask_path}")
+                    
+                    self.save_visualization(viz_path)
+                    
+                    # Save metadata
+                    metadata = {
+                        'original_image': image_path,
+                        'centerline_points': len(self.centerline_points),
+                        'mask_width': self.mask_width,
+                        'image_dimensions': [self.original_image.shape[1], self.original_image.shape[0]]
+                    }
+                    
+                    metadata_path = os.path.join(output_dir, f"{base_name}_metadata.json")
+                    with open(metadata_path, 'w') as f:
+                        json.dump(metadata, f, indent=2)
+                    
+                    print(f"All files saved to {output_dir}")
+                else:
+                    print("Need at least 2 points to save")
+            elif key == ord('w'):  # Adjust width
+                print(f"Current mask width: {self.mask_width}")
+                try:
+                    new_width = int(input("Enter new mask width (pixels): "))
+                    if new_width > 0:
+                        self.mask_width = new_width
+                        print(f"Mask width set to {self.mask_width}")
+                    else:
+                        print("Width must be positive")
+                except ValueError:
+                    print("Invalid input")
+                    
+        cv.destroyAllWindows()
+        return True
 
 def main():
     parser = argparse.ArgumentParser(description="Interactive centerline drawing tool for race tracks")
