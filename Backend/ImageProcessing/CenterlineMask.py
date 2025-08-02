@@ -40,6 +40,32 @@ class CenterlineMask:
         self.image = self.display_image.copy()
         print(f"Image loaded: {width}x{height}, Display scale: {self.scale_factor:.2f}")
         return True
+    
+    def mouse_callback(self, event, x, y, flags, param):
+        if event == cv.EVENT_LBUTTONDOWN:
+            self.drawing = True
+            # Convert display coordinates to original image coordinates
+            orig_x = int(x / self.scale_factor)
+            orig_y = int(y / self.scale_factor)
+            self.centerline_points = [(orig_x, orig_y)]
+            
+        elif event == cv.EVENT_MOUSEMOVE and self.drawing:
+            # Convert display coordinates to original image coordinates
+            orig_x = int(x / self.scale_factor)
+            orig_y = int(y / self.scale_factor)
+            
+            # Add point if it's far enough from the last point to avoid clustering
+            if len(self.centerline_points) == 0 or \
+               np.sqrt((orig_x - self.centerline_points[-1][0])**2 + 
+                      (orig_y - self.centerline_points[-1][1])**2) > 5:
+                self.centerline_points.append((orig_x, orig_y))
+                
+            # Draw on display image
+            self.update_display()
+                
+        elif event == cv.EVENT_LBUTTONUP:
+            self.drawing = False
+            print(f"Centerline drawn with {len(self.centerline_points)} points")
 
 def main():
     parser = argparse.ArgumentParser(description="Interactive centerline drawing tool for race tracks")
