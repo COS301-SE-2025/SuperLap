@@ -157,7 +157,7 @@ public class APIManager : MonoBehaviour
         }
         catch (Exception e)
         {
-          Debug.LogError("Error parsing login response: " + e.Message);
+          Debug.Log("Error parsing login response: " + e.Message);
           callback?.Invoke(false, "Error parsing server response", null);
         }
       }

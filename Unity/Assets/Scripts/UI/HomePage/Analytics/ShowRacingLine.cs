@@ -54,7 +54,7 @@ public class ShowRacingLine : MonoBehaviour
   public Image racelineImage;
 
   [Header("Data Source")]
-  public string binaryDataPath = "tracks/";
+  public string binaryDataPath = "tracks";
 
   [Header("Animation Settings")]
   public float animationSpeed = 200.0f;
@@ -114,6 +114,61 @@ public class ShowRacingLine : MonoBehaviour
       UpdateAnimatedTexture();
     }
   }
+
+  void OnEnable()
+  {
+    if (currentTrackData != null)
+    {
+      Debug.Log("ShowRacingLine re-enabled, refreshing display.");
+      RefreshDisplay();
+    }
+    else
+    {
+      TryLoadFirstAvailableTrack();
+    }
+  }
+
+
+  void Start()
+  {
+    if (!IsTrackDataLoaded())
+    {
+      TryLoadFirstAvailableTrack();
+    }
+  }
+
+
+  private void TryLoadFirstAvailableTrack()
+  {
+    // Ensure binaryDataPath is just a relative folder name like "tracks"
+    string tracksDirectory = Path.Combine(Application.dataPath, binaryDataPath.TrimEnd('/', '\\'));
+
+    Debug.Log($"Trying to load first track from directory: {tracksDirectory}");
+
+    if (Directory.Exists(tracksDirectory))
+    {
+      string[] binFiles = Directory.GetFiles(tracksDirectory, "*.bin");
+
+      if (binFiles.Length > 0)
+      {
+        string firstFile = binFiles[0];
+        string trackName = Path.GetFileNameWithoutExtension(firstFile);
+
+        Debug.Log($"Defaulting to first available track: {trackName}");
+        InitializeWithTrack(trackName);
+      }
+      else
+      {
+        Debug.LogWarning("No .bin files found in track directory.");
+      }
+    }
+    else
+    {
+      Debug.LogWarning($"Track directory does not exist: {tracksDirectory}");
+    }
+  }
+
+
   void OnDestroy()
   {
     CleanupTextures();

@@ -12,14 +12,7 @@ public class AnalysisGetInfo : MonoBehaviour
   public TMP_Text trackDescriptionText;
   public TMP_Text trackCityText;
   public TMP_Text trackCountryText;
-
-  [Header("Track Data")]
-  public GameObject trackDataPanel;
-
-  [Header("Racing Line Preview")]
-  public Image trackPreviewImage;
   private ShowRacingLine racingLinePreview;
-
   private HomePageNavigation homePageNavigation;
 
   private APIManager apiManager;
@@ -35,7 +28,7 @@ public class AnalysisGetInfo : MonoBehaviour
     }
     catch (System.Exception e)
     {
-      Debug.LogError($"Failed to initialize components: {e.Message}");
+      Debug.Log($"Failed to initialize components: {e.Message}");
       SetDefaultValues();
     }
   }
@@ -50,14 +43,14 @@ public class AnalysisGetInfo : MonoBehaviour
       }
       else
       {
-        Debug.LogError("APIManager is null");
+        Debug.Log("APIManager is null");
         SetDefaultValues();
       }
 
     }
     catch (System.Exception e)
     {
-      Debug.LogError($"Error in Start: {e.Message}");
+      Debug.Log($"Error in Start: {e.Message}");
       SetDefaultValues();
     }
   }
@@ -77,7 +70,7 @@ public class AnalysisGetInfo : MonoBehaviour
   {
     if (!success)
     {
-      Debug.LogError($"Failed to load tracks: {message}");
+      Debug.Log($"Failed to load tracks: {message}");
       DisplayErrorMessage("Failed to load track data");
       return;
     }
@@ -160,13 +153,13 @@ public class AnalysisGetInfo : MonoBehaviour
       }
       else
       {
-        Debug.LogError("APIManager is null in DisplayTrackByIndex");
+        Debug.Log("APIManager is null in DisplayTrackByIndex");
         SetDefaultValues();
       }
     }
     catch (System.Exception e)
     {
-      Debug.LogError($"Error in DisplayTrackByIndex: {e.Message}");
+      Debug.Log($"Error in DisplayTrackByIndex: {e.Message}");
       SetDefaultValues();
     }
   }
@@ -184,20 +177,20 @@ public class AnalysisGetInfo : MonoBehaviour
           }
           else
           {
-            Debug.LogError($"Failed to load track '{trackName}': {message}");
+            Debug.Log($"Failed to load track '{trackName}': {message}");
             SetDefaultValues();
           }
         });
       }
       else
       {
-        Debug.LogError("APIManager is null in DisplayTrackByName");
+        Debug.Log("APIManager is null in DisplayTrackByName");
         SetDefaultValues();
       }
     }
     catch (System.Exception e)
     {
-      Debug.LogError($"Error in DisplayTrackByName: {e.Message}");
+      Debug.Log($"Error in DisplayTrackByName: {e.Message}");
       SetDefaultValues();
     }
   }
@@ -209,7 +202,7 @@ public class AnalysisGetInfo : MonoBehaviour
     }
     else
     {
-      Debug.LogError("Track object is null");
+      Debug.Log("Track object is null");
       DisplayErrorMessage("Invalid track data");
     }
   }
@@ -236,13 +229,13 @@ public class AnalysisGetInfo : MonoBehaviour
       }
       else
       {
-        Debug.LogError("APIManager is null in RefreshTrackInfo");
+        Debug.Log("APIManager is null in RefreshTrackInfo");
         SetDefaultValues();
       }
     }
     catch (System.Exception e)
     {
-      Debug.LogError($"Error in RefreshTrackInfo: {e.Message}");
+      Debug.Log($"Error in RefreshTrackInfo: {e.Message}");
       SetDefaultValues();
     }
   }
@@ -267,7 +260,7 @@ public class AnalysisGetInfo : MonoBehaviour
     }
     else
     {
-      Debug.LogError("HomePageNavigation reference not set in AnalysisGetInfo");
+      Debug.Log("HomePageNavigation reference not set in AnalysisGetInfo");
     }
   }
 
@@ -281,7 +274,7 @@ public class AnalysisGetInfo : MonoBehaviour
     }
     else
     {
-      Debug.LogError("HomePageNavigation component not found in scene");
+      Debug.Log("HomePageNavigation component not found in scene");
     }
   }
 

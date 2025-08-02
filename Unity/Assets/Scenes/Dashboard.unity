@@ -13665,7 +13665,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 994.92004, y: 620}
+  m_AnchoredPosition: {x: 994.9, y: 620}
   m_SizeDelta: {x: 1989.8, y: 1240}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1312239174
@@ -13720,7 +13720,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   previewImage: {fileID: 1202546393}
   particleCount: 100
-  maxIterations: 500
+  maxIterations: 2000
   outputImage: {fileID: 0}
   outputImageWidth: 1024
   outputImageHeight: 1024
@@ -15292,8 +15292,6 @@ MonoBehaviour:
   trackDescriptionText: {fileID: 492803645}
   trackCityText: {fileID: 1547843088}
   trackCountryText: {fileID: 350210175}
-  trackDataPanel: {fileID: 1224448439}
-  trackPreviewImage: {fileID: 113658015}
 --- !u!1 &1417876284
 GameObject:
   m_ObjectHideFlags: 0
@@ -20609,7 +20607,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   racelineImage: {fileID: 113658015}
-  binaryDataPath: tracks/test1.bin
+  binaryDataPath: tracks
   animationSpeed: 200
   cursorColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   cursorSize: 8
