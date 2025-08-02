@@ -222,6 +222,27 @@ class CenterlineMask:
         for i in range(1, len(self.centerline_points)):
             cv.line(viz, self.centerline_points[i-1], self.centerline_points[i], (0, 255, 0), 3)
             
+        # Highlight start position (starting line)
+        if self.start_position is not None:
+            cv.circle(viz, self.start_position, 6, (0, 0, 255), -1)  # Red filled circle
+            cv.circle(viz, self.start_position, 10, (255, 255, 255), 3)  # White border
+            
+            # Add start position label
+            label_pos = (self.start_position[0] + 25, self.start_position[1] - 10)
+            cv.putText(viz, "START", label_pos, cv.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+            cv.putText(viz, "START", label_pos, cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 1)
+            
+        # Draw direction arrow near start position
+        if self.start_position is not None and self.race_direction is not None:
+            # Calculate arrow end point
+            arrow_length = 50
+            angle_rad = np.radians(self.race_direction)
+            end_x = int(self.start_position[0] + arrow_length * np.cos(angle_rad))
+            end_y = int(self.start_position[1] + arrow_length * np.sin(angle_rad))
+            
+            # Draw arrow
+            cv.arrowedLine(viz, self.start_position, (end_x, end_y), (255, 0, 0), 4, tipLength=0.3)
+            
         # Create a colored version of the binary mask for overlay
         if hasattr(self, 'binary_mask'):
             # Show the mask area with a semi-transparent overlay
