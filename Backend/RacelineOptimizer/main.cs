@@ -35,8 +35,8 @@ namespace RacelineOptimizer
             {
                 foreach (string filePath in binFiles)
                 {
-                    PSOInterface.Run(filePath, outputPath: "Output");
                     string fileNameNoExt = Path.GetFileNameWithoutExtension(filePath);
+                    PSOInterface.Run(filePath, outputPath: "Output/" + fileNameNoExt);
                     string outputDir = $"Output/{fileNameNoExt}";
                     string racelineFilePath = $"{outputDir}/{fileNameNoExt}.bin";
                     DebugImage(racelineFilePath, outputDir, fileNameNoExt);
@@ -44,8 +44,8 @@ namespace RacelineOptimizer
             }
             else
             {
-                PSOInterface.Run(binFiles[choice - 1], outputPath: "Output");
                 string fileNameNoExt = Path.GetFileNameWithoutExtension(binFiles[choice - 1]);
+                PSOInterface.Run(binFiles[choice - 1], outputPath: "Output/" + fileNameNoExt);
                 string outputDir = $"Output/{fileNameNoExt}";
                 string racelineFilePath = $"{outputDir}/{fileNameNoExt}.bin";
                 DebugImage(racelineFilePath, outputDir, fileNameNoExt);
@@ -59,7 +59,9 @@ namespace RacelineOptimizer
                 binPath: binPath,
                 outputPath: $"./{outputDir}/{fileNameNoExt}.png",
                 canvasSize: new Size(1920, 1080),
-                includeRaceline: true
+                includeRaceline: true,
+                includeCorners: false
+
             );
         }
     }
