@@ -148,6 +148,33 @@ class CenterlineMask:
         except Exception as e:
             print(f"Smoothing failed: {e}. Using original points")
             return self.centerline_points
+        
+    def save_centerline(self, output_path):
+        if not self.centerline_points:
+            print("No centerline to save")
+            return False
+            
+        # Optionally smooth the centerline before saving
+        smoothed_points = self.smooth_centerline()
+        
+        with open(output_path, 'wb') as f:
+            f.write(struct.pack('<I', len(smoothed_points)))
+            for x, y in smoothed_points:
+                f.write(struct.pack('<ff', float(x), float(y)))
+                
+        print(f"Centerline saved to {output_path} with {len(smoothed_points)} points")
+        return True
+        
+    def save_mask(self, output_path):
+        if self.mask is None:
+            print("No mask to save")
+            return False
+            
+        cv.imwrite(output_path, self.mask)
+        print(f"Mask saved to {output_path}")
+        return True
+    
+    
 
 def main():
     parser = argparse.ArgumentParser(description="Interactive centerline drawing tool for race tracks")
