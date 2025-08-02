@@ -116,6 +116,38 @@ class CenterlineMask:
         self.mask = combined_mask
         self.binary_mask = binary_mask
         return combined_mask
+    
+    def smooth_centerline(self, factor=0.1):
+        if len(self.centerline_points) < 4:
+            return self.centerline_points
+            
+        from scipy.interpolate import interp1d
+        
+        points_arr = np.array(self.centerline_points)
+        x_coords = points_arr[:, 0]
+        y_coords = points_arr[:, 1]
+        
+        # Create parameter t based on cumulative distance
+        distances = np.sqrt(np.diff(x_coords)**2 + np.diff(y_coords)**2)
+        t = np.concatenate([[0], np.cumsum(distances)])
+        t = t / t[-1]  # Normalize to [0, 1]
+        
+        try:
+            # Interpolate with cubic splines
+            interp_x = interp1d(t, x_coords, kind='cubic')
+            interp_y = interp1d(t, y_coords, kind='cubic')
+            
+            # Create more points for smoother line
+            t_smooth = np.linspace(0, 1, len(self.centerline_points) * 2)
+            x_smooth = interp_x(t_smooth)
+            y_smooth = interp_y(t_smooth)
+            
+            smoothed_points = [(int(x), int(y)) for x, y in zip(x_smooth, y_smooth)]
+            return smoothed_points
+            
+        except Exception as e:
+            print(f"Smoothing failed: {e}. Using original points")
+            return self.centerline_points
 
 def main():
     parser = argparse.ArgumentParser(description="Interactive centerline drawing tool for race tracks")
