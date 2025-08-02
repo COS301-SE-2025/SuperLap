@@ -84,6 +84,42 @@ class CenterlineMask:
             cv.putText(self.image, f"Points: {len(self.centerline_points)}", 
                       (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
+    def calculate_race_direction(self):
+        if len(self.centerline_points) < 2:
+            return None
+            
+        # Use the first 10 points (or all points if less than 10) to determine direction
+        end_idx = min(10, len(self.centerline_points))
+        start_point = self.centerline_points[0]
+        end_point = self.centerline_points[end_idx - 1]
+        
+        # Calculate angle in degrees
+        # Note: In image coordinates, Y increases downward
+        dx = end_point[0] - start_point[0]
+        dy = end_point[1] - start_point[1]
+        
+        # Calculate angle (0° = East, 90° = South in image coordinates)
+        angle_rad = np.arctan2(dy, dx)
+        angle_deg = np.degrees(angle_rad)
+        
+        # Normalize to 0-360 degrees
+        if angle_deg < 0:
+            angle_deg += 360
+            
+        self.race_direction = angle_deg
+        return angle_deg
+            
+    def get_compass_direction(self, angle_deg):
+        # Adjust for image coordinates (Y increases downward)
+        directions = [
+            "East", "Southeast", "South", "Southwest", 
+            "West", "Northwest", "North", "Northeast"
+        ]
+        
+        # Each direction covers 45 degrees
+        idx = int((angle_deg + 22.5) / 45) % 8
+        return directions[idx]
+
     def create_mask_from_centerline(self):
         if len(self.centerline_points) < 2:
             print("Need at least 2 points to create a mask")
