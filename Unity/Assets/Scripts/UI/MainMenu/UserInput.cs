@@ -36,9 +36,24 @@ public class UserInput : MonoBehaviour
 
   void MoveToNextElement()
   {
-    currentIndex = (currentIndex + 1) % elements.Count;
-    elements[currentIndex].Select();
+    int startIndex = currentIndex;
+    do
+    {
+      currentIndex = (currentIndex + 1) % elements.Count;
+      Selectable next = elements[currentIndex];
+
+      // Skip if inactive or not interactable
+      if (next != null &&
+          next.gameObject.activeInHierarchy &&
+          next.IsInteractable())
+      {
+        next.Select();
+        return;
+      }
+
+    } while (currentIndex != startIndex); // Prevent infinite loop if all are inactive
   }
+
 
   void HandleEnterOnCurrentElement()
   {
@@ -51,22 +66,33 @@ public class UserInput : MonoBehaviour
     if (tmpInput != null)
     {
       Debug.Log("Saved TMP input: " + tmpInput.text);
+
+      // Move to next
+      MoveToNextElement();
+      return;
     }
     else if (input != null)
     {
       Debug.Log("Saved InputField: " + input.text);
+
+      // Move to next
+      MoveToNextElement();
+      return;
+    }
+  }
+
+  public void SetCurrentElement(Selectable selected)
+  {
+    int index = elements.IndexOf(selected);
+    if (index >= 0)
+    {
+      currentIndex = index;
+      elements[currentIndex].Select();
     }
     else
     {
-      // If it's a button or something else with onClick
-      Button btn = current.GetComponent<Button>();
-      if (btn != null)
-      {
-        btn.onClick.Invoke();
-      }
+      Debug.LogWarning("Element not found in list.");
     }
-
-    // Move to next
-    MoveToNextElement();
   }
+
 }
