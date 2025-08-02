@@ -92,7 +92,7 @@ public class TrackMaster : MonoBehaviour
 
         // Determine starting position
         Vector3 startPosition = GetStartingPosition();
-        Vector3 startDirection = GetStartingDirection(startPosition);
+        Vector3 startDirection = GetStartingDirection();
 
         // Spawn the agent
         spawnedAgent = Instantiate(instance.motorcycleAgentPrefab, startPosition, Quaternion.LookRotation(startDirection));
@@ -135,37 +135,47 @@ public class TrackMaster : MonoBehaviour
         return new Vector3(racelinePoint.x, instance.agentSpawnHeight, racelinePoint.y);
     }
 
-    private static Vector3 GetStartingDirection(Vector3 currentPosition)
+    private static Vector3 GetStartingDirection()
     {
         if (currentRaceline.Count < 2)
         {
-            return Vector3.forward; // Default direction if not enough points
+            return Vector3.forward;
         }
 
-        // Find the closest raceline point to our current position
-        int closestIndex = 0;
-        float minDistance = float.MaxValue;
-
-        for (int i = 0; i < currentRaceline.Count; i++)
+        // Get the starting index directly from our configuration
+        int startIndex;
+        if (instance.spawnAtRandomPosition)
         {
-            Vector2 point = currentRaceline[i];
-            Vector3 worldPoint = new Vector3(point.x, instance.agentSpawnHeight, point.y);
-            float distance = Vector3.Distance(currentPosition, worldPoint);
-            
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closestIndex = i;
-            }
+            startIndex = Random.Range(0, currentRaceline.Count);
+        }
+        else
+        {
+            startIndex = Mathf.Clamp(instance.startingPositionIndex, 0, currentRaceline.Count - 1);
         }
 
-        // Get direction to next point on raceline
-        int nextIndex = (closestIndex + 1) % currentRaceline.Count;
-        Vector2 currentPoint = currentRaceline[closestIndex];
-        Vector2 nextPoint = currentRaceline[nextIndex];
+        // Look ahead several points for smoother direction calculation
+        int lookAheadDistance = Mathf.Max(1, currentRaceline.Count / 20); // ~5% of track length
+        int endIndex = (startIndex + lookAheadDistance) % currentRaceline.Count;
 
-        Vector3 direction = new Vector3(nextPoint.x - currentPoint.x, 0, nextPoint.y - currentPoint.y).normalized;
-        return direction != Vector3.zero ? direction : Vector3.forward;
+        // Get two points for direction calculation
+        Vector2 point1 = currentRaceline[startIndex];
+        Vector2 point2 = currentRaceline[endIndex];
+
+        // Calculate direction vector
+        Vector2 direction2D = point2 - point1;
+        
+        // Handle case where points are too close (circular track wrap-around)
+        if (direction2D.magnitude < 0.1f)
+        {
+            endIndex = (startIndex + 1) % currentRaceline.Count;
+            point2 = currentRaceline[endIndex];
+            direction2D = point2 - point1;
+        }
+
+        // Convert to 3D and normalize
+        Vector3 direction3D = new Vector3(direction2D.x, 0, direction2D.y).normalized;
+        
+        return direction3D != Vector3.zero ? direction3D : Vector3.forward;
     }
 
     /// <summary>
