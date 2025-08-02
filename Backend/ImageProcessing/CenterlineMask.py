@@ -19,6 +19,28 @@ class CenterlineMask:
         self.scale_factor = 1.0
         self.window_name = "Draw Centerline - Left Click and Drag to Draw, 'r' to Reset, 's' to Save, 'ESC' to Exit"
 
+    def load_image(self, image_path):
+        self.original_image = cv.imread(image_path)
+        if self.original_image is None:
+            raise ValueError(f"Could not load image from {image_path}")
+        
+        # Calculate scale factor to fit image on screen if it's too large
+        max_display_size = 1200
+        height, width = self.original_image.shape[:2]
+        
+        if max(height, width) > max_display_size:
+            self.scale_factor = max_display_size / max(height, width)
+            new_width = int(width * self.scale_factor)
+            new_height = int(height * self.scale_factor)
+            self.display_image = cv.resize(self.original_image, (new_width, new_height))
+        else:
+            self.scale_factor = 1.0
+            self.display_image = self.original_image.copy()
+            
+        self.image = self.display_image.copy()
+        print(f"Image loaded: {width}x{height}, Display scale: {self.scale_factor:.2f}")
+        return True
+
 def main():
     parser = argparse.ArgumentParser(description="Interactive centerline drawing tool for race tracks")
     parser.add_argument('image_path', help='Path to the track image')
