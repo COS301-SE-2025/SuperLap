@@ -174,7 +174,28 @@ class CenterlineMask:
         print(f"Mask saved to {output_path}")
         return True
     
-    
+    def save_visualization(self, output_path):
+        if self.mask is None or not self.centerline_points:
+            print("No data to visualize")
+            return False
+            
+        # Create visualization
+        viz = self.original_image.copy()
+        
+        # Draw centerline on the visualization
+        for i in range(1, len(self.centerline_points)):
+            cv.line(viz, self.centerline_points[i-1], self.centerline_points[i], (0, 255, 0), 3)
+            
+        # Create a colored version of the binary mask for overlay
+        if hasattr(self, 'binary_mask'):
+            # Show the mask area with a semi-transparent overlay
+            mask_colored = np.zeros_like(viz)
+            mask_colored[self.binary_mask == 255] = [0, 255, 255]  # Yellow overlay
+            viz = cv.addWeighted(viz, 0.8, mask_colored, 0.2, 0)
+        
+        cv.imwrite(output_path, viz)
+        print(f"Visualization saved to {output_path}")
+        return True
 
 def main():
     parser = argparse.ArgumentParser(description="Interactive centerline drawing tool for race tracks")
