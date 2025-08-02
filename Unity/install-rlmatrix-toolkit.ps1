@@ -1,4 +1,4 @@
-$packageName = "RLMatrix"
+$packageName = "RLMatrix.Toolkit"
 $packageVersion = "0.5.2"
 $netTarget = "netstandard2.0"
 $tempDir = ".\Temp"
@@ -16,9 +16,21 @@ if (!(Test-Path $dllDir)) {
     New-Item -ItemType "directory" -Path $dllDir
 }
 Get-ChildItem -Path $tempDir -Directory | ForEach-Object {
+    # First try the standard lib path
     $packagePath = Join-Path $_.FullName "lib\$netTarget"
     if (Test-Path $packagePath) {
         Get-ChildItem -Path $packagePath -Filter "*.dll" | ForEach-Object {
+            $destinationPath = Join-Path $dllDir $_.Name
+            if (!(Test-Path $destinationPath)) {
+                Copy-Item -Path $_.FullName -Destination $destinationPath
+            }
+        }
+    }
+    
+    # Also try the analyzers path (for source generators like RLMatrix.Toolkit)
+    $analyzerPath = Join-Path $_.FullName "analyzers\dotnet\cs"
+    if (Test-Path $analyzerPath) {
+        Get-ChildItem -Path $analyzerPath -Filter "*.dll" | ForEach-Object {
             $destinationPath = Join-Path $dllDir $_.Name
             if (!(Test-Path $destinationPath)) {
                 Copy-Item -Path $_.FullName -Destination $destinationPath
