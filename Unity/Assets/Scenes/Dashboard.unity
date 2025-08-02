@@ -6149,7 +6149,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 49.6
+  m_fontSize: 49.65
   m_fontSizeBase: 40
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -9289,7 +9289,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 52.4
+  m_fontSize: 52.45
   m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -12438,6 +12438,10 @@ MonoBehaviour:
   meshResolution: 1000
   splitCount: 50
   splitMeshScale: 25
+  motorcycleAgentPrefab: {fileID: 919132149155446097, guid: ddd1a5f8aa6ef4a3e979b11d3c0721a1, type: 3}
+  agentSpawnHeight: 1
+  startingPositionIndex: 0
+  spawnAtRandomPosition: 0
 --- !u!1 &1224448439
 GameObject:
   m_ObjectHideFlags: 0
