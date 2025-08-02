@@ -6,7 +6,6 @@ from pathlib import Path
 import json
 import struct
 
-
 class CenterlineMask:
     def __init__(self, mask_width=50):
         self.image = None
@@ -18,7 +17,9 @@ class CenterlineMask:
         self.mask_width = mask_width
         self.scale_factor = 1.0
         self.window_name = "Draw Centerline - Left Click and Drag to Draw, 'r' to Reset, 's' to Save, 'ESC' to Exit"
-
+        self.start_position = None
+        self.race_direction = None
+        
     def load_image(self, image_path):
         self.original_image = cv.imread(image_path)
         if self.original_image is None:
@@ -40,17 +41,19 @@ class CenterlineMask:
         self.image = self.display_image.copy()
         print(f"Image loaded: {width}x{height}, Display scale: {self.scale_factor:.2f}")
         return True
-    
+        
     def mouse_callback(self, event, x, y, flags, param):
         if event == cv.EVENT_LBUTTONDOWN:
             self.drawing = True
-            # Convert display coordinates to original image coordinates
+            
             orig_x = int(x / self.scale_factor)
             orig_y = int(y / self.scale_factor)
             self.centerline_points = [(orig_x, orig_y)]
+
+            self.start_position = (orig_x, orig_y)
+            print(f"Starting line set at: ({orig_x}, {orig_y})")
             
         elif event == cv.EVENT_MOUSEMOVE and self.drawing:
-            # Convert display coordinates to original image coordinates
             orig_x = int(x / self.scale_factor)
             orig_y = int(y / self.scale_factor)
             
@@ -60,13 +63,23 @@ class CenterlineMask:
                       (orig_y - self.centerline_points[-1][1])**2) > 5:
                 self.centerline_points.append((orig_x, orig_y))
                 
-            # Draw on display image
+                if len(self.centerline_points) >= 10:
+                    self.calculate_race_direction()
+                
             self.update_display()
                 
         elif event == cv.EVENT_LBUTTONUP:
             self.drawing = False
+            # Final calculation of race direction
+            if len(self.centerline_points) >= 2:
+                self.calculate_race_direction()
             print(f"Centerline drawn with {len(self.centerline_points)} points")
-
+            if self.race_direction is not None:
+                print(f"Race direction: {self.race_direction:.1f}° (0° = East, 90° = North)")
+                # Convert to compass direction for easier understanding
+                compass_dir = self.get_compass_direction(self.race_direction)
+                print(f"Initial race direction: {compass_dir}")
+            
     def update_display(self):
         self.image = self.display_image.copy()
         
@@ -83,22 +96,22 @@ class CenterlineMask:
         if len(self.centerline_points) > 0:
             cv.putText(self.image, f"Points: {len(self.centerline_points)}", 
                       (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-            
+
     def calculate_race_direction(self):
         if len(self.centerline_points) < 2:
             return None
             
-        # Use the first 10 points (or all points if less than 10) to determine direction
+        # Use the first 10 points to determine direction
         end_idx = min(10, len(self.centerline_points))
         start_point = self.centerline_points[0]
         end_point = self.centerline_points[end_idx - 1]
         
         # Calculate angle in degrees
-        # Note: In image coordinates, Y increases downward
+        # Note: Y increases downward
         dx = end_point[0] - start_point[0]
         dy = end_point[1] - start_point[1]
         
-        # Calculate angle (0° = East, 90° = South in image coordinates)
+        # Calculate angle (0° = East, 90° = South)
         angle_rad = np.arctan2(dy, dx)
         angle_deg = np.degrees(angle_rad)
         
@@ -108,7 +121,7 @@ class CenterlineMask:
             
         self.race_direction = angle_deg
         return angle_deg
-            
+        
     def get_compass_direction(self, angle_deg):
         # Adjust for image coordinates (Y increases downward)
         directions = [
@@ -119,7 +132,7 @@ class CenterlineMask:
         # Each direction covers 45 degrees
         idx = int((angle_deg + 22.5) / 45) % 8
         return directions[idx]
-
+            
     def create_mask_from_centerline(self):
         if len(self.centerline_points) < 2:
             print("Need at least 2 points to create a mask")
@@ -139,7 +152,7 @@ class CenterlineMask:
         binary_mask = cv.morphologyEx(binary_mask, cv.MORPH_CLOSE, kernel)
         binary_mask = cv.morphologyEx(binary_mask, cv.MORPH_OPEN, kernel)
         
-        # Convert original image to grayscale for better contrast
+        # Create the combined mask with track image
         if len(self.original_image.shape) == 3:
             gray_image = cv.cvtColor(self.original_image, cv.COLOR_BGR2GRAY)
         else:
@@ -152,7 +165,7 @@ class CenterlineMask:
         self.mask = combined_mask
         self.binary_mask = binary_mask
         return combined_mask
-    
+        
     def smooth_centerline(self, factor=0.1):
         if len(self.centerline_points) < 4:
             return self.centerline_points
@@ -184,7 +197,7 @@ class CenterlineMask:
         except Exception as e:
             print(f"Smoothing failed: {e}. Using original points")
             return self.centerline_points
-        
+            
     def save_centerline(self, output_path):
         if not self.centerline_points:
             print("No centerline to save")
@@ -209,7 +222,7 @@ class CenterlineMask:
         cv.imwrite(output_path, self.mask)
         print(f"Mask saved to {output_path}")
         return True
-    
+        
     def save_visualization(self, output_path):
         if self.mask is None or not self.centerline_points:
             print("No data to visualize")
@@ -222,10 +235,10 @@ class CenterlineMask:
         for i in range(1, len(self.centerline_points)):
             cv.line(viz, self.centerline_points[i-1], self.centerline_points[i], (0, 255, 0), 3)
             
-        # Highlight start position (starting line)
+        # Highlight start position
         if self.start_position is not None:
-            cv.circle(viz, self.start_position, 6, (0, 0, 255), -1)  # Red filled circle
-            cv.circle(viz, self.start_position, 10, (255, 255, 255), 3)  # White border
+            cv.circle(viz, self.start_position, 8, (0, 0, 255), -1)  # Red filled circle
+            cv.circle(viz, self.start_position, 12, (255, 255, 255), 3)  # White border
             
             # Add start position label
             label_pos = (self.start_position[0] + 25, self.start_position[1] - 10)
@@ -253,7 +266,7 @@ class CenterlineMask:
         cv.imwrite(output_path, viz)
         print(f"Visualization saved to {output_path}")
         return True
-    
+        
     def run_interactive(self, image_path, output_dir=None):
         if not self.load_image(image_path):
             return False
@@ -270,6 +283,8 @@ class CenterlineMask:
         
         print("\nInstructions:")
         print("- Left click and drag to draw the centerline")
+        print("- The FIRST point you click will be the STARTING LINE")
+        print("- Draw in the direction you want the race to go")
         print("- Press 'r' to reset and start over")
         print("- Press 's' to save the centerline and mask")
         print("- Press 'w' to adjust mask width (current: {})".format(self.mask_width))
@@ -284,8 +299,10 @@ class CenterlineMask:
             elif key == ord('r'):  # Reset
                 self.centerline_points = []
                 self.mask = None
+                self.start_position = None
+                self.race_direction = None
                 self.image = self.display_image.copy()
-                print("Reset centerline")
+                print("Reset centerline, start position, and direction")
             elif key == ord('s'):  # Save
                 if len(self.centerline_points) > 1:
                     # Create mask
@@ -312,7 +329,17 @@ class CenterlineMask:
                         'original_image': image_path,
                         'centerline_points': len(self.centerline_points),
                         'mask_width': self.mask_width,
-                        'image_dimensions': [self.original_image.shape[1], self.original_image.shape[0]]
+                        'image_dimensions': [self.original_image.shape[1], self.original_image.shape[0]],
+                        'start_position': {
+                            'x': self.start_position[0] if self.start_position else None,
+                            'y': self.start_position[1] if self.start_position else None,
+                            'description': 'Starting line position (finish line)'
+                        },
+                        'race_direction': {
+                            'angle_degrees': self.race_direction,
+                            'compass_direction': self.get_compass_direction(self.race_direction) if self.race_direction else None,
+                            'description': 'Initial direction of travel from start position (0° = East, 90° = South)'
+                        }
                     }
                     
                     metadata_path = os.path.join(output_dir, f"{base_name}_metadata.json")
