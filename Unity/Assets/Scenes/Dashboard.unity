@@ -12435,6 +12435,10 @@ MonoBehaviour:
   - {fileID: 2100000, guid: a9b2f7bcbdcf80a43a9613bcebf9afe1, type: 2}
   - {fileID: 2100000, guid: 8a465a85ef142d245a5f524892d443b1, type: 2}
   - {fileID: 2100000, guid: 0a6c9136e0598704ea810d46920f61ae, type: 2}
+  showRaceline: 1
+  racelineColor: {r: 1, g: 0, b: 0, a: 1}
+  racelineWidth: 0.5
+  racelineHeightOffset: 0.1
   motorcycleAgentPrefab: {fileID: 5433541524235702189, guid: 281b89903f0722b4ba142ec79b4d6d29, type: 3}
   agentSpawnHeight: 1
   startingPositionIndex: 0
@@ -13711,7 +13715,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   previewImage: {fileID: 1202546393}
   particleCount: 100
-  maxIterations: 100
+  maxIterations: 5000
   outputImage: {fileID: 0}
   outputImageWidth: 1024
   outputImageHeight: 1024

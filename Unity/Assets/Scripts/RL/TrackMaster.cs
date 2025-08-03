@@ -15,6 +15,12 @@ public class TrackMaster : MonoBehaviour
     [SerializeField] private GameObject checkpointPrefab;
     [SerializeField] private Material[] checkpointMaterials = new Material[3];
 
+    [Header("Raceline Visualization")]
+    [SerializeField] private bool showRaceline = true;
+    [SerializeField] private Color racelineColor = Color.red;
+    [SerializeField] private float racelineWidth = 0.5f;
+    [SerializeField] private float racelineHeightOffset = 0.1f;
+
     [Header("Agent Spawning")]
     [SerializeField] private GameObject motorcycleAgentPrefab;
     [SerializeField] private float agentSpawnHeight = 1.0f;
@@ -29,6 +35,7 @@ public class TrackMaster : MonoBehaviour
     public static TrackMaster instance;
     private static List<Vector2> currentRaceline;
     private static GameObject spawnedAgent;
+    private static LineRenderer racelineRenderer;
 
     void Start()
     {
@@ -58,7 +65,9 @@ public class TrackMaster : MonoBehaviour
         // Store raceline for agent spawning
         currentRaceline = results.raceline;
 
-        Mesh mesh = Processor3D.GenerateOutputMesh(results, instance.meshResolution);
+        (List<Vector2> innerPoints, List<Vector2> outerPoints) = Processor3D.GetNewBoundaries(results, instance.meshResolution);
+
+        Mesh mesh = Processor3D.GenerateOutputMesh(innerPoints, outerPoints);
         MeshFilter meshFilter = instance.gameObject.AddComponent<MeshFilter>();
         meshFilter.mesh = mesh;
         MeshRenderer meshRenderer = instance.gameObject.AddComponent<MeshRenderer>();
@@ -70,6 +79,7 @@ public class TrackMaster : MonoBehaviour
         meshCollider.sharedMesh = mesh;
 
         CreateCheckpoints(results.raceline);
+        CreateRacelineVisualization(results.raceline);
 
         // Spawn the motorcycle agent on the raceline
         SpawnMotorcycleAgent();
@@ -77,25 +87,6 @@ public class TrackMaster : MonoBehaviour
         AssetDatabase.CreateAsset(mesh, "Assets/GeneratedMeshes/TrackMesh.asset");
         // AssetDatabase.SaveAssets();
     }
-
-    // Legacy split creation method - replaced by checkpoint system
-    /*
-    private static void CreateSplits(List<Vector2> raceline)
-    {
-        // Create red spheres at split points
-        for (int i = 0; i < raceline.Count; i += instance.meshResolution / instance.splitCount)
-        {
-            Vector2 point = raceline[i];
-            GameObject splitPoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            splitPoint.transform.position = new Vector3(point.x, 0, point.y);
-            splitPoint.transform.localScale = Vector3.one * instance.splitMeshScale; // Adjust size as needed
-            splitPoint.GetComponent<Renderer>().material = instance.splitMaterial;
-            splitPoint.GetComponent<Collider>().isTrigger = true; // Make collider a trigger
-            splitPoint.transform.SetParent(instance.transform); // Set parent to keep hierarchy clean
-            splitPoint.name = $"SplitPoint_{i}";
-        }
-    }
-    */
 
     private static void CreateCheckpoints(List<Vector2> raceline)
     {
@@ -137,6 +128,66 @@ public class TrackMaster : MonoBehaviour
         {
             manager.SetCheckpointMaterials(instance.checkpointMaterials);
         }
+    }
+
+    private static void CreateRacelineVisualization(List<Vector2> raceline)
+    {
+        if (!instance.showRaceline || raceline == null || raceline.Count == 0)
+        {
+            if (racelineRenderer != null)
+            {
+                racelineRenderer.enabled = false;
+            }
+            return;
+        }
+
+        // Create or get the LineRenderer component
+        if (racelineRenderer == null)
+        {
+            GameObject racelineObject = new GameObject("Raceline");
+            racelineObject.transform.SetParent(instance.transform);
+            racelineRenderer = racelineObject.AddComponent<LineRenderer>();
+        }
+
+        // Configure the LineRenderer
+        SetupRacelineRenderer();
+
+        // Convert 2D raceline points to 3D positions with height offset
+        Vector3[] racelinePoints = new Vector3[raceline.Count + 1]; // +1 to close the loop
+        
+        for (int i = 0; i < raceline.Count; i++)
+        {
+            Vector2 point = raceline[i];
+            racelinePoints[i] = new Vector3(point.x, instance.racelineHeightOffset, point.y);
+        }
+        
+        // Close the loop by connecting back to the first point
+        racelinePoints[raceline.Count] = racelinePoints[0];
+
+        // Apply the points to the LineRenderer
+        racelineRenderer.positionCount = racelinePoints.Length;
+        racelineRenderer.SetPositions(racelinePoints);
+        racelineRenderer.enabled = true;
+
+        Debug.Log($"Created raceline visualization with {raceline.Count} points");
+    }
+
+    private static void SetupRacelineRenderer()
+    {
+        if (racelineRenderer == null) return;
+
+        // Create a material for the line if it doesn't exist
+        Material racelineMaterial = new Material(Shader.Find("Sprites/Default"));
+        racelineMaterial.color = instance.racelineColor;
+
+        // Configure LineRenderer properties
+        racelineRenderer.material = racelineMaterial;
+        racelineRenderer.material.color = instance.racelineColor;
+        racelineRenderer.startWidth = instance.racelineWidth;
+        racelineRenderer.endWidth = instance.racelineWidth;
+        racelineRenderer.useWorldSpace = true;
+        racelineRenderer.loop = false; // We manually close the loop
+        racelineRenderer.sortingOrder = 1; // Render on top of track
     }
 
     private static void SpawnMotorcycleAgent()

@@ -308,6 +308,7 @@ public class MotorcyclePlayer : MonoBehaviour
         trajectoryLineRenderer.positionCount = trajectoryPoints;
         trajectoryLineRenderer.useWorldSpace = true;
         trajectoryLineRenderer.enabled = showTrajectory;
+        trajectoryLineRenderer.sortingOrder = 1;
     }
 
     private void UpdateTrajectoryVisualization()
