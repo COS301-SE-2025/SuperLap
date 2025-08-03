@@ -69,6 +69,11 @@ MonoBehaviour:
   maxFOVSpeed: 10
   accelerationFOVBoost: 1
   fovAdjustSpeed: 2
+  showTrajectory: 1
+  trajectoryLength: 3
+  trajectoryPoints: 20
+  trajectoryColor: {r: 0, g: 0.74262595, b: 1, a: 1}
+  trajectoryWidth: 0.4
   speedText: {fileID: 0}
   currentSpeed: 0
   currentSpeedKmh: 0

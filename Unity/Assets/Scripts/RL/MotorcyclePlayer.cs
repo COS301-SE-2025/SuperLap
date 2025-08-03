@@ -88,6 +88,18 @@ public class MotorcyclePlayer : MonoBehaviour
     [Tooltip("How quickly the FOV adjusts to changes.")]
     [SerializeField] private float fovAdjustSpeed = 3f;
 
+    [Header("Trajectory Prediction")]
+    [Tooltip("Enable/disable trajectory line visualization.")]
+    [SerializeField] private bool showTrajectory = false;
+    [Tooltip("Length of the predicted trajectory in seconds.")]
+    [SerializeField] private float trajectoryLength = 3f;
+    [Tooltip("Number of points to calculate for the trajectory line.")]
+    [SerializeField] private int trajectoryPoints = 50;
+    [Tooltip("Color of the trajectory line.")]
+    [SerializeField] private Color trajectoryColor = Color.green;
+    [Tooltip("Width of the trajectory line.")]
+    [SerializeField] private float trajectoryWidth = 0.1f;
+
     [Header("GUI")]
     [Tooltip("Displays the current speed of the motorcycle.")]
     [SerializeField] private TextMeshProUGUI speedText;
@@ -107,10 +119,14 @@ public class MotorcyclePlayer : MonoBehaviour
     
     // Internal tracking
     private float previousSpeed = 0f;
+    
+    // Trajectory prediction
+    private LineRenderer trajectoryLineRenderer;
 
     void Start()
     {
         CalculateTheoreticalTopSpeed();
+        SetupTrajectoryLineRenderer();
     }
 
     void Update()
@@ -120,6 +136,7 @@ public class MotorcyclePlayer : MonoBehaviour
         UpdateTurning(Time.deltaTime);
         UpdateMotorcycleLeaning(Time.deltaTime);
         UpdateCameraFOV(Time.deltaTime);
+        UpdateTrajectoryVisualization();
 
         currentSpeedKmh = currentSpeed * 3.6f;
         if (speedText != null)
@@ -274,5 +291,126 @@ public class MotorcyclePlayer : MonoBehaviour
         
         Debug.Log($"Theoretical Top Speed: {theoreticalTopSpeed * 3.6f:F1} km/h");
         Debug.Log($"Cd x A = {dragCoefficient * frontalArea:F3}");
+    }
+
+    private void SetupTrajectoryLineRenderer()
+    {
+        trajectoryLineRenderer = GetComponent<LineRenderer>();
+        if (trajectoryLineRenderer == null)
+        {
+            trajectoryLineRenderer = gameObject.AddComponent<LineRenderer>();
+        }
+
+        trajectoryLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        trajectoryLineRenderer.material.color = trajectoryColor;
+        trajectoryLineRenderer.startWidth = trajectoryWidth;
+        trajectoryLineRenderer.endWidth = trajectoryWidth;
+        trajectoryLineRenderer.positionCount = trajectoryPoints;
+        trajectoryLineRenderer.useWorldSpace = true;
+        trajectoryLineRenderer.enabled = showTrajectory;
+    }
+
+    private void UpdateTrajectoryVisualization()
+    {
+        if (trajectoryLineRenderer == null)
+        {
+            SetupTrajectoryLineRenderer();
+            return;
+        }
+
+        trajectoryLineRenderer.enabled = showTrajectory;
+        trajectoryLineRenderer.material.color = trajectoryColor;
+        trajectoryLineRenderer.startWidth = trajectoryWidth;
+        trajectoryLineRenderer.endWidth = trajectoryWidth;
+
+        if (!showTrajectory) return;
+
+        CalculateTrajectoryPoints();
+    }
+
+    private void CalculateTrajectoryPoints()
+    {
+        Vector3[] points = new Vector3[trajectoryPoints];
+        
+        // Simulation state - start with current state
+        Vector3 simPosition = transform.position;
+        Vector3 simForward = transform.forward;
+        float simSpeed = currentSpeed;
+        float simTurnAngle = currentTurnAngle;
+        
+        float deltaTime = trajectoryLength / trajectoryPoints;
+
+        for (int i = 0; i < trajectoryPoints; i++)
+        {
+            points[i] = simPosition;
+
+            // Simulate one step forward using the same physics as the actual motorcycle
+            SimulateOneStep(ref simPosition, ref simForward, ref simSpeed, ref simTurnAngle, deltaTime);
+        }
+
+        trajectoryLineRenderer.positionCount = trajectoryPoints;
+        trajectoryLineRenderer.SetPositions(points);
+    }
+
+    private void SimulateOneStep(ref Vector3 position, ref Vector3 forward, ref float speed, ref float turnAngle, float dt)
+    {
+        // Use current inputs for prediction (could be modified to use different inputs)
+        float simThrottleInput = throttleInput;
+        float simSteerInput = steerInput;
+
+        // Simulate movement using same physics as UpdateMovement
+        float drivingForce = SimulateDrivingForce(speed);
+        float resistanceForces = SimulateResistanceForces(speed);
+
+        float netForce = (drivingForce * simThrottleInput) - resistanceForces;
+
+        if (simThrottleInput < 0)
+        {
+            netForce = -brakingForce - resistanceForces;
+        }
+
+        float acceleration = netForce / mass;
+        speed += acceleration * dt;
+        speed = Mathf.Max(0, speed);
+
+        // Simulate turning using same physics as UpdateTurning
+        float steeringMultiplier = SimulateSteeringMultiplier(speed);
+        turnAngle += simSteerInput * turnRate * steeringMultiplier * dt;
+        turnAngle *= Mathf.Pow(steeringDecay, dt);
+
+        // Apply rotation to forward vector
+        float rotationThisFrame = turnAngle * dt;
+        Quaternion rotation = Quaternion.AngleAxis(rotationThisFrame, Vector3.up);
+        forward = rotation * forward;
+
+        // Move forward
+        position += forward * speed * dt;
+    }
+
+    private float SimulateDrivingForce(float speed)
+    {
+        float powerLimitedForce = enginePower / Mathf.Max(speed, 0.1f);
+        return Mathf.Min(maxTractionForce, powerLimitedForce);
+    }
+
+    private float SimulateResistanceForces(float speed)
+    {
+        float dragForce = 0.5f * AIR_DENSITY * dragCoefficient * frontalArea * speed * speed;
+        float rollingForce = rollingResistanceCoefficient * mass * GRAVITY;
+        return dragForce + rollingForce;
+    }
+
+    private float SimulateSteeringMultiplier(float speed)
+    {
+        if (speed < minSteeringSpeed)
+        {
+            return 0f;
+        }
+
+        float normalizedSpeed = speed / fullSteeringSpeed;
+        float steeringMultiplier = 1f / (1f + normalizedSpeed * steeringIntensity);
+        float fadeInMultiplier = Mathf.Clamp01((speed - minSteeringSpeed) / (fullSteeringSpeed - minSteeringSpeed));
+        
+        return steeringMultiplier * fadeInMultiplier;
     }
 }
