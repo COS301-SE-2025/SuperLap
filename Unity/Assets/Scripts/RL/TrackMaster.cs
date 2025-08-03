@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RLMatrix;
 using UnityEditor;
 using UnityEngine;
 
@@ -80,12 +81,105 @@ public class TrackMaster : MonoBehaviour
 
         CreateCheckpoints(results.raceline);
         CreateRacelineVisualization(results.raceline);
+        CreateTrainingEnvironment();
+
 
         // Spawn the motorcycle agent on the raceline
         //SpawnMotorcycleAgent();
 
         AssetDatabase.CreateAsset(mesh, "Assets/GeneratedMeshes/TrackMesh.asset");
         // AssetDatabase.SaveAssets();
+    }
+
+    private static void CreateTrainingEnvironment()
+    {
+        if (instance.motorcycleAgentPrefab == null)
+        {
+            Debug.LogWarning("No motorcycle agent prefab assigned - skipping training environment creation");
+            return;
+        }
+
+        // Create a training manager object
+        GameObject trainingManagerObj = new GameObject("MotorcycleTrainingManager");
+        trainingManagerObj.transform.SetParent(instance.transform);
+        
+        MotorcycleTrainingManager trainingManager = trainingManagerObj.AddComponent<MotorcycleTrainingManager>();
+        
+        // Create multiple motorcycle environments for training
+        List<MotorcycleEnvironment> environments = new List<MotorcycleEnvironment>();
+        int numEnvironments = 1; // Start with 4 parallel environments
+        
+        for (int i = 0; i < numEnvironments; i++)
+        {
+            Vector3 spawnPosition = GetTrainingSpawnPosition(i, currentRaceline);
+            Vector3 spawnDirection = GetTrainingSpawnDirection(i, currentRaceline);
+            
+            // Create motorcycle agent
+            GameObject agentObj = Instantiate(instance.motorcycleAgentPrefab, spawnPosition, Quaternion.LookRotation(spawnDirection));
+            agentObj.name = $"TrainingMotorcycle_{i}";
+            agentObj.transform.SetParent(trainingManagerObj.transform);
+            
+            // Add MotorcycleEnvironment component
+            MotorcycleEnvironment environment = agentObj.AddComponent<MotorcycleEnvironment>();
+            environments.Add(environment);
+            
+            Debug.Log($"Created training motorcycle {i} at position {spawnPosition}");
+        }
+        
+        // Initialize the training manager with the environments
+        trainingManager.Initialize(environments);
+        
+        Debug.Log($"Created training environment with {environments.Count} motorcycle agents");
+    }
+    
+    private static Vector3 GetTrainingSpawnPosition(int agentIndex, List<Vector2> raceline)
+    {
+        if (raceline == null || raceline.Count == 0)
+        {
+            return Vector3.zero;
+        }
+        
+        // Spread agents around the track
+        float spacing = (float)raceline.Count / 4f; // 4 environments max
+        int positionIndex = Mathf.RoundToInt(agentIndex * spacing) % raceline.Count;
+        
+        Vector2 racelinePoint = raceline[positionIndex];
+        Vector3 basePosition = new Vector3(racelinePoint.x, instance.agentSpawnHeight, racelinePoint.y);
+        
+        // Add lateral offset to prevent collisions
+        Vector3 trackDirection = GetTrainingSpawnDirection(agentIndex, raceline);
+        Vector3 lateralOffset = Vector3.Cross(trackDirection, Vector3.up) * (agentIndex - 1.5f) * 3f;
+        
+        return basePosition + lateralOffset;
+    }
+    
+    private static Vector3 GetTrainingSpawnDirection(int agentIndex, List<Vector2> raceline)
+    {
+        if (raceline == null || raceline.Count == 0)
+        {
+            return Vector3.forward;
+        }
+        
+        float spacing = (float)raceline.Count / 4f;
+        int positionIndex = Mathf.RoundToInt(agentIndex * spacing) % raceline.Count;
+        
+        // Look ahead for direction
+        int lookAheadDistance = Mathf.Max(1, raceline.Count / 20);
+        int endIndex = (positionIndex + lookAheadDistance) % raceline.Count;
+        
+        Vector2 point1 = raceline[positionIndex];
+        Vector2 point2 = raceline[endIndex];
+        Vector2 direction2D = point2 - point1;
+        
+        if (direction2D.magnitude < 0.1f)
+        {
+            endIndex = (positionIndex + 1) % raceline.Count;
+            point2 = raceline[endIndex];
+            direction2D = point2 - point1;
+        }
+        
+        Vector3 direction3D = new Vector3(direction2D.x, 0, direction2D.y).normalized;
+        return direction3D != Vector3.zero ? direction3D : Vector3.forward;
     }
 
     private static void CreateCheckpoints(List<Vector2> raceline)
@@ -190,54 +284,6 @@ public class TrackMaster : MonoBehaviour
         racelineRenderer.sortingOrder = 1; // Render on top of track
     }
 
-    private static void SpawnMotorcycleAgent()
-    {
-        if (instance.motorcycleAgentPrefab == null)
-        {
-            Debug.LogWarning("MotorcycleAgent prefab not assigned in TrackMaster!");
-            return;
-        }
-
-        if (currentRaceline == null || currentRaceline.Count == 0)
-        {
-            Debug.LogWarning("No raceline available for agent spawning!");
-            return;
-        }
-
-        // Destroy existing agent if present
-        if (spawnedAgent != null)
-        {
-            DestroyImmediate(spawnedAgent);
-        }
-
-        // Determine starting position
-        Vector3 startPosition = GetStartingPosition();
-        Vector3 startDirection = GetStartingDirection();
-
-        // Spawn the agent
-        spawnedAgent = Instantiate(instance.motorcycleAgentPrefab, startPosition, Quaternion.LookRotation(startDirection));
-        spawnedAgent.name = "SpawnedMotorcycleAgent";
-        spawnedAgent.transform.SetParent(instance.transform);
-
-        // Configure the agent's starting position if it has a MotorcycleAgent component
-        MotorcycleAgent agentComponent = spawnedAgent.GetComponent<MotorcycleAgent>();
-        if (agentComponent != null)
-        {
-            // Set the starting position for ML-Agents episode resets
-            var startingPositionField = typeof(MotorcycleAgent).GetField("startingPosition", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var startingRotationField = typeof(MotorcycleAgent).GetField("startingRotation", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            if (startingPositionField != null)
-                startingPositionField.SetValue(agentComponent, startPosition);
-            if (startingRotationField != null)
-                startingRotationField.SetValue(agentComponent, startDirection);
-        }
-
-        Debug.Log($"Spawned MotorcycleAgent at position: {startPosition} with direction: {startDirection}");
-    }
-
     private static Vector3 GetStartingPosition()
     {
         int positionIndex;
@@ -298,47 +344,6 @@ public class TrackMaster : MonoBehaviour
         return direction3D != Vector3.zero ? direction3D : Vector3.forward;
     }
 
-    /// <summary>
-    /// Public method to manually spawn or respawn the motorcycle agent
-    /// </summary>
-    public static void RespawnAgent()
-    {
-        if (currentRaceline != null && currentRaceline.Count > 0)
-        {
-            SpawnMotorcycleAgent();
-        }
-        else
-        {
-            Debug.LogWarning("Cannot respawn agent: No track loaded!");
-        }
-    }
-
-    /// <summary>
-    /// Public method to set a new starting position index
-    /// </summary>
-    /// <param name="newIndex">Index along the raceline for the new starting position</param>
-    public static void SetStartingPosition(int newIndex)
-    {
-        if (instance != null)
-        {
-            instance.startingPositionIndex = Mathf.Clamp(newIndex, 0, 
-                currentRaceline != null ? currentRaceline.Count - 1 : 0);
-        }
-    }
-
-    /// <summary>
-    /// Public method to get the currently spawned agent
-    /// </summary>
-    /// <returns>The spawned MotorcycleAgent GameObject, or null if none exists</returns>
-    public static GameObject GetSpawnedAgent()
-    {
-        return spawnedAgent;
-    }
-
-    /// <summary>
-    /// Public method to get the current optimal raceline
-    /// </summary>
-    /// <returns>The current raceline as a list of Vector2 points, or null if no track is loaded</returns>
     public static List<Vector2> GetCurrentRaceline()
     {
         return currentRaceline;

@@ -284,6 +284,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "org.nuget.oneof": {
+      "version": "3.0.271",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://unitynuget-registry.openupm.com"
+    },
     "org.nuget.pythonnet": {
       "version": "3.0.5",
       "depth": 0,

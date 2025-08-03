@@ -1,10 +1,7 @@
 using UnityEngine;
-using RLMatrix;
 using System.Collections.Generic;
 using System.Reflection;
-using RLMatrix.Toolkit;
 
-[RLMatrixEnvironment]
 public partial class MotorcycleTrainingEnvironment : MonoBehaviour
 {
     [Header("Training Environment Settings")]

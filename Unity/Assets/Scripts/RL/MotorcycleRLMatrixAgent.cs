@@ -1,16 +1,13 @@
 using System;
 using UnityEngine;
 using TMPro;
-using RLMatrix;
 using System.Collections.Generic;
-using RLMatrix.Toolkit;
 
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-[RLMatrixEnvironment]
 public partial class MotorcycleRLMatrixAgent : MonoBehaviour
 {
     private const float AIR_DENSITY = 1.225f;
@@ -207,19 +204,41 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         if (startingRotation != Vector3.zero)
             initialRotation = Quaternion.Euler(startingRotation);
 
+        // Initialize all variables to safe defaults
+        currentSpeed = 0f;
+        currentAcceleration = 0f;
+        currentTurnAngle = 0f;
+        currentLeanAngle = 0f;
+        previousSpeed = 0f;
+        episodeTime = 0f;
+        throttleInput = 0f;
+        steerInput = 0f;
+        racelineDeviation = 0f;
+        averageTrajectoryDeviation = 0f;
+        
+        // Ensure physics parameters are valid
+        if (mass <= 0f) mass = 200f;
+        if (enginePower <= 0f) enginePower = 150000f;
+        if (dragCoefficient <= 0f) dragCoefficient = 0.6f;
+        if (frontalArea <= 0f) frontalArea = 0.48f;
+        if (maxEpisodeTime <= 0f) maxEpisodeTime = 120f;
+        if (turnRate <= 0f) turnRate = 100f;
+        if (fullSteeringSpeed <= minSteeringSpeed) fullSteeringSpeed = minSteeringSpeed + 5f;
+
         CalculateTheoreticalTopSpeed();
         SetupTrajectoryLineRenderer();
         ResetRewards();
+        
+        Debug.Log($"MotorcycleRLMatrixAgent initialized. Theoretical top speed: {theoreticalTopSpeed * 3.6f:F1} km/h");
     }
 
-    [RLMatrixReset]
     public void ResetEpisode()
     {
         // Reset motorcycle state for new episode
         transform.position = initialPosition;
         transform.rotation = initialRotation;
         
-        // Reset physics state
+        // Reset physics state to safe defaults
         currentSpeed = 0f;
         currentAcceleration = 0f;
         currentTurnAngle = 0f;
@@ -246,9 +265,10 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
 
         // Reset reward system
         ResetRewards();
+        
+        Debug.Log($"{gameObject.name} episode reset completed");
     }
 
-    [RLMatrixActionContinuous(2)]
     public void TakeAction(float throttle, float steering)
     {
         // Extract actions from RLMatrix
@@ -290,38 +310,59 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         CheckEpisodeTermination();
     }
 
-    // Observation methods - RLMatrix will automatically call these
-    [RLMatrixObservation]
-    public float GetNormalizedSpeed() => currentSpeed / theoreticalTopSpeed;
+    // Observation methods - Environment will call these
+    public float GetNormalizedSpeed() 
+    {
+        if (theoreticalTopSpeed <= 0f || float.IsNaN(theoreticalTopSpeed))
+        {
+            return 0f;
+        }
+        float result = currentSpeed / theoreticalTopSpeed;
+        return float.IsNaN(result) || float.IsInfinity(result) ? 0f : Mathf.Clamp01(result);
+    }
 
-    [RLMatrixObservation]
-    public float GetNormalizedAcceleration() => currentAcceleration / 10f;
+    public float GetNormalizedAcceleration() 
+    {
+        float result = currentAcceleration / 10f;
+        return float.IsNaN(result) || float.IsInfinity(result) ? 0f : Mathf.Clamp(result, -1f, 1f);
+    }
 
-    [RLMatrixObservation]
-    public float GetNormalizedTurnAngle() => currentTurnAngle / turnRate;
+    public float GetNormalizedTurnAngle() 
+    {
+        if (turnRate <= 0f)
+        {
+            return 0f;
+        }
+        float result = currentTurnAngle / turnRate;
+        return float.IsNaN(result) || float.IsInfinity(result) ? 0f : Mathf.Clamp(result, -1f, 1f);
+    }
 
-    [RLMatrixObservation]
     public float GetTrackDetection() => IsOnTrack() ? 1f : 0f;
 
-    [RLMatrixObservation]
-    public float GetNormalizedRacelineDeviation() => Mathf.Clamp01(racelineDeviation / 10f);
+    public float GetNormalizedRacelineDeviation() 
+    {
+        float result = Mathf.Clamp01(racelineDeviation / 10f);
+        return float.IsNaN(result) || float.IsInfinity(result) ? 0f : result;
+    }
 
-    [RLMatrixObservation]
-    public float GetEpisodeProgress() => episodeTime / maxEpisodeTime;
+    public float GetEpisodeProgress() 
+    {
+        if (maxEpisodeTime <= 0f)
+        {
+            return 0f;
+        }
+        float result = episodeTime / maxEpisodeTime;
+        return float.IsNaN(result) || float.IsInfinity(result) ? 0f : Mathf.Clamp01(result);
+    }
 
-    [RLMatrixObservation]
     public float GetRecommendSpeedUp() => recommendSpeedUp ? 1f : 0f;
 
-    [RLMatrixObservation]
     public float GetRecommendSlowDown() => recommendSlowDown ? 1f : 0f;
 
-    [RLMatrixObservation]
     public float GetRecommendTurnLeft() => recommendTurnLeft ? 1f : 0f;
 
-    [RLMatrixObservation]
     public float GetRecommendTurnRight() => recommendTurnRight ? 1f : 0f;
 
-    [RLMatrixReward]
     public float CalculateReward()
     {
         float reward = 0f;
@@ -363,7 +404,6 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         return reward;
     }
 
-    [RLMatrixDone]
     public bool IsEpisodeDone()
     {
         // Check if episode should end
@@ -392,7 +432,7 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
 
     private void CheckEpisodeTermination()
     {
-        // Episode termination is now handled by the [RLMatrixDone] method
+        // Episode termination is now handled by the IsEpisodeDone() method
         // This method can be used for any additional cleanup if needed
     }
 
@@ -408,10 +448,26 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
     // All the movement and physics methods from MotorcyclePlayer (keeping exactly the same)
     private void UpdateMovement(float dt)
     {
+        // Safety check for invalid dt
+        if (dt <= 0f || float.IsNaN(dt) || float.IsInfinity(dt))
+        {
+            return;
+        }
+
         previousSpeed = currentSpeed;
 
         float drivingForce = CalculateDrivingForce();
         float resistanceForces = CalculateResistanceForces();
+
+        // Safety checks for forces
+        if (float.IsNaN(drivingForce) || float.IsInfinity(drivingForce))
+        {
+            drivingForce = 0f;
+        }
+        if (float.IsNaN(resistanceForces) || float.IsInfinity(resistanceForces))
+        {
+            resistanceForces = 0f;
+        }
 
         float netForce = (drivingForce * throttleInput) - resistanceForces;
 
@@ -420,36 +476,112 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
             netForce = -brakingForce - resistanceForces;
         }
 
+        // Safety check for mass
+        if (mass <= 0f)
+        {
+            mass = 200f; // Default mass
+        }
+
         float acceleration = netForce / mass;
+        
+        // Safety check for acceleration
+        if (float.IsNaN(acceleration) || float.IsInfinity(acceleration))
+        {
+            acceleration = 0f;
+        }
+        
         currentAcceleration = acceleration;
 
         currentSpeed += acceleration * dt;
-
         currentSpeed = Mathf.Max(0, currentSpeed);
 
-        transform.Translate(Vector3.forward * currentSpeed * dt, Space.Self);
+        // Safety check for speed
+        if (float.IsNaN(currentSpeed) || float.IsInfinity(currentSpeed))
+        {
+            currentSpeed = 0f;
+        }
+
+        // Safety check before transform operation
+        Vector3 movement = Vector3.forward * currentSpeed * dt;
+        if (!float.IsNaN(movement.x) && !float.IsNaN(movement.y) && !float.IsNaN(movement.z))
+        {
+            transform.Translate(movement, Space.Self);
+        }
     }
 
     private void UpdateTurning(float dt)
     {
+        // Safety check for invalid dt
+        if (dt <= 0f || float.IsNaN(dt) || float.IsInfinity(dt))
+        {
+            return;
+        }
+
         float steeringMultiplier = CalculateSteeringMultiplier();
+        
+        // Safety check for steering multiplier
+        if (float.IsNaN(steeringMultiplier) || float.IsInfinity(steeringMultiplier))
+        {
+            steeringMultiplier = 0f;
+        }
         
         currentTurnAngle += steerInput * turnRate * steeringMultiplier * dt;
         
+        // Safety check for currentTurnAngle
+        if (float.IsNaN(currentTurnAngle) || float.IsInfinity(currentTurnAngle))
+        {
+            currentTurnAngle = 0f;
+        }
+        
         currentTurnAngle *= Mathf.Pow(steeringDecay, dt);
+        
+        // Safety check again after decay
+        if (float.IsNaN(currentTurnAngle) || float.IsInfinity(currentTurnAngle))
+        {
+            currentTurnAngle = 0f;
+        }
 
-        transform.Rotate(Vector3.up * currentTurnAngle * dt);
+        // Safety check before transform operation
+        Vector3 rotation = Vector3.up * currentTurnAngle * dt;
+        if (!float.IsNaN(rotation.x) && !float.IsNaN(rotation.y) && !float.IsNaN(rotation.z))
+        {
+            transform.Rotate(rotation);
+        }
     }
 
     private void UpdateMotorcycleLeaning(float dt)
     {
         if (motorcycleModel == null) return;
 
+        // Safety check for invalid dt
+        if (dt <= 0f || float.IsNaN(dt) || float.IsInfinity(dt))
+        {
+            return;
+        }
+
         float targetLeanAngle = CalculateTargetLeanAngle();
+        
+        // Safety check for target lean angle
+        if (float.IsNaN(targetLeanAngle) || float.IsInfinity(targetLeanAngle))
+        {
+            targetLeanAngle = 0f;
+        }
         
         currentLeanAngle = Mathf.Lerp(currentLeanAngle, targetLeanAngle, leanSpeed * dt);
         
-        motorcycleModel.localRotation = Quaternion.Euler(0, 0, -currentLeanAngle);
+        // Safety check for current lean angle
+        if (float.IsNaN(currentLeanAngle) || float.IsInfinity(currentLeanAngle))
+        {
+            currentLeanAngle = 0f;
+        }
+        
+        // Safety check before setting rotation
+        Quaternion targetRotation = Quaternion.Euler(0, 0, -currentLeanAngle);
+        if (!float.IsNaN(targetRotation.x) && !float.IsNaN(targetRotation.y) && 
+            !float.IsNaN(targetRotation.z) && !float.IsNaN(targetRotation.w))
+        {
+            motorcycleModel.localRotation = targetRotation;
+        }
     }
 
     private void UpdateCameraFOV(float dt)
@@ -486,13 +618,40 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
             return 0f;
         }
 
+        // Safety check for fullSteeringSpeed
+        if (fullSteeringSpeed <= 0f)
+        {
+            return 1f;
+        }
+
         float normalizedSpeed = currentSpeed / fullSteeringSpeed;
+        
+        // Safety check for steeringIntensity and avoid division issues
+        if (steeringIntensity <= 0f)
+        {
+            steeringIntensity = 0.5f; // Default value
+        }
         
         float steeringMultiplier = 1f / (1f + normalizedSpeed * steeringIntensity);
         
-        float fadeInMultiplier = Mathf.Clamp01((currentSpeed - minSteeringSpeed) / (fullSteeringSpeed - minSteeringSpeed));
+        // Safety check for minSteeringSpeed and fullSteeringSpeed difference
+        float speedDifference = fullSteeringSpeed - minSteeringSpeed;
+        if (speedDifference <= 0f)
+        {
+            return steeringMultiplier;
+        }
         
-        return steeringMultiplier * fadeInMultiplier;
+        float fadeInMultiplier = Mathf.Clamp01((currentSpeed - minSteeringSpeed) / speedDifference);
+        
+        float result = steeringMultiplier * fadeInMultiplier;
+        
+        // Final safety check
+        if (float.IsNaN(result) || float.IsInfinity(result))
+        {
+            return 0f;
+        }
+        
+        return result;
     }
 
     private float CalculateTargetLeanAngle()
@@ -542,7 +701,23 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         float dragTerm = 0.5f * AIR_DENSITY * dragCoefficient * frontalArea;
         float rollingTerm = rollingResistanceCoefficient * mass * GRAVITY;
         
-        theoreticalTopSpeed = Mathf.Pow(enginePower / dragTerm, 1f/3f);
+        // Safety check to prevent division by zero
+        if (dragTerm <= 0f || enginePower <= 0f)
+        {
+            theoreticalTopSpeed = 50f; // Default fallback speed
+            Debug.LogWarning($"Invalid drag term ({dragTerm}) or engine power ({enginePower}). Using fallback speed.");
+        }
+        else
+        {
+            theoreticalTopSpeed = Mathf.Pow(enginePower / dragTerm, 1f/3f);
+            
+            // Safety check for NaN result
+            if (float.IsNaN(theoreticalTopSpeed) || float.IsInfinity(theoreticalTopSpeed))
+            {
+                theoreticalTopSpeed = 50f; // Default fallback speed
+                Debug.LogWarning("Theoretical top speed calculation resulted in NaN/Infinity. Using fallback speed.");
+            }
+        }
         
         Debug.Log($"Theoretical Top Speed: {theoreticalTopSpeed * 3.6f:F1} km/h");
         Debug.Log($"Cd x A = {dragCoefficient * frontalArea:F3}");

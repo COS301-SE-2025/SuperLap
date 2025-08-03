@@ -592,7 +592,7 @@ MonoBehaviour:
   trajectoryColor: {r: 0, g: 1, b: 0, a: 1}
   trajectoryWidth: 0.1
   enableRecommendations: 1
-  recommendationSteps: 10
+  recommendationSteps: 2
   steeringSensitivity: 0.1
   throttleSensitivity: 0.15
   testInputStrength: 0.5

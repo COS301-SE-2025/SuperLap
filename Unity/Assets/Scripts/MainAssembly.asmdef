@@ -15,7 +15,8 @@
         "RLMatrix.dll",
         "RLMatrix.Common.dll",
         "RLMatrix.Toolkit.dll",
-        "TorchSharp.dll"
+        "TorchSharp.dll",
+        "OneOf.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],
