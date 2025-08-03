@@ -1717,16 +1717,140 @@ class TrackProcessor:
 
 #--------------------------------------------------------------------------------Main and run bellow
 
-def main():
-    # parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
-    # parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
-    # parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
-    # parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
-    # parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing and generate edge visualization')
-    # parser.add_argument('--extract-centerline', '-e', action='store_true', help='Extract centerline data (disabled by default)')
-    # parser.add_argument('--centerline-method', '-c', choices=['skeleton', 'distance_transform', 'medial_axis'], default='skeleton', help='Method for centerline extraction (Default: skeleton)')
+# def main():
+#     parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
+#     parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
+#     parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
+#     parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
+#     parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing and generate edge visualization')
+#     parser.add_argument('--extract-centerline', '-e', action='store_true', help='Extract centerline data (disabled by default)')
+#     parser.add_argument('--centerline-method', '-c', choices=['skeleton', 'distance_transform', 'medial_axis'], default='skeleton', help='Method for centerline extraction (Default: skeleton)')
+    
+#     # Add smoothing arguments
+#     parser.add_argument('--smooth-method', choices=['gaussian', 'savgol', 'bspline', 'interp'], 
+#                        default='bspline', help='Smoothing method to use')
+#     parser.add_argument('--smooth-boundaries', action='store_true', 
+#                        help='Apply smoothing to track boundaries')
+#     parser.add_argument('--smooth-sigma', type=float, default=2.0,
+#                        help='Sigma parameter for Gaussian smoothing')
+#     parser.add_argument('--savgol-window', type=int, default=15,
+#                        help='Window size for Savitzky-Golay filter')
+#     parser.add_argument('--spline-smoothness', type=float, default=0.1,
+#                        help='Smoothness factor for spline methods')
 
-    parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm with optional manual centerline guidance")
+#     args = parser.parse_args()
+
+#     # Prepare smoothing kwargs
+#     smooth_kwargs = {
+#         'sigma': args.smooth_sigma,
+#         'window_size': args.savgol_window,
+#         'smooth_factor': args.spline_smoothness
+#     }
+
+#     os.makedirs(args.output, exist_ok=True)
+
+#     if args.file:
+#         if os.path.exists(args.file):
+#             # New TrackProcessor approach for single file
+#             processor = TrackProcessor(
+#                 output_dir=args.output,
+#                 debug=args.debug,
+#                 centerline_method=args.centerline_method
+#             )
+#             processor.loadImg(args.file)
+#             processor.processImg(processor.original_image)
+#             boundaries = processor.detectBoundaries(processor.processed_image)
+            
+#             centerline_extracted = False
+#             centerline_points = 0
+            
+#             if args.extract_centerline:
+#                 centerline_results = processor.extractCenterline()
+#                 if centerline_results:
+#                     centerline_extracted = True
+#                     centerline_points = len(processor.centerline)
+#                     # Generate smoothing comparison visualization
+#                     comparison_path = os.path.join(args.output, 'smoothing_comparison.png')
+#                     processor.compareSmoothing(
+#                         processor.centerline,
+#                         methods=['original', 'gaussian', 'savgol', 'bspline'],
+#                         output_path=comparison_path,
+#                         sigma=args.smooth_sigma,
+#                         window_size=args.savgol_window,
+#                         smooth_factor=args.spline_smoothness
+#                     )
+#                     print(f"Smoothing comparison saved to: {comparison_path}")
+            
+#             # Save results to maintain compatibility with existing output
+#             result = {
+#                 'original_image': args.file,
+#                 'processed_files': processor.get_output_files(),
+#                 'centerline_extracted': centerline_extracted,
+#                 'centerline_points': centerline_points
+#             }
+            
+#             print(f"\nSingle file processing complete")
+#             if args.extract_centerline and result['centerline_extracted']:
+#                 print(f"Centerline extracted with {result['centerline_points']} points")
+#             elif args.extract_centerline:
+#                 print("Centerline extraction failed")
+#             else:
+#                 print("Centerline extraction skipped")
+#             if args.smooth_boundaries:
+#                 print(f"Boundaries smoothed using {args.smooth_method} method")
+#         else:
+#             print(f"File not found: {args.file}")
+#     else:
+#         # Keep original batch processing approach
+#         results = processAllTracks(
+#             args.input, 
+#             args.output, 
+#             args.debug, 
+#             args.centerline_method, 
+#             args.extract_centerline,
+#             args.smooth_method,
+#             args.smooth_boundaries,
+#             **smooth_kwargs
+#         )
+
+#         print(f"\n{'='*50}")
+#         print(f"PROCESSING SUMMARY")
+#         print(f"\n{'='*50}")
+#         print(f"Total files processed: {len(results)}")
+#         print(f"Output directory: {args.output}")
+#         print(f"Centerline extraction: {'Enabled' if args.extract_centerline else 'Disabled'}")
+#         if args.extract_centerline:
+#             print(f"Centerline method used: {args.centerline_method}")
+#         print(f"Boundary smoothing: {'Enabled' if args.smooth_boundaries else 'Disabled'}")
+#         if args.smooth_boundaries:
+#             print(f"Smoothing method used: {args.smooth_method}")
+
+#         if results:
+#             print(f"\nProcessed tracks:")
+#             centerline_success = 0
+#             smoothing_applied = args.smooth_boundaries
+
+#             for result in results:
+#                 trackName = Path(result['original_image']).stem
+#                 status_info = []
+
+#                 if args.extract_centerline and result['centerline_extracted']:
+#                     centerline_success += 1
+#                     status_info.append(f"{result['centerline_points']} centerline points")
+#                 elif args.extract_centerline:
+#                     status_info.append("Centerline extraction failed")
+                
+#                 if smoothing_applied:
+#                     status_info.append("boundaries smoothed")
+
+#                 status_str = ", ".join(status_info) if status_info else "basic processing only"
+#                 print(f" - {trackName}: {len(result['processed_files'])} files generated ({status_str})")
+
+#             if args.extract_centerline:
+#                 print(f"\nCenterline extraction success rate: {centerline_success}/{len(results)} tracks")
+
+def main():
+    parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm with optional manual centerline guidance and smoothing options")
     parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
     parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
     parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
@@ -1734,9 +1858,8 @@ def main():
     parser.add_argument('--extract-centerline', '-e', action='store_true', help='Extract centerline data (disabled by default)')
     parser.add_argument('--centerline-method', '-c', choices=['skeleton', 'distance_transform', 'medial_axis'], default='skeleton', help='Method for centerline extraction (Default: skeleton)')
     parser.add_argument('--manual-centerline', '-m', action='store_true', help='Enable manual centerline drawing to guide track extraction')
-
     
-    # Add smoothing arguments
+    # Smoothing arguments
     parser.add_argument('--smooth-method', choices=['gaussian', 'savgol', 'bspline', 'interp'], 
                        default='bspline', help='Smoothing method to use')
     parser.add_argument('--smooth-boundaries', action='store_true', 
@@ -1761,66 +1884,92 @@ def main():
 
     if args.file:
         if os.path.exists(args.file):
-            # New TrackProcessor approach for single file
-            processor = TrackProcessor(
-                output_dir=args.output,
-                debug=args.debug,
-                centerline_method=args.centerline_method
-            )
-            processor.loadImg(args.file)
-            processor.processImg(processor.original_image)
-            boundaries = processor.detectBoundaries(processor.processed_image)
-            
-            centerline_extracted = False
-            centerline_points = 0
-            
-            if args.extract_centerline:
-                centerline_results = processor.extractCenterline()
-                if centerline_results:
-                    centerline_extracted = True
-                    centerline_points = len(processor.centerline)
-                    # Generate smoothing comparison visualization
-                    comparison_path = os.path.join(args.output, 'smoothing_comparison.png')
-                    processor.compareSmoothing(
-                        processor.centerline,
-                        methods=['original', 'gaussian', 'savgol', 'bspline'],
-                        output_path=comparison_path,
-                        sigma=args.smooth_sigma,
-                        window_size=args.savgol_window,
-                        smooth_factor=args.spline_smoothness
-                    )
-                    print(f"Smoothing comparison saved to: {comparison_path}")
-            
-            # Save results to maintain compatibility with existing output
-            result = {
-                'original_image': args.file,
-                'processed_files': processor.get_output_files(),
-                'centerline_extracted': centerline_extracted,
-                'centerline_points': centerline_points
-            }
-            
-            print(f"\nSingle file processing complete")
-            if args.extract_centerline and result['centerline_extracted']:
-                print(f"Centerline extracted with {result['centerline_points']} points")
-            elif args.extract_centerline:
-                print("Centerline extraction failed")
+            if args.manual_centerline:
+                # Process with manual centerline guidance
+                result = processTrack(args.file, args.output, args.debug, 
+                                    args.centerline_method, args.extract_centerline, 
+                                    args.manual_centerline)
+                if result:
+                    print(f"\nSingle file processing complete")
+                    print(f"Boundaries normalized to {result.get('outer_boundary_points', 0)} outer and {result.get('inner_boundary_points', 0)} inner points")
+
+                    if args.manual_centerline and result.get('manual_centerline_used'):
+                        print(f"Manual centerline guidance used with {result.get('manual_centerline_points', 0)} points")
+                    
+                    if args.extract_centerline and result.get('centerline_extracted'):
+                        print(f"Centerline extracted with {result.get('centerline_points', 0)} points")
+                        # Generate smoothing comparison if centerline was extracted
+                        processor = TrackProcessor()
+                        processor.loadImg(args.file)
+                        if processor.centerline:
+                            comparison_path = os.path.join(args.output, 'smoothing_comparison.png')
+                            processor.compareSmoothing(
+                                processor.centerline,
+                                methods=['original', 'gaussian', 'savgol', 'bspline'],
+                                output_path=comparison_path,
+                                **smooth_kwargs
+                            )
+                            print(f"Smoothing comparison saved to: {comparison_path}")
+                    elif args.extract_centerline:
+                        print("Centerline extraction failed")
+                    else:
+                        print("Centerline extraction skipped")
+                    
+                    if args.smooth_boundaries:
+                        print(f"Boundaries smoothed using {args.smooth_method} method")
             else:
-                print("Centerline extraction skipped")
-            if args.smooth_boundaries:
-                print(f"Boundaries smoothed using {args.smooth_method} method")
+                # Process without manual centerline
+                processor = TrackProcessor()
+                processor.loadImg(args.file)
+                processor.processImg(processor.original_image)
+                boundaries = processor.detectBoundaries(processor.processed_image)
+                
+                centerline_extracted = False
+                centerline_points = 0
+                
+                if args.extract_centerline:
+                    centerline_results = processor.extractCenterline()
+                    if centerline_results:
+                        centerline_extracted = True
+                        centerline_points = len(processor.centerline)
+                        # Generate smoothing comparison visualization
+                        comparison_path = os.path.join(args.output, 'smoothing_comparison.png')
+                        processor.compareSmoothing(
+                            processor.centerline,
+                            methods=['original', 'gaussian', 'savgol', 'bspline'],
+                            output_path=comparison_path,
+                            **smooth_kwargs
+                        )
+                        print(f"Smoothing comparison saved to: {comparison_path}")
+                
+                # Save results
+                result = {
+                    'original_image': args.file,
+                    'processed_files': processor.get_output_files(),
+                    'centerline_extracted': centerline_extracted,
+                    'centerline_points': centerline_points
+                }
+                
+                print(f"\nSingle file processing complete")
+                if args.extract_centerline and result['centerline_extracted']:
+                    print(f"Centerline extracted with {result['centerline_points']} points")
+                elif args.extract_centerline:
+                    print("Centerline extraction failed")
+                else:
+                    print("Centerline extraction skipped")
+                if args.smooth_boundaries:
+                    print(f"Boundaries smoothed using {args.smooth_method} method")
         else:
             print(f"File not found: {args.file}")
     else:
-        # Keep original batch processing approach
+        # Batch processing
         results = processAllTracks(
             args.input, 
             args.output, 
             args.debug, 
             args.centerline_method, 
             args.extract_centerline,
-            args.smooth_method,
-            args.smooth_boundaries,
-            **smooth_kwargs
+            args.manual_centerline
         )
 
         print(f"\n{'='*50}")
@@ -1828,6 +1977,7 @@ def main():
         print(f"\n{'='*50}")
         print(f"Total files processed: {len(results)}")
         print(f"Output directory: {args.output}")
+        print(f"Manual centerline guidance: {'Enabled' if args.manual_centerline else 'Disabled'}")
         print(f"Centerline extraction: {'Enabled' if args.extract_centerline else 'Disabled'}")
         if args.extract_centerline:
             print(f"Centerline method used: {args.centerline_method}")
@@ -1838,26 +1988,36 @@ def main():
         if results:
             print(f"\nProcessed tracks:")
             centerline_success = 0
+            manual_centerline_used = 0
             smoothing_applied = args.smooth_boundaries
 
             for result in results:
                 trackName = Path(result['original_image']).stem
                 status_info = []
+                
+                if args.manual_centerline and result.get('manual_centerline_used'):
+                    manual_centerline_used += 1
+                    status_info.append(f"Manual centerline: {result.get('manual_centerline_points', 0)} points")
+                
+                if 'boundary_points_normalized' in result:
+                    status_info.append(f"Boundaries normalized to {result.get('outer_boundary_points', 0)} points each")
+                elif smoothing_applied:
+                    status_info.append("boundaries smoothed")
 
-                if args.extract_centerline and result['centerline_extracted']:
+                if args.extract_centerline and result.get('centerline_extracted'):
                     centerline_success += 1
-                    status_info.append(f"{result['centerline_points']} centerline points")
+                    status_info.append(f"{result.get('centerline_points', 0)} centerline points")
                 elif args.extract_centerline:
                     status_info.append("Centerline extraction failed")
-                
-                if smoothing_applied:
-                    status_info.append("boundaries smoothed")
 
                 status_str = ", ".join(status_info) if status_info else "basic processing only"
                 print(f" - {trackName}: {len(result['processed_files'])} files generated ({status_str})")
 
+            if args.manual_centerline:
+                print(f"\nManual centerline guidance success rate: {manual_centerline_used}/{len(results)} tracks")
+            
             if args.extract_centerline:
-                print(f"\nCenterline extraction success rate: {centerline_success}/{len(results)} tracks")
+                print(f"Centerline extraction success rate: {centerline_success}/{len(results)} tracks")
           
 if __name__ == "__main__":
     main()
