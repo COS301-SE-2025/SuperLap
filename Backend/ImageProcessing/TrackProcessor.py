@@ -13,7 +13,7 @@ from scipy.interpolate import interp1d, splprep, splev
 from skimage.morphology import skeletonize
 from scipy.signal import savgol_filter  # New from Amber
 
-#--------------------------------------------------------------------------------Interactive UI Drawer Class
+#================================================================================Interactive UI Drawer Class
 class InteractiveCenterlineDrawer:
     def __init__(self, image):
         self.image = image.copy()
@@ -158,7 +158,7 @@ class InteractiveCenterlineDrawer:
         cv.destroyWindow(self.window_name)
         return self.centerline_points if len(self.centerline_points) > 10 else None
 
-#--------------------------------------------------------------------------------Track Processor Class
+#================================================================================Track Processor Class
 class TrackProcessor:
     def __init__(self):
         #initialize track values
@@ -169,6 +169,151 @@ class TrackProcessor:
         self.centerline = None
         self.centerline_smoothed = None
 
+#--------------------------------------------------------------------------------Masks added to images
+    def setManualCenterline(self, centerline_points):
+        self.manual_centerline = centerline_points
+        print(f"Manual centerline set with {len(centerline_points)} points")
+    
+    def createGuidedMask(self, img, centerline_points, track_width_estimate=50, show_debug=False):
+        if not centerline_points:
+            print("No centerline points provided, falling back to adaptive mask")
+            return self.createAdaptiveMask(img, show_debug=show_debug)
+        
+        h, w = img.shape[:2]
+        
+        # Estimate track width simply
+        actual_width = self.estimateTrackWidth(centerline_points, img)
+        print(f"Using estimated track width: {actual_width} pixels")
+        
+        # Create a simple region of interest mask around the centerline
+        roi_mask = np.zeros((h, w), dtype=np.uint8)
+        
+        # Draw thick lines along centerline to create ROI
+        for i in range(1, len(centerline_points)):
+            cv.line(roi_mask, centerline_points[i-1], centerline_points[i], 255, actual_width//2)
+        
+        # Slightly expand the ROI
+        expand_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
+        roi_mask = cv.dilate(roi_mask, expand_kernel, iterations=2)
+        
+        # Now apply the normal adaptive mask processing, but only within the ROI
+        full_adaptive_mask = self.createAdaptiveMask(img, method='enhanced_multi_approach', show_debug=False)
+        
+        # Combine: keep adaptive mask results only within ROI
+        guided_mask = cv.bitwise_and(full_adaptive_mask, roi_mask)
+        
+        # Ensure we always include the centerline itself
+        centerline_mask = np.zeros((h, w), dtype=np.uint8)
+        for i in range(1, len(centerline_points)):
+            cv.line(centerline_mask, centerline_points[i-1], centerline_points[i], 255, max(5, actual_width//4))
+        
+        # Final result: combine guided mask with centerline guarantee
+        final_mask = cv.bitwise_or(guided_mask, centerline_mask)
+        
+        if show_debug:
+            debug_img = img.copy()
+            for i in range(1, len(centerline_points)):
+                cv.line(debug_img, centerline_points[i-1], centerline_points[i], (0, 255, 255), 3)
+            
+            cv.imshow("Manual Centerline on Image", debug_img)
+            cv.imshow("ROI Mask", roi_mask)
+            cv.imshow("Guided Mask", guided_mask)
+            cv.imshow("Full Adaptive Mask", full_adaptive_mask)
+            cv.imshow("Final Guided Mask", final_mask)
+            cv.waitKey(1)
+        
+        return guided_mask
+
+    def estimateTrackWidth(self, centerline_points, img):
+        if len(centerline_points) < 10:
+            return 50
+        
+        # Just use image size as a baseline
+        img_diagonal = np.sqrt(img.shape[0]**2 + img.shape[1]**2)
+        
+        # Estimate based on typical track proportions (3-8% of diagonal)
+        estimated_width = int(img_diagonal * 0.05)  # 5% of diagonal as default
+        
+        # Clamp to reasonable bounds
+        estimated_width = max(20, min(100, estimated_width))
+        
+        print(f"Simple width estimation: {estimated_width} pixels (based on image diagonal: {img_diagonal:.0f})")
+        
+        return estimated_width
+
+    def analyzeImageCharacteristics(self, img):
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
+
+        h_mean, h_std = cv.meanStdDev(hsv[:,:,0])
+        s_mean, s_std = cv.meanStdDev(hsv[:,:,1])
+        v_mean, v_std = cv.meanStdDev(hsv[:,:,2])
+
+        l_mean, l_std = cv.meanStdDev(lab[:,:,0])
+        
+        # Analyze histogram peaks for value channel (brightness)
+        hist_v = cv.calcHist([hsv], [2], None, [256], [0,256])
+        
+        # Find dark regions (potential track areas)
+        dark_threshold = np.percentile(hsv[:,:,2], 30)  # Bottom 30% of brightness
+        bright_threshold = np.percentile(hsv[:,:,2], 70) # Top 30% of brightness
+        
+        # Adaptive thresholds based on image characteristics
+        params = {
+            'v_mean': float(v_mean[0][0]),
+            'v_std': float(v_std[0][0]),
+            'l_mean': float(l_mean[0][0]),
+            'l_std': float(l_std[0][0]),
+            'dark_threshold': float(dark_threshold),
+            'bright_threshold': float(bright_threshold),
+            'brightness_factor': 1.0
+        }
+
+        print(f"Image analysis - V_mean: {v_mean[0][0]:.1f}, V_std: {v_std[0][0]:.1f}, L_mean: {l_mean[0][0]:.1f}, L_std: {l_std[0][0]:.1f}")
+        print(f"Dark threshold: {dark_threshold:.1f}, Bright threshold: {bright_threshold:.1f}")
+        
+        if v_mean[0][0] < 80:
+            print("Very dark surface detected (likely asphalt)...")
+            params['track_detection_method'] = 'very_dark_asphalt'
+            params['upper_v'] = min(60, dark_threshold + 2.0 * v_std[0][0])
+            params['brightness_factor'] = 1.4
+        elif v_mean[0][0] < 120:
+            print("Dark surface detected (asphalt/dark concrete)...")
+            params['track_detection_method'] = 'dark_asphalt'
+            params['upper_v'] = min(100, dark_threshold + 1.8 * v_std[0][0])
+            params['brightness_factor'] = 1.2
+        elif v_mean[0][0] > 160:
+            print("Light surface detected (concrete/light surfaces)...")
+            params['track_detection_method'] = 'bright_surface'
+            params['upper_v'] = min(180, bright_threshold - 0.5 * v_std[0][0])
+            params['brightness_factor'] = 0.8
+        else:
+            print("Standard surface detected...")
+            params['track_detection_method'] = 'standard'
+            params['upper_v'] = min(110, dark_threshold + 2.5 * v_std[0][0])
+            params['brightness_factor'] = 1.0
+        
+        self.adaptive_mask_params = params
+        return params
+    
+    def createAdaptiveMask(self, img, method='enhanced_multi_approach', show_debug=False):
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
+        
+        if method == 'enhanced_multi_approach':
+            return self.enhancedMultiApproachMask(img, hsv, gray, lab, show_debug)
+        elif method == 'multi_approach':
+            return self.multiApproachMask(img, hsv, gray, show_debug)
+        elif method == 'adaptive_hsv':
+            return self.adaptiveHSVMask(hsv, show_debug)
+        elif method == 'otsu_adaptive':
+            return self.otsuAdaptiveMask(gray, show_debug)
+        else:
+            return self.adaptiveHSVMask(hsv, show_debug)
+        
+ 
+#--------------------------------------------------------------------------------Old Code
     def loadImg(self, img_path):
         # Load and convert the image
         self.original_image = cv.imread(img_path)
