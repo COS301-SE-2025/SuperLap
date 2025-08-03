@@ -659,7 +659,7 @@ class TrackProcessor:
 
         return self.track_boundaries
     
-    def generatePreciseBoundariesFromSkeleton(self, step_limit=20, min_spacing=5, show_debug=False):
+    def generatePreciseBoundariesFromSkeleton(self, step_limit=20, min_spacing=5, show_debug=False): # New from Qwinton's code
         if self.track_mask is None or self.centerline_smoothed is None:
             print("Missing track mask or centerline")
             return None
@@ -722,6 +722,311 @@ class TrackProcessor:
             'inner': np.array(inner_points, dtype=np.int32).reshape(-1, 1, 2),
             'method': 'centerline_tracing'
         }
+
+        def detectBoundariesImproved(self, img, show_debug=False):
+        if len(img.shape) == 3:
+            img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        else:
+            img_gray = img.copy()
+
+        # Ensure binary image
+        _, binary_mask = cv.threshold(img_gray, 127, 255, cv.THRESH_BINARY)
+        
+        # Calculate distance transform for centerline detection
+        self.distance_transform = cv.distanceTransform(binary_mask, cv.DIST_L2, 5)
+        
+        # Find contours from the binary mask
+        contours, _ = cv.findContours(binary_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        
+        if not contours:
+            print("No contours found in processed image")
+            return None
+        
+        # Filter contours based on area and shape characteristics
+        img_area = img_gray.shape[0] * img_gray.shape[1]
+        min_area = max(10000, img_area * 0.02)  # At least 2% of image area
+        min_perimeter = max(1000, np.sqrt(img_area) * 3)  # Minimum perimeter
+        
+        valid_contours = []
+        for contour in contours:
+            area = cv.contourArea(contour)
+            perimeter = cv.arcLength(contour, True)
+            
+            if area > min_area and perimeter > min_perimeter:
+                # Additional checks for track-like shapes
+                hull = cv.convexHull(contour)
+                hull_area = cv.contourArea(hull)
+                solidity = area / hull_area if hull_area > 0 else 0
+                
+                # Check if contour is reasonably complex (not just a simple shape)
+                rect = cv.minAreaRect(contour)
+                width, height = rect[1]
+                if width > 0 and height > 0:
+                    aspect_ratio = max(width, height) / (min(width, height) +1e-5)
+                    if aspect_ratio < 1.3 or min(width, height) < 15:  # Elongated shape typical of tracks
+                        continue
+
+                if solidity > 0.3 and solidity < 0.95:  # Not too simple, not too complex
+                    valid_contours.append(contour)
+        
+        if not valid_contours:
+            print("No valid track contours found")
+            return self.detectBoundariesFallback(img_gray, show_debug)
+        
+        # Get the largest valid contour as the main track
+        main_contour = max(valid_contours, key=cv.contourArea)
+        
+        # Create boundaries using improved morphological approach
+        boundaries = self.createBoundariesImproved(binary_mask, main_contour, show_debug)
+        
+        if boundaries is None:
+            print("Falling back to alternative boundary detection...")
+            return self.detectBoundariesFallback(img_gray, show_debug)
+        
+        self.track_boundaries = boundaries
+
+        if show_debug and boundaries:
+            print("Displaying boundary detection results...")
+            # Show distance transform
+            dist_norm = cv.normalize(self.distance_transform, None, 0, 255, cv.NORM_MINMAX, dtype=cv.CV_8U)
+            cv.imshow("Distance Transform", dist_norm)
+            
+            # Show boundaries on original image
+            if self.original_image is not None:
+                contour_img = self.original_image.copy()
+                if boundaries['outer'] is not None:
+                    cv.drawContours(contour_img, [boundaries['outer']], -1, (0, 255, 0), thickness=2)
+                if boundaries['inner'] is not None:
+                    cv.drawContours(contour_img, [boundaries['inner']], -1, (0, 0, 255), thickness=2)
+                cv.imshow("Detected Boundaries", contour_img)
+                cv.waitKey(1)
+
+        return boundaries
+    
+    def createBoundariesImproved(self, track_mask, main_contour, show_debug=False):
+        img_area = track_mask.shape[0] * track_mask.shape[1]
+
+        # Create a clean mask from the main contour
+        mask = np.zeros(track_mask.shape, dtype=np.uint8)
+        cv.fillPoly(mask, [main_contour], 255)
+
+        # Estimate track half-width
+        distance_map = cv.distanceTransform(mask, cv.DIST_L2, 5)
+        non_zero = distance_map[distance_map > 0]
+
+        if len(non_zero) == 0:
+            print("Warning: Distance transform returned no values.")
+            return None
+
+        # Use median or 80th percentile for a more typical width
+        estimated_half_width = np.percentile(non_zero, 80)
+        print(f"Estimated track half-width (80th percentile): {estimated_half_width:.2f} px")
+
+        # Clamp width to avoid over-expansion
+        clamped_half_width = np.clip(estimated_half_width, 5, 12)
+        inner_kernel_size = max(3, int(clamped_half_width))
+        outer_kernel_size = max(3, int(clamped_half_width + 2))
+
+        print(f"Using inner kernel size: {inner_kernel_size}, outer kernel size: {outer_kernel_size}")
+
+        outer_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (outer_kernel_size, outer_kernel_size))
+        inner_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (inner_kernel_size, inner_kernel_size))
+
+        # Apply operations
+        outer_mask = cv.dilate(mask, outer_kernel, iterations=1)
+        inner_mask = cv.erode(mask, inner_kernel, iterations=1)
+
+        # Extract contours
+        outer_contours, _ = cv.findContours(outer_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        inner_contours, _ = cv.findContours(inner_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+
+        outer_boundary = max(outer_contours, key=cv.contourArea) if outer_contours else None
+        inner_boundary = max(inner_contours, key=cv.contourArea) if inner_contours else None
+
+        if outer_boundary is None or inner_boundary is None:
+            print("Fallback to main contour due to invalid boundaries.")
+            outer_boundary = outer_boundary or main_contour
+            inner_boundary = inner_boundary or main_contour
+
+        print(f"Created boundaries — Outer: {len(outer_boundary)} points, Inner: {len(inner_boundary)} points")
+
+        return {
+            'outer': outer_boundary,
+            'inner': inner_boundary,
+            'method': 'improved_morphological_conservative'
+        }
+
+    def detectBoundariesFallback(self, img, show_debug=False):
+        print("Using fallback edge-based boundary detection...")
+        
+        # Apply Gaussian blur
+        blurred = cv.GaussianBlur(img, (5, 5), 0)
+        
+        # Use Canny edge detection with adaptive thresholds
+        edges = cv.Canny(blurred, 30, 100)
+        
+        # Morphological operations to close gaps
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+        edges = cv.morphologyEx(edges, cv.MORPH_CLOSE, kernel, iterations=2)
+        edges = cv.dilate(edges, kernel, iterations=1)
+        
+        # Find contours
+        contours, _ = cv.findContours(edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        
+        if not contours:
+            print("No contours found in fallback method")
+            return None
+        
+        # Filter and sort contours
+        img_area = img.shape[0] * img.shape[1]
+        min_area = max(5000, img_area * 0.01)
+        
+        valid_contours = [c for c in contours if cv.contourArea(c) > min_area]
+        
+        filtered = []
+        for contour in valid_contours:
+            rect = cv.minAreaRect(contour)
+            width, height = rect[1]
+            if width > 0 and height > 0:
+                aspect_ratio = max(width, height) / (min(width, height) + 1e-5)
+                if aspect_ratio < 1.3:
+                    continue
+            filtered.append(contour)
+
+        if len(filtered) < 1:
+            print("No valid contours found in fallback method")
+            return None
+        
+        # Sort by area
+        valid_contours = sorted(filtered, key=cv.contourArea, reverse=True)
+        
+        if show_debug:
+            fallback_img = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
+            cv.imshow("Fallback Edges", edges)
+            for i, contour in enumerate(valid_contours[:2]):
+                color = [(0, 255, 0), (0, 0, 255)][i] if i < 2 else (255, 0, 0)
+                cv.drawContours(fallback_img, [contour], -1, color, thickness=2)
+            cv.imshow("Fallback Boundaries", fallback_img)
+            cv.waitKey(1)
+        
+        return {
+            'outer': valid_contours[0],
+            'inner': valid_contours[1] if len(valid_contours) > 1 else valid_contours[0],
+            'method': 'fallback_edge_detection'
+        }
+    
+    def calculateCurvature(self, points, window_size=5):
+        curvatures = np.zeros(len(points))
+        
+        for i in range(len(points)):
+            start_idx = max(0, i - window_size)
+            end_idx = min(len(points), i + window_size + 1)
+            window_points = points[start_idx:end_idx]
+            
+            if len(window_points) < 3:
+                curvatures[i] = 0
+                continue
+            
+            current = points[i]
+            start_vec = window_points[0] - current
+            end_vec = window_points[-1] - current
+            
+            start_norm = np.linalg.norm(start_vec)
+            end_norm = np.linalg.norm(end_vec)
+            
+            if start_norm == 0 or end_norm == 0:
+                curvatures[i] = 0
+                continue
+            
+            dot_product = np.dot(start_vec, end_vec) / (start_norm * end_norm)
+            dot_product = np.clip(dot_product, -1.0, 1.0)
+            angle = np.arccos(dot_product)
+            
+            curvatures[i] = angle
+        
+        return curvatures
+    
+    def normalizeContour(self, contour, target_points=1800):
+        if contour is None or len(contour) == 0:
+            print("Warning: Empty contour provided")
+            return np.array([])
+    
+        min_required_points = max(50, target_points // 36)
+        if len(contour) < min_required_points:
+            print(f"Warning: Contour has too few points ({len(contour)}) for reliable normalization")
+            return contour
+        
+        if contour.ndim == 3:
+            points = contour.squeeze()
+        else:
+            points = contour
+
+        if not np.array_equal(points[0], points[-1]):
+            points = np.vstack([points, points[0]])
+
+        x_coords = points[:, 0]
+        y_coords = points[:, 1]
+
+        curvatures = self.calculateCurvature(points)
+
+        from scipy.ndimage import gaussian_filter1d
+        curvatures_smooth = gaussian_filter1d(curvatures, sigma=2)
+
+        distances = np.sqrt(np.diff(x_coords)**2 + np.diff(y_coords)**2)
+        cumulative_dist = np.concatenate([[0], np.cumsum(distances)])
+
+        total_length = cumulative_dist[-1]
+        if total_length == 0:
+            print("Warning: Contour has zero length")
+            return contour
+        
+        normalized_dist = cumulative_dist / total_length
+
+        try:
+            interp_x = interp1d(normalized_dist, x_coords, kind='linear', assume_sorted=True)
+            interp_y = interp1d(normalized_dist, y_coords, kind='linear', assume_sorted=True)
+            interp_curvature = interp1d(normalized_dist, curvatures_smooth, kind='linear', assume_sorted=True)
+            
+            base_samples = np.linspace(0, 1, target_points * 2)
+            curvature_at_samples = interp_curvature(base_samples)
+            
+            min_curvature = np.min(curvature_at_samples)
+            max_curvature = np.max(curvature_at_samples)
+            
+            if max_curvature - min_curvature > 0:
+                normalized_curvature = 0.2 + 0.8 * (curvature_at_samples - min_curvature) / (max_curvature - min_curvature)
+            else:
+                normalized_curvature = np.ones_like(curvature_at_samples)
+            
+            cumulative_density = np.cumsum(normalized_curvature)
+            cumulative_density = cumulative_density / cumulative_density[-1]
+            
+            target_density = np.linspace(0, 1, target_points + 1)[:-1]
+            
+            adaptive_samples = np.interp(target_density, cumulative_density, base_samples)
+            new_x = interp_x(adaptive_samples)
+            new_y = interp_y(adaptive_samples)
+            
+            norm_contour = np.column_stack([new_x, new_y]).astype(np.float32)
+            norm_contour = cv.approxPolyDP(norm_contour, epsilon=2.0, closed=True)
+            
+            final_curvatures = interp_curvature(adaptive_samples)
+            high_curvature_points = np.sum(final_curvatures > np.mean(final_curvatures))
+            
+            print(f"Normalized contour from {len(contour)} to {len(norm_contour)} points")
+            print(f"  - {high_curvature_points}/{len(norm_contour)} points in high-curvature areas")
+            print(f"  - Curvature range: {np.min(final_curvatures):.3f} to {np.max(final_curvatures):.3f}")
+            
+            return norm_contour
+        
+        except Exception as e:
+            print(f"Error during curvature-based normalization: {e}")
+            print(f"Falling back to even spacing...")
+            new_dist = np.linspace(0, 1, target_points + 1)[:-1]
+            new_x = interp_x(new_dist)
+            new_y = interp_y(new_dist)
+            norm_contour = np.column_stack([new_x, new_y]).astype(np.float32)
+            return norm_contour
 
 
     def extractCenterline(self, method='skeleton', smooth=True, show_debug=True):
