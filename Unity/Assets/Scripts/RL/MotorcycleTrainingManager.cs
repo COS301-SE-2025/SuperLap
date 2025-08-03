@@ -18,7 +18,7 @@ public class MotorcycleTrainingManager : MonoBehaviour
     [SerializeField] private int memorySize = 10000;
     [SerializeField] private float gamma = 0.99f;
     [SerializeField] private float gaeLambda = 0.95f;
-    [SerializeField] private float learningRate = 1e-3f;
+    [SerializeField] private float learningRate = 1e-1f;
     [SerializeField] private int networkWidth = 128;
     [SerializeField] private int networkDepth = 2;
     [SerializeField] private float clipEpsilon = 0.2f;
@@ -37,7 +37,7 @@ public class MotorcycleTrainingManager : MonoBehaviour
 
     // Training components
     private PPOAgentOptions ppoOptions;
-    private LocalContinuousRolloutAgent<float[]> localAgent;
+    private LocalDiscreteRolloutAgent<float[]> localAgent;
     private List<MotorcycleEnvironment> environments;
     
     // Step management
@@ -94,7 +94,7 @@ public class MotorcycleTrainingManager : MonoBehaviour
             );
 
             Debug.Log("Initializing Local RLMatrix Agent...");
-            localAgent = new LocalContinuousRolloutAgent<float[]>(ppoOptions, environments);
+            localAgent = new LocalDiscreteRolloutAgent<float[]>(ppoOptions, environments);
         });
 
         // Set time scale and mark as initialized

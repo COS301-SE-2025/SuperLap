@@ -3,29 +3,20 @@ using System;
 using System.Threading.Tasks;
 using RLMatrix;
 using OneOf;
-using System.Collections.Generic;
 
-public class MotorcycleEnvironment : MonoBehaviour, IContinuousEnvironmentAsync<float[]>
+public class MotorcycleEnvironment : MonoBehaviour, IEnvironmentAsync<float[]>
 {
     [Header("Environment Settings")]
     [SerializeField] private int poolingRate = 1;
-    [SerializeField] private int maxStepsHard = 5000;
+    [SerializeField] private int maxStepsHard = 2000;
     [SerializeField] private int maxStepsSoft = 1000;
     
-    [Header("Reward Settings")]
-    [SerializeField] private float onTrackReward = 0.1f;
-    [SerializeField] private float offTrackPenalty = -1.0f;
-    [SerializeField] private float speedRewardScale = 0.02f;
-    [SerializeField] private float racelineDeviationPenalty = 0.1f;
-    [SerializeField] private float crashPenalty = -10.0f;
-    
     // RLMatrix Interface Properties
-    public OneOf<int, (int, int)> StateSize { get; set; }
-    public int[] DiscreteActionSize { get; set; } = Array.Empty<int>();
-    public (float min, float max)[] ContinuousActionBounds { get; set; } = new[]
+    public OneOf<int, (int, int)> stateSize { get; set; }
+    public int[] actionSize { get; set; } = new[]
     {
-        (-1f, 1f), // Throttle/Brake
-        (-1f, 1f), // Steering
+        3,
+        3
     };
 
     // Internal state
@@ -50,13 +41,13 @@ public class MotorcycleEnvironment : MonoBehaviour, IContinuousEnvironmentAsync<
             return;
         }
 
-        poolingHelper = new RLMatrixPoolingHelper(poolingRate, ContinuousActionBounds.Length, GetObservations);
-        StateSize = poolingRate * GetObservationSize();
+        poolingHelper = new RLMatrixPoolingHelper(poolingRate, actionSize.Length, GetObservations);
+        stateSize = poolingRate * GetObservationSize();
         isDone = true;
         
         InitializeObservations();
         
-        Debug.Log($"MotorcycleEnvironment initialized with pooling rate {poolingRate}, state size: {StateSize}");
+        Debug.Log($"MotorcycleEnvironment initialized with pooling rate {poolingRate}, state size: {stateSize}");
     }
 
     private void InitializeObservations()
@@ -107,13 +98,32 @@ public class MotorcycleEnvironment : MonoBehaviour, IContinuousEnvironmentAsync<
         return Task.CompletedTask;
     }
 
-    public Task<(float reward, bool done)> Step(int[] discreteActions, float[] continuousActions)
+    //public Task<(float reward, bool done)> Step(int[] discreteActions)
+    //{
+    //    stepsSoft++;
+    //    stepsHard++;
+
+    //    // Apply actions to the motorcycle agent
+    //    ApplyActions(discreteActions);
+
+    //    float stepReward = CalculateReward();
+    //    poolingHelper.CollectObservation(stepReward);
+
+    //    float totalReward = poolingHelper.GetAndResetAccumulatedReward();
+    //    isDone = IsHardDone() || IsSoftDone();
+
+    //    poolingHelper.SetAction(continuousActions);
+
+    //    return Task.FromResult((totalReward, isDone));
+    //}
+
+    public Task<(float, bool)> Step(int[] actionsIds)
     {
         stepsSoft++;
         stepsHard++;
 
         // Apply actions to the motorcycle agent
-        ApplyActions(continuousActions);
+        ApplyActions(actionsIds);
 
         float stepReward = CalculateReward();
         poolingHelper.CollectObservation(stepReward);
@@ -121,7 +131,7 @@ public class MotorcycleEnvironment : MonoBehaviour, IContinuousEnvironmentAsync<
         float totalReward = poolingHelper.GetAndResetAccumulatedReward();
         isDone = IsHardDone() || IsSoftDone();
 
-        poolingHelper.SetAction(continuousActions);
+        poolingHelper.SetAction(actionsIds);
 
         return Task.FromResult((totalReward, isDone));
     }
@@ -143,25 +153,13 @@ public class MotorcycleEnvironment : MonoBehaviour, IContinuousEnvironmentAsync<
     private bool IsHardDone() => stepsHard >= maxStepsHardComputed || IsDone();
     private bool IsSoftDone() => stepsSoft >= maxStepsSoftComputed;
 
-    private void ApplyActions(float[] actions)
+    private void ApplyActions(int[] actions)
     {
         if (motorcycleAgent != null && actions != null && actions.Length >= 2)
         {
             // Safety check for NaN values in actions
-            float throttle = actions[0];
-            float steering = actions[1];
-            
-            if (float.IsNaN(throttle) || float.IsInfinity(throttle))
-            {
-                throttle = 0f;
-                Debug.LogWarning("NaN/Infinity detected in throttle action, replaced with 0");
-            }
-            
-            if (float.IsNaN(steering) || float.IsInfinity(steering))
-            {
-                steering = 0f;
-                Debug.LogWarning("NaN/Infinity detected in steering action, replaced with 0");
-            }
+            int throttle = actions[0];
+            int steering = actions[1];
             
             motorcycleAgent.TakeAction(throttle, steering);
         }

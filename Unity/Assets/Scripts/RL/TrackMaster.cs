@@ -108,11 +108,13 @@ public class TrackMaster : MonoBehaviour
         // Create multiple motorcycle environments for training
         List<MotorcycleEnvironment> environments = new List<MotorcycleEnvironment>();
         int numEnvironments = 4; // Start with 4 parallel environments
+
+        Vector3 spawnPosition = GetTrainingSpawnPosition(0, currentRaceline);
+        Vector3 spawnDirection = GetTrainingSpawnDirection(0, currentRaceline);
         
         for (int i = 0; i < numEnvironments; i++)
         {
-            Vector3 spawnPosition = GetTrainingSpawnPosition(i, currentRaceline);
-            Vector3 spawnDirection = GetTrainingSpawnDirection(i, currentRaceline);
+
             
             // Create motorcycle agent
             GameObject agentObj = Instantiate(instance.motorcycleAgentPrefab, spawnPosition, Quaternion.LookRotation(spawnDirection));

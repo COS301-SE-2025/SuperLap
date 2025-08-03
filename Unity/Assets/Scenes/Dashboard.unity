@@ -6149,7 +6149,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 49.65
+  m_fontSize: 49.6
   m_fontSizeBase: 40
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -9280,7 +9280,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 52.45
+  m_fontSize: 52.4
   m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -13715,7 +13715,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   previewImage: {fileID: 1202546393}
   particleCount: 100
-  maxIterations: 3000
+  maxIterations: 1000
   outputImage: {fileID: 0}
   outputImageWidth: 1024
   outputImageHeight: 1024

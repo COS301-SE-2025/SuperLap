@@ -7,7 +7,7 @@ namespace RLMatrix
     {
         private int poolingRate;
         private Queue<float[]> observationBuffer;
-        private float[] lastAction;
+        private int[] lastAction;
         private Func<float[]> getObservationFunc;
         private int singleObservationSize;
         private float accumulatedReward;
@@ -17,7 +17,7 @@ namespace RLMatrix
         public RLMatrixPoolingHelper(int rate, int actionSize, Func<float[]> getObservation)
         {
             poolingRate = rate;
-            lastAction = new float[actionSize];
+            lastAction = new int[actionSize];
             getObservationFunc = getObservation;
             HasAction = false;
             singleObservationSize = getObservation().Length;
@@ -34,13 +34,13 @@ namespace RLMatrix
             }
         }
 
-        public void SetAction(float[] action)
+        public void SetAction(int[] action)
         {
             Array.Copy(action, lastAction, action.Length);
             HasAction = true;
         }
 
-        public float[] GetLastAction()
+        public int[] GetLastAction()
         {
             return lastAction;
         }
@@ -88,7 +88,7 @@ namespace RLMatrix
             observationBuffer.Clear();
             HasAction = false;
             accumulatedReward = 0f;
-            lastAction = new float[lastAction.Length];  // Reset the last action
+            lastAction = new int[lastAction.Length];  // Reset the last action
 
             // Fill the buffer with new observations
             for (int i = 0; i < poolingRate; i++)

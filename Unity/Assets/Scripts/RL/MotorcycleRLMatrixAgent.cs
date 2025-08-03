@@ -152,6 +152,8 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
     [ReadOnly] [SerializeField] private float cumulativeReward = 0f;
     [ReadOnly] [SerializeField] private float followingRecommendationsReward = 0f;
     [ReadOnly] [SerializeField] private float speedReward = 0f;
+    [ReadOnly] [SerializeField] private float currentReward = 0f;
+
 
     // Events for training environment
     public System.Action<float> OnEpisodeEndEvent;
@@ -276,11 +278,12 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         Debug.Log($"{gameObject.name} episode reset completed");
     }
 
-    public void TakeAction(float throttle, float steering)
+    public void TakeAction(int throttle, int steering)
     {
         // Extract actions from RLMatrix
-        throttleInput = Mathf.Clamp(throttle, -1f, 1f);
-        steerInput = Mathf.Clamp(steering, -1f, 1f);
+        throttleInput = Mathf.Clamp(throttle - 1, -1f, 1f);
+        steerInput = Mathf.Clamp(steering - 1, -1f, 1f);
+        //Debug.Log($"Taking action: Throttle={throttleInput}, Steering={steerInput}");
     }
 
     void FixedUpdate()
@@ -295,16 +298,16 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         //UpdateCameraFOV(Time.fixedDeltaTime);
         int currentTime = DateTime.Now.Millisecond;
         UpdateTrajectoryVisualization();
-        Debug.Log("Update TrajectoryVisualization took " + (DateTime.Now.Millisecond - currentTime) + " ms");
+        // Debug.Log("Update TrajectoryVisualization took " + (DateTime.Now.Millisecond - currentTime) + " ms");
         currentTime = DateTime.Now.Millisecond;
         UpdateRacelineDeviation();
-        Debug.Log("Update RacelineDeviation took " + (DateTime.Now.Millisecond - currentTime) + " ms");
+        // Debug.Log("Update RacelineDeviation took " + (DateTime.Now.Millisecond - currentTime) + " ms");
         currentTime = DateTime.Now.Millisecond;
         UpdateDrivingRecommendations();
-        Debug.Log("Update DrivingRecommendations took " + (DateTime.Now.Millisecond - currentTime) + " ms");
+        // Debug.Log("Update DrivingRecommendations took " + (DateTime.Now.Millisecond - currentTime) + " ms");
         currentTime = DateTime.Now.Millisecond;
         UpdateRewardSystem();
-        Debug.Log("Update RewardSystem took " + (DateTime.Now.Millisecond - currentTime) + " ms");
+        // Debug.Log("Update RewardSystem took " + (DateTime.Now.Millisecond - currentTime) + " ms");
 
         // Update display
         currentSpeedKmh = currentSpeed * 3.6f;
@@ -397,17 +400,60 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         float speedRatio = currentSpeed / theoreticalTopSpeed;
         reward += speedRatio * speedRewardScale * Time.fixedDeltaTime;
 
-        // Raceline adherence reward (negative penalty for deviation)
-        if (averageTrajectoryDeviation > 0f)
+        if (currentSpeed <= 0.01f)
         {
-            float deviationPenalty = -averageTrajectoryDeviation * 0.01f * Time.fixedDeltaTime;
+            reward += -1f * Time.fixedDeltaTime; // Penalty for being stationary
+        }
+
+        // Raceline adherence reward (negative penalty for deviation)
+        if (averageTrajectoryDeviation > 5f)
+        {
+            float deviationPenalty = -averageTrajectoryDeviation * 0.05f * Time.fixedDeltaTime;
             reward += deviationPenalty;
+        } else
+        {
+            float deviationReward = (10f - averageTrajectoryDeviation) * 0.1f * Time.fixedDeltaTime;
+            reward += deviationReward;
         }
 
         // Smooth driving reward (penalize erratic steering/throttle changes)
         float throttleChangeRate = Mathf.Abs(throttleInput - (previousSpeed > 0 ? 1f : 0f)) * Time.fixedDeltaTime;
         float steeringChangeRate = Mathf.Abs(steerInput) * Time.fixedDeltaTime;
         reward -= (throttleChangeRate + steeringChangeRate) * 0.1f;
+
+        // Follow recommendations reward
+        bool followingSpeedRecommendation = false;
+        if (recommendSpeedUp && throttleInput > inputThreshold)
+        {
+            followingSpeedRecommendation = true;
+        }
+        else if (recommendSlowDown && throttleInput < -inputThreshold)
+        {
+            followingSpeedRecommendation = true;
+        }
+
+        // Check steering recommendations (can be combined with throttle)
+        bool followingSteerRecommendation = false;
+        if (recommendTurnLeft && steerInput < -inputThreshold)
+        {
+            followingSteerRecommendation = true;
+        }
+        else if (recommendTurnRight && steerInput > inputThreshold)
+        {
+            followingSteerRecommendation = true;
+        }
+
+        if(followingSpeedRecommendation || followingSteerRecommendation)
+        {
+            reward += recommendationFollowReward * Time.fixedDeltaTime;
+        }
+        else
+        {
+            reward -= recommendationFollowReward * 0.1f * Time.fixedDeltaTime;
+        }
+
+
+        currentReward += reward;
 
         return reward;
     }
@@ -447,9 +493,18 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
     public void HeuristicAction()
     {
         // Provide manual control for testing when not using AI
-        float throttle = Input.GetAxis("Vertical");   // W/S or Up/Down arrows
-        float steering = Input.GetAxis("Horizontal"); // A/D or Left/Right arrows
-        
+        float throttleF = Input.GetAxis("Vertical");   // W/S or Up/Down arrows
+        float steeringF = Input.GetAxis("Horizontal"); // A/D or Left/Right arrows
+
+        // scale to -1, 0 or 1
+        int throttle = 0;
+        if (throttleF > 0.1f) throttle = 1;
+        else if (throttleF < -0.1f) throttle = -1;
+
+        int steering = 0;
+        if (steeringF > 0.1f) steering = 1;
+        else if (steeringF < -0.1f) steering = -1;
+
         TakeAction(throttle, steering);
     }
 
@@ -1462,6 +1517,7 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         speedReward = 0f;
         wasFollowingRecommendationLastFrame = false;
         timeSinceLastRewardLog = 0f;
+        currentReward = 0f;
     }
     
     private struct RecommendationAnalysis
