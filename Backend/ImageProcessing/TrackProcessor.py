@@ -312,7 +312,271 @@ class TrackProcessor:
         else:
             return self.adaptiveHSVMask(hsv, show_debug)
         
- 
+    def enhancedMultiApproachMask(self, img, hsv, gray, lab, show_debug=False):
+        masks = {}
+        params = self.analyzeImageCharacteristics(img)
+        
+        # Method 1: Improved LAB color space detection
+        l_channel = lab[:,:,0]
+        
+        if params['track_detection_method'] in ['very_dark_asphalt', 'dark_asphalt']:
+            # Adaptive threshold for dark surfaces
+            lab_mask = cv.adaptiveThreshold(l_channel, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 25, 8)
+            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
+            lab_mask = cv.morphologyEx(lab_mask, cv.MORPH_CLOSE, kernel, iterations=1)
+        else:
+            # Otsu for lighter surfaces
+            blurred_l = cv.GaussianBlur(l_channel, (3, 3), 0)
+            _, lab_mask = cv.threshold(blurred_l, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        
+        masks['lab_enhanced'] = lab_mask
+        
+        # Method 2: Improved HSV masking
+        v_channel = hsv[:,:,2]
+        
+        # Create more accurate HSV mask based on track type
+        if params['track_detection_method'] == 'bright_surface':
+            # For bright surfaces, look for darker areas within the bright surface
+            lower_bound = np.array([0, 0, max(20, int(params['dark_threshold'] - 20))])
+            upper_bound = np.array([180, 120, int(params['upper_v'])])
+        else:
+            # For dark surfaces, be more inclusive
+            lower_bound = np.array([0, 0, 0])
+            upper_bound = np.array([180, 150, int(params['upper_v'])])
+        
+        hsv_mask = cv.inRange(hsv, lower_bound, upper_bound)
+        masks['hsv_improved'] = hsv_mask
+        
+        # Method 3: Enhanced Otsu with CLAHE
+        clahe = cv.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        enhanced_gray = clahe.apply(gray)
+        blurred = cv.GaussianBlur(enhanced_gray, (5, 5), 0)
+        
+        _, otsu_enhanced = cv.threshold(blurred, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        masks['otsu_enhanced'] = otsu_enhanced
+        
+        # Method 4: Gradient-based approach
+        # Use Laplacian for better edge detection
+        laplacian = cv.Laplacian(gray, cv.CV_64F, ksize=3)
+        laplacian = np.absolute(laplacian)
+        laplacian = np.uint8(laplacian / laplacian.max() * 255)
+        
+        # Invert to get low-gradient areas (smooth track surface)
+        _, gradient_mask = cv.threshold(laplacian, 20, 255, cv.THRESH_BINARY_INV)
+        
+        # Clean gradient mask
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+        gradient_mask = cv.morphologyEx(gradient_mask, cv.MORPH_CLOSE, kernel, iterations=2)
+
+        corner_response = cv.cornerHarris(gray, 2, 3, 0.04)
+        corner_response = cv.dilate(corner_response, None)
+        _, corner_mask = cv.threshold(corner_response, 0.01 * corner_response.max(), 255, cv.THRESH_BINARY)
+        corner_mask = corner_mask.astype(np.uint8)
+
+        gradient_mask = cv.bitwise_and(gradient_mask, cv.bitwise_not(corner_mask))
+        
+        masks['gradient_enhanced'] = gradient_mask
+        
+        # Method 5: Improved K-means clustering
+        kmeans_mask = self.createEnhancedKMeansMask(img, n_clusters=4)
+        masks['kmeans_enhanced'] = kmeans_mask
+        
+        # mask combination based on track type
+        if params['track_detection_method'] in ['very_dark_asphalt', 'dark_asphalt']:
+            weights = {
+                'lab_enhanced': 0.35, 
+                'hsv_improved': 0.1, 
+                'otsu_enhanced': 0.25, 
+                'gradient_enhanced': 0.1, 
+                'kmeans_enhanced': 0.2
+            }
+        elif params['track_detection_method'] == 'bright_surface':
+            weights = {
+                'lab_enhanced': 0.2, 
+                'hsv_improved': 0.1, 
+                'otsu_enhanced': 0.4, 
+                'gradient_enhanced': 0.1, 
+                'kmeans_enhanced': 0.2
+            }
+        else:
+            weights = {
+                'lab_enhanced': 0.25, 
+                'hsv_improved': 0.15, 
+                'otsu_enhanced': 0.25, 
+                'gradient_enhanced': 0.1, 
+                'kmeans_enhanced': 0.25
+            }
+        
+        combined = self.combineMasks(masks, weights)
+        
+        if show_debug:
+            print("Showing mask comparison...")
+            self.showMaskComparison(masks, combined)
+        
+        return combined
+    
+    def createEnhancedKMeansMask(self, img, n_clusters=4):
+        # Reshape image for k-means
+        data = img.reshape((-1, 3))
+        data = np.float32(data)
+        
+        # Apply k-means
+        criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 1.0)
+        _, labels, centers = cv.kmeans(data, n_clusters, None, criteria, 10, cv.KMEANS_RANDOM_CENTERS)
+        
+        labels = labels.reshape(img.shape[:2])
+        
+        # Convert centers to different color spaces for analysis
+        centers_bgr = centers.reshape(-1, 1, 3).astype(np.uint8)
+        centers_hsv = cv.cvtColor(centers_bgr, cv.COLOR_BGR2HSV).reshape(-1, 3)
+        centers_lab = cv.cvtColor(centers_bgr, cv.COLOR_BGR2LAB).reshape(-1, 3)
+        
+        # Find track-like clusters using multiple criteria
+        track_clusters = []
+        center_brightness = [center[2] for center in centers_hsv]  # V channel
+        center_lightness = [center[0] for center in centers_lab]   # L channel
+        
+        brightness_threshold = np.mean(center_brightness) - 0.3 * np.std(center_brightness)
+        
+        for i, (center_hsv, center_lab) in enumerate(zip(centers_hsv, centers_lab)):
+            h, s, v = center_hsv
+            l_val = center_lab[0]
+            
+            # Track surfaces: darker than average, moderate saturation
+            if v < brightness_threshold and s < 100:
+                track_clusters.append(i)
+        
+        # Fallback: use darkest clusters if none found
+        if not track_clusters:
+            sorted_indices = np.argsort(center_brightness)
+            track_clusters = sorted_indices[:max(1, n_clusters//2)].tolist()
+        
+        # Create mask for track clusters
+        kmeans_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        for cluster_id in track_clusters:
+            cluster_mask = (labels == cluster_id).astype(np.uint8) * 255
+            kmeans_mask = cv.bitwise_or(kmeans_mask, cluster_mask)
+        
+        return kmeans_mask
+        
+    def multiApproachMask(self, img, hsv, gray, show_debug=False):
+        masks = {}
+        params = self.analyzeImageCharacteristics(img)
+        
+        # Approach 1: Improved HSV masking
+        lower_bound = np.array([0, 0, 0])
+        upper_bound = np.array([180, 200, int(params['upper_v'])])
+        
+        hsv_mask = cv.inRange(hsv, lower_bound, upper_bound)
+        masks['hsv'] = hsv_mask
+        
+        # Approach 2: Adaptive threshold with preprocessing
+        blurred = cv.GaussianBlur(gray, (3, 3), 0)
+        _, otsu_thresh = cv.threshold(blurred, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        masks['otsu'] = otsu_thresh
+        
+        # Approach 3: Local adaptive threshold
+        adaptive_thresh = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 21, 10)
+        masks['adaptive'] = adaptive_thresh
+        
+        # Approach 4: Improved K-means
+        kmeans_mask = self.createKMeansMask(img, n_clusters=5)
+        masks['kmeans'] = kmeans_mask
+        
+        # Combine masks with adjusted weights
+        combined = self.combineMasks(masks, weights={'hsv': 0.2, 'otsu': 0.4, 'adaptive': 0.1, 'kmeans': 0.3})
+        
+        if show_debug:
+            print("Showing mask comparison...")
+            self.showMaskComparison(masks, combined)
+        
+        return combined
+    
+    def createKMeansMask(self, img, n_clusters=5):
+        data = img.reshape((-1, 3))
+        data = np.float32(data)
+        
+        # Apply k-means
+        criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 20, 1.0)
+        _, labels, centers = cv.kmeans(data, n_clusters, None, criteria, 10, cv.KMEANS_RANDOM_CENTERS)
+        
+        labels = labels.reshape(img.shape[:2])
+        
+        # Find track-like clusters (darker clusters)
+        center_brightness = [np.mean(center) for center in centers]
+        sorted_indices = np.argsort(center_brightness)
+        
+        # Take bottom 40% of clusters as potential track
+        num_track_clusters = max(1, int(n_clusters * 0.4))
+        track_clusters = sorted_indices[:num_track_clusters]
+        
+        kmeans_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        for cluster_id in track_clusters:
+            cluster_mask = (labels == cluster_id).astype(np.uint8) * 255
+            kmeans_mask = cv.bitwise_or(kmeans_mask, cluster_mask)
+        
+        return kmeans_mask
+    
+    def adaptiveHSVMask(self, hsv, show_debug=False):
+        params = self.adaptive_mask_params or self.analyzeImageCharacteristics(cv.cvtColor(hsv, cv.COLOR_HSV2BGR))
+        
+        lower_bound = np.array([0, 0, 0])
+        upper_bound = np.array([180, 200, int(params['upper_v'])])
+        mask = cv.inRange(hsv, lower_bound, upper_bound)
+        
+        if show_debug:
+            print(f"Adaptive HSV bounds: Lower {lower_bound}, Upper {upper_bound}")
+        
+        return mask
+    
+    def otsuAdaptiveMask(self, gray, show_debug=False):
+        blurred = cv.GaussianBlur(gray, (5, 5), 0)
+        thresh_val, otsu_mask = cv.threshold(blurred, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        if show_debug:
+            print(f"Otsu threshold value: {thresh_val}")
+        
+        return otsu_mask
+    
+    def combineMasks(self, masks, weights=None):
+        if weights is None:
+            weights = {name: 1.0/len(masks) for name in masks.keys()}
+        
+        total_weight = sum(weights.values())
+        weights = {k: v/total_weight for k, v in weights.items()}
+        
+        combined = np.zeros_like(list(masks.values())[0], dtype=np.float32)
+        
+        for name, mask in masks.items():
+            weight = weights.get(name, 0)
+            combined += (mask.astype(np.float32) / 255.0) * weight
+        
+        # lower threshold for more inclusive combination
+        final_mask = (combined > 0.4).astype(np.uint8) * 255
+        
+        return final_mask
+    
+    def showMaskComparison(self, masks, combined):
+        n_masks = len(masks) + 1
+        cols = 3
+        rows = (n_masks + cols - 1) // cols
+        
+        plt.figure(figsize=(15, 5 * rows))
+        
+        for i, (name, mask) in enumerate(masks.items()):
+            plt.subplot(rows, cols, i + 1)
+            plt.imshow(mask, cmap='gray')
+            plt.title(f'{name.upper()} Mask')
+            plt.axis('off')
+        
+        plt.subplot(rows, cols, len(masks) + 1)
+        plt.imshow(combined, cmap='gray')
+        plt.title('Combined Mask')
+        plt.axis('off')
+        
+        plt.tight_layout()
+        plt.show()
+        plt.close()
+    
 #--------------------------------------------------------------------------------Old Code
     def loadImg(self, img_path):
         # Load and convert the image
