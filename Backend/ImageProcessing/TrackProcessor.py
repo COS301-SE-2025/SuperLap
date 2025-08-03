@@ -659,7 +659,8 @@ class TrackProcessor:
 
         return self.track_boundaries
     
-    def generatePreciseBoundariesFromSkeleton(self, step_limit=20, min_spacing=5, show_debug=False): # New from Qwinton's code
+#--------------------------------------------------------------------------------New Code from Qwinton
+    def generatePreciseBoundariesFromSkeleton(self, step_limit=20, min_spacing=5, show_debug=False):
         if self.track_mask is None or self.centerline_smoothed is None:
             print("Missing track mask or centerline")
             return None
@@ -1027,7 +1028,7 @@ class TrackProcessor:
             new_y = interp_y(new_dist)
             norm_contour = np.column_stack([new_x, new_y]).astype(np.float32)
             return norm_contour
-
+#---------------------------------------------------------------------------------------
 
     def extractCenterline(self, method='skeleton', smooth=True, show_debug=True):
         if self.track_mask is None:
@@ -1241,73 +1242,232 @@ class TrackProcessor:
 
         return saved_files
     
-    def processImageForCSharp(self, img_path):
-        """
-        Process a track image and return boundary coordinates in a format suitable for C# integration.
-        
-        Args:
-            img_path (str): Path to the track image file
-            
-        Returns:
-            dict: Dictionary containing success status, boundary coordinates, and error information
-        """
+#---------------------------------------------------------------------------------------    
+    def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, centerline_method='skeleton', extract_centerline=False, manual_centerline=False):
+        processor = TrackProcessor()
+        base_filename = Path(img_path).stem
+        output_dir = os.path.join(output_base_dir, base_filename)
+        os.makedirs(output_dir, exist_ok=True)
+
         try:
-            # Load the image
-            img = self.loadImg(img_path)
-            if img is None:
-                return {
-                    'success': False,
-                    'outer_boundary': [],
-                    'inner_boundary': [],
-                    'error': 'Failed to load image'
+            print(f"Loading Image: {img_path}")
+            processor.loadImg(img_path)
+            
+            # Handle manual centerline drawing
+            if manual_centerline:
+                print("\n" + "="*60)
+                print("MANUAL CENTERLINE DRAWING")
+                print("="*60)
+                print("You will now draw the centerline for track extraction.")
+                print("This will help guide the automatic track detection algorithms.")
+                
+                drawer = InteractiveCenterlineDrawer(processor.original_image)
+                drawn_centerline = drawer.draw_centerline()
+                
+                if drawn_centerline:
+                    processor.setManualCenterline(drawn_centerline)
+                    print(f"Manual centerline captured with {len(drawn_centerline)} points")
+                    
+                    # Save the manual centerline
+                    manual_centerline_path = os.path.join(output_dir, f'{base_filename}_manual_centerline.bin')
+                    with open(manual_centerline_path, 'wb') as f:
+                        f.write(struct.pack('<I', len(drawn_centerline)))
+                        for x, y in drawn_centerline:
+                            f.write(struct.pack('<ff', float(x), float(y)))
+                    print(f"Manual centerline saved to: {manual_centerline_path}")
+                else:
+                    print("No centerline was drawn. Proceeding with automatic processing.")
+                    manual_centerline = False
+            
+            print(f"Processing Image: {base_filename}")
+            results = processor.processImg(processor.original_image, show_debug=show_debug, 
+                                        use_manual_centerline=manual_centerline)
+
+            print("Generating boundaries...")
+            boundaries = processor.detectBoundaries(results['processed_image'], show_debug=show_debug)
+
+            if boundaries:
+                print("Normalizing boundaries to 1800 points using curvature-based adaptive sampling...")
+                normalized_outer = processor.normalizeContour(boundaries['outer'], target_points=1800)
+                normalized_inner = processor.normalizeContour(boundaries['inner'], target_points=1800)
+                
+                boundaries['outer'] = normalized_outer
+                boundaries['inner'] = normalized_inner
+
+                if extract_centerline:
+                    print(f"Extracting centerline using {centerline_method} method...")
+                    centerline_results = processor.extractCenterline(method=centerline_method, show_debug=show_debug)
+
+                    if centerline_results:
+                        results.update(centerline_results)
+
+                        centerline_bin_path = os.path.join(output_dir, f'{base_filename}_centerline.bin')
+                        processor.saveCenterlineToBin(centerline_bin_path)
+                else:
+                    print("Skipping centerline extraction")
+
+                def contour_to_list(contour):
+                    return contour.squeeze().tolist() if contour.ndim == 3 else contour.tolist()
+
+                edge_data = {
+                    'outer_boundary': contour_to_list(normalized_outer),
+                    'inner_boundary': contour_to_list(normalized_inner)
                 }
-            
-            # Process the image
-            processed_result = self.processImg(img, show_debug=False)
-            if processed_result is None:
-                return {
-                    'success': False,
-                    'outer_boundary': [],
-                    'inner_boundary': [],
-                    'error': 'Failed to process image'
-                }
-            
-            # Detect boundaries
-            boundaries = self.detectBoundaries(processed_result['processed_image'], show_debug=False)
-            if boundaries is None:
-                return {
-                    'success': False,
-                    'outer_boundary': [],
-                    'inner_boundary': [],
-                    'error': 'Failed to detect track boundaries'
-                }
-            
-            # Extract boundary coordinates and convert to simple lists
-            outer_coords = []
-            inner_coords = []
-            
-            if boundaries['outer'] is not None:
-                # Convert OpenCV contour to list of [x, y] coordinates
-                outer_coords = boundaries['outer'].reshape(-1, 2).tolist()
-            
-            if boundaries['inner'] is not None:
-                # Convert OpenCV contour to list of [x, y] coordinates  
-                inner_coords = boundaries['inner'].reshape(-1, 2).tolist()
-            
-            return {
-                'success': True,
-                'outer_boundary': outer_coords,
-                'inner_boundary': inner_coords,
-                'error': None
+
+                # Save binary edge coordinates
+                edge_bin_path = os.path.join(output_dir, f'{base_filename}_edge_coords.bin')
+                os.makedirs(output_dir, exist_ok=True)
+                with open(edge_bin_path, 'wb') as f:
+                    for key in ['outer_boundary', 'inner_boundary']:
+                        points = edge_data[key]
+                        f.write(struct.pack('<I', len(points)))
+                        for x, y in points:
+                            f.write(struct.pack('<ff', float(x), float(y)))
+                print(f"Edge coordinates saved to: {edge_bin_path} (outer: {len(edge_data['outer_boundary'])} points, inner: {len(edge_data['inner_boundary'])} points)")
+
+                results['edge_visualization'] = processor.drawEdgesFromBin(edge_bin_path)
+
+                # Add centerline visualization
+                if show_debug:
+                    if extract_centerline and processor.centerline:
+                        centerline_img = processor.visualizeCenterline()
+                        if centerline_img is not None:
+                            results['centerline_visualization'] = centerline_img
+                    
+                    # Add manual centerline visualization if it exists
+                    if manual_centerline and processor.manual_centerline:
+                        manual_viz = processor.original_image.copy()
+                        for i in range(1, len(processor.manual_centerline)):
+                            cv.line(manual_viz, processor.manual_centerline[i-1], processor.manual_centerline[i], (0, 255, 255), 3)
+                        results['manual_centerline_visualization'] = manual_viz
+
+            saved_files = processor.saveProcessedImages(results, output_dir, base_filename)
+
+            summary = {
+                'original_image': img_path,
+                'output_directory': output_dir,
+                'processed_files': saved_files,
+                'processing_successful': True,
+                'boundary_points_normalized': True,
+                'outer_boundary_points': 1800 if boundaries else 0,
+                'inner_boundary_points': 1800 if boundaries else 0,
+                'centerline_extracted': extract_centerline and processor.centerline is not None,
+                'centerline_points': len(processor.centerline) if processor.centerline else 0,
+                'manual_centerline_used': manual_centerline and processor.manual_centerline is not None,
+                'manual_centerline_points': len(processor.manual_centerline) if processor.manual_centerline else 0
             }
+
+            summary_path = os.path.join(output_dir, f"{base_filename}_summary.json")
+            with open(summary_path, 'w') as f:
+                json.dump(summary, f, indent=2)
+
+            print(f"Processing complete. Files saved to: {output_dir}")
             
+            if manual_centerline and processor.manual_centerline:
+                print(f"Manual centerline guidance: {len(processor.manual_centerline)} points used")
+
+            if show_debug:
+                cv.waitKey(0)
+                cv.destroyAllWindows()
+
+            return summary
+
         except Exception as e:
-            return {
-                'success': False,
-                'outer_boundary': [],
-                'inner_boundary': [],
-                'error': str(e)
-            }
+            print(f"Error processing track image {img_path}: {str(e)}")
+            return None
+        
+    def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', show_debug=True, centerline_method='skeleton', extract_centerline=False, manual_centerline=False):
+        extensions = ['*.png', '*.jpg', '*.bmp', '*.tiff']
+
+        image_files = []
+        for ext in extensions:
+            pattern = os.path.join(input_dir, ext)
+            image_files.extend(glob.glob(pattern))
+
+        if not image_files:
+            print(f"No image files found in {input_dir}")
+            return []
+        
+        print(f"Found {len(image_files)} image(s) to process")
+
+        results = []
+        for img_path in image_files:
+            print(f"\n{'='*50}")
+            result = processTrack(img_path, output_base_dir, show_debug, centerline_method, extract_centerline, manual_centerline)
+            if result:
+                results.append(result)
+
+        return results
+
+
+        def processImageForCSharp(self, img_path):
+            """
+            Process a track image and return boundary coordinates in a format suitable for C# integration.
+            
+            Args:
+                img_path (str): Path to the track image file
+                
+            Returns:
+                dict: Dictionary containing success status, boundary coordinates, and error information
+            """
+            try:
+                # Load the image
+                img = self.loadImg(img_path)
+                if img is None:
+                    return {
+                        'success': False,
+                        'outer_boundary': [],
+                        'inner_boundary': [],
+                        'error': 'Failed to load image'
+                    }
+                
+                # Process the image
+                processed_result = self.processImg(img, show_debug=False)
+                if processed_result is None:
+                    return {
+                        'success': False,
+                        'outer_boundary': [],
+                        'inner_boundary': [],
+                        'error': 'Failed to process image'
+                    }
+                
+                # Detect boundaries
+                boundaries = self.detectBoundaries(processed_result['processed_image'], show_debug=False)
+                if boundaries is None:
+                    return {
+                        'success': False,
+                        'outer_boundary': [],
+                        'inner_boundary': [],
+                        'error': 'Failed to detect track boundaries'
+                    }
+                
+                # Extract boundary coordinates and convert to simple lists
+                outer_coords = []
+                inner_coords = []
+                
+                if boundaries['outer'] is not None:
+                    # Convert OpenCV contour to list of [x, y] coordinates
+                    outer_coords = boundaries['outer'].reshape(-1, 2).tolist()
+                
+                if boundaries['inner'] is not None:
+                    # Convert OpenCV contour to list of [x, y] coordinates  
+                    inner_coords = boundaries['inner'].reshape(-1, 2).tolist()
+                
+                return {
+                    'success': True,
+                    'outer_boundary': outer_coords,
+                    'inner_boundary': inner_coords,
+                    'error': None
+                }
+                
+            except Exception as e:
+                return {
+                    'success': False,
+                    'outer_boundary': [],
+                    'inner_boundary': [],
+                    'error': str(e)
+                }
+#---------------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------Standalone function for direct C# integration
     def process_track_for_csharp(img_path):
