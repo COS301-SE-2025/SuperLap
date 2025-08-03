@@ -586,9 +586,9 @@ MonoBehaviour:
   maxFOVSpeed: 50
   accelerationFOVBoost: 2
   fovAdjustSpeed: 3
-  showTrajectory: 0
-  trajectoryLength: 3
-  trajectoryPoints: 50
+  showTrajectory: 1
+  trajectoryLength: 2
+  trajectoryPoints: 10
   trajectoryColor: {r: 0, g: 1, b: 0, a: 1}
   trajectoryWidth: 0.1
   enableRecommendations: 1
@@ -596,6 +596,7 @@ MonoBehaviour:
   steeringSensitivity: 0.1
   throttleSensitivity: 0.15
   testInputStrength: 0.5
+  recommendationUpdateInterval: 5
   recommendationSensitivity: 0.1
   speedUpIndicator: {fileID: 0}
   slowDownIndicator: {fileID: 0}
@@ -604,18 +605,11 @@ MonoBehaviour:
   recommendationFollowReward: 1
   inputThreshold: 0.3
   speedRewardMultiplier: 0.5
-  startingPosition: {x: 0, y: 0, z: 0}
-  startingRotation: {x: 0, y: 0, z: 0}
-  rayCount: 8
-  rayAngle: 120
-  maxRayLength: 15
-  rayVerticalOffset: 0.5
   trackCheckDistance: 5
   maxEpisodeTime: 120
-  onTrackReward: 0.1
-  offTrackPenalty: -1
+  onTrackReward: 0
+  offTrackPenaltyScale: -1
   speedRewardScale: 0.02
-  leanAnglePenalty: 0.01
   speedText: {fileID: 0}
   racelineDeviationText: {fileID: 0}
   currentSpeed: 0

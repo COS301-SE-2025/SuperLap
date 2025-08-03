@@ -107,7 +107,7 @@ public class TrackMaster : MonoBehaviour
         
         // Create multiple motorcycle environments for training
         List<MotorcycleEnvironment> environments = new List<MotorcycleEnvironment>();
-        int numEnvironments = 1; // Start with 4 parallel environments
+        int numEnvironments = 4; // Start with 4 parallel environments
         
         for (int i = 0; i < numEnvironments; i++)
         {

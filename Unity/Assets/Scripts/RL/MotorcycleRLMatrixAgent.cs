@@ -1,7 +1,8 @@
-using System;
 using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
+using System;
+
 
 
 #if UNITY_EDITOR
@@ -90,6 +91,8 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
     [SerializeField] private float throttleSensitivity = 0.15f;
     [Tooltip("Input strength for testing recommendations (0-1).")]
     [SerializeField] private float testInputStrength = 0.5f;
+    [Tooltip("How often to update recommendations (in frames). Higher = better performance.")]
+    [SerializeField] private int recommendationUpdateInterval = 5;
     
     [Header("Recommendation UI GameObjects")]
     [SerializeField] private float recommendationSensitivity = 0.1f;
@@ -111,19 +114,6 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
     [SerializeField] private float speedRewardMultiplier = 0.5f;
 
     [Header("RLMatrix Training Settings")]
-    [Tooltip("Starting position for episode reset.")]
-    [SerializeField] private Vector3 startingPosition;
-    [Tooltip("Starting rotation for episode reset.")]
-    [SerializeField] private Vector3 startingRotation;
-    [Tooltip("Number of rays to cast for environmental sensing.")]
-    [SerializeField] private int rayCount = 8;
-    [Tooltip("Angle spread of rays in degrees (0-180).")]
-    [Range(0f, 180f)]
-    [SerializeField] private float rayAngle = 120f;
-    [Tooltip("Maximum length of rays in meters.")]
-    [SerializeField] private float maxRayLength = 15f;
-    [Tooltip("Vertical offset for ray starting position.")]
-    [SerializeField] private float rayVerticalOffset = 0.5f;
     [Tooltip("Maximum distance to check downward for track detection.")]
     [SerializeField] private float trackCheckDistance = 5f;
 
@@ -133,11 +123,9 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
     [Tooltip("Reward for staying on track per time step.")]
     [SerializeField] private float onTrackReward = 0.1f;
     [Tooltip("Penalty for going off track per time step.")]
-    [SerializeField] private float offTrackPenalty = -1.0f;
+    [SerializeField] private float offTrackPenaltyScale = -1.0f;
     [Tooltip("Reward multiplier for speed (higher speed = more reward).")]
     [SerializeField] private float speedRewardScale = 0.02f;
-    [Tooltip("Penalty for excessive lean angles.")]
-    [SerializeField] private float leanAnglePenalty = 0.01f;
 
     [Header("GUI")]
     [Tooltip("Displays the current speed of the motorcycle.")]
@@ -186,6 +174,15 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
     
     // Trajectory prediction
     private LineRenderer trajectoryLineRenderer;
+    
+    // Performance optimization caches
+    private List<Vector2> cachedRaceline;
+    private float lastRacelineCacheTime;
+    private int racelineUpdateFrame;
+    private int closestRacelineIndex = 0;
+    private float lastClosestPointDistance = float.MaxValue;
+    private int recommendationUpdateFrame;
+    private RecommendationAnalysis? cachedRecommendations;
 
     void Start()
     {
@@ -197,12 +194,6 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         // Store initial transform values for episode resets
         initialPosition = transform.position;
         initialRotation = transform.rotation;
-        
-        // Use custom starting position/rotation if provided
-        if (startingPosition != Vector3.zero)
-            initialPosition = startingPosition;
-        if (startingRotation != Vector3.zero)
-            initialRotation = Quaternion.Euler(startingRotation);
 
         // Initialize all variables to safe defaults
         currentSpeed = 0f;
@@ -228,6 +219,13 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         CalculateTheoreticalTopSpeed();
         SetupTrajectoryLineRenderer();
         ResetRewards();
+        
+        // Initialize performance optimization variables
+        racelineUpdateFrame = 0;
+        recommendationUpdateFrame = 0;
+        lastRacelineCacheTime = 0f;
+        closestRacelineIndex = 0;
+        lastClosestPointDistance = float.MaxValue;
         
         Debug.Log($"MotorcycleRLMatrixAgent initialized. Theoretical top speed: {theoreticalTopSpeed * 3.6f:F1} km/h");
     }
@@ -266,6 +264,15 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         // Reset reward system
         ResetRewards();
         
+        // Reset performance optimization caches
+        racelineUpdateFrame = 0;
+        recommendationUpdateFrame = 0;
+        lastRacelineCacheTime = 0f;
+        closestRacelineIndex = 0;
+        lastClosestPointDistance = float.MaxValue;
+        cachedRaceline = null;
+        cachedRecommendations = null;
+        
         Debug.Log($"{gameObject.name} episode reset completed");
     }
 
@@ -284,12 +291,20 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         // Update motorcycle physics
         UpdateMovement(Time.fixedDeltaTime);
         UpdateTurning(Time.fixedDeltaTime);
-        UpdateMotorcycleLeaning(Time.fixedDeltaTime);
-        UpdateCameraFOV(Time.fixedDeltaTime);
+        //UpdateMotorcycleLeaning(Time.fixedDeltaTime);
+        //UpdateCameraFOV(Time.fixedDeltaTime);
+        int currentTime = DateTime.Now.Millisecond;
         UpdateTrajectoryVisualization();
+        Debug.Log("Update TrajectoryVisualization took " + (DateTime.Now.Millisecond - currentTime) + " ms");
+        currentTime = DateTime.Now.Millisecond;
         UpdateRacelineDeviation();
+        Debug.Log("Update RacelineDeviation took " + (DateTime.Now.Millisecond - currentTime) + " ms");
+        currentTime = DateTime.Now.Millisecond;
         UpdateDrivingRecommendations();
+        Debug.Log("Update DrivingRecommendations took " + (DateTime.Now.Millisecond - currentTime) + " ms");
+        currentTime = DateTime.Now.Millisecond;
         UpdateRewardSystem();
+        Debug.Log("Update RewardSystem took " + (DateTime.Now.Millisecond - currentTime) + " ms");
 
         // Update display
         currentSpeedKmh = currentSpeed * 3.6f;
@@ -375,7 +390,7 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         }
         else
         {
-            reward += offTrackPenalty * Time.fixedDeltaTime;
+            reward += offTrackPenaltyScale * Time.fixedDeltaTime;
         }
 
         // Speed-based reward (encourage maintaining good speed)
@@ -383,17 +398,10 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         reward += speedRatio * speedRewardScale * Time.fixedDeltaTime;
 
         // Raceline adherence reward (negative penalty for deviation)
-        if (racelineDeviation > 0f)
+        if (averageTrajectoryDeviation > 0f)
         {
-            float deviationPenalty = -racelineDeviation * 0.01f * Time.fixedDeltaTime;
+            float deviationPenalty = -averageTrajectoryDeviation * 0.01f * Time.fixedDeltaTime;
             reward += deviationPenalty;
-        }
-
-        // Lean angle penalty (discourage excessive leaning which can lead to crashes)
-        float leanRatio = Mathf.Abs(currentLeanAngle) / maxLeanAngle;
-        if (leanRatio > 0.8f) // Only penalize excessive lean
-        {
-            reward -= leanAnglePenalty * leanRatio * Time.fixedDeltaTime;
         }
 
         // Smooth driving reward (penalize erratic steering/throttle changes)
@@ -848,8 +856,8 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
     
     private void UpdateRacelineDeviation()
     {
-        // Get the optimal raceline from TrackMaster
-        List<Vector2> optimalRaceline = GetOptimalRaceline();
+        // Get cached raceline (only update periodically for performance)
+        List<Vector2> optimalRaceline = GetCachedOptimalRaceline();
         if (optimalRaceline == null || optimalRaceline.Count == 0)
         {
             racelineDeviation = 0f;
@@ -857,25 +865,36 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
             return;
         }
         
-        // Calculate current position deviation from raceline
+        // Calculate current position deviation from raceline using optimized method
         Vector2 currentPos2D = new Vector2(transform.position.x, transform.position.z);
-        racelineDeviation = CalculateDistanceToRaceline(currentPos2D, optimalRaceline);
+        racelineDeviation = CalculateDistanceToRacelineOptimized(currentPos2D, optimalRaceline);
         
-        // Calculate average trajectory deviation if trajectory is being shown
-        if (showTrajectory && trajectoryLineRenderer != null && trajectoryLineRenderer.positionCount > 0)
+        // Calculate average trajectory deviation less frequently for performance
+        if (showTrajectory && trajectoryLineRenderer != null && trajectoryLineRenderer.positionCount > 0 && 
+            racelineUpdateFrame % 3 == 0) // Update every 3rd frame
         {
             averageTrajectoryDeviation = CalculateAverageTrajectoryDeviation(optimalRaceline);
         }
-        else
-        {
-            averageTrajectoryDeviation = 0f;
-        }
+        // Don't reset to 0 if we're not updating this frame - keep the last value
     }
     
     private List<Vector2> GetOptimalRaceline()
     {
         // Access the raceline from TrackMaster using the public method
         return TrackMaster.GetCurrentRaceline();
+    }
+    
+    private List<Vector2> GetCachedOptimalRaceline()
+    {
+        // Cache raceline to avoid frequent calls to TrackMaster
+        // Update cache every 30 frames (about every 0.5 seconds at 60fps)
+        if (cachedRaceline == null || racelineUpdateFrame % 30 == 0)
+        {
+            cachedRaceline = GetOptimalRaceline();
+            lastRacelineCacheTime = Time.time;
+        }
+        racelineUpdateFrame++;
+        return cachedRaceline;
     }
     
     private float CalculateDistanceToRaceline(Vector2 position, List<Vector2> raceline)
@@ -909,6 +928,63 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         }
         
         return minDistance;
+    }
+    
+    private float CalculateDistanceToRacelineOptimized(Vector2 position, List<Vector2> raceline)
+    {
+        if (raceline.Count == 0) return 0f;
+        
+        // Use cached closest point as starting hint for faster search
+        int searchRadius = Mathf.Min(20, raceline.Count / 4); // Limit search to nearby points
+        float minDistance = float.MaxValue;
+        int bestIndex = closestRacelineIndex;
+        
+        // Search around the previously closest point first
+        for (int offset = 0; offset <= searchRadius; offset++)
+        {
+            // Check both directions from the last closest point
+            int[] indices = offset == 0 ? new int[] { closestRacelineIndex } : 
+                           new int[] { 
+                               (closestRacelineIndex + offset) % raceline.Count,
+                               (closestRacelineIndex - offset + raceline.Count) % raceline.Count
+                           };
+            
+            foreach (int i in indices)
+            {
+                float distance = Vector2.SqrMagnitude(position - raceline[i]); // Use SqrMagnitude for performance
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    bestIndex = i;
+                }
+            }
+            
+            // Early exit if we found a very close point
+            if (minDistance < 1f) // 1 unit squared
+                break;
+        }
+        
+        // Check line segments only around the closest point for performance
+        float segmentDistance = minDistance;
+        for (int offset = -2; offset <= 2; offset++)
+        {
+            int i = (bestIndex + offset + raceline.Count) % raceline.Count;
+            int nextIndex = (i + 1) % raceline.Count;
+            Vector2 lineStart = raceline[i];
+            Vector2 lineEnd = raceline[nextIndex];
+            
+            float distanceToSegment = DistanceToLineSegmentOptimized(position, lineStart, lineEnd);
+            if (distanceToSegment < segmentDistance)
+            {
+                segmentDistance = distanceToSegment;
+            }
+        }
+        
+        // Update cached values
+        closestRacelineIndex = bestIndex;
+        lastClosestPointDistance = Mathf.Sqrt(Mathf.Min(minDistance, segmentDistance * segmentDistance));
+        
+        return lastClosestPointDistance;
     }
     
     private float CalculateAverageTrajectoryDeviation(List<Vector2> raceline)
@@ -958,6 +1034,30 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         return Vector2.Distance(point, closestPoint);
     }
     
+    private float DistanceToLineSegmentOptimized(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
+    {
+        Vector2 line = lineEnd - lineStart;
+        float lineLengthSqr = line.sqrMagnitude;
+        
+        if (lineLengthSqr < 0.0001f) // Line segment is essentially a point
+        {
+            return Vector2.Distance(point, lineStart);
+        }
+        
+        Vector2 pointToStart = point - lineStart;
+        
+        // Project point onto line using sqrMagnitude for performance
+        float projection = Vector2.Dot(pointToStart, line) / lineLengthSqr;
+        
+        // Clamp projection to line segment
+        projection = Mathf.Clamp01(projection);
+        
+        // Find closest point on line segment
+        Vector2 closestPoint = lineStart + line * projection;
+        
+        return Vector2.Distance(point, closestPoint);
+    }
+    
     private void UpdateDrivingRecommendations()
     {
         if (!enableRecommendations)
@@ -966,7 +1066,26 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
             return;
         }
         
-        List<Vector2> optimalRaceline = GetOptimalRaceline();
+        // Update recommendations less frequently for better performance
+        if (recommendationUpdateFrame % recommendationUpdateInterval != 0)
+        {
+            recommendationUpdateFrame++;
+            // Use cached recommendations
+            if (cachedRecommendations.HasValue)
+            {
+                var analysis2 = cachedRecommendations.Value;
+                recommendSpeedUp = analysis2.shouldSpeedUp;
+                recommendSlowDown = analysis2.shouldSlowDown;
+                recommendTurnLeft = analysis2.shouldTurnLeft;
+                recommendTurnRight = analysis2.shouldTurnRight;
+                UpdateRecommendationIndicators(analysis2);
+            }
+            return;
+        }
+        
+        recommendationUpdateFrame++;
+        
+        List<Vector2> optimalRaceline = GetCachedOptimalRaceline();
         if (optimalRaceline == null || optimalRaceline.Count == 0)
         {
             SetAllRecommendationIndicators(false);
@@ -974,7 +1093,10 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         }
         
         // Calculate recommendations for each input type
-        RecommendationAnalysis analysis = AnalyzeRecommendations(optimalRaceline);
+        RecommendationAnalysis analysis = AnalyzeRecommendationsOptimized(optimalRaceline);
+        
+        // Cache the results
+        cachedRecommendations = analysis;
         
         // Update recommendation states
         recommendSpeedUp = analysis.shouldSpeedUp;
@@ -1067,6 +1189,73 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         };
     }
     
+    private RecommendationAnalysis AnalyzeRecommendationsOptimized(List<Vector2> raceline)
+    {
+        // Reduce simulation steps for better performance but maintain accuracy
+        int originalSteps = recommendationSteps;
+        int optimizedSteps = Mathf.Max(5, originalSteps / 2);
+        
+        // Get baseline score (continue straight) with fewer steps
+        float baselineScore = SimulateRecommendationScenarioOptimized(0f, 0f, raceline, optimizedSteps);
+        
+        // Test only the most promising directions first
+        float turnLeftScore = SimulateRecommendationScenarioOptimized(0f, -testInputStrength, raceline, optimizedSteps);
+        float turnRightScore = SimulateRecommendationScenarioOptimized(0f, testInputStrength, raceline, optimizedSteps);
+        
+        // Calculate steering improvements
+        float turnLeftImprovement = baselineScore - turnLeftScore;
+        float turnRightImprovement = baselineScore - turnRightScore;
+        
+        // Determine optimal steering input for speed tests
+        float optimalSteeringInput = 0f;
+        if (turnLeftImprovement > steeringSensitivity && turnLeftImprovement > turnRightImprovement)
+        {
+            optimalSteeringInput = -testInputStrength;
+        }
+        else if (turnRightImprovement > steeringSensitivity && turnRightImprovement > turnLeftImprovement)
+        {
+            optimalSteeringInput = testInputStrength;
+        }
+        
+        // Test speed options with optimal steering
+        float speedUpScore = SimulateRecommendationScenarioOptimized(testInputStrength, optimalSteeringInput, raceline, optimizedSteps);
+        float slowDownScore = SimulateRecommendationScenarioOptimized(-testInputStrength, optimalSteeringInput, raceline, optimizedSteps);
+        
+        // Calculate improvements
+        float speedUpImprovement = baselineScore - speedUpScore;
+        float slowDownImprovement = baselineScore - slowDownScore;
+        
+        // Determine recommendations
+        bool shouldSpeedUp = false;
+        bool shouldSlowDown = false;
+        
+        if (speedUpImprovement > throttleSensitivity && slowDownImprovement > throttleSensitivity)
+        {
+            shouldSpeedUp = speedUpImprovement > slowDownImprovement;
+            shouldSlowDown = !shouldSpeedUp;
+        }
+        else if (speedUpImprovement > throttleSensitivity)
+        {
+            shouldSpeedUp = true;
+        }
+        else if (slowDownImprovement > throttleSensitivity)
+        {
+            shouldSlowDown = true;
+        }
+        
+        return new RecommendationAnalysis
+        {
+            shouldSpeedUp = shouldSpeedUp,
+            shouldSlowDown = shouldSlowDown,
+            shouldTurnLeft = turnLeftImprovement > steeringSensitivity,
+            shouldTurnRight = turnRightImprovement > steeringSensitivity,
+            speedUpImprovement = speedUpImprovement,
+            slowDownImprovement = slowDownImprovement,
+            turnLeftImprovement = turnLeftImprovement,
+            turnRightImprovement = turnRightImprovement
+        };
+    }
+    
     private void UpdateRecommendationIndicators(RecommendationAnalysis analysis)
     {
         // Update throttle/brake indicators
@@ -1129,6 +1318,33 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         return totalDeviation / recommendationSteps;
     }
     
+    private float SimulateRecommendationScenarioOptimized(float testThrottle, float testSteering, List<Vector2> raceline, int steps)
+    {
+        // Use current state as starting point
+        Vector3 simPosition = transform.position;
+        Vector3 simForward = transform.forward;
+        float simSpeed = currentSpeed;
+        float simTurnAngle = currentTurnAngle;
+        
+        float deltaTime = trajectoryLength / steps;
+        float totalDeviation = 0f;
+        
+        // Use the optimized distance calculation and fewer simulation steps
+        for (int step = 0; step < steps; step++)
+        {
+            // Calculate deviation using the optimized method
+            Vector2 simPos2D = new Vector2(simPosition.x, simPosition.z);
+            float deviation = CalculateDistanceToRacelineOptimized(simPos2D, raceline);
+            totalDeviation += deviation;
+            
+            // Simulate one step forward with test inputs
+            SimulateOneStepWithInputs(ref simPosition, ref simForward, ref simSpeed, ref simTurnAngle, 
+                                    deltaTime, testThrottle, testSteering);
+        }
+        
+        return totalDeviation / steps;
+    }
+    
     private void SimulateOneStepWithInputs(ref Vector3 position, ref Vector3 forward, ref float speed, 
                                          ref float turnAngle, float dt, float simThrottleInput, float simSteerInput)
     {
@@ -1169,7 +1385,7 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         float speedRewardThisFrame = CalculateSpeedReward();
         speedReward += speedRewardThisFrame;
         cumulativeReward += speedRewardThisFrame;
-        
+
         // Check if player is following recommendations
         bool followingRecommendation = false;
         string followedAction = "";
@@ -1223,61 +1439,6 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         return normalizedReward * speedRewardMultiplier * Time.deltaTime;
     }
 
-    private float[] PerformRaycasts()
-    {
-        if (rayCount <= 0 || maxRayLength <= 0f) 
-            return new float[0];
-
-        float[] rayDistances = new float[rayCount];
-        Vector3 startPosition = transform.position + (transform.up * rayVerticalOffset);
-        Vector3 forward = transform.forward;
-        Vector3 up = transform.up;
-
-        if (rayCount == 1)
-        {
-            // Single ray straight forward
-            Vector3 rayDirection = forward;
-            if (Physics.Raycast(startPosition, rayDirection, out RaycastHit hit, maxRayLength))
-            {
-                rayDistances[0] = hit.distance;
-            }
-            else
-            {
-                rayDistances[0] = maxRayLength; // No hit, return max distance
-            }
-        }
-        else
-        {
-            // Multiple rays spread across the angle
-            float halfAngle = rayAngle * 0.5f;
-            
-            for (int i = 0; i < rayCount; i++)
-            {
-                float angle;
-                
-                // Distribute rays evenly across the angle range
-                float t = (float)i / (rayCount - 1); // 0 to 1
-                angle = Mathf.Lerp(-halfAngle, halfAngle, t);
-
-                // Create rotation around the Y-axis (horizontal rotation)
-                Quaternion rotation = Quaternion.AngleAxis(angle, up);
-                Vector3 rayDirection = rotation * forward;
-                
-                // Perform the raycast
-                if (Physics.Raycast(startPosition, rayDirection, out RaycastHit hit, maxRayLength))
-                {
-                    rayDistances[i] = hit.distance;
-                }
-                else
-                {
-                    rayDistances[i] = maxRayLength; // No hit, return max distance
-                }
-            }
-        }
-
-        return rayDistances;
-    }
-
     private bool IsOnTrack()
     {
         Vector3 startPosition = transform.position;
@@ -1313,55 +1474,8 @@ public partial class MotorcycleRLMatrixAgent : MonoBehaviour
         public float slowDownImprovement;
         public float turnLeftImprovement;
         public float turnRightImprovement;
-    }
-
-    private void OnDrawGizmos()
-    {
-        DrawRays();
-    }
-
-    private void DrawRays()
-    {
-        if (rayCount <= 0 || maxRayLength <= 0f) return;
-
-        Vector3 startPosition = transform.position + (transform.up * rayVerticalOffset);
-        Vector3 forward = transform.forward;
-        Vector3 up = transform.up;
-
-        // Set gizmo color
-        Gizmos.color = Color.green;
-
-        if (rayCount == 1)
-        {
-            // Single ray straight forward
-            Vector3 rayDirection = forward;
-            Gizmos.DrawRay(startPosition, rayDirection * maxRayLength);
-        }
-        else
-        {
-            // Multiple rays spread across the angle
-            float halfAngle = rayAngle * 0.5f;
-            
-            for (int i = 0; i < rayCount; i++)
-            {
-                float angle;
-                
-                // Distribute rays evenly across the angle range
-                float t = (float)i / (rayCount - 1); // 0 to 1
-                angle = Mathf.Lerp(-halfAngle, halfAngle, t);
-
-                // Create rotation around the Y-axis (horizontal rotation)
-                Quaternion rotation = Quaternion.AngleAxis(angle, up);
-                Vector3 rayDirection = rotation * forward;
-                
-                // Draw the ray
-                Gizmos.DrawRay(startPosition, rayDirection * maxRayLength);
-            }
-        }
         
-        // Draw downward track detection ray
-        Gizmos.color = Color.red;
-        Vector3 downDirection = -transform.up;
-        Gizmos.DrawRay(transform.position, downDirection * trackCheckDistance);
+        public bool HasValue => speedUpImprovement != 0 || slowDownImprovement != 0 || 
+                               turnLeftImprovement != 0 || turnRightImprovement != 0;
     }
 }
