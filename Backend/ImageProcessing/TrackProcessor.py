@@ -13,7 +13,7 @@ from scipy.interpolate import interp1d, splprep, splev
 from skimage.morphology import skeletonize
 from scipy.signal import savgol_filter  # New from Amber
 
-#--------------------------------------------------------------------------------Interactive UI Drawer [Qwinton]
+#--------------------------------------------------------------------------------Interactive UI Drawer Class
 class InteractiveCenterlineDrawer:
     def __init__(self, image):
         self.image = image.copy()
@@ -23,6 +23,142 @@ class InteractiveCenterlineDrawer:
         self.current_stroke = []
         self.window_name = "Draw Centerline - Left click and drag to draw, 'c' to clear, 's' to smooth, ENTER to finish"
 
+    def mouse_callback(self, event, x, y, flags, param):
+        if event == cv.EVENT_LBUTTONDOWN:
+            self.drawing = True
+            self.current_stroke = [(x, y)]
+            
+        elif event == cv.EVENT_MOUSEMOVE and self.drawing:
+            self.current_stroke.append((x, y))
+            cv.circle(self.image, (x, y), 3, (0, 255, 255), -1)  # Yellow dots
+            if len(self.current_stroke) > 1:
+                cv.line(self.image, self.current_stroke[-2], self.current_stroke[-1], (0, 255, 255), 2)
+            cv.imshow(self.window_name, self.image)
+            
+        elif event == cv.EVENT_LBUTTONUP:
+            self.drawing = False
+            if len(self.current_stroke) > 1:
+                self.centerline_points.extend(self.current_stroke)
+                print(f"Stroke added with {len(self.current_stroke)} points. Total points: {len(self.centerline_points)}")
+            self.current_stroke = []
+    
+    def smooth_centerline(self, points, smoothing_factor=0.1):
+        if len(points) < 4:
+            return points
+            
+        points_array = np.array(points)
+        
+        # Remove duplicate consecutive points
+        unique_points = [points_array[0]]
+        for i in range(1, len(points_array)):
+            if np.linalg.norm(points_array[i] - points_array[i-1]) > 2:  # Minimum distance threshold
+                unique_points.append(points_array[i])
+        
+        if len(unique_points) < 4:
+            return points
+            
+        unique_points = np.array(unique_points)
+        
+        try:
+            # Use parametric spline fitting
+            t = np.linspace(0, 1, len(unique_points))
+            
+            # Fit splines for x and y coordinates
+            from scipy.interpolate import UnivariateSpline
+            spline_x = UnivariateSpline(t, unique_points[:, 0], s=len(unique_points) * smoothing_factor)
+            spline_y = UnivariateSpline(t, unique_points[:, 1], s=len(unique_points) * smoothing_factor)
+            
+            # Generate smoothed points
+            t_smooth = np.linspace(0, 1, len(unique_points) * 2)
+            smooth_x = spline_x(t_smooth)
+            smooth_y = spline_y(t_smooth)
+            
+            smoothed_points = [(int(x), int(y)) for x, y in zip(smooth_x, smooth_y)]
+            return smoothed_points
+            
+        except Exception as e:
+            print(f"Smoothing failed: {e}. Returning original points.")
+            return points
+    
+    def redraw_centerline(self):
+        self.image = self.original_image.copy()
+        if len(self.centerline_points) > 1:
+            for i in range(1, len(self.centerline_points)):
+                cv.line(self.image, self.centerline_points[i-1], self.centerline_points[i], (0, 255, 255), 2)
+            # Draw points
+            for point in self.centerline_points[::5]:  # Draw every 5th point to avoid clutter
+                cv.circle(self.image, point, 2, (0, 255, 0), -1)
+        cv.imshow(self.window_name, self.image)
+    
+    def draw_centerline(self):
+        cv.namedWindow(self.window_name, cv.WINDOW_NORMAL)
+        cv.resizeWindow(self.window_name, 1200, 800)
+        cv.setMouseCallback(self.window_name, self.mouse_callback)
+        
+        # Add instructions text overlay
+        instructions = [
+            "Instructions:",
+            "- Left click and drag to draw centerline",
+            "- Press 'c' to clear and start over",
+            "- Press 's' to smooth the current centerline",
+            "- Press ENTER when finished drawing",
+            "- Press ESC to cancel"
+        ]
+        
+        img_with_instructions = self.image.copy()
+        y_offset = 30
+        for instruction in instructions:
+            cv.putText(img_with_instructions, instruction, (10, y_offset), 
+                      cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            cv.putText(img_with_instructions, instruction, (10, y_offset), 
+                      cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1)
+            y_offset += 25
+            
+        cv.imshow(self.window_name, img_with_instructions)
+        
+        print("Interactive centerline drawing started.")
+        print("Instructions:")
+        print("- Left click and drag to draw the track centerline")
+        print("- Press 'c' to clear and start over")
+        print("- Press 's' to smooth the centerline")
+        print("- Press ENTER when finished")
+        print("- Press ESC to cancel")
+        
+        while True:
+            key = cv.waitKey(1) & 0xFF
+            
+            if key == ord('\r') or key == ord('\n'):  # Enter key
+                if len(self.centerline_points) > 10:
+                    print(f"Centerline drawing completed with {len(self.centerline_points)} points")
+                    break
+                else:
+                    print("Please draw a longer centerline (at least 10 points)")
+                    
+            elif key == ord('c'):  # Clear
+                self.centerline_points = []
+                self.current_stroke = []
+                self.image = self.original_image.copy()
+                cv.imshow(self.window_name, self.image)
+                print("Centerline cleared")
+                
+            elif key == ord('s'):  # Smooth
+                if len(self.centerline_points) > 4:
+                    print("Smoothing centerline...")
+                    self.centerline_points = self.smooth_centerline(self.centerline_points)
+                    self.redraw_centerline()
+                    print(f"Centerline smoothed to {len(self.centerline_points)} points")
+                else:
+                    print("Need at least 4 points to smooth")
+                    
+            elif key == 27:  # ESC key
+                print("Centerline drawing cancelled")
+                self.centerline_points = []
+                break
+        
+        cv.destroyWindow(self.window_name)
+        return self.centerline_points if len(self.centerline_points) > 10 else None
+
+#--------------------------------------------------------------------------------Track Processor Class
 class TrackProcessor:
     def __init__(self):
         #initialize track values
