@@ -125,6 +125,14 @@ public class MotorcyclePlayer : MonoBehaviour
     [Tooltip("GameObject to enable when recommending turn right.")]
     [SerializeField] private GameObject turnRightIndicator;
 
+    [Header("Reward System Settings")]
+    [Tooltip("Reward given for following a recommendation.")]
+    [SerializeField] private float recommendationFollowReward = 1.0f;
+    [Tooltip("Minimum input threshold to consider an action as 'following' a recommendation.")]
+    [SerializeField] private float inputThreshold = 0.3f;
+    [Tooltip("Multiplier for speed-based rewards. Higher values give more reward for high speeds.")]
+    [SerializeField] private float speedRewardMultiplier = 0.5f;
+
     [Header("GUI")]
     [Tooltip("Displays the current speed of the motorcycle.")]
     [SerializeField] private TextMeshProUGUI speedText;
@@ -146,12 +154,21 @@ public class MotorcyclePlayer : MonoBehaviour
     [ReadOnly] [SerializeField] private bool recommendTurnLeft = false;
     [ReadOnly] [SerializeField] private bool recommendTurnRight = false;
 
+    [Header("Reward System")]
+    [ReadOnly] [SerializeField] private float cumulativeReward = 0f;
+    [ReadOnly] [SerializeField] private float followingRecommendationsReward = 0f;
+    [ReadOnly] [SerializeField] private float speedReward = 0f;
+
     // Input values
     private float throttleInput = 0f;
     private float steerInput = 0f;
     
     // Internal tracking
     private float previousSpeed = 0f;
+    
+    // Reward system tracking
+    private bool wasFollowingRecommendationLastFrame = false;
+    private float timeSinceLastRewardLog = 0f;
     
     // Trajectory prediction
     private LineRenderer trajectoryLineRenderer;
@@ -160,6 +177,7 @@ public class MotorcyclePlayer : MonoBehaviour
     {
         CalculateTheoreticalTopSpeed();
         SetupTrajectoryLineRenderer();
+        ResetRewards();
     }
 
     void Update()
@@ -172,6 +190,7 @@ public class MotorcyclePlayer : MonoBehaviour
         UpdateTrajectoryVisualization();
         UpdateRacelineDeviation();
         UpdateDrivingRecommendations();
+        UpdateRewardSystem();
 
         currentSpeedKmh = currentSpeed * 3.6f;
         if (speedText != null)
@@ -181,7 +200,10 @@ public class MotorcyclePlayer : MonoBehaviour
         
         if (racelineDeviationText != null)
         {
-            racelineDeviationText.text = $"Raceline Dev: {racelineDeviation:F2}m\nTraj Avg Dev: {averageTrajectoryDeviation:F2}m";
+            racelineDeviationText.text = $"Raceline Dev: {racelineDeviation:F2}m\nTraj Avg Dev: {averageTrajectoryDeviation:F2}m\n" +
+                                       $"Cumulative Reward: {cumulativeReward:F1}\n" +
+                                       $"Follow Rec. Reward: {followingRecommendationsReward:F1}\n" +
+                                       $"Speed Reward: {speedReward:F1}";
         }
     }
 
@@ -189,6 +211,78 @@ public class MotorcyclePlayer : MonoBehaviour
     {
         throttleInput = Input.GetAxis("Vertical");
         steerInput = Input.GetAxis("Horizontal");
+    }
+
+    private void UpdateRewardSystem()
+    {
+        timeSinceLastRewardLog += Time.deltaTime;
+        
+        // Calculate speed-based reward
+        float speedRewardThisFrame = CalculateSpeedReward();
+        speedReward += speedRewardThisFrame;
+        cumulativeReward += speedRewardThisFrame;
+        
+        // Check if player is following recommendations
+        bool followingRecommendation = false;
+        string followedAction = "";
+        
+        // Check throttle/brake recommendations
+        if (recommendSpeedUp && throttleInput > inputThreshold)
+        {
+            followingRecommendation = true;
+            followedAction = "Speed Up";
+        }
+        else if (recommendSlowDown && throttleInput < -inputThreshold)
+        {
+            followingRecommendation = true;
+            followedAction = "Slow Down";
+        }
+        
+        // Check steering recommendations (can be combined with throttle)
+        if (recommendTurnLeft && steerInput < -inputThreshold)
+        {
+            followingRecommendation = true;
+            followedAction += (followedAction != "" ? " + " : "") + "Turn Left";
+        }
+        else if (recommendTurnRight && steerInput > inputThreshold)
+        {
+            followingRecommendation = true;
+            followedAction += (followedAction != "" ? " + " : "") + "Turn Right";
+        }
+        
+        // Award points for following recommendations
+        if (followingRecommendation)
+        {
+            float reward = recommendationFollowReward * Time.deltaTime;
+            followingRecommendationsReward += reward;
+            cumulativeReward += reward;
+        }
+        
+        // Debug output in editor (limit frequency to avoid spam)
+        #if UNITY_EDITOR
+        if (followingRecommendation && (!wasFollowingRecommendationLastFrame || timeSinceLastRewardLog > 2f))
+        {
+            Debug.Log($"Following recommendation: {followedAction}! " +
+                     $"Cumulative reward: {cumulativeReward:F2}");
+            timeSinceLastRewardLog = 0f;
+        }
+        #endif
+        
+        wasFollowingRecommendationLastFrame = followingRecommendation;
+    }
+
+    private float CalculateSpeedReward()
+    {
+        // Reward is based on the ratio of current speed to theoretical top speed
+        // Uses a curved function to give more reward for higher speeds
+        float speedRatio = currentSpeed / theoreticalTopSpeed;
+        
+        // Use a quadratic function to emphasize higher speeds more
+        // This gives minimal reward at low speeds and exponentially more at high speeds
+        float normalizedReward = speedRatio * speedRatio;
+        
+        // Apply the multiplier and time delta
+        return normalizedReward * speedRewardMultiplier * Time.deltaTime;
     }
 
     private void UpdateMovement(float dt)
@@ -820,6 +914,22 @@ public class MotorcyclePlayer : MonoBehaviour
             score = bestScore,
             improvement = improvement
         };
+    }
+    
+    // Public methods for accessing reward information
+    public float GetCumulativeReward() => cumulativeReward;
+    public float GetFollowingRecommendationsReward() => followingRecommendationsReward;
+    public float GetSpeedReward() => speedReward;
+
+    public void ResetRewards()
+    {
+        cumulativeReward = 0f;
+        followingRecommendationsReward = 0f;
+        speedReward = 0f;
+        wasFollowingRecommendationLastFrame = false;
+        timeSinceLastRewardLog = 0f;
+        
+        Debug.Log("Reward system reset!");
     }
     
     private struct RecommendationAnalysis

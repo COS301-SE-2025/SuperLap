@@ -13714,7 +13714,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   previewImage: {fileID: 1202546393}
-  particleCount: 100
+  particleCount: 50
   maxIterations: 3000
   outputImage: {fileID: 0}
   outputImageWidth: 1024
