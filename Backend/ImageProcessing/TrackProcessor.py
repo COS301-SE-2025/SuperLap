@@ -1788,6 +1788,42 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True,
         print(f"Error processing track image {img_path}: {str(e)}")
         return None
 
+def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks', 
+                   show_debug=True, centerline_method='skeleton', 
+                   extract_centerline=False, manual_centerline=False,
+                   smooth_method='bspline', smooth_boundaries=False, **smooth_kwargs):
+    extensions = ['*.png', '*.jpg', '*.bmp', '*.tiff']
+
+    image_files = []
+    for ext in extensions:
+        pattern = os.path.join(input_dir, ext)
+        image_files.extend(glob.glob(pattern))
+
+    if not image_files:
+        print(f"No image files found in {input_dir}")
+        return []
+    
+    print(f"Found {len(image_files)} image(s) to process")
+
+    results = []
+    for img_path in image_files:
+        print(f"\n{'='*50}")
+        result = processTrack(
+            img_path, 
+            output_base_dir, 
+            show_debug, 
+            centerline_method, 
+            extract_centerline,
+            manual_centerline,
+            smooth_method,
+            smooth_boundaries,
+            **smooth_kwargs
+        )
+        if result:
+            results.append(result)
+
+    return results
+
 
 #--------------------------------------------------------------------------------Smoothing functions added bellow
 
