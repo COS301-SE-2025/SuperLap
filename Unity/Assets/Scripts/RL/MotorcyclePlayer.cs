@@ -102,6 +102,29 @@ public class MotorcyclePlayer : MonoBehaviour
     [Tooltip("Width of the trajectory line.")]
     [SerializeField] private float trajectoryWidth = 0.1f;
 
+    [Header("Driving Recommendations")]
+    [Tooltip("Enable/disable driving recommendations based on raceline analysis.")]
+    [SerializeField] private bool enableRecommendations = true;
+    [Tooltip("Number of simulation steps to test each recommendation.")]
+    [SerializeField] private int recommendationSteps = 10;
+    [Tooltip("Sensitivity threshold for steering recommendations (lower = more sensitive).")]
+    [SerializeField] private float steeringSensitivity = 0.1f;
+    [Tooltip("Sensitivity threshold for throttle/brake recommendations (lower = more sensitive).")]
+    [SerializeField] private float throttleSensitivity = 0.15f;
+    [Tooltip("Input strength for testing recommendations (0-1).")]
+    [SerializeField] private float testInputStrength = 0.5f;
+    
+    [Header("Recommendation UI GameObjects")]
+    [SerializeField] private float recommendationSensitivity = 0.1f;
+    [Tooltip("GameObject to enable when recommending speed up (throttle).")]
+    [SerializeField] private GameObject speedUpIndicator;
+    [Tooltip("GameObject to enable when recommending slow down (brake).")]
+    [SerializeField] private GameObject slowDownIndicator;
+    [Tooltip("GameObject to enable when recommending turn left.")]
+    [SerializeField] private GameObject turnLeftIndicator;
+    [Tooltip("GameObject to enable when recommending turn right.")]
+    [SerializeField] private GameObject turnRightIndicator;
+
     [Header("GUI")]
     [Tooltip("Displays the current speed of the motorcycle.")]
     [SerializeField] private TextMeshProUGUI speedText;
@@ -118,6 +141,10 @@ public class MotorcyclePlayer : MonoBehaviour
     [ReadOnly] [SerializeField] private float theoreticalTopSpeed = 0f;
     [ReadOnly] [SerializeField] private float racelineDeviation = 0f;
     [ReadOnly] [SerializeField] private float averageTrajectoryDeviation = 0f;
+    [ReadOnly] [SerializeField] private bool recommendSpeedUp = false;
+    [ReadOnly] [SerializeField] private bool recommendSlowDown = false;
+    [ReadOnly] [SerializeField] private bool recommendTurnLeft = false;
+    [ReadOnly] [SerializeField] private bool recommendTurnRight = false;
 
     // Input values
     private float throttleInput = 0f;
@@ -144,6 +171,7 @@ public class MotorcyclePlayer : MonoBehaviour
         UpdateCameraFOV(Time.deltaTime);
         UpdateTrajectoryVisualization();
         UpdateRacelineDeviation();
+        UpdateDrivingRecommendations();
 
         currentSpeedKmh = currentSpeed * 3.6f;
         if (speedText != null)
@@ -538,4 +566,278 @@ public class MotorcyclePlayer : MonoBehaviour
         
         return Vector2.Distance(point, closestPoint);
     }
+    
+    private void UpdateDrivingRecommendations()
+    {
+        if (!enableRecommendations)
+        {
+            SetAllRecommendationIndicators(false);
+            return;
+        }
+        
+        List<Vector2> optimalRaceline = GetOptimalRaceline();
+        if (optimalRaceline == null || optimalRaceline.Count == 0)
+        {
+            SetAllRecommendationIndicators(false);
+            return;
+        }
+        
+        // Calculate recommendations for each input type
+        RecommendationAnalysis analysis = AnalyzeRecommendations(optimalRaceline);
+        
+        // Update recommendation states
+        recommendSpeedUp = analysis.shouldSpeedUp;
+        recommendSlowDown = analysis.shouldSlowDown;
+        recommendTurnLeft = analysis.shouldTurnLeft;
+        recommendTurnRight = analysis.shouldTurnRight;
+        
+        // Update UI GameObjects
+        UpdateRecommendationIndicators(analysis);
+    }
+    
+    private RecommendationAnalysis AnalyzeRecommendations(List<Vector2> raceline)
+    {
+        // Get baseline score (continue straight)
+        float baselineScore = SimulateRecommendationScenario(0f, 0f, raceline);
+        
+        // First, determine the optimal steering direction
+        float turnLeftScore = SimulateRecommendationScenario(0f, -testInputStrength, raceline);
+        float turnRightScore = SimulateRecommendationScenario(0f, testInputStrength, raceline);
+        
+        // Calculate steering improvements
+        float turnLeftImprovement = baselineScore - turnLeftScore;
+        float turnRightImprovement = baselineScore - turnRightScore;
+        
+        // Determine optimal steering input for speed tests
+        float optimalSteeringInput = 0f;
+        if (turnLeftImprovement > steeringSensitivity && turnLeftImprovement > turnRightImprovement)
+        {
+            optimalSteeringInput = -testInputStrength;
+        }
+        else if (turnRightImprovement > steeringSensitivity && turnRightImprovement > turnLeftImprovement)
+        {
+            optimalSteeringInput = testInputStrength;
+        }
+        
+        // Test throttle/brake options with optimal steering
+        float speedUpScore = SimulateRecommendationScenario(testInputStrength, optimalSteeringInput, raceline);
+        float slowDownScore = SimulateRecommendationScenario(-testInputStrength, optimalSteeringInput, raceline);
+        
+        // If no steering is beneficial, also test speed changes without steering
+        if (optimalSteeringInput == 0f)
+        {
+            float speedUpNoSteerScore = SimulateRecommendationScenario(testInputStrength, 0f, raceline);
+            float slowDownNoSteerScore = SimulateRecommendationScenario(-testInputStrength, 0f, raceline);
+            
+            // Use the better of the two approaches
+            speedUpScore = Mathf.Min(speedUpScore, speedUpNoSteerScore);
+            slowDownScore = Mathf.Min(slowDownScore, slowDownNoSteerScore);
+        }
+        
+        // Calculate improvements
+        float speedUpImprovement = baselineScore - speedUpScore;
+        float slowDownImprovement = baselineScore - slowDownScore;
+        
+        // Ensure only one throttle recommendation is active (prioritize the better improvement)
+        bool shouldSpeedUp = false;
+        bool shouldSlowDown = false;
+        
+        if (speedUpImprovement > throttleSensitivity && slowDownImprovement > throttleSensitivity)
+        {
+            // Both would help, choose the one with greater improvement
+            if (speedUpImprovement > slowDownImprovement)
+            {
+                shouldSpeedUp = true;
+            }
+            else
+            {
+                shouldSlowDown = true;
+            }
+        }
+        else if (speedUpImprovement > throttleSensitivity)
+        {
+            shouldSpeedUp = true;
+        }
+        else if (slowDownImprovement > throttleSensitivity)
+        {
+            shouldSlowDown = true;
+        }
+        
+        return new RecommendationAnalysis
+        {
+            shouldSpeedUp = shouldSpeedUp,
+            shouldSlowDown = shouldSlowDown,
+            shouldTurnLeft = turnLeftImprovement > steeringSensitivity,
+            shouldTurnRight = turnRightImprovement > steeringSensitivity,
+            speedUpImprovement = speedUpImprovement,
+            slowDownImprovement = slowDownImprovement,
+            turnLeftImprovement = turnLeftImprovement,
+            turnRightImprovement = turnRightImprovement
+        };
+    }
+    
+    private void UpdateRecommendationIndicators(RecommendationAnalysis analysis)
+    {
+        // Update throttle/brake indicators
+        if (speedUpIndicator != null)
+            speedUpIndicator.SetActive(analysis.shouldSpeedUp);
+            
+        if (slowDownIndicator != null)
+            slowDownIndicator.SetActive(analysis.shouldSlowDown);
+            
+        // Update steering indicators
+        if (turnLeftIndicator != null)
+            turnLeftIndicator.SetActive(analysis.shouldTurnLeft);
+            
+        if (turnRightIndicator != null)
+            turnRightIndicator.SetActive(analysis.shouldTurnRight);
+    }
+    
+    private void SetAllRecommendationIndicators(bool active)
+    {
+        if (speedUpIndicator != null)
+            speedUpIndicator.SetActive(active);
+        if (slowDownIndicator != null)
+            slowDownIndicator.SetActive(active);
+        if (turnLeftIndicator != null)
+            turnLeftIndicator.SetActive(active);
+        if (turnRightIndicator != null)
+            turnRightIndicator.SetActive(active);
+            
+        recommendSpeedUp = active;
+        recommendSlowDown = active;
+        recommendTurnLeft = active;
+        recommendTurnRight = active;
+    }
+    
+    private float SimulateRecommendationScenario(float testThrottle, float testSteering, List<Vector2> raceline)
+    {
+        // Simulation state - start with current state
+        Vector3 simPosition = transform.position;
+        Vector3 simForward = transform.forward;
+        float simSpeed = currentSpeed;
+        float simTurnAngle = currentTurnAngle;
+        
+        float deltaTime = trajectoryLength / recommendationSteps;
+        float totalDeviation = 0f;
+        
+        // Simulate forward for the specified number of steps
+        for (int step = 0; step < recommendationSteps; step++)
+        {
+            // Calculate deviation at this position
+            Vector2 simPos2D = new Vector2(simPosition.x, simPosition.z);
+            float deviation = CalculateDistanceToRaceline(simPos2D, raceline);
+            totalDeviation += deviation;
+            
+            // Simulate one step forward with test inputs
+            SimulateOneStepWithInputs(ref simPosition, ref simForward, ref simSpeed, ref simTurnAngle, 
+                                    deltaTime, testThrottle, testSteering);
+        }
+        
+        // Return average deviation over the simulation period
+        return totalDeviation / recommendationSteps;
+    }
+    
+    private void SimulateOneStepWithInputs(ref Vector3 position, ref Vector3 forward, ref float speed, 
+                                         ref float turnAngle, float dt, float simThrottleInput, float simSteerInput)
+    {
+        // Simulate movement using same physics as UpdateMovement
+        float drivingForce = SimulateDrivingForce(speed);
+        float resistanceForces = SimulateResistanceForces(speed);
+
+        float netForce = (drivingForce * simThrottleInput) - resistanceForces;
+
+        if (simThrottleInput < 0)
+        {
+            netForce = -brakingForce - resistanceForces;
+        }
+
+        float acceleration = netForce / mass;
+        speed += acceleration * dt;
+        speed = Mathf.Max(0, speed);
+
+        // Simulate turning using same physics as UpdateTurning
+        float steeringMultiplier = SimulateSteeringMultiplier(speed);
+        turnAngle += simSteerInput * turnRate * steeringMultiplier * dt;
+        turnAngle *= Mathf.Pow(steeringDecay, dt);
+
+        // Apply rotation to forward vector
+        float rotationThisFrame = turnAngle * dt;
+        Quaternion rotation = Quaternion.AngleAxis(rotationThisFrame, Vector3.up);
+        forward = rotation * forward;
+
+        // Move forward
+        position += forward * speed * dt;
+    }
+    
+    private RecommendationResult FindBestRecommendation(List<Vector2> raceline)
+    {
+        // Define test scenarios: throttle input, steering input, name
+        var testScenarios = new[]
+        {
+            (0f, 0f, "Continue Straight"),
+            (testInputStrength, 0f, "Speed Up"),
+            (-testInputStrength, 0f, "Slow Down"),
+            (0f, testInputStrength, "Turn Right"),
+            (0f, -testInputStrength, "Turn Left"),
+            (testInputStrength, testInputStrength, "Speed Up + Right"),
+            (testInputStrength, -testInputStrength, "Speed Up + Left"),
+            (-testInputStrength, testInputStrength, "Slow Down + Right"),
+            (-testInputStrength, -testInputStrength, "Slow Down + Left")
+        };
+        
+        float bestScore = float.MaxValue;
+        string bestRecommendation = "Continue Straight";
+        float currentScore = float.MaxValue;
+        
+        foreach (var (throttle, steering, name) in testScenarios)
+        {
+            float score = SimulateRecommendationScenario(throttle, steering, raceline);
+            
+            // Store current scenario score for comparison
+            if (name == "Continue Straight")
+            {
+                currentScore = score;
+            }
+            
+            if (score < bestScore)
+            {
+                bestScore = score;
+                bestRecommendation = name;
+            }
+        }
+        
+        // Only recommend change if improvement is significant enough
+        float improvement = currentScore - bestScore;
+        if (improvement < recommendationSensitivity)
+        {
+            bestRecommendation = "Continue Straight";
+        }
+        
+        return new RecommendationResult
+        {
+            recommendation = bestRecommendation,
+            score = bestScore,
+            improvement = improvement
+        };
+    }
+    
+    private struct RecommendationAnalysis
+    {
+        public bool shouldSpeedUp;
+        public bool shouldSlowDown;
+        public bool shouldTurnLeft;
+        public bool shouldTurnRight;
+        public float speedUpImprovement;
+        public float slowDownImprovement;
+        public float turnLeftImprovement;
+        public float turnRightImprovement;
+    }
+}
+
+internal class RecommendationResult
+{
+    public string recommendation { get; set; }
+    public float score { get; set; }
+    public float improvement { get; set; }
 }
