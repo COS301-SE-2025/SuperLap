@@ -659,6 +659,71 @@ class TrackProcessor:
 
         return self.track_boundaries
     
+    def generatePreciseBoundariesFromSkeleton(self, step_limit=20, min_spacing=5, show_debug=False):
+        if self.track_mask is None or self.centerline_smoothed is None:
+            print("Missing track mask or centerline")
+            return None
+
+        mask = self.track_mask
+        h, w = mask.shape
+
+        centerline = self.centerline_smoothed
+        inner_points = []
+        outer_points = []
+
+        def is_inside(x, y):
+            return 0 <= x < w and 0 <= y < h and mask[int(y), int(x)] > 0
+
+        for i in range(1, len(centerline) - 1, min_spacing):
+            x0, y0 = centerline[i]
+            x1, y1 = centerline[i - 1]
+            x2, y2 = centerline[i + 1]
+
+            # Tangent vector
+            dx = x2 - x1
+            dy = y2 - y1
+            length = np.hypot(dx, dy)
+            if length == 0:
+                continue
+            # Perpendicular normal vector
+            nx, ny = -dy / length, dx / length
+
+            # Walk outward until track ends
+            def trace_outward(x, y, nx, ny, direction):
+                for step in range(1, step_limit):
+                    tx = int(round(x + direction * step * nx))
+                    ty = int(round(y + direction * step * ny))
+                    if not is_inside(tx, ty):
+                        return (tx, ty)
+                return (int(round(x + direction * step_limit * nx)),
+                        int(round(y + direction * step_limit * ny)))
+
+            outer_pt = trace_outward(x0, y0, nx, ny, direction=+1)
+            inner_pt = trace_outward(x0, y0, nx, ny, direction=-1)
+
+            outer_points.append(outer_pt)
+            inner_points.append(inner_pt)
+
+        print(f"Extracted {len(inner_points)} inner and {len(outer_points)} outer boundary points.")
+
+        if show_debug and self.original_image is not None:
+            debug_img = self.original_image.copy()
+            for pt in outer_points:
+                cv.circle(debug_img, pt, 1, (0, 255, 0), -1)  # green
+            for pt in inner_points:
+                cv.circle(debug_img, pt, 1, (0, 0, 255), -1)  # red
+            for pt in centerline[::min_spacing]:
+                cv.circle(debug_img, pt, 1, (255, 255, 0), -1)  # yellow
+            cv.imshow("Precise Boundary Points", debug_img)
+            cv.waitKey(1)
+
+        return {
+            'outer': np.array(outer_points, dtype=np.int32).reshape(-1, 1, 2),
+            'inner': np.array(inner_points, dtype=np.int32).reshape(-1, 1, 2),
+            'method': 'centerline_tracing'
+        }
+
+
     def extractCenterline(self, method='skeleton', smooth=True, show_debug=True):
         if self.track_mask is None:
             print("Track mask not found")
