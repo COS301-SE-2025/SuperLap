@@ -1892,6 +1892,19 @@ def processImageForCSharp(self, img_path):
             'error': str(e)
         }
 
+# Standalone function for direct C# integration
+def process_track_for_csharp(img_path):
+    """
+    Standalone function to process a track image for C# integration.
+    
+    Args:
+        img_path (str): Path to the track image file
+        
+    Returns:
+        dict: Dictionary containing success status, boundary coordinates, and error information
+    """
+    processor = TrackProcessor()
+    return processor.processImageForCSharp(img_path)
 
 #--------------------------------------------------------------------------------Smoothing functions added bellow
 
