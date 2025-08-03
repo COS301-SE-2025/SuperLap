@@ -1718,13 +1718,23 @@ class TrackProcessor:
 #--------------------------------------------------------------------------------Main and run bellow
 
 def main():
-    parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
+    # parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
+    # parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
+    # parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
+    # parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
+    # parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing and generate edge visualization')
+    # parser.add_argument('--extract-centerline', '-e', action='store_true', help='Extract centerline data (disabled by default)')
+    # parser.add_argument('--centerline-method', '-c', choices=['skeleton', 'distance_transform', 'medial_axis'], default='skeleton', help='Method for centerline extraction (Default: skeleton)')
+
+    parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm with optional manual centerline guidance")
     parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
     parser.add_argument('--output', '-o', default='processedTracks', help='Output base directory (Default: processedTracks)')
     parser.add_argument('--file', '-f', type=str, help='Process a single specific file instead of all files in the input directory')
     parser.add_argument('--debug', '-d', action='store_true', help='Show debug images during processing and generate edge visualization')
     parser.add_argument('--extract-centerline', '-e', action='store_true', help='Extract centerline data (disabled by default)')
     parser.add_argument('--centerline-method', '-c', choices=['skeleton', 'distance_transform', 'medial_axis'], default='skeleton', help='Method for centerline extraction (Default: skeleton)')
+    parser.add_argument('--manual-centerline', '-m', action='store_true', help='Enable manual centerline drawing to guide track extraction')
+
     
     # Add smoothing arguments
     parser.add_argument('--smooth-method', choices=['gaussian', 'savgol', 'bspline', 'interp'], 
