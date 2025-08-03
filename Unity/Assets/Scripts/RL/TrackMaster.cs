@@ -82,7 +82,7 @@ public class TrackMaster : MonoBehaviour
         CreateRacelineVisualization(results.raceline);
 
         // Spawn the motorcycle agent on the raceline
-        SpawnMotorcycleAgent();
+        //SpawnMotorcycleAgent();
 
         AssetDatabase.CreateAsset(mesh, "Assets/GeneratedMeshes/TrackMesh.asset");
         // AssetDatabase.SaveAssets();
