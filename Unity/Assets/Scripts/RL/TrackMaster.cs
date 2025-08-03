@@ -334,4 +334,13 @@ public class TrackMaster : MonoBehaviour
     {
         return spawnedAgent;
     }
+
+    /// <summary>
+    /// Public method to get the current optimal raceline
+    /// </summary>
+    /// <returns>The current raceline as a list of Vector2 points, or null if no track is loaded</returns>
+    public static List<Vector2> GetCurrentRaceline()
+    {
+        return currentRaceline;
+    }
 }

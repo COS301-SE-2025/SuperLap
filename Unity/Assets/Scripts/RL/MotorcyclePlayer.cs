@@ -2,6 +2,8 @@ using System;
 using UnityEngine;
 using TMPro;
 using Unity.MLAgents;
+using System.Collections.Generic;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -103,6 +105,8 @@ public class MotorcyclePlayer : MonoBehaviour
     [Header("GUI")]
     [Tooltip("Displays the current speed of the motorcycle.")]
     [SerializeField] private TextMeshProUGUI speedText;
+    [Tooltip("Displays the distance deviation from optimal raceline.")]
+    [SerializeField] private TextMeshProUGUI racelineDeviationText;
 
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
@@ -112,6 +116,8 @@ public class MotorcyclePlayer : MonoBehaviour
     [ReadOnly] [SerializeField] private float currentLeanAngle = 0f;
     [ReadOnly] [SerializeField] private float currentFOV = 0f;
     [ReadOnly] [SerializeField] private float theoreticalTopSpeed = 0f;
+    [ReadOnly] [SerializeField] private float racelineDeviation = 0f;
+    [ReadOnly] [SerializeField] private float averageTrajectoryDeviation = 0f;
 
     // Input values
     private float throttleInput = 0f;
@@ -137,11 +143,17 @@ public class MotorcyclePlayer : MonoBehaviour
         UpdateMotorcycleLeaning(Time.deltaTime);
         UpdateCameraFOV(Time.deltaTime);
         UpdateTrajectoryVisualization();
+        UpdateRacelineDeviation();
 
         currentSpeedKmh = currentSpeed * 3.6f;
         if (speedText != null)
         {
             speedText.text = $"{currentSpeedKmh:F1} km/h";
+        }
+        
+        if (racelineDeviationText != null)
+        {
+            racelineDeviationText.text = $"Raceline Dev: {racelineDeviation:F2}m\nTraj Avg Dev: {averageTrajectoryDeviation:F2}m";
         }
     }
 
@@ -413,5 +425,117 @@ public class MotorcyclePlayer : MonoBehaviour
         float fadeInMultiplier = Mathf.Clamp01((speed - minSteeringSpeed) / (fullSteeringSpeed - minSteeringSpeed));
         
         return steeringMultiplier * fadeInMultiplier;
+    }
+    
+    private void UpdateRacelineDeviation()
+    {
+        // Get the optimal raceline from TrackMaster
+        List<Vector2> optimalRaceline = GetOptimalRaceline();
+        if (optimalRaceline == null || optimalRaceline.Count == 0)
+        {
+            racelineDeviation = 0f;
+            averageTrajectoryDeviation = 0f;
+            return;
+        }
+        
+        // Calculate current position deviation from raceline
+        Vector2 currentPos2D = new Vector2(transform.position.x, transform.position.z);
+        racelineDeviation = CalculateDistanceToRaceline(currentPos2D, optimalRaceline);
+        
+        // Calculate average trajectory deviation if trajectory is being shown
+        if (showTrajectory && trajectoryLineRenderer != null && trajectoryLineRenderer.positionCount > 0)
+        {
+            averageTrajectoryDeviation = CalculateAverageTrajectoryDeviation(optimalRaceline);
+        }
+        else
+        {
+            averageTrajectoryDeviation = 0f;
+        }
+    }
+    
+    private List<Vector2> GetOptimalRaceline()
+    {
+        // Access the raceline from TrackMaster using the public method
+        return TrackMaster.GetCurrentRaceline();
+    }
+    
+    private float CalculateDistanceToRaceline(Vector2 position, List<Vector2> raceline)
+    {
+        if (raceline.Count == 0) return 0f;
+        
+        float minDistance = float.MaxValue;
+        
+        // Find the closest point on the raceline
+        for (int i = 0; i < raceline.Count; i++)
+        {
+            float distance = Vector2.Distance(position, raceline[i]);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+            }
+        }
+        
+        // Also check distances to line segments between consecutive points
+        for (int i = 0; i < raceline.Count; i++)
+        {
+            int nextIndex = (i + 1) % raceline.Count;
+            Vector2 lineStart = raceline[i];
+            Vector2 lineEnd = raceline[nextIndex];
+            
+            float distanceToSegment = DistanceToLineSegment(position, lineStart, lineEnd);
+            if (distanceToSegment < minDistance)
+            {
+                minDistance = distanceToSegment;
+            }
+        }
+        
+        return minDistance;
+    }
+    
+    private float CalculateAverageTrajectoryDeviation(List<Vector2> raceline)
+    {
+        if (trajectoryLineRenderer.positionCount == 0) return 0f;
+        
+        Vector3[] trajectoryPoints = new Vector3[trajectoryLineRenderer.positionCount];
+        trajectoryLineRenderer.GetPositions(trajectoryPoints);
+        
+        float totalDeviation = 0f;
+        int validPoints = 0;
+        
+        // Calculate deviation for each trajectory point
+        for (int i = 0; i < trajectoryPoints.Length; i++)
+        {
+            Vector2 trajPoint2D = new Vector2(trajectoryPoints[i].x, trajectoryPoints[i].z);
+            float deviation = CalculateDistanceToRaceline(trajPoint2D, raceline);
+            totalDeviation += deviation;
+            validPoints++;
+        }
+        
+        return validPoints > 0 ? totalDeviation / validPoints : 0f;
+    }
+    
+    private float DistanceToLineSegment(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
+    {
+        Vector2 line = lineEnd - lineStart;
+        float lineLength = line.magnitude;
+        
+        if (lineLength < 0.0001f) // Line segment is essentially a point
+        {
+            return Vector2.Distance(point, lineStart);
+        }
+        
+        Vector2 lineDirection = line / lineLength;
+        Vector2 pointToStart = point - lineStart;
+        
+        // Project point onto line
+        float projection = Vector2.Dot(pointToStart, lineDirection);
+        
+        // Clamp projection to line segment
+        projection = Mathf.Clamp(projection, 0f, lineLength);
+        
+        // Find closest point on line segment
+        Vector2 closestPoint = lineStart + lineDirection * projection;
+        
+        return Vector2.Distance(point, closestPoint);
     }
 }
