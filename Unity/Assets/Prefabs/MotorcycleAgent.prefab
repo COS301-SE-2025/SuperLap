@@ -596,14 +596,19 @@ MonoBehaviour:
   steeringSensitivity: 0.1
   throttleSensitivity: 0.3
   testInputStrength: 0.5
-  recommendationSensitivity: 0.1
-  speedUpIndicator: {fileID: 0}
-  slowDownIndicator: {fileID: 0}
-  turnLeftIndicator: {fileID: 0}
-  turnRightIndicator: {fileID: 0}
-  recommendationFollowReward: 1
   inputThreshold: 0.3
-  speedRewardMultiplier: 0.5
+  recommendationWeight: 3
+  baseActionWeight: 1
+  idleWeight: 0.5
+  minSpeedForIdle: 1
+  enableDecisionLogging: 0
+  raycastStartHeight: 0
+  raycastDistance: 5
+  offTrackThreshold: 0.25
+  maxSpeedRatio: 0.8
+  showTrackDetectionDebug: 0
+  onTrackRayColor: {r: 0, g: 1, b: 0, a: 1}
+  offTrackRayColor: {r: 1, g: 0, b: 0, a: 1}
   speedText: {fileID: 0}
   racelineDeviationText: {fileID: 0}
   currentSpeed: 0
@@ -619,9 +624,11 @@ MonoBehaviour:
   recommendSlowDown: 0
   recommendTurnLeft: 0
   recommendTurnRight: 0
-  cumulativeReward: 0
-  followingRecommendationsReward: 0
-  speedReward: 0
+  willGoOffTrack: 0
+  offTrackRatio: 0
+  lastSelectedAction: 
+  lastActionWeight: 0
+  totalRecommendations: 0
 --- !u!1 &6285464825667995485
 GameObject:
   m_ObjectHideFlags: 0

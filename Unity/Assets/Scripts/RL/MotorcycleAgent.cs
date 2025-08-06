@@ -89,6 +89,22 @@ public class MotorcycleAgent : MonoBehaviour
     [SerializeField] private float testInputStrength = 0.5f;
     [Tooltip("Minimum input threshold to consider an action as 'following' a recommendation.")]
     [SerializeField] private float inputThreshold = 0.3f;
+    
+    [Header("Track Detection")]
+    [Tooltip("Height above ground to start raycast for track detection (in meters).")]
+    [SerializeField] private float raycastStartHeight = 2f;
+    [Tooltip("Maximum distance to check for track surface (in meters).")]
+    [SerializeField] private float raycastDistance = 5f;
+    [Tooltip("Ratio of off-track points that triggers braking recommendation (0-1).")]
+    [SerializeField] private float offTrackThreshold = 0.25f;
+    [Tooltip("Maximum speed ratio (of theoretical top speed) before stopping speed-up recommendations.")]
+    [SerializeField] private float maxSpeedRatio = 0.8f;
+    [Tooltip("Enable debug visualization of track detection raycasts.")]
+    [SerializeField] private bool showTrackDetectionDebug = false;
+    [Tooltip("Color for raycasts that hit track surface.")]
+    [SerializeField] private Color onTrackRayColor = Color.green;
+    [Tooltip("Color for raycasts that miss track surface.")]
+    [SerializeField] private Color offTrackRayColor = Color.red;
 
     [Header("GUI")]
     [Tooltip("Displays the current speed of the motorcycle.")]
@@ -110,6 +126,8 @@ public class MotorcycleAgent : MonoBehaviour
     [ReadOnly] [SerializeField] private bool recommendSlowDown = false;
     [ReadOnly] [SerializeField] private bool recommendTurnLeft = false;
     [ReadOnly] [SerializeField] private bool recommendTurnRight = false;
+    [ReadOnly] [SerializeField] private bool willGoOffTrack = false;
+    [ReadOnly] [SerializeField] private float offTrackRatio = 0f;
 
     // Input values
     private float throttleInput = 0f;
@@ -137,37 +155,93 @@ public class MotorcycleAgent : MonoBehaviour
 
         List<(int, int)> options = new List<(int, int)>();
 
-        if(recommendSlowDown)
-        {
-            options.Add((-1, 0)); // Brake
-            options.Add((0, 0)); // Idle
+        // if(recommendSlowDown)
+        // {
+        //     options.Add((-1, 0)); // Brake
+        //     options.Add((0, 0)); // Idle
 
-        }
-        if (recommendSpeedUp)
-        {
-            options.Add((1, 0)); // Accelerate
-        }
+        // }
+        // if (recommendSpeedUp)
+        // {
+        //     options.Add((1, 0)); // Accelerate
+        // }
+        // if(recommendTurnLeft)
+        // {
+        //     options.Add((1, -1)); // Turn left
+        //     options.Add((0, -1)); // Turn left
+
+        // }
+        // if (recommendTurnRight)
+        // {
+        //     options.Add((1, 1)); // Turn right
+        //     options.Add((0, 1)); // Turn right
+
+        // }
+
+        // if (options.Count == 0)
+        // {
+        //     //if(currentSpeed==0f)
+        //     //{
+        //         return (1, 0);
+        //     //}
+
+        //     //return (0, 0);
+        // }
+
         if(recommendTurnLeft)
         {
-            options.Add((1, -1)); // Turn left
-            options.Add((0, -1)); // Turn left
-
+            if(CheckIfPathGoesOffTrack(-1))
+            {
+                options.Add((-1, -1)); // Brake
+            }
+            else
+            {
+                options.Add((0, -1)); // Turn left
+                options.Add((1, -1)); // Accelerate and turn left
+            }
         }
-        if (recommendTurnRight)
+
+        if(recommendTurnRight)
         {
-            options.Add((1, 1)); // Turn right
-            options.Add((0, 1)); // Turn right
-
+            if(CheckIfPathGoesOffTrack(1))
+            {
+                options.Add((-1, 1)); // Brake
+            }
+            else
+            {
+                options.Add((0, 1)); // Turn right
+                options.Add((1, 1)); // Accelerate and turn right
+            }
         }
 
+        if(recommendSpeedUp)
+        {
+            if(CheckIfPathGoesOffTrack(0))
+            {
+                options.Add((-1, 0)); // Brake
+            }
+            else
+            {
+                options.Add((1, 0)); // Accelerate
+                options.Add((0, 0)); // Idle
+            }
+        }
+
+        // Fallback: if no options were added, provide default actions
         if (options.Count == 0)
         {
-            //if(currentSpeed==0f)
-            //{
-                return (1, 0);
-            //}
-
-            //return (0, 0);
+            // If we're stationary, always try to accelerate
+            if (currentSpeed < 0.1f)
+            {
+                options.Add((1, 0)); // Accelerate
+            }
+            else
+            {
+                // Add some basic options when no recommendations are active
+                options.Add((1, 0));  // Accelerate
+                options.Add((0, 0));  // Idle
+                options.Add((-1, 0)); // Brake
+            }
         }
 
         // Randomly select one of the available options
@@ -193,7 +267,8 @@ public class MotorcycleAgent : MonoBehaviour
 
         if (racelineDeviationText != null)
         {
-            racelineDeviationText.text = $"Raceline Dev: {racelineDeviation:F2}m\nTraj Avg Dev: {averageTrajectoryDeviation:F2}m\n";
+            racelineDeviationText.text = $"Raceline Dev: {racelineDeviation:F2}m\nTraj Avg Dev: {averageTrajectoryDeviation:F2}m\n" +
+                                       $"Off Track Ratio: {offTrackRatio:F2}\nWill Go Off Track: {willGoOffTrack}";
         }
     }
 
@@ -620,73 +695,101 @@ public class MotorcycleAgent : MonoBehaviour
             optimalSteeringInput = testInputStrength;
         }
 
-        //// Test throttle/brake options with optimal steering
-        //float speedUpScore = SimulateRecommendationScenario(testInputStrength, optimalSteeringInput, raceline);
-        //float slowDownScore = SimulateRecommendationScenario(-testInputStrength, optimalSteeringInput, raceline);
-
-        //// If no steering is beneficial, also test speed changes without steering
-        //if (optimalSteeringInput == 0f)
-        //{
-        //    float speedUpNoSteerScore = SimulateRecommendationScenario(testInputStrength, 0f, raceline);
-        //    float slowDownNoSteerScore = SimulateRecommendationScenario(-testInputStrength, 0f, raceline);
-
-        //    // Use the better of the two approaches
-        //    speedUpScore = Mathf.Min(speedUpScore, speedUpNoSteerScore);
-        //    slowDownScore = Mathf.Min(slowDownScore, slowDownNoSteerScore);
-        //}
-
-        //// Calculate improvements
-        //float speedUpImprovement = baselineScore - speedUpScore;
-        //float slowDownImprovement = baselineScore - slowDownScore;
-
-        //// Ensure only one throttle recommendation is active (prioritize the better improvement)
-        //bool shouldSpeedUp = false;
-        //bool shouldSlowDown = false;
-
-        //if (speedUpImprovement > throttleSensitivity && slowDownImprovement > throttleSensitivity)
-        //{
-        //    // Both would help, choose the one with greater improvement
-        //    if (speedUpImprovement > slowDownImprovement)
-        //    {
-        //        shouldSpeedUp = true;
-        //    }
-        //    else
-        //    {
-        //        //shouldSlowDown = true;
-        //    }
-        //}
-        //else if (speedUpImprovement > throttleSensitivity)
-        //{
-        //    shouldSpeedUp = true;
-        //}
-        //else if (slowDownImprovement > throttleSensitivity)
-        //{
-        //    shouldSlowDown = true;
-        //}
-
-        //return new RecommendationAnalysis
-        //{
-        //    shouldSpeedUp = shouldSpeedUp,
-        //    shouldSlowDown = shouldSlowDown,
-        //    shouldTurnLeft = turnLeftImprovement > steeringSensitivity,
-        //    shouldTurnRight = turnRightImprovement > steeringSensitivity,
-        //    speedUpImprovement = speedUpImprovement,
-        //    slowDownImprovement = slowDownImprovement,
-        //    turnLeftImprovement = turnLeftImprovement,
-        //    turnRightImprovement = turnRightImprovement
-        //};
+        // Use raycast-based track detection for speed recommendations
+        bool willGoOffTrack = CheckIfPathGoesOffTrack(optimalSteeringInput);
+        
+        bool shouldSpeedUp = false;
+        bool shouldSlowDown = false;
+        
+        if (willGoOffTrack)
+        {
+            // If we're going to go off track, recommend slowing down
+            shouldSlowDown = true;
+        }
+        else
+        {
+            // If we're staying on track, recommend speeding up (unless already at high speed)
+            if (currentSpeed < theoreticalTopSpeed * maxSpeedRatio)
+            {
+                shouldSpeedUp = true;
+            }
+        }
 
         return new RecommendationAnalysis
         {
-            shouldSpeedUp = false,
-            shouldSlowDown = false,
+            shouldSpeedUp = shouldSpeedUp,
+            shouldSlowDown = shouldSlowDown,
             shouldTurnLeft = turnLeftImprovement > steeringSensitivity,
             shouldTurnRight = turnRightImprovement > steeringSensitivity,
-            speedUpImprovement = 0,
-            slowDownImprovement = 0,
+            speedUpImprovement = willGoOffTrack ? 0 : 1, // Simple binary improvement indicator
+            slowDownImprovement = willGoOffTrack ? 1 : 0,
             turnLeftImprovement = turnLeftImprovement,
             turnRightImprovement = turnRightImprovement
         };
+    }
+    
+    private bool CheckIfPathGoesOffTrack(float steeringInput)
+    {
+        // Simulation state - start with current state
+        Vector3 simPosition = transform.position;
+        Vector3 simForward = transform.forward;
+        float simSpeed = currentSpeed;
+        float simTurnAngle = currentTurnAngle;
+        
+        float deltaTime = trajectoryLength / recommendationSteps;
+        int offTrackPoints = 0;
+        int totalCheckPoints = Mathf.Min(recommendationSteps, 8); // Check first 8 points for performance
+        
+        // Simulate forward and check if any predicted positions are off track
+        for (int step = 0; step < totalCheckPoints; step++)
+        {
+            // Simulate one step forward with current throttle and provided steering
+            SimulateOneStepWithInputs(ref simPosition, ref simForward, ref simSpeed, ref simTurnAngle, 
+                                    deltaTime, throttleInput, steeringInput);
+            
+            // Check if this position is on track using raycast
+            if (!IsPositionOnTrack(simPosition))
+            {
+                offTrackPoints++;
+            }
+        }
+        
+        // Consider path as "going off track" if more than the threshold of check points are off track
+        offTrackRatio = (float)offTrackPoints / totalCheckPoints;
+        bool goingOffTrack = offTrackRatio > offTrackThreshold;
+        willGoOffTrack = goingOffTrack;
+        
+        return goingOffTrack;
+    }
+    
+    private bool IsPositionOnTrack(Vector3 position)
+    {
+        // Cast a ray downward from the position to check if there's track beneath
+        Vector3 rayOrigin = position + Vector3.up * raycastStartHeight;
+        Vector3 rayDirection = Vector3.down;
+        
+        // Perform the raycast
+        RaycastHit hit;
+        bool hitTrack = false;
+        
+        if (Physics.Raycast(rayOrigin, rayDirection, out hit, raycastDistance))
+        {
+
+            if (hit.collider.CompareTag("Track"))
+            {
+                hitTrack = true;
+            }
+        }
+        
+        // Debug visualization
+        if (showTrackDetectionDebug)
+        {
+            Color rayColor = hitTrack ? onTrackRayColor : offTrackRayColor;
+            Vector3 rayEnd = hit.collider != null ? hit.point : rayOrigin + rayDirection * raycastDistance;
+            Debug.DrawLine(rayOrigin, rayEnd, rayColor, 0.1f);
+        }
+        
+        return hitTrack;
     }
     
     private void SetAllRecommendationIndicators(bool active)
@@ -768,4 +871,11 @@ public class MotorcycleAgent : MonoBehaviour
         public float turnLeftImprovement;
         public float turnRightImprovement;
     }
+}
+
+// Simple component to mark track surfaces for raycast detection
+public class TrackSurface : MonoBehaviour
+{
+    // This component can be attached to track pieces to identify them in raycasts
+    // No additional functionality needed - just acts as a marker
 }
