@@ -6149,7 +6149,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 49.6
+  m_fontSize: 49.65
   m_fontSizeBase: 40
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -12388,6 +12388,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1218835725}
   - component: {fileID: 1218835726}
+  - component: {fileID: 1218835727}
   m_Layer: 5
   m_Name: Map
   m_TagString: Untagged
@@ -12427,7 +12428,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meshResolution: 1000
-  splitCount: 50
+  splitCount: 20
   splitMeshScale: 25
   splitMaterial: {fileID: 2100000, guid: 0a6c9136e0598704ea810d46920f61ae, type: 2}
   checkpointPrefab: {fileID: 4942769836713583722, guid: 7a4fb2e8f0f800b499b4c7abccb94bd1, type: 3}
@@ -12445,6 +12446,21 @@ MonoBehaviour:
   spawnAtRandomPosition: 0
   mainCamera: {fileID: 1557655353}
   screen: {fileID: 729960482}
+--- !u!114 &1218835727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1218835724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39fb8d448b0661a4cbdf5337eb8e6cce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agentCount: 4
+  agentPrefab: {fileID: 5433541524235702189, guid: ea14785c6087a944cab1cb442dbe6ddd, type: 3}
+  decisionInterval: 10
 --- !u!1 &1224448439
 GameObject:
   m_ObjectHideFlags: 0
@@ -13715,7 +13731,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   previewImage: {fileID: 1202546393}
   particleCount: 100
-  maxIterations: 1000
+  maxIterations: 3000
   outputImage: {fileID: 0}
   outputImageWidth: 1024
   outputImageHeight: 1024

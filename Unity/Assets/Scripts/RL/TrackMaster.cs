@@ -81,8 +81,6 @@ public class TrackMaster : MonoBehaviour
 
         CreateCheckpoints(results.raceline);
         CreateRacelineVisualization(results.raceline);
-        CreateTrainingEnvironment();
-
 
         // Spawn the motorcycle agent on the raceline
         //SpawnMotorcycleAgent();
@@ -91,71 +89,28 @@ public class TrackMaster : MonoBehaviour
         // AssetDatabase.SaveAssets();
     }
 
-    private static void CreateTrainingEnvironment()
-    {
-        if (instance.motorcycleAgentPrefab == null)
-        {
-            Debug.LogWarning("No motorcycle agent prefab assigned - skipping training environment creation");
-            return;
-        }
-
-        // Create a training manager object
-        GameObject trainingManagerObj = new GameObject("MotorcycleTrainingManager");
-        trainingManagerObj.transform.SetParent(instance.transform);
-        
-        MotorcycleTrainingManager trainingManager = trainingManagerObj.AddComponent<MotorcycleTrainingManager>();
-        
-        // Create multiple motorcycle environments for training
-        List<MotorcycleEnvironment> environments = new List<MotorcycleEnvironment>();
-        int numEnvironments = 4; // Start with 4 parallel environments
-
-        Vector3 spawnPosition = GetTrainingSpawnPosition(0, currentRaceline);
-        Vector3 spawnDirection = GetTrainingSpawnDirection(0, currentRaceline);
-        
-        for (int i = 0; i < numEnvironments; i++)
-        {
-
-            
-            // Create motorcycle agent
-            GameObject agentObj = Instantiate(instance.motorcycleAgentPrefab, spawnPosition, Quaternion.LookRotation(spawnDirection));
-            agentObj.name = $"TrainingMotorcycle_{i}";
-            agentObj.transform.SetParent(trainingManagerObj.transform);
-            
-            // Add MotorcycleEnvironment component
-            MotorcycleEnvironment environment = agentObj.AddComponent<MotorcycleEnvironment>();
-            environments.Add(environment);
-            
-            Debug.Log($"Created training motorcycle {i} at position {spawnPosition}");
-        }
-        
-        // Initialize the training manager with the environments
-        trainingManager.Initialize(environments);
-        
-        Debug.Log($"Created training environment with {environments.Count} motorcycle agents");
-    }
-    
-    private static Vector3 GetTrainingSpawnPosition(int agentIndex, List<Vector2> raceline)
+    public static Vector3 GetTrainingSpawnPosition(int agentIndex, List<Vector2> raceline)
     {
         if (raceline == null || raceline.Count == 0)
         {
             return Vector3.zero;
         }
-        
+
         // Spread agents around the track
         float spacing = (float)raceline.Count / 4f; // 4 environments max
         int positionIndex = Mathf.RoundToInt(agentIndex * spacing) % raceline.Count;
-        
+
         Vector2 racelinePoint = raceline[positionIndex];
         Vector3 basePosition = new Vector3(racelinePoint.x, instance.agentSpawnHeight, racelinePoint.y);
-        
+
         // Add lateral offset to prevent collisions
         Vector3 trackDirection = GetTrainingSpawnDirection(agentIndex, raceline);
         Vector3 lateralOffset = Vector3.Cross(trackDirection, Vector3.up) * (agentIndex - 1.5f) * 3f;
-        
+
         return basePosition + lateralOffset;
     }
-    
-    private static Vector3 GetTrainingSpawnDirection(int agentIndex, List<Vector2> raceline)
+
+    public static Vector3 GetTrainingSpawnDirection(int agentIndex, List<Vector2> raceline)
     {
         if (raceline == null || raceline.Count == 0)
         {

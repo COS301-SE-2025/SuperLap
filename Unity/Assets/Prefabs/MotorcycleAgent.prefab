@@ -561,7 +561,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5433541524235702189}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fdab77c4fe29d144c854abefbb3048c7, type: 3}
+  m_Script: {fileID: 11500000, guid: 82a9b3c4f5431f84eac183fed18544ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   enginePower: 150000
@@ -592,11 +592,10 @@ MonoBehaviour:
   trajectoryColor: {r: 0, g: 1, b: 0, a: 1}
   trajectoryWidth: 0.1
   enableRecommendations: 1
-  recommendationSteps: 2
+  recommendationSteps: 5
   steeringSensitivity: 0.1
-  throttleSensitivity: 0.15
+  throttleSensitivity: 0.3
   testInputStrength: 0.5
-  recommendationUpdateInterval: 5
   recommendationSensitivity: 0.1
   speedUpIndicator: {fileID: 0}
   slowDownIndicator: {fileID: 0}
@@ -605,11 +604,6 @@ MonoBehaviour:
   recommendationFollowReward: 1
   inputThreshold: 0.3
   speedRewardMultiplier: 0.5
-  trackCheckDistance: 5
-  maxEpisodeTime: 120
-  onTrackReward: 0
-  offTrackPenaltyScale: -1
-  speedRewardScale: 0.02
   speedText: {fileID: 0}
   racelineDeviationText: {fileID: 0}
   currentSpeed: 0
