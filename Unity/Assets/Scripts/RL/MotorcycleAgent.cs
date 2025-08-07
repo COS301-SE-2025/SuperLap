@@ -3,13 +3,11 @@ using UnityEngine;
 using TMPro;
 using Unity.MLAgents;
 using System.Collections.Generic;
+using UnityEngine.Profiling;
 
 
 public class MotorcycleAgent : MonoBehaviour
 {
-    private const float AIR_DENSITY = 1.225f;
-    private const float GRAVITY = 9.81f;
-
     [Header("Engine & Power")]
     [Tooltip("Engine power in Watts. ~750W = 1 horsepower.")]
     [SerializeField] private float enginePower = 150000f;
@@ -133,13 +131,78 @@ public class MotorcycleAgent : MonoBehaviour
     private float throttleInput = 0f;
     private float steerInput = 0f;
     
-    // Trajectory prediction
-    private LineRenderer trajectoryLineRenderer;
+    // Helper components
+    private TrajectoryPredictor trajectoryPredictor;
+    private MotorcycleVisualEffects visualEffects;
+    
+    // Physics configuration
+    private MotorcyclePhysicsConfig physicsConfig;
+    private RecommendationConfig recommendationConfig;
+    private TrackDetectionConfig trackDetectionConfig;
 
     void Start()
     {
-        CalculateTheoreticalTopSpeed();
-        SetupTrajectoryLineRenderer();
+        InitializeConfigurations();
+        InitializeComponents();
+        theoreticalTopSpeed = MotorcyclePhysicsCalculator.CalculateTheoreticalTopSpeed(
+            enginePower, dragCoefficient, frontalArea, rollingResistanceCoefficient, mass);
+    }
+
+    private void InitializeConfigurations()
+    {
+        physicsConfig = new MotorcyclePhysicsConfig
+        {
+            enginePower = this.enginePower,
+            maxTractionForce = this.maxTractionForce,
+            brakingForce = this.brakingForce,
+            mass = this.mass,
+            dragCoefficient = this.dragCoefficient,
+            frontalArea = this.frontalArea,
+            rollingResistanceCoefficient = this.rollingResistanceCoefficient,
+            turnRate = this.turnRate,
+            steeringDecay = this.steeringDecay,
+            minSteeringSpeed = this.minSteeringSpeed,
+            fullSteeringSpeed = this.fullSteeringSpeed,
+            steeringIntensity = this.steeringIntensity
+        };
+
+        recommendationConfig = new RecommendationConfig
+        {
+            recommendationSteps = this.recommendationSteps,
+            steeringSensitivity = this.steeringSensitivity,
+            throttleSensitivity = this.throttleSensitivity,
+            testInputStrength = this.testInputStrength,
+            inputThreshold = this.inputThreshold,
+            offTrackThreshold = this.offTrackThreshold,
+            maxSpeedRatio = this.maxSpeedRatio,
+            trajectoryLength = this.trajectoryLength
+        };
+
+        trackDetectionConfig = new TrackDetectionConfig
+        {
+            raycastStartHeight = this.raycastStartHeight,
+            raycastDistance = this.raycastDistance,
+            showTrackDetectionDebug = this.showTrackDetectionDebug,
+            onTrackRayColor = this.onTrackRayColor,
+            offTrackRayColor = this.offTrackRayColor
+        };
+    }
+
+    private void InitializeComponents()
+    {
+        trajectoryPredictor = GetComponent<TrajectoryPredictor>();
+        if (trajectoryPredictor == null)
+        {
+            trajectoryPredictor = gameObject.AddComponent<TrajectoryPredictor>();
+        }
+
+        visualEffects = GetComponent<MotorcycleVisualEffects>();
+        if (visualEffects == null)
+        {
+            visualEffects = gameObject.AddComponent<MotorcycleVisualEffects>();
+        }
+
+        trajectoryPredictor.SetupTrajectoryLineRenderer(trajectoryPoints, trajectoryColor, trajectoryWidth, showTrajectory);
     }
 
     public void SetInput(int throttle, int steer)
@@ -150,47 +213,31 @@ public class MotorcycleAgent : MonoBehaviour
 
     public (int, int) Decide()
     {
-        UpdateRacelineDeviation();
-        UpdateDrivingRecommendations();
+        Profiler.BeginSample("MotorcycleAgent.UpdateRacelineDeviation");
+        RacelineAnalyzer.UpdateRacelineDeviation(transform.position, showTrajectory, 
+                                               trajectoryPredictor.GetComponent<LineRenderer>(), 
+                                               out racelineDeviation, out averageTrajectoryDeviation);
+        Profiler.EndSample();
+        
+        Profiler.BeginSample("MotorcycleAgent.UpdateDrivingRecommendations");
+        DrivingRecommendationEngine.UpdateDrivingRecommendations(enableRecommendations, transform.position, 
+                                                               transform.forward, currentSpeed, currentTurnAngle, 
+                                                               throttleInput, theoreticalTopSpeed, recommendationConfig, 
+                                                               physicsConfig, trackDetectionConfig, out recommendSpeedUp, 
+                                                               out recommendSlowDown, out recommendTurnLeft, out recommendTurnRight);
+        Profiler.EndSample();
 
         List<(int, int)> options = new List<(int, int)>();
 
-        // if(recommendSlowDown)
-        // {
-        //     options.Add((-1, 0)); // Brake
-        //     options.Add((0, 0)); // Idle
+        Profiler.BeginSample("MotorcycleAgent.GenerateActionOptions");
 
-        // }
-        // if (recommendSpeedUp)
-        // {
-        //     options.Add((1, 0)); // Accelerate
-        // }
-        // if(recommendTurnLeft)
-        // {
-        //     options.Add((1, -1)); // Turn left
-        //     options.Add((0, -1)); // Turn left
-
-        // }
-        // if (recommendTurnRight)
-        // {
-        //     options.Add((1, 1)); // Turn right
-        //     options.Add((0, 1)); // Turn right
-
-        // }
-
-        // if (options.Count == 0)
-        // {
-        //     //if(currentSpeed==0f)
-        //     //{
-        //         return (1, 0);
-        //     //}
-
-        //     //return (0, 0);
-        // }
-
-        if(recommendTurnLeft)
+        if (recommendTurnLeft)
         {
-            if(CheckIfPathGoesOffTrack(-1))
+            float offTrackRatio;
+            if(TrackDetector.CheckIfPathGoesOffTrack(-1, transform.position, transform.forward, 
+                                                   currentSpeed, currentTurnAngle, throttleInput, 
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
             {
                 options.Add((-1, -1)); // Brake
             }
@@ -203,7 +250,11 @@ public class MotorcycleAgent : MonoBehaviour
 
         if(recommendTurnRight)
         {
-            if(CheckIfPathGoesOffTrack(1))
+            float offTrackRatio;
+            if(TrackDetector.CheckIfPathGoesOffTrack(1, transform.position, transform.forward, 
+                                                   currentSpeed, currentTurnAngle, throttleInput, 
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
             {
                 options.Add((-1, 1)); // Brake
             }
@@ -216,7 +267,11 @@ public class MotorcycleAgent : MonoBehaviour
 
         if(recommendSpeedUp)
         {
-            if(CheckIfPathGoesOffTrack(0))
+            float offTrackRatio;
+            if(TrackDetector.CheckIfPathGoesOffTrack(0, transform.position, transform.forward, 
+                                                   currentSpeed, currentTurnAngle, throttleInput, 
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
             {
                 options.Add((-1, 0)); // Brake
             }
@@ -248,16 +303,26 @@ public class MotorcycleAgent : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(0, options.Count);
         (int, int) selectedAction = options[randomIndex];
 
+        Profiler.EndSample();
+
         return selectedAction;
     }
 
     public void Step()
     {
+        Profiler.BeginSample("MotorcycleAgent.Step");
         UpdateMovement(Time.fixedDeltaTime);
         UpdateTurning(Time.fixedDeltaTime);
-        UpdateMotorcycleLeaning(Time.fixedDeltaTime);
-        UpdateCameraFOV(Time.fixedDeltaTime);
-        UpdateTrajectoryVisualization();
+        visualEffects.UpdateMotorcycleLeaning(motorcycleModel, currentSpeed, currentTurnAngle, 
+                                            maxLeanAngle, optimalLeanSpeed, leanSpeed, 
+                                            minSteeringSpeed, turnRate, Time.fixedDeltaTime, ref currentLeanAngle);
+        visualEffects.UpdateCameraFOV(dynamicCamera, currentSpeed, currentAcceleration, 
+                                    minFOV, maxFOV, maxFOVSpeed, accelerationFOVBoost, 
+                                    fovAdjustSpeed, Time.fixedDeltaTime, ref currentFOV);
+        trajectoryPredictor.UpdateTrajectoryVisualization(showTrajectory, trajectoryColor, trajectoryWidth, 
+                                                         trajectoryPoints, trajectoryLength, transform.position, 
+                                                         transform.forward, currentSpeed, currentTurnAngle, 
+                                                         throttleInput, steerInput, physicsConfig);
 
         currentSpeedKmh = currentSpeed * 3.6f;
         if (speedText != null)
@@ -270,12 +335,14 @@ public class MotorcycleAgent : MonoBehaviour
             racelineDeviationText.text = $"Raceline Dev: {racelineDeviation:F2}m\nTraj Avg Dev: {averageTrajectoryDeviation:F2}m\n" +
                                        $"Off Track Ratio: {offTrackRatio:F2}\nWill Go Off Track: {willGoOffTrack}";
         }
+        Profiler.EndSample();
     }
 
     private void UpdateMovement(float dt)
     {
-        float drivingForce = CalculateDrivingForce();
-        float resistanceForces = CalculateResistanceForces();
+        float drivingForce = MotorcyclePhysicsCalculator.CalculateDrivingForce(enginePower, currentSpeed, maxTractionForce);
+        float resistanceForces = MotorcyclePhysicsCalculator.CalculateResistanceForces(currentSpeed, dragCoefficient, 
+                                                                                      frontalArea, rollingResistanceCoefficient, mass);
 
         float netForce = (drivingForce * throttleInput) - resistanceForces;
 
@@ -296,7 +363,8 @@ public class MotorcycleAgent : MonoBehaviour
 
     private void UpdateTurning(float dt)
     {
-        float steeringMultiplier = CalculateSteeringMultiplier();
+        float steeringMultiplier = MotorcyclePhysicsCalculator.CalculateSteeringMultiplier(currentSpeed, minSteeringSpeed, 
+                                                                                         fullSteeringSpeed, steeringIntensity);
         
         currentTurnAngle += steerInput * turnRate * steeringMultiplier * dt;
         
@@ -305,572 +373,6 @@ public class MotorcycleAgent : MonoBehaviour
         transform.Rotate(Vector3.up * currentTurnAngle * dt);
     }
 
-    private void UpdateMotorcycleLeaning(float dt)
-    {
-        if (motorcycleModel == null) return;
-
-        float targetLeanAngle = CalculateTargetLeanAngle();
-        
-        currentLeanAngle = Mathf.Lerp(currentLeanAngle, targetLeanAngle, leanSpeed * dt);
-        
-        motorcycleModel.localRotation = Quaternion.Euler(0, 0, -currentLeanAngle);
-    }
-
-    private void UpdateCameraFOV(float dt)
-    {
-        if (dynamicCamera == null) return;
-
-        float targetFOV = CalculateTargetFOV();
-        
-        currentFOV = Mathf.Lerp(currentFOV, targetFOV, fovAdjustSpeed * dt);
-        
-        dynamicCamera.fieldOfView = currentFOV;
-    }
-
-    private float CalculateDrivingForce()
-    {
-        float powerLimitedForce = enginePower / Mathf.Max(currentSpeed, 0.1f);
-        
-        return Mathf.Min(maxTractionForce, powerLimitedForce);
-    }
-    
-    private float CalculateResistanceForces()
-    {
-        float dragForce = 0.5f * AIR_DENSITY * dragCoefficient * frontalArea * currentSpeed * currentSpeed;
-
-        float rollingForce = rollingResistanceCoefficient * mass * GRAVITY;
-
-        return dragForce + rollingForce;
-    }
-
-    private float CalculateSteeringMultiplier()
-    {
-        if (currentSpeed < minSteeringSpeed)
-        {
-            return 0f;
-        }
-
-        float normalizedSpeed = currentSpeed / fullSteeringSpeed;
-        
-        float steeringMultiplier = 1f / (1f + normalizedSpeed * steeringIntensity);
-        
-        float fadeInMultiplier = Mathf.Clamp01((currentSpeed - minSteeringSpeed) / (fullSteeringSpeed - minSteeringSpeed));
-        
-        return steeringMultiplier * fadeInMultiplier;
-    }
-
-    private float CalculateTargetLeanAngle()
-    {
-        if (currentSpeed < minSteeringSpeed || Mathf.Abs(currentTurnAngle) < 0.1f)
-        {
-            return 0f;
-        }
-
-        float speedMultiplier = CalculateSpeedLeanMultiplier();
-        
-        float turnIntensity = Mathf.Abs(currentTurnAngle) / turnRate;
-        turnIntensity = Mathf.Clamp01(turnIntensity);
-        
-        float baseLeanAngle = turnIntensity * maxLeanAngle * speedMultiplier;
-        
-        return Mathf.Sign(currentTurnAngle) * baseLeanAngle;
-    }
-
-    private float CalculateSpeedLeanMultiplier()
-    {
-        if (currentSpeed <= optimalLeanSpeed)
-        {
-            return Mathf.Lerp(0.2f, 1f, currentSpeed / optimalLeanSpeed);
-        }
-        else
-        {
-            float excessSpeed = currentSpeed - optimalLeanSpeed;
-            float reductionFactor = 1f / (1f + excessSpeed * 0.02f);
-            return Mathf.Max(0.3f, reductionFactor);
-        }
-    }
-
-    private float CalculateTargetFOV()
-    {
-        float speedBasedFOV = Mathf.Lerp(minFOV, maxFOV, currentSpeed / maxFOVSpeed);
-        
-        float accelerationBoost = Mathf.Max(0f, currentAcceleration) * accelerationFOVBoost;
-        
-        float targetFOV = speedBasedFOV + accelerationBoost;
-        
-        return Mathf.Clamp(targetFOV, minFOV, maxFOV + (accelerationFOVBoost * 10f));
-    }
-
-    private void CalculateTheoreticalTopSpeed()
-    {
-        float dragTerm = 0.5f * AIR_DENSITY * dragCoefficient * frontalArea;
-        float rollingTerm = rollingResistanceCoefficient * mass * GRAVITY;
-        
-        theoreticalTopSpeed = Mathf.Pow(enginePower / dragTerm, 1f/3f);
-        
-        Debug.Log($"Theoretical Top Speed: {theoreticalTopSpeed * 3.6f:F1} km/h");
-        Debug.Log($"Cd x A = {dragCoefficient * frontalArea:F3}");
-    }
-
-    private void SetupTrajectoryLineRenderer()
-    {
-        trajectoryLineRenderer = GetComponent<LineRenderer>();
-        if (trajectoryLineRenderer == null)
-        {
-            trajectoryLineRenderer = gameObject.AddComponent<LineRenderer>();
-        }
-
-        trajectoryLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        trajectoryLineRenderer.material.color = trajectoryColor;
-        trajectoryLineRenderer.startWidth = trajectoryWidth;
-        trajectoryLineRenderer.endWidth = trajectoryWidth;
-        trajectoryLineRenderer.positionCount = trajectoryPoints;
-        trajectoryLineRenderer.useWorldSpace = true;
-        trajectoryLineRenderer.enabled = showTrajectory;
-        trajectoryLineRenderer.sortingOrder = 1;
-    }
-
-    private void UpdateTrajectoryVisualization()
-    {
-        if (trajectoryLineRenderer == null)
-        {
-            SetupTrajectoryLineRenderer();
-            return;
-        }
-
-        trajectoryLineRenderer.enabled = showTrajectory;
-        trajectoryLineRenderer.material.color = trajectoryColor;
-        trajectoryLineRenderer.startWidth = trajectoryWidth;
-        trajectoryLineRenderer.endWidth = trajectoryWidth;
-
-        if (!showTrajectory) return;
-
-        CalculateTrajectoryPoints();
-    }
-
-    private void CalculateTrajectoryPoints()
-    {
-        Vector3[] points = new Vector3[trajectoryPoints];
-        
-        // Simulation state - start with current state
-        Vector3 simPosition = transform.position;
-        Vector3 simForward = transform.forward;
-        float simSpeed = currentSpeed;
-        float simTurnAngle = currentTurnAngle;
-        
-        float deltaTime = trajectoryLength / trajectoryPoints;
-
-        for (int i = 0; i < trajectoryPoints; i++)
-        {
-            points[i] = simPosition;
-
-            // Simulate one step forward using the same physics as the actual motorcycle
-            SimulateOneStep(ref simPosition, ref simForward, ref simSpeed, ref simTurnAngle, deltaTime);
-        }
-
-        trajectoryLineRenderer.positionCount = trajectoryPoints;
-        trajectoryLineRenderer.SetPositions(points);
-    }
-
-    private void SimulateOneStep(ref Vector3 position, ref Vector3 forward, ref float speed, ref float turnAngle, float dt)
-    {
-        // Use current inputs for prediction (could be modified to use different inputs)
-        float simThrottleInput = throttleInput;
-        float simSteerInput = steerInput;
-
-        // Simulate movement using same physics as UpdateMovement
-        float drivingForce = SimulateDrivingForce(speed);
-        float resistanceForces = SimulateResistanceForces(speed);
-
-        float netForce = (drivingForce * simThrottleInput) - resistanceForces;
-
-        if (simThrottleInput < 0)
-        {
-            netForce = -brakingForce - resistanceForces;
-        }
-
-        float acceleration = netForce / mass;
-        speed += acceleration * dt;
-        speed = Mathf.Max(0, speed);
-
-        // Simulate turning using same physics as UpdateTurning
-        float steeringMultiplier = SimulateSteeringMultiplier(speed);
-        turnAngle += simSteerInput * turnRate * steeringMultiplier * dt;
-        turnAngle *= Mathf.Pow(steeringDecay, dt);
-
-        // Apply rotation to forward vector
-        float rotationThisFrame = turnAngle * dt;
-        Quaternion rotation = Quaternion.AngleAxis(rotationThisFrame, Vector3.up);
-        forward = rotation * forward;
-
-        // Move forward
-        position += forward * speed * dt;
-    }
-
-    private float SimulateDrivingForce(float speed)
-    {
-        float powerLimitedForce = enginePower / Mathf.Max(speed, 0.1f);
-        return Mathf.Min(maxTractionForce, powerLimitedForce);
-    }
-
-    private float SimulateResistanceForces(float speed)
-    {
-        float dragForce = 0.5f * AIR_DENSITY * dragCoefficient * frontalArea * speed * speed;
-        float rollingForce = rollingResistanceCoefficient * mass * GRAVITY;
-        return dragForce + rollingForce;
-    }
-
-    private float SimulateSteeringMultiplier(float speed)
-    {
-        if (speed < minSteeringSpeed)
-        {
-            return 0f;
-        }
-
-        float normalizedSpeed = speed / fullSteeringSpeed;
-        float steeringMultiplier = 1f / (1f + normalizedSpeed * steeringIntensity);
-        float fadeInMultiplier = Mathf.Clamp01((speed - minSteeringSpeed) / (fullSteeringSpeed - minSteeringSpeed));
-        
-        return steeringMultiplier * fadeInMultiplier;
-    }
-    
-    private void UpdateRacelineDeviation()
-    {
-        // Get the optimal raceline from TrackMaster
-        List<Vector2> optimalRaceline = GetOptimalRaceline();
-        if (optimalRaceline == null || optimalRaceline.Count == 0)
-        {
-            racelineDeviation = 0f;
-            averageTrajectoryDeviation = 0f;
-            return;
-        }
-        
-        // Calculate current position deviation from raceline
-        Vector2 currentPos2D = new Vector2(transform.position.x, transform.position.z);
-        racelineDeviation = CalculateDistanceToRaceline(currentPos2D, optimalRaceline);
-        
-        // Calculate average trajectory deviation if trajectory is being shown
-        if (showTrajectory && trajectoryLineRenderer != null && trajectoryLineRenderer.positionCount > 0)
-        {
-            averageTrajectoryDeviation = CalculateAverageTrajectoryDeviation(optimalRaceline);
-        }
-        else
-        {
-            averageTrajectoryDeviation = 0f;
-        }
-    }
-    
-    private List<Vector2> GetOptimalRaceline()
-    {
-        // Access the raceline from TrackMaster using the public method
-        return TrackMaster.GetCurrentRaceline();
-    }
-    
-    private float CalculateDistanceToRaceline(Vector2 position, List<Vector2> raceline)
-    {
-        if (raceline.Count == 0) return 0f;
-        
-        float minDistance = float.MaxValue;
-        
-        // Find the closest point on the raceline
-        for (int i = 0; i < raceline.Count; i++)
-        {
-            float distance = Vector2.Distance(position, raceline[i]);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-            }
-        }
-        
-        // Also check distances to line segments between consecutive points
-        for (int i = 0; i < raceline.Count; i++)
-        {
-            int nextIndex = (i + 1) % raceline.Count;
-            Vector2 lineStart = raceline[i];
-            Vector2 lineEnd = raceline[nextIndex];
-            
-            float distanceToSegment = DistanceToLineSegment(position, lineStart, lineEnd);
-            if (distanceToSegment < minDistance)
-            {
-                minDistance = distanceToSegment;
-            }
-        }
-        
-        return minDistance;
-    }
-    
-    private float CalculateAverageTrajectoryDeviation(List<Vector2> raceline)
-    {
-        if (trajectoryLineRenderer.positionCount == 0) return 0f;
-        
-        Vector3[] trajectoryPoints = new Vector3[trajectoryLineRenderer.positionCount];
-        trajectoryLineRenderer.GetPositions(trajectoryPoints);
-        
-        float totalDeviation = 0f;
-        int validPoints = 0;
-        
-        // Calculate deviation for each trajectory point
-        for (int i = 0; i < trajectoryPoints.Length; i++)
-        {
-            Vector2 trajPoint2D = new Vector2(trajectoryPoints[i].x, trajectoryPoints[i].z);
-            float deviation = CalculateDistanceToRaceline(trajPoint2D, raceline);
-            totalDeviation += deviation;
-            validPoints++;
-        }
-        
-        return validPoints > 0 ? totalDeviation / validPoints : 0f;
-    }
-    
-    private float DistanceToLineSegment(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
-    {
-        Vector2 line = lineEnd - lineStart;
-        float lineLength = line.magnitude;
-        
-        if (lineLength < 0.0001f) // Line segment is essentially a point
-        {
-            return Vector2.Distance(point, lineStart);
-        }
-        
-        Vector2 lineDirection = line / lineLength;
-        Vector2 pointToStart = point - lineStart;
-        
-        // Project point onto line
-        float projection = Vector2.Dot(pointToStart, lineDirection);
-        
-        // Clamp projection to line segment
-        projection = Mathf.Clamp(projection, 0f, lineLength);
-        
-        // Find closest point on line segment
-        Vector2 closestPoint = lineStart + lineDirection * projection;
-        
-        return Vector2.Distance(point, closestPoint);
-    }
-    
-    private void UpdateDrivingRecommendations()
-    {
-        if (!enableRecommendations)
-        {
-            SetAllRecommendationIndicators(false);
-            return;
-        }
-        
-        List<Vector2> optimalRaceline = GetOptimalRaceline();
-        if (optimalRaceline == null || optimalRaceline.Count == 0)
-        {
-            SetAllRecommendationIndicators(false);
-            return;
-        }
-        
-        // Calculate recommendations for each input type
-        RecommendationAnalysis analysis = AnalyzeRecommendations(optimalRaceline);
-        
-        // Update recommendation states
-        recommendSpeedUp = analysis.shouldSpeedUp;
-        recommendSlowDown = analysis.shouldSlowDown;
-        recommendTurnLeft = analysis.shouldTurnLeft;
-        recommendTurnRight = analysis.shouldTurnRight;
-    }
-    
-    private RecommendationAnalysis AnalyzeRecommendations(List<Vector2> raceline)
-    {
-        // Get baseline score (continue straight)
-        float baselineScore = SimulateRecommendationScenario(0f, 0f, raceline);
-        
-        // First, determine the optimal steering direction
-        float turnLeftScore = SimulateRecommendationScenario(0f, -testInputStrength, raceline);
-        float turnRightScore = SimulateRecommendationScenario(0f, testInputStrength, raceline);
-        
-        // Calculate steering improvements
-        float turnLeftImprovement = baselineScore - turnLeftScore;
-        float turnRightImprovement = baselineScore - turnRightScore;
-        
-        // Determine optimal steering input for speed tests
-        float optimalSteeringInput = 0f;
-        if (turnLeftImprovement > steeringSensitivity && turnLeftImprovement > turnRightImprovement)
-        {
-            optimalSteeringInput = -testInputStrength;
-        }
-        else if (turnRightImprovement > steeringSensitivity && turnRightImprovement > turnLeftImprovement)
-        {
-            optimalSteeringInput = testInputStrength;
-        }
-
-        // Use raycast-based track detection for speed recommendations
-        bool willGoOffTrack = CheckIfPathGoesOffTrack(optimalSteeringInput);
-        
-        bool shouldSpeedUp = false;
-        bool shouldSlowDown = false;
-        
-        if (willGoOffTrack)
-        {
-            // If we're going to go off track, recommend slowing down
-            shouldSlowDown = true;
-        }
-        else
-        {
-            // If we're staying on track, recommend speeding up (unless already at high speed)
-            if (currentSpeed < theoreticalTopSpeed * maxSpeedRatio)
-            {
-                shouldSpeedUp = true;
-            }
-        }
-
-        return new RecommendationAnalysis
-        {
-            shouldSpeedUp = shouldSpeedUp,
-            shouldSlowDown = shouldSlowDown,
-            shouldTurnLeft = turnLeftImprovement > steeringSensitivity,
-            shouldTurnRight = turnRightImprovement > steeringSensitivity,
-            speedUpImprovement = willGoOffTrack ? 0 : 1, // Simple binary improvement indicator
-            slowDownImprovement = willGoOffTrack ? 1 : 0,
-            turnLeftImprovement = turnLeftImprovement,
-            turnRightImprovement = turnRightImprovement
-        };
-    }
-    
-    private bool CheckIfPathGoesOffTrack(float steeringInput)
-    {
-        // Simulation state - start with current state
-        Vector3 simPosition = transform.position;
-        Vector3 simForward = transform.forward;
-        float simSpeed = currentSpeed;
-        float simTurnAngle = currentTurnAngle;
-        
-        float deltaTime = trajectoryLength / recommendationSteps;
-        int offTrackPoints = 0;
-        int totalCheckPoints = Mathf.Min(recommendationSteps, 8); // Check first 8 points for performance
-        
-        // Simulate forward and check if any predicted positions are off track
-        for (int step = 0; step < totalCheckPoints; step++)
-        {
-            // Simulate one step forward with current throttle and provided steering
-            SimulateOneStepWithInputs(ref simPosition, ref simForward, ref simSpeed, ref simTurnAngle, 
-                                    deltaTime, throttleInput, steeringInput);
-            
-            // Check if this position is on track using raycast
-            if (!IsPositionOnTrack(simPosition))
-            {
-                offTrackPoints++;
-            }
-        }
-        
-        // Consider path as "going off track" if more than the threshold of check points are off track
-        offTrackRatio = (float)offTrackPoints / totalCheckPoints;
-        bool goingOffTrack = offTrackRatio > offTrackThreshold;
-        willGoOffTrack = goingOffTrack;
-        
-        return goingOffTrack;
-    }
-    
-    private bool IsPositionOnTrack(Vector3 position)
-    {
-        // Cast a ray downward from the position to check if there's track beneath
-        Vector3 rayOrigin = position + Vector3.up * raycastStartHeight;
-        Vector3 rayDirection = Vector3.down;
-        
-        // Perform the raycast
-        RaycastHit hit;
-        bool hitTrack = false;
-        
-        if (Physics.Raycast(rayOrigin, rayDirection, out hit, raycastDistance))
-        {
-
-            if (hit.collider.CompareTag("Track"))
-            {
-                hitTrack = true;
-            }
-        }
-        
-        // Debug visualization
-        if (showTrackDetectionDebug)
-        {
-            Color rayColor = hitTrack ? onTrackRayColor : offTrackRayColor;
-            Vector3 rayEnd = hit.collider != null ? hit.point : rayOrigin + rayDirection * raycastDistance;
-            Debug.DrawLine(rayOrigin, rayEnd, rayColor, 0.1f);
-        }
-        
-        return hitTrack;
-    }
-    
-    private void SetAllRecommendationIndicators(bool active)
-    {
-        recommendSpeedUp = active;
-        recommendSlowDown = active;
-        recommendTurnLeft = active;
-        recommendTurnRight = active;
-    }
-    
-    private float SimulateRecommendationScenario(float testThrottle, float testSteering, List<Vector2> raceline)
-    {
-        // Simulation state - start with current state
-        Vector3 simPosition = transform.position;
-        Vector3 simForward = transform.forward;
-        float simSpeed = currentSpeed;
-        float simTurnAngle = currentTurnAngle;
-        
-        float deltaTime = trajectoryLength / recommendationSteps;
-        float totalDeviation = 0f;
-        
-        // Simulate forward for the specified number of steps
-        for (int step = 0; step < recommendationSteps; step++)
-        {
-            // Calculate deviation at this position
-            Vector2 simPos2D = new Vector2(simPosition.x, simPosition.z);
-            float deviation = CalculateDistanceToRaceline(simPos2D, raceline);
-            totalDeviation += deviation;
-            
-            // Simulate one step forward with test inputs
-            SimulateOneStepWithInputs(ref simPosition, ref simForward, ref simSpeed, ref simTurnAngle, 
-                                    deltaTime, testThrottle, testSteering);
-        }
-        
-        // Return average deviation over the simulation period
-        return totalDeviation / recommendationSteps;
-    }
-    
-    private void SimulateOneStepWithInputs(ref Vector3 position, ref Vector3 forward, ref float speed, 
-                                         ref float turnAngle, float dt, float simThrottleInput, float simSteerInput)
-    {
-        // Simulate movement using same physics as UpdateMovement
-        float drivingForce = SimulateDrivingForce(speed);
-        float resistanceForces = SimulateResistanceForces(speed);
-
-        float netForce = (drivingForce * simThrottleInput) - resistanceForces;
-
-        if (simThrottleInput < 0)
-        {
-            netForce = -brakingForce - resistanceForces;
-        }
-
-        float acceleration = netForce / mass;
-        speed += acceleration * dt;
-        speed = Mathf.Max(0, speed);
-
-        // Simulate turning using same physics as UpdateTurning
-        float steeringMultiplier = SimulateSteeringMultiplier(speed);
-        turnAngle += simSteerInput * turnRate * steeringMultiplier * dt;
-        turnAngle *= Mathf.Pow(steeringDecay, dt);
-
-        // Apply rotation to forward vector
-        float rotationThisFrame = turnAngle * dt;
-        Quaternion rotation = Quaternion.AngleAxis(rotationThisFrame, Vector3.up);
-        forward = rotation * forward;
-
-        // Move forward
-        position += forward * speed * dt;
-    }
-    
-    private struct RecommendationAnalysis
-    {
-        public bool shouldSpeedUp;
-        public bool shouldSlowDown;
-        public bool shouldTurnLeft;
-        public bool shouldTurnRight;
-        public float speedUpImprovement;
-        public float slowDownImprovement;
-        public float turnLeftImprovement;
-        public float turnRightImprovement;
-    }
 }
 
 // Simple component to mark track surfaces for raycast detection
