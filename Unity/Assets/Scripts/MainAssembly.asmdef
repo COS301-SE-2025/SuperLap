@@ -3,8 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Unity.TextMeshPro",
-        "StandaloneFileBrowser",
-        "Unity.ML-Agents"
+        "StandaloneFileBrowser"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -12,11 +11,7 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "Python.Runtime.dll",
-        "RLMatrix.dll",
-        "RLMatrix.Common.dll",
-        "RLMatrix.Toolkit.dll",
-        "TorchSharp.dll",
-        "OneOf.dll"
+        "Unity.Mathematics.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

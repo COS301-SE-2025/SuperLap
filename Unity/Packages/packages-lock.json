@@ -93,18 +93,6 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.ml-agents": {
-      "version": "3.0.0",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.sentis": "2.1.0",
-        "com.unity.modules.physics": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0",
-        "com.unity.modules.imageconversion": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.unity.multiplayer.center": {
       "version": "1.0.0",
       "depth": 0,
@@ -168,17 +156,6 @@
       "depth": 2,
       "source": "registry",
       "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.sentis": {
-      "version": "2.1.2",
-      "depth": 1,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.burst": "1.8.17",
-        "com.unity.collections": "2.4.3",
-        "com.unity.modules.imageconversion": "1.0.0"
-      },
       "url": "https://packages.unity.com"
     },
     "com.unity.settings-manager": {
@@ -283,13 +260,6 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
-    },
-    "org.nuget.oneof": {
-      "version": "3.0.271",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://unitynuget-registry.openupm.com"
     },
     "org.nuget.pythonnet": {
       "version": "3.0.5",

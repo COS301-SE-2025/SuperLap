@@ -1,7 +1,5 @@
-using System;
 using UnityEngine;
 using TMPro;
-using Unity.MLAgents;
 using System.Collections.Generic;
 
 

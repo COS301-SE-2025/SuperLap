@@ -1,11 +1,7 @@
-using System;
 using UnityEngine;
 using TMPro;
-using Unity.MLAgents;
 using System.Collections.Generic;
 using UnityEngine.Profiling;
-
-
 public class MotorcycleAgent : MonoBehaviour
 {
     [Header("Engine & Power")]
