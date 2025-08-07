@@ -82,6 +82,9 @@ public class TrackMaster : MonoBehaviour
         CreateCheckpoints(results.raceline);
         CreateRacelineVisualization(results.raceline);
 
+        // Initialize the RacelineAnalyzer with the raceline data for optimized queries
+        RacelineAnalyzer.Initialize(results.raceline);
+
         // Spawn the motorcycle agent on the raceline
         //SpawnMotorcycleAgent();
 

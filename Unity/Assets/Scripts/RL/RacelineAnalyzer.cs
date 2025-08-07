@@ -1,8 +1,196 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Profiling;
 
 public static class RacelineAnalyzer
 {
+    private static List<Vector2> cachedRaceline;
+    private static RacelineQuadTree quadTree;
+    
+    // Quadtree node structure for spatial partitioning
+    private class RacelineQuadTree
+    {
+        private struct RacelinePoint
+        {
+            public Vector2 position;
+            public int index;
+            
+            public RacelinePoint(Vector2 pos, int idx)
+            {
+                position = pos;
+                index = idx;
+            }
+        }
+        
+        private const int MAX_POINTS_PER_NODE = 8;
+        private const int MAX_DEPTH = 6;
+        
+        private Rect bounds;
+        private List<RacelinePoint> points;
+        private RacelineQuadTree[] children;
+        private int depth;
+        
+        public RacelineQuadTree(Rect bounds, int depth = 0)
+        {
+            this.bounds = bounds;
+            this.depth = depth;
+            this.points = new List<RacelinePoint>();
+            this.children = null;
+        }
+        
+        public void Insert(Vector2 position, int index)
+        {
+            if (!bounds.Contains(position))
+                return;
+                
+            if (points.Count < MAX_POINTS_PER_NODE || depth >= MAX_DEPTH)
+            {
+                points.Add(new RacelinePoint(position, index));
+                return;
+            }
+            
+            if (children == null)
+            {
+                Subdivide();
+            }
+            
+            foreach (var child in children)
+            {
+                child.Insert(position, index);
+            }
+        }
+        
+        private void Subdivide()
+        {
+            float halfWidth = bounds.width / 2f;
+            float halfHeight = bounds.height / 2f;
+            float x = bounds.x;
+            float y = bounds.y;
+            
+            children = new RacelineQuadTree[4];
+            children[0] = new RacelineQuadTree(new Rect(x, y, halfWidth, halfHeight), depth + 1);
+            children[1] = new RacelineQuadTree(new Rect(x + halfWidth, y, halfWidth, halfHeight), depth + 1);
+            children[2] = new RacelineQuadTree(new Rect(x, y + halfHeight, halfWidth, halfHeight), depth + 1);
+            children[3] = new RacelineQuadTree(new Rect(x + halfWidth, y + halfHeight, halfWidth, halfHeight), depth + 1);
+            
+            // Redistribute existing points to children
+            foreach (var point in points)
+            {
+                foreach (var child in children)
+                {
+                    child.Insert(point.position, point.index);
+                }
+            }
+            
+            points.Clear();
+        }
+        
+        public void FindClosestPoint(Vector2 queryPoint, ref int closestIndex, ref float closestDistance)
+        {
+            // Check points in this node
+            foreach (var point in points)
+            {
+                float distance = Vector2.Distance(queryPoint, point.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestIndex = point.index;
+                }
+            }
+            
+            // If we have children, check them in order of proximity
+            if (children != null)
+            {
+                // Create array of children with their distances to query point
+                var childDistances = new (RacelineQuadTree child, float distance)[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    childDistances[i] = (children[i], DistanceToRect(queryPoint, children[i].bounds));
+                }
+                
+                // Sort by distance to bounds
+                System.Array.Sort(childDistances, (a, b) => a.distance.CompareTo(b.distance));
+                
+                // Check children in order, pruning those that can't contain closer points
+                foreach (var (child, distanceToBounds) in childDistances)
+                {
+                    if (distanceToBounds < closestDistance)
+                    {
+                        child.FindClosestPoint(queryPoint, ref closestIndex, ref closestDistance);
+                    }
+                }
+            }
+        }
+        
+        private float DistanceToRect(Vector2 point, Rect rect)
+        {
+            float dx = Mathf.Max(0, Mathf.Max(rect.xMin - point.x, point.x - rect.xMax));
+            float dy = Mathf.Max(0, Mathf.Max(rect.yMin - point.y, point.y - rect.yMax));
+            return Mathf.Sqrt(dx * dx + dy * dy);
+        }
+    }
+    
+    /// <summary>
+    /// Initialize the RacelineAnalyzer with the given raceline data.
+    /// This creates a spatial partitioning structure for fast nearest point queries.
+    /// </summary>
+    public static void Initialize(List<Vector2> raceline)
+    {
+        cachedRaceline = new List<Vector2>(raceline);
+        
+        if (raceline == null || raceline.Count == 0)
+        {
+            quadTree = null;
+            return;
+        }
+        
+        // Calculate bounds of the raceline
+        Vector2 min = raceline[0];
+        Vector2 max = raceline[0];
+        
+        foreach (var point in raceline)
+        {
+            min.x = Mathf.Min(min.x, point.x);
+            min.y = Mathf.Min(min.y, point.y);
+            max.x = Mathf.Max(max.x, point.x);
+            max.y = Mathf.Max(max.y, point.y);
+        }
+        
+        // Add some padding to bounds
+        Vector2 padding = (max - min) * 0.1f;
+        min -= padding;
+        max += padding;
+        
+        Rect bounds = new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
+        quadTree = new RacelineQuadTree(bounds);
+        
+        // Insert all raceline points into the quadtree
+        for (int i = 0; i < raceline.Count; i++)
+        {
+            quadTree.Insert(raceline[i], i);
+        }
+        
+        Debug.Log($"RacelineAnalyzer initialized with {raceline.Count} points in quadtree");
+    }
+    
+    /// <summary>
+    /// Find the closest raceline point using the spatial partitioning structure.
+    /// Returns the index and distance of the closest point.
+    /// </summary>
+    private static (int index, float distance) FindClosestRacelinePoint(Vector2 position)
+    {
+        if (quadTree == null || cachedRaceline == null || cachedRaceline.Count == 0)
+        {
+            return (-1, float.MaxValue);
+        }
+        
+        int closestIndex = 0;
+        float closestDistance = float.MaxValue;
+        
+        quadTree.FindClosestPoint(position, ref closestIndex, ref closestDistance);
+        
+        return (closestIndex, closestDistance);
+    }
     public static void UpdateRacelineDeviation(Vector3 currentPosition, bool showTrajectory, 
                                              LineRenderer trajectoryLineRenderer, out float racelineDeviation, 
                                              out float averageTrajectoryDeviation)
@@ -42,31 +230,65 @@ public static class RacelineAnalyzer
         if (raceline.Count == 0) return 0f;
         
         float minDistance = float.MaxValue;
-        
-        // Find the closest point on the raceline
-        for (int i = 0; i < raceline.Count; i++)
+        int closestPointIndex = -1;
+
+        Profiler.BeginSample("CalculateDistanceToRaceline.Points");
+
+        // Use optimized quadtree search to find the closest point
+        if (quadTree != null && cachedRaceline != null && cachedRaceline == raceline)
         {
-            float distance = Vector2.Distance(position, raceline[i]);
-            if (distance < minDistance)
+            var (closestIndex, closestDistance) = FindClosestRacelinePoint(position);
+            if (closestIndex >= 0)
             {
-                minDistance = distance;
+                minDistance = closestDistance;
+                closestPointIndex = closestIndex;
             }
         }
-        
-        // Also check distances to line segments between consecutive points
-        for (int i = 0; i < raceline.Count; i++)
+        else
         {
-            int nextIndex = (i + 1) % raceline.Count;
-            Vector2 lineStart = raceline[i];
-            Vector2 lineEnd = raceline[nextIndex];
+            // Fallback to linear search if quadtree is not available or raceline doesn't match
+            for (int i = 0; i < raceline.Count; i++)
+            {
+                float distance = Vector2.Distance(position, raceline[i]);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestPointIndex = i;
+                }
+            }
+        }
+        Profiler.EndSample();
+
+        Profiler.BeginSample("CalculateDistanceToRaceline.Segments");
+
+        // Only check the two line segments adjacent to the closest point
+        if (closestPointIndex >= 0 && raceline.Count > 1)
+        {
+            // Previous segment: from previous point to closest point
+            int prevIndex = (closestPointIndex - 1 + raceline.Count) % raceline.Count;
+            Vector2 prevLineStart = raceline[prevIndex];
+            Vector2 prevLineEnd = raceline[closestPointIndex];
             
-            float distanceToSegment = DistanceToLineSegment(position, lineStart, lineEnd);
-            if (distanceToSegment < minDistance)
+            float prevDistanceToSegment = DistanceToLineSegment(position, prevLineStart, prevLineEnd);
+            if (prevDistanceToSegment < minDistance)
             {
-                minDistance = distanceToSegment;
+                minDistance = prevDistanceToSegment;
+            }
+            
+            // Next segment: from closest point to next point
+            int nextIndex = (closestPointIndex + 1) % raceline.Count;
+            Vector2 nextLineStart = raceline[closestPointIndex];
+            Vector2 nextLineEnd = raceline[nextIndex];
+            
+            float nextDistanceToSegment = DistanceToLineSegment(position, nextLineStart, nextLineEnd);
+            if (nextDistanceToSegment < minDistance)
+            {
+                minDistance = nextDistanceToSegment;
             }
         }
-        
+
+        Profiler.EndSample();
+
         return minDistance;
     }
     
