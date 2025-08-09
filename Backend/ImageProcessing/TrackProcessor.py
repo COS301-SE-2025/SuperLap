@@ -192,7 +192,6 @@ class TrackProcessor:
         except Exception as e:
             print(f"Smoothing failed: {e}. Returning original points")
             return points
-
     
     def visualizeCenterline(self, use_smoothed=True):
         if self.original_image is None:
@@ -491,7 +490,7 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
 
     return results
 
-
+#================================================================================Main and run bellow
 def main():
     parser = argparse.ArgumentParser(description="Process racetrack images for ML algorithm")
     parser.add_argument('--input', '-i', default='trackImages', help='Input directory containing track images (Default: trackImages)')
@@ -551,7 +550,6 @@ def main():
 
             if args.extract_centerline:
                 print(f"\nCenterline extraction success rate: {centerline_success}/{len(results)} tracks")
-
-                
+          
 if __name__ == "__main__":
     main()
