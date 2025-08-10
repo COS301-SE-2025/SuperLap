@@ -329,3 +329,20 @@ def save_predictions(model, frameObjTrain, output_dir, num_samples=5):
     model_path = os.path.join(output_dir, 'MapSegmentationGenerator.keras')
     model.save(model_path)
     print(f"\nModel saved to {model_path}")
+
+
+#Phase 4 of the system: Use the Model on Images
+def load_saved_model(model_path):
+    """
+    Load and compile a saved Keras model.
+    
+    Args:
+        model_path: Path to the saved .keras model file
+        
+    Returns:
+        Loaded and compiled Keras model
+    """
+    model = tf.keras.models.load_model(model_path, compile=False)
+    model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+    print(f"Model loaded from {model_path}")
+    return model
