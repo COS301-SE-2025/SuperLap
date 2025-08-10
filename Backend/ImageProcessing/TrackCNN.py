@@ -10,6 +10,7 @@ from PIL import Image
 output_dir = "CNNoutput"
 os.makedirs(output_dir, exist_ok=True)
 
+
 # Phase 1 of the system: Load and preprocess data
 def save_model_summary(model, filename):
     """Save model summary to a text file"""
@@ -155,6 +156,7 @@ def save_sample_images(frameObj, output_dir, num_samples=5):
         plt.savefig(os.path.join(output_dir, f'sample_{i}.png'))
         plt.close()
 
+
 #Phase 2 of the system: Train the model
 def plot_training_history(history, output_dir):
     """Enhanced plotting function"""
@@ -243,3 +245,24 @@ def train_model(model, x_train, y_train, epochs=83, output_file=None):
         print(f"\nTraining summary saved to {output_file}")
 
     return history
+
+
+# Phase 3 of the system: Predictions
+def predict16(valMap, model, shape=128):
+    """
+    Predicts the output for a batch of 16 images using the given model.
+
+    Args:
+        valMap (dict): Dictionary containing 'img' and 'mask' arrays
+        model: Trained Keras model
+        shape (int): Image shape (unused in this implementation but kept for compatibility)
+
+    Returns:
+        tuple: (predictions, processed_images, ground_truth_masks)
+    """
+    img = valMap['img'][0:16]
+    mask = valMap['mask'][0:16]
+    imgProc = np.array(img)  # Convert list to numpy array
+    
+    predictions = model.predict(imgProc)
+    return predictions, imgProc, mask
