@@ -569,3 +569,55 @@ Mean IoU: {mean_iou:.4f}
     with open(output_file, 'a') as f:
         f.write(results)
     print(f"Metrics saved to {output_file}")
+
+def predict_custom_image(model, image_path, output_dir):
+    """
+    Process and predict roads for a custom map screenshot.
+    
+    Args:
+        model: Loaded Keras model
+        image_path: Path to custom image
+        output_dir: Directory to save results
+    """
+    try:
+        # Create custom predictions directory
+        custom_dir = os.path.join(output_dir, 'custom_predictions')
+        os.makedirs(custom_dir, exist_ok=True)
+        
+        # Load and preprocess image
+        img = Image.open(image_path).convert('RGB')  # Ensure RGB format
+        img = img.resize((128, 128))
+        img_array = np.array(img) / 255.0
+        
+        # Make prediction
+        pred = model.predict(np.expand_dims(img_array, axis=0))[0]
+        pred_mask = (pred > 0.5).astype(np.uint8)[..., 0]  # Threshold at 0.5
+        
+        # Create visualization
+        plt.figure(figsize=(12, 6))
+        
+        plt.subplot(1, 2, 1)
+        plt.imshow(img)
+        plt.title('Input Map Screenshot')
+        plt.axis('off')
+        
+        plt.subplot(1, 2, 2)
+        # Create colored prediction (blue-green)
+        colored_mask = np.zeros((*pred_mask.shape, 3))
+        colored_mask[..., 1] = pred_mask * 0.7  # Green
+        colored_mask[..., 2] = pred_mask * 0.9  # Blue
+        plt.imshow(colored_mask)
+        plt.title('Predicted Roads')
+        plt.axis('off')
+        
+        # Save results
+        output_path = os.path.join(custom_dir, 'custom_prediction.png')
+        plt.savefig(output_path, bbox_inches='tight', dpi=150)
+        plt.close()
+        
+        print(f"\nCustom image prediction saved to {output_path}")
+        return pred_mask
+        
+    except Exception as e:
+        print(f"\nError processing custom image: {str(e)}")
+        return None
