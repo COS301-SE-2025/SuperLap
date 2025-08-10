@@ -300,3 +300,32 @@ def plot_predictions(img, predMask, groundTruth, output_dir, index):
     plt.savefig(plot_path)
     plt.close()
     print(f"Saved prediction plot to {plot_path}")
+
+def save_predictions(model, frameObjTrain, output_dir, num_samples=5):
+    """
+    Generate and save prediction visualizations for sample images.
+    
+    Args:
+        model: Trained Keras model
+        frameObjTrain: Dictionary containing training data
+        output_dir: Directory to save outputs
+        num_samples: Number of samples to visualize
+    """
+    # Make predictions
+    predictions, actuals, masks = predict16(frameObjTrain, model)
+    
+    # Plot sample predictions
+    sample_indices = [2, 10, 13, 5, 15]  # Example indices to visualize
+    for i, idx in enumerate(sample_indices[:num_samples]):
+        plot_predictions(
+            actuals[idx],
+            predictions[idx][:, :, 0],  # Remove channel dimension
+            masks[idx],
+            output_dir,
+            i+1
+        )
+    
+    # Save the model
+    model_path = os.path.join(output_dir, 'MapSegmentationGenerator.keras')
+    model.save(model_path)
+    print(f"\nModel saved to {model_path}")
