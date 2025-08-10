@@ -134,3 +134,22 @@ def unet_block(inputImage, numFilters=16, droupouts=0.1, doBatchNorm=True):
     output = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
     model = tf.keras.Model(inputs=[inputImage], outputs=[output])
     return model
+
+def save_sample_images(frameObj, output_dir, num_samples=5):
+    """
+    Save sample images and masks to the output directory.
+    """
+    for i in range(min(num_samples, len(frameObj['img']))):
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+        
+        ax1.imshow(frameObj['img'][i])
+        ax1.set_title('Input Image')
+        ax1.axis('off')
+        
+        ax2.imshow(frameObj['mask'][i], cmap='gray')
+        ax2.set_title('Ground Truth Mask')
+        ax2.axis('off')
+        
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f'sample_{i}.png'))
+        plt.close()
