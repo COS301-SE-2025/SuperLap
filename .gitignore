@@ -65,5 +65,7 @@ Backend/RacelineOptimizer/Input
 Unity/TestResults/
 
 # Ignore personal files
-todo
-old.txt
+Backend/RacelineOptimizer/todo
+Backend/RacelineOptimizer/old.txt
+Backend/RacelineOptimizer/CNNoutput
+Backend/RacelineOptimizer/data

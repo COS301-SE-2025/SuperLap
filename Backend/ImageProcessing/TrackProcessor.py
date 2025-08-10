@@ -11,6 +11,8 @@ from scipy import ndimage
 from scipy.interpolate import interp1d, splprep, splev
 from skimage.morphology import skeletonize
 
+from TrackCNN import load_model_from_file, process_images
+
 class TrackProcessor:
     def __init__(self):
         #initialize track values
@@ -487,6 +489,19 @@ def processAllTracks(input_dir='trackImages', output_base_dir='processedTracks',
         result = processTrack(img_path, output_base_dir, show_debug, centerline_method, extract_centerline)
         if result:
             results.append(result)
+
+    return results
+
+
+def run_cnn_on_tracks(image_paths):
+    model = load_model_from_file()  # loads 'MapSegmentationGenerator.keras' by default
+
+    # Run prediction and save outputs
+    results = process_images(model, image_paths)
+
+    # Print/log output paths for terminal
+    for img_path, pred_path in results.items():
+        print(f"Predicted mask for {img_path} saved at {pred_path}")
 
     return results
 
