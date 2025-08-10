@@ -187,3 +187,59 @@ def plot_training_history(history, output_dir):
     plt.savefig(plot_path)
     plt.close()
     print(f"Training metrics plot saved to {plot_path}")
+
+def train_model(model, x_train, y_train, epochs=83, output_file=None):
+    """Train the model with progress bar in terminal and clean logs in file"""
+    class DualOutput:
+        def __init__(self, terminal, log_file):
+            self.terminal = terminal
+            self.log = log_file
+            
+        def write(self, message):
+            self.terminal.write(message)
+            # Only write complete lines (no progress bars) to log file
+            if '\r' not in message and '\x1b' not in message:
+                self.log.write(message)
+                
+        def flush(self):
+            self.terminal.flush()
+            self.log.flush()
+
+    # Open log file if specified
+    log_file = None
+    original_stdout = sys.stdout
+    if output_file:
+        log_file = open(output_file, 'a')
+        print("\n" + "="*50, file=log_file)
+        print("TRAINING OUTPUT", file=log_file)
+        print("="*50 + "\n", file=log_file)
+        sys.stdout = DualOutput(original_stdout, log_file)
+
+    # Train with both progress bar and clean epoch summaries
+    history = model.fit(
+        x_train,
+        y_train,
+        epochs=epochs,
+        batch_size=32,
+        validation_split=0.2,
+        verbose=1  # Keep progress bar in terminal
+    )
+
+    # Print clean epoch summaries
+    print("\nTraining Summary:")
+    for epoch in range(epochs):
+        epoch_log = (f"Epoch {epoch+1}/{epochs}\n"
+                    f" - loss: {history.history['loss'][epoch]:.4f}\n"
+                    f" - accuracy: {history.history['accuracy'][epoch]:.4f}")
+        if 'val_loss' in history.history:
+            epoch_log += (f"\n - val_loss: {history.history['val_loss'][epoch]:.4f}\n"
+                         f" - val_accuracy: {history.history['val_accuracy'][epoch]:.4f}")
+        print(epoch_log + "\n")
+
+    # Clean up
+    if output_file:
+        log_file.close()
+        sys.stdout = original_stdout
+        print(f"\nTraining summary saved to {output_file}")
+
+    return history
