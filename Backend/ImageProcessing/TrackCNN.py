@@ -266,3 +266,37 @@ def predict16(valMap, model, shape=128):
     
     predictions = model.predict(imgProc)
     return predictions, imgProc, mask
+
+def plot_predictions(img, predMask, groundTruth, output_dir, index):
+    """
+    Plots and saves comparison of input image, prediction, and ground truth.
+    
+    Args:
+        img: Input image array
+        predMask: Predicted mask array
+        groundTruth: Ground truth mask array
+        output_dir: Directory to save plots
+        index: Index number for filename
+    """
+    plt.figure(figsize=(9, 9))
+    
+    plt.subplot(1, 3, 1)
+    plt.imshow(img)
+    plt.title('Aerial Image')
+    plt.axis('off')
+    
+    plt.subplot(1, 3, 2)
+    plt.imshow(predMask, cmap='gray')
+    plt.title('Predicted Routes')
+    plt.axis('off')
+    
+    plt.subplot(1, 3, 3)
+    plt.imshow(groundTruth, cmap='gray')
+    plt.title('Actual Routes')
+    plt.axis('off')
+    
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, f'prediction_comparison_{index}.png')
+    plt.savefig(plot_path)
+    plt.close()
+    print(f"Saved prediction plot to {plot_path}")
