@@ -374,3 +374,47 @@ def predict_images(model, image_paths, target_size=(128, 128)):
             print(f"Error processing {path}: {str(e)}")
             predictions.append(None)
     return predictions
+
+def visualize_results(predicted_mask, original_image, save_dir=None, index=None):
+    """
+    Visualize and save comparison of original image and predicted mask.
+    
+    Args:
+        predicted_mask: Model prediction array
+        original_image: Original PIL Image or array
+        save_dir: Directory to save visualization
+        index: Optional index for filename
+    """
+    # Convert inputs to numpy arrays
+    original_img = np.array(original_image)
+    pred_mask = np.squeeze(np.array(predicted_mask))  # Remove extra dimensions
+    
+    # Create figure
+    plt.figure(figsize=(12, 6))
+    
+    # Original image
+    plt.subplot(1, 2, 1)
+    plt.imshow(original_img)
+    plt.title('Original Image')
+    plt.axis('off')
+    
+    # Predicted mask with color
+    plt.subplot(1, 2, 2)
+    # Create blue-green mask (like previous implementation)
+    colored_mask = np.zeros((*pred_mask.shape, 3))
+    colored_mask[..., 1] = pred_mask * 0.7  # Green
+    colored_mask[..., 2] = pred_mask * 0.9  # Blue
+    plt.imshow(colored_mask)
+    plt.title('Predicted Roads')
+    plt.axis('off')
+    
+    # Save or show
+    if save_dir and index is not None:
+        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(save_dir, f'test_prediction_{index}.png')
+        plt.savefig(save_path, bbox_inches='tight', dpi=150)
+        plt.close()
+        print(f"Saved test prediction visualization to {save_path}")
+    else:
+        plt.tight_layout()
+        plt.show()
