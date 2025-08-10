@@ -56,3 +56,34 @@ def load_data(frameObj=None, imgPath=None, maskPath=None, shape=128):
         frameObj['mask'].append(mask[:, :, 0])  # binary mask is in channel 0
 
     return frameObj
+
+def conv2d_block(inputTensor, numFilters, kernelSize=3, doBatchNorm=True):
+    """
+    Creates a convolutional block with two Conv2D layers, batch norm, and ReLU activation.
+    """
+    x = tf.keras.layers.Conv2D(
+        filters=numFilters, 
+        kernel_size=(kernelSize, kernelSize),
+        kernel_initializer='he_normal', 
+        padding='same'
+    )(inputTensor)
+    
+    if doBatchNorm:
+        x = tf.keras.layers.BatchNormalization()(x)
+        
+    x = tf.keras.layers.Activation('relu')(x)
+    
+    x = tf.keras.layers.Conv2D(
+        filters=numFilters, 
+        kernel_size=(kernelSize, kernelSize),
+        kernel_initializer='he_normal', 
+        padding='same'
+    )(x)
+    
+    if doBatchNorm:
+        x = tf.keras.layers.BatchNormalization()(x)
+        
+    x = tf.keras.layers.Activation('relu')(x)
+    
+    return x
+
