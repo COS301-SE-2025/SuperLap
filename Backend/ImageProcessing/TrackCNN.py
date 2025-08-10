@@ -17,3 +17,42 @@ def save_model_summary(model, filename):
         sys.stdout = f  # Change the standard output to the file we created
         model.summary()
         sys.stdout = original_stdout  # Reset the standard output to its original value
+
+def load_data(frameObj=None, imgPath=None, maskPath=None, shape=128):
+    """
+    Load data from image and mask directories and resize them to the specified shape.
+
+    Args:
+        frameObj (dict): Dictionary to store the loaded images and masks.
+        imgPath (str): Path to the directory containing the images.
+        maskPath (str): Path to the directory containing the masks.
+        shape (int): Desired shape for resizing the images and masks.
+
+    Returns:
+        dict: Dictionary containing the loaded and resized images and masks.
+    """
+    imgNames = os.listdir(imgPath)
+    maskNames = []
+
+    # Generate mask names
+    for mem in imgNames:
+        mem = mem.split('_')[0]
+        if mem not in maskNames:
+            maskNames.append(mem)
+
+    imgAddr = imgPath + '/'
+    maskAddr = maskPath + '/'
+
+    for i in range(len(imgNames)):
+        try:
+            img = plt.imread(imgAddr + maskNames[i] + '_sat.jpg')
+            mask = plt.imread(maskAddr + maskNames[i] + '_mask.png')
+        except:
+            continue
+        
+        img = cv2.resize(img, (shape, shape))
+        mask = cv2.resize(mask, (shape, shape))
+        frameObj['img'].append(img)
+        frameObj['mask'].append(mask[:, :, 0])  # binary mask is in channel 0
+
+    return frameObj
