@@ -466,6 +466,7 @@ def test_model_predictions(model, test_dir='data/test', output_dir='CNNoutput/te
     except Exception as e:
         print(f"Error accessing test directory: {str(e)}")
 
+
 #Phase 5: Miscellaneous functions
 def calculate_f1_score(model, test_dir='data/test', mask_dir='data/test', 
                      output_file='CNNoutput/road_extraction_unet.txt', max_samples=None):
@@ -621,3 +622,94 @@ def predict_custom_image(model, image_path, output_dir):
     except Exception as e:
         print(f"\nError processing custom image: {str(e)}")
         return None
+
+
+# Main function to run the entire pipeline
+def main():
+    # Initialize data container
+    frameObjTrain = {'img': [], 'mask': []}
+
+    # Load data
+    img_path = "data/train"
+    mask_path = "data/train"
+    try:
+        frameObjTrain = load_data(frameObjTrain, img_path, mask_path)
+        print(f"Loaded {len(frameObjTrain['img'])} training images")
+    except Exception as e:
+        print(f"Error loading training data: {str(e)}")
+        return
+
+    # Save sample images
+    save_sample_images(frameObjTrain, output_dir)
+
+    # Build and compile model
+    inputs = tf.keras.layers.Input((128, 128, 3))
+    unet = unet_block(inputs, droupouts=0.07)
+    unet.compile(optimizer='Adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    # Save model info
+    summary_file = os.path.join(output_dir, 'road_extraction_unet.txt')
+    save_model_summary(unet, summary_file)
+    print(f"Model summary saved to {summary_file}")
+
+    # Train model
+    x_train = np.array(frameObjTrain['img'])
+    y_train = np.array(frameObjTrain['mask'])
+    print(f"\nTraining data shape: {x_train.shape}")
+    print(f"Mask data shape: {y_train.shape}")
+    
+    history = train_model(unet, x_train, y_train, epochs=1, output_file=summary_file)
+    
+    # Save and verify model
+    model_path = os.path.join(output_dir, 'MapSegmentationGenerator.keras')
+    try:
+        unet.save(model_path)
+        print(f"\nModel saved to {model_path}")
+    except Exception as e:
+        print(f"Error saving model: {str(e)}")
+        return
+        
+    if not os.path.exists(model_path):
+        print(f"Model file not found at {model_path}")
+        return
+
+    # Test models
+    print("\nTesting with in-memory model:")
+    test_model_predictions(unet, max_samples=3)
+    calculate_f1_score(unet, max_samples=3)
+    
+    print("\n" + "="*50)
+    print("VERIFYING SAVED MODEL")
+    print("="*50)
+    
+    try:
+        loaded_model = load_saved_model(model_path)
+        print("\nTesting with loaded model:")
+        test_model_predictions(loaded_model, max_samples=3)
+        calculate_f1_score(loaded_model, max_samples=3)
+        
+        # Custom image test
+        custom_image_path = "testimage/test.jpg"
+        if os.path.exists(custom_image_path):
+            print("\n" + "="*50)
+            print("TESTING CUSTOM MAP SCREENSHOT")
+            print("="*50)
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            road_mask = predict_custom_image(
+                loaded_model, 
+                custom_image_path, 
+                output_dir
+            )
+            
+            if road_mask is not None:
+                print(f"\nRoad pixels detected: {np.sum(road_mask)}")
+        else:
+            print(f"\nCustom image not found at {custom_image_path}")
+            
+    except Exception as e:
+        print(f"\nModel verification failed: {str(e)}")
+
+if __name__ == "__main__":
+    from datetime import datetime
+    main()
