@@ -465,3 +465,107 @@ def test_model_predictions(model, test_dir='data/test', output_dir='CNNoutput/te
                 
     except Exception as e:
         print(f"Error accessing test directory: {str(e)}")
+
+#Phase 5: Miscellaneous functions
+def calculate_f1_score(model, test_dir='data/test', mask_dir='data/test', 
+                     output_file='CNNoutput/road_extraction_unet.txt', max_samples=None):
+    """
+    Calculate F1-score, precision, and recall for model predictions on test set.
+    
+    Args:
+        model: Trained Keras model
+        test_dir: Directory containing test images
+        mask_dir: Directory containing ground truth masks
+        output_file: File path to save results
+        max_samples: Maximum number of samples to evaluate (None for all)
+    """
+    def get_iou(y_true, y_pred):
+        """Calculate Intersection over Union"""
+        intersection = np.logical_and(y_true, y_pred)
+        union = np.logical_or(y_true, y_pred)
+        return np.sum(intersection) / np.sum(union)
+    
+    # Initialize metrics
+    total_tp = 0
+    total_fp = 0
+    total_fn = 0
+    total_iou = 0
+    processed = 0
+    
+    # Get test images
+    test_images = sorted([f for f in os.listdir(test_dir) if f.endswith('_sat.jpg')])
+    if max_samples:
+        test_images = test_images[:max_samples]
+    
+    if not test_images:
+        print("No test images found!")
+        return
+    
+    print(f"\nEvaluating {len(test_images)} test images...")
+    
+    for img_name in test_images:
+        try:
+            # Load image and corresponding mask
+            base_name = img_name.split('_')[0]
+            img_path = os.path.join(test_dir, img_name)
+            mask_path = os.path.join(mask_dir, f"{base_name}_mask.png")
+            
+            # Process image
+            img = Image.open(img_path).resize((128, 128))
+            img_array = np.array(img) / 255.0
+            
+            # Get prediction
+            pred = model.predict(np.expand_dims(img_array, axis=0))[0]
+            pred_mask = (pred > 0.5).astype(np.uint8)[..., 0]  # Threshold at 0.5
+            
+            # Load ground truth
+            true_mask = np.array(Image.open(mask_path).resize((128, 128)))
+            true_mask = (true_mask > 0).astype(np.uint8)  # Binarize
+            
+            # Calculate metrics
+            tp = np.sum(np.logical_and(pred_mask == 1, true_mask == 1))
+            fp = np.sum(np.logical_and(pred_mask == 1, true_mask == 0))
+            fn = np.sum(np.logical_and(pred_mask == 0, true_mask == 1))
+            
+            total_tp += tp
+            total_fp += fp
+            total_fn += fn
+            total_iou += get_iou(true_mask, pred_mask)
+            processed += 1
+            
+            # Print sample results
+            print(f"\nSample: {img_name}")
+            print(f"True Positives: {tp}")
+            print(f"False Positives: {fp}")
+            print(f"False Negatives: {fn}")
+            print(f"IoU: {get_iou(true_mask, pred_mask):.4f}")
+            
+        except Exception as e:
+            print(f"Error processing {img_name}: {str(e)}")
+    
+    if processed == 0:
+        print("No images processed successfully!")
+        return
+    
+    # Calculate final metrics
+    precision = total_tp / (total_tp + total_fp + 1e-7)
+    recall = total_tp / (total_tp + total_fn + 1e-7)
+    f1 = 2 * (precision * recall) / (precision + recall + 1e-7)
+    mean_iou = total_iou / processed
+    
+    # Format results
+    results = f"""
+{'='*50}
+EVALUATION METRICS (N={processed})
+{'='*50}
+Precision: {precision:.4f}
+Recall: {recall:.4f}
+F1-Score: {f1:.4f}
+Mean IoU: {mean_iou:.4f}
+"""
+    
+    # Print to console and save to file
+    print(results)
+    with open(output_file, 'a') as f:
+        f.write(results)
+    print(f"Metrics saved to {output_file}")
