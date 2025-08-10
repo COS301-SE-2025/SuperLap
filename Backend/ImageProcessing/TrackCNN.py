@@ -10,6 +10,7 @@ from PIL import Image
 output_dir = "CNNoutput"
 os.makedirs(output_dir, exist_ok=True)
 
+# Phase 1 of the system: Load and preprocess data
 def save_model_summary(model, filename):
     """Save model summary to a text file"""
     original_stdout = sys.stdout  # Save a reference to the original standard output
@@ -153,3 +154,36 @@ def save_sample_images(frameObj, output_dir, num_samples=5):
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, f'sample_{i}.png'))
         plt.close()
+
+#Phase 2 of the system: Train the model
+def plot_training_history(history, output_dir):
+    """Enhanced plotting function"""
+    plt.figure(figsize=(12, 6))
+    
+    # Plot training & validation loss
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['loss'], label='Training Loss')
+    if 'val_loss' in history.history:
+        plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.title('Model Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+    
+    # Plot training & validation accuracy
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['accuracy'], label='Training Accuracy')
+    if 'val_accuracy' in history.history:
+        plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+    plt.title('Model Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.grid(True)
+    
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, 'training_metrics.png')
+    plt.savefig(plot_path)
+    plt.close()
+    print(f"Training metrics plot saved to {plot_path}")
