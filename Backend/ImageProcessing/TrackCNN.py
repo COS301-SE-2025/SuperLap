@@ -346,3 +346,31 @@ def load_saved_model(model_path):
     model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
     print(f"Model loaded from {model_path}")
     return model
+
+def predict_images(model, image_paths, target_size=(128, 128)):
+    """
+    Predict road masks for a list of input images.
+    
+    Args:
+        model: Loaded Keras model
+        image_paths: List of paths to input images
+        target_size: Size to resize images to
+        
+    Returns:
+        List of predictions (road masks)
+    """
+    predictions = []
+    for path in image_paths:
+        try:
+            # Load and preprocess image
+            img = Image.open(path)
+            img = img.resize(target_size)
+            img_array = np.array(img) / 255.0  # Normalize to [0,1]
+            
+            # Predict and store
+            pred = model.predict(np.expand_dims(img_array, axis=0))
+            predictions.append(pred)
+        except Exception as e:
+            print(f"Error processing {path}: {str(e)}")
+            predictions.append(None)
+    return predictions
