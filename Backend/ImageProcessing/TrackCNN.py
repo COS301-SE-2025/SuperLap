@@ -418,3 +418,50 @@ def visualize_results(predicted_mask, original_image, save_dir=None, index=None)
     else:
         plt.tight_layout()
         plt.show()
+
+def test_model_predictions(model, test_dir='data/test', output_dir='CNNoutput/test_predictions', max_samples=5):
+    """
+    Run predictions on test images and save visualizations (limited to max_samples).
+    
+    Args:
+        model: Loaded Keras model
+        test_dir: Directory containing test images
+        output_dir: Where to save prediction visualizations
+        max_samples: Maximum number of samples to process (default: 5)
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Find test images (limited to max_samples)
+    try:
+        test_images = sorted([
+            os.path.join(test_dir, f) for f in os.listdir(test_dir) 
+            if f.endswith('_sat.jpg')
+        ])[:max_samples]  # Only take first max_samples images
+        
+        if not test_images:
+            print(f"No test images found in {test_dir}")
+            return
+            
+        print(f"Processing {len(test_images)} test images (limited to first {max_samples})")
+        
+        # Make predictions
+        predictions = []
+        for i, path in enumerate(test_images, 1):
+            try:
+                img = Image.open(path)
+                img = img.resize((128, 128))
+                img_array = np.array(img) / 255.0
+                pred = model.predict(np.expand_dims(img_array, axis=0))
+                predictions.append(pred)
+                
+                # Save visualization
+                visualize_results(pred, img, output_dir, i)
+                print(f"Processed image {i}/{len(test_images)}: {os.path.basename(path)}")
+                
+            except Exception as e:
+                print(f"Error processing {path}: {str(e)}")
+                predictions.append(None)
+                
+    except Exception as e:
+        print(f"Error accessing test directory: {str(e)}")
