@@ -23,9 +23,9 @@ namespace RacelineOptimizer
         private int patience;
 
         public PSO(
-            float smoothnessWeight = 10f, //Favours less sharp turns (10f)
-            float distanceWeight = 0.0f, //Favours shorter paths(typically more straight) (0.0f)
-            float racingBiasWeight = 0.21f,  //Favours paths opposite to upcoming corner direction (0.21f)
+            float smoothnessWeight = 10f, //Favours less sharp turns (25f)
+            float distanceWeight = 0.0f, //Favours shorter paths(typically more straight) (4f)
+            float racingBiasWeight = 0.21f,  //Favours paths opposite to upcoming corner direction.
             float inertiaStart = 0.6f,
             float inertiaEnd = 0.1f,
             float cognitiveWeight = 1.7f,
@@ -81,6 +81,7 @@ namespace RacelineOptimizer
 
             return 0.5f;
         }
+
         
         private float CalculateCorneringCost(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners,  float[] ratios, List<(Vector2 inner, Vector2 outer)> cornerTrack)
         {
@@ -141,7 +142,7 @@ namespace RacelineOptimizer
                 totalCost += curvature * curvature;
             }
 
-            return totalCost * 100f;
+            return totalCost * 100000f;
         }
 
         private float EvaluateDistanceCost(List<Vector2> path)

@@ -37,12 +37,14 @@ public class ImageProcessing
       }
 
       // Get the path to the Python script
-      string scriptPath = Application.dataPath.Replace("Unity/Assets", "Backend/ImageProcessing/TrackProcessor.py");
+      string scriptPath = Path.Combine(Application.streamingAssetsPath, "TrackProcessor.py");
       if (!File.Exists(scriptPath))
       {
         result.errorMessage = $"TrackProcessor.py not found at: {scriptPath}";
         return result;
       }
+
+      Debug.Log($"Using Python script at: {scriptPath}");
 
       // Create simple Python code to call the dedicated integration function
       string pythonCode = $@"

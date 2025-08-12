@@ -11,7 +11,7 @@ namespace RacelineOptimizer
             List<Vector2> inner,
             List<Vector2> outer,
             List<Vector2> raceline,
-            List<CornerDetector.CornerSegment>? corners = null)
+            List<CornerDetector.CornerSegment> corners = null)
         {
             using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write);
             using var bw = new BinaryWriter(fs);
