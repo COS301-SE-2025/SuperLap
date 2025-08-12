@@ -50,18 +50,28 @@ namespace RacelineOptimizer
             return MathF.Max(min, MathF.Min(max, value));
         }
 
-        private static float GetCornerBias(List<CornerDetector.CornerSegment> corners, int index)
+        private static float GetCornerBias(
+            List<CornerDetector.CornerSegment> corners,
+            int index,
+            int currentTrackLength,
+            int cornerTrackLength)
         {
+            // Remap the index from the current track to cornerTrack space
+            int mappedIndex = (int)(index * (cornerTrackLength / (float)currentTrackLength));
+
             foreach (var corner in corners)
             {
-                if (corner.EndIndex < index)
+                if (corner.EndIndex < mappedIndex)
                     continue;
 
                 float severity = MathF.Min(1f, MathF.Abs(corner.Angle) / 90f);
-                float t = Math.Clamp((index - corner.StartIndex) / (float)(corner.EndIndex - corner.StartIndex), 0f, 1f);
+                float t = Math.Clamp((mappedIndex - corner.StartIndex) / (float)(corner.EndIndex - corner.StartIndex), 0f, 1f);
 
-                // Outer -> inner -> outer
-                float baseBias = MathF.Cos(t * MathF.PI);
+                // Jump immediately to ideal bias at entry (cosine step removed)
+                float baseBias = (mappedIndex < corner.StartIndex + (corner.EndIndex - corner.StartIndex) / 3f) ? -1f :
+                                (mappedIndex > corner.StartIndex + 2 * (corner.EndIndex - corner.StartIndex) / 3f) ? 1f :
+                                0f;
+
                 float biasOffset = baseBias * 0.5f * severity;
 
                 return corner.IsLeftTurn
