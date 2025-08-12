@@ -151,7 +151,7 @@ namespace RacelineOptimizer
       }
 
       PSO pso = new PSO();
-      float[] bestRatios = pso.Optimize(track, corners, numParticles, iterations);
+      float[] bestRatios = pso.Optimize(track, corners, cornerTrack, numParticles, iterations);
       if (bestRatios == null || bestRatios.Length == 0)
       {
         Debug.Log("Error: Optimization failed to find a valid solution.");
