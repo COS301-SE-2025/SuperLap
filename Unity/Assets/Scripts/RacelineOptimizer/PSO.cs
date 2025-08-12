@@ -82,13 +82,13 @@ namespace RacelineOptimizer
             return 0.5f;
         }
         
-        private float CalculateCorneringCost(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, float[] ratios)
+        private float CalculateCorneringCost(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners,  float[] ratios, List<(Vector2 inner, Vector2 outer)> cornerTrack)
         {
             float cost = 0f;
             for (int i = 0; i < track.Count; i++)
             {
-                float idealBias = GetCornerBias(corners, i);
-                float ratio = ratios[i];
+                float idealBias = GetCornerBias(corners, i, track.Count, cornerTrack.Count);
+
 
                 if (idealBias > 0.5f)
                 {
