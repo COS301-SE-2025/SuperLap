@@ -154,14 +154,14 @@ namespace RacelineOptimizer
             return totalDistance;
         }
 
-        private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios, List<CornerDetector.CornerSegment> corners)
+        private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> cornerTrack)
         {
             List<Vector2> path = new(track.Count);
             for (int i = 0; i < track.Count; i++)
                 path.Add(Vector2.Lerp(track[i].inner, track[i].outer, ratios[i]));
 
             float cost = 0f;
-            float corneringCost = CalculateCorneringCost(track, corners, ratios);
+            float corneringCost = CalculateCorneringCost(track, corners, ratios, cornerTrack);
             float smoothnessCost = CalculateSmoothnessCost(path);
             float distanceCost = EvaluateDistanceCost(path);
             cost += distanceCost * distanceWeight
