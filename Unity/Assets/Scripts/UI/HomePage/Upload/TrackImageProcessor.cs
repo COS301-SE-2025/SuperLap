@@ -11,6 +11,14 @@ public class TrackImageProcessor : MonoBehaviour
 {
   [Header("UI References")]
   [SerializeField] private Image previewImage;
+  [SerializeField] private Button traceButton;
+  [SerializeField] private Button resetTraceButton;
+  [SerializeField] private Button processButton;
+  [SerializeField] private Text instructionText;
+  [SerializeField] private Slider maskWidthSlider;
+  [SerializeField] private Text maskWidthLabel;
+  
+  
 
   [Header("Upload Settings")]
   [SerializeField]
@@ -23,6 +31,13 @@ public class TrackImageProcessor : MonoBehaviour
   [SerializeField] private int particleCount = 100;
   [SerializeField] private int maxIterations = 6000;
 
+  [Header("Centerline Tracing Settings")]
+  [SerializeField] private int maskWidth = 50;
+  [SerializeField] private Color centerlineColor = Color.green;
+  [SerializeField] private Color startPositionColor = Color.red;
+  [SerializeField] private int CenterlineThickness = 3;
+  [SerializeField] private float minPointDistance = 5f;
+
   [Header("Output Settings")]
   [SerializeField] private Image outputImage;
   [SerializeField] private int outputImageWidth = 1024;
@@ -31,6 +46,15 @@ public class TrackImageProcessor : MonoBehaviour
   [SerializeField] private Color outerBoundaryColor = Color.blue;
   [SerializeField] private Color racelineColor = Color.green;
   [SerializeField] private int lineThickness = 3;
+
+  //Centerline tracing state
+  private bool isTracingMode = false;
+  private bool isDrawing = false;
+  private List<Vector2> centerlinePoints = new List<Vector2>();
+  private Vector2? startPosition = null;
+  private float raceDirection = 0f;
+  private Texture2D centerlineOverlay;
+  private RectTransform previewImageRect;
 
   // Results data
 
@@ -43,6 +67,9 @@ public class TrackImageProcessor : MonoBehaviour
     public List<Vector2> outerBoundary;
     public List<Vector2> raceline;
     public float processingTime;
+    public List<Vector2> centerlinePoints;
+    public Vector2? startPosition;
+    public float raceDirection;
   }
 
   private string selectedImagePath;
