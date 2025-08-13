@@ -91,6 +91,9 @@ public class TrackImageProcessor : MonoBehaviour
     }
 
     homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
+
+    SetupUI();
+    SetTracingMode(false);
   }
 
   private void SetupUI()
@@ -248,9 +251,18 @@ public class TrackImageProcessor : MonoBehaviour
       previewImage.sprite = imageSprite;
       previewImage.gameObject.SetActive(true);
 
+      if (traceButton != null)
+      {
+        traceButton.interactable = true;
+      }
+
       string fileName = Path.GetFileName(imagePath);
       Debug.Log($"Image loaded successfully: {fileName} ({loadedTexture.width}x{loadedTexture.height})");
       OnImageLoaded?.Invoke($"Image loaded: {fileName}");
+
+      //Reset any existing centerline
+      ResetCenterline();
+      UpdateInstructions();
     }
     else
     {
@@ -268,6 +280,12 @@ public class TrackImageProcessor : MonoBehaviour
       return;
     }
 
+    if (centerlinePoints.Count < 100)
+    {
+      Debug.LogError("Need to trace centerline before processing");
+      return;
+    }
+
     StartCoroutine(ProcessTrackImageCoroutine());
   }
 
@@ -277,6 +295,24 @@ public class TrackImageProcessor : MonoBehaviour
 
     Debug.Log("Starting track image processing...");
     OnProcessingStarted?.Invoke("Processing track image...");
+
+    //Create mask from centerline
+    Texture2D centerlineMask = CreateMaskFromCenterline();
+    if (centerlineMask == null)
+    {
+      string errorMsg = "Failed to create centerline mask";
+      Debug.LogError(errorMsg);
+
+      lastResults = new ProcessingResults
+      {
+        success = false,
+        errorMessage = errorMsg,
+        processingTime = Time.realtimeSinceStartup - startTime
+      };
+
+      OnProcessingComplete?.Invoke(lastResults);
+      yield break;
+    }
 
     // Process the image to get boundaries
     ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(selectedImagePath);
@@ -331,6 +367,12 @@ public class TrackImageProcessor : MonoBehaviour
     };
 
     Debug.Log($"Track processing completed successfully in {processingTime:F2} seconds.");
+
+    //Clean up mask texture
+    if (centerlineMask != null)
+    {
+      Destroy(centerlineMask);
+    }
 
     // Generate output image
     GenerateOutputImage();
@@ -459,6 +501,26 @@ public class TrackImageProcessor : MonoBehaviour
   public bool HasValidResults()
   {
     return lastResults != null && lastResults.success;
+  }
+
+  public bool HasCenterlineData()
+  {
+    return centerlinePoints != null && centerlinePoints.Count > 100;
+  }
+
+  public List<Vector2> GetCenterlinePoints()
+  {
+    return new List<Vector2>(centerlinePoints);
+  }
+
+  public Vector2? GetStartPosition()
+  {
+    return startPosition;
+  }
+
+  public float GetRaceDirection()
+  {
+    return raceDirection;
   }
 
   // Public method to manually navigate to racing line with current results
