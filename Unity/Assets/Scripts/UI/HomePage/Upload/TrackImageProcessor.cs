@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using RacelineOptimizer;
+using System;
 
 public class TrackImageProcessor : MonoBehaviour
 {
@@ -92,7 +93,40 @@ public class TrackImageProcessor : MonoBehaviour
     homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
   }
 
-  public void OpenImageDialog()
+  private void SetupUI()
+  {
+    if (traceButton != null)
+    {
+      traceButton.onClick.AddListener(ToggleTracingMode);
+      traceButton.interactable = false;
+    }
+  }
+
+  private void ToggleTracingMode()
+  {
+    SetTracingMode(!isTracingMode);
+  }
+
+  private void SetTracingMode(bool enabled)
+  {
+    isTracingMode = enabled;
+    if (traceButton != null)
+    {
+      traceButton.GetComponentInChildren<Text>().text = isTracingMode ? "Stop Tracing" : "Trace Centerline";
+    }
+    if (resetTraceButton != null)
+    {
+      resetTraceButton.interactable = isTracingMode || centerlinePoints.Count > 0;
+    }
+    if (processButton != null)
+    {
+      processButton.interactable = !isTracingMode && centerlinePoints.Count > 100;
+    }
+
+    UpdateInstructions();
+  }
+
+    public void OpenImageDialog()
   {
     var paths = StandaloneFileBrowser.OpenFilePanel("Select Track Image", "", extensionFilters, false);
 
