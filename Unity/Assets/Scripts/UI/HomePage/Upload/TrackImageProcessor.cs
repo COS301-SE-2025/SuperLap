@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using RacelineOptimizer;
 using System;
+using UnityEngine.EventSystems;
 
 public class TrackImageProcessor : MonoBehaviour
 {
@@ -211,6 +212,36 @@ public class TrackImageProcessor : MonoBehaviour
     UpdateInstructions();
   }
 
+  public void OnPointerDown(PointerEventData eventData)
+  {
+    if (!isTracingMode || loadedTexture == null) return;
+
+    Vector2 localPoint;
+    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(previewImageRect, eventData.position, eventData.pressEventCamera, out localPoint))
+    {
+      Vector2 normalisedPoint = GetNormalisedImagePoint(localPoint);
+      Vector2 imagePoint = new Vector2(normalisedPoint.x * loadedTexture.width, normalisedPoint.y * loadedTexture.height);
+
+      isDrawing = true;
+      centerlinePoints.Clear();
+      centerlinePoints.Add(imagePoint);
+      startPosition = imagePoint;
+
+      Debug.Log($"Started centerline at: ({imagePoint.x:F1}, {imagePoint.y:F1})");
+      UpdateCenterlineOverlay();
+    }
+  }
+
+    private void UpdateCenterlineOverlay()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Vector2 GetNormalisedImagePoint(Vector2 localPoint)
+    {
+        throw new NotImplementedException();
+    }
+
     public void OpenImageDialog()
   {
     var paths = StandaloneFileBrowser.OpenFilePanel("Select Track Image", "", extensionFilters, false);
@@ -383,8 +414,13 @@ public class TrackImageProcessor : MonoBehaviour
     OnProcessingComplete?.Invoke(lastResults);
   }
 
-  // Helper method to convert System.Numerics.Vector2 to UnityEngine.Vector2
-  private List<Vector2> ConvertToUnityVectors(List<System.Numerics.Vector2> numericsVectors)
+    private Texture2D CreateMaskFromCenterline()
+    {
+        throw new NotImplementedException();
+    }
+
+    // Helper method to convert System.Numerics.Vector2 to UnityEngine.Vector2
+    private List<Vector2> ConvertToUnityVectors(List<System.Numerics.Vector2> numericsVectors)
   {
     if (numericsVectors == null)
       return new List<Vector2>();
@@ -702,6 +738,14 @@ public class TrackImageProcessor : MonoBehaviour
     return outputTexture;
   }
 
+  public Texture2D GetCenterlineMask()
+  {
+    if (centerlinePoints.Count < 100)
+    {
+      return null;
+    }
+    return CreateMaskFromCenterline();
+  }
   private void OnDestroy()
   {
     if (loadedTexture != null)
