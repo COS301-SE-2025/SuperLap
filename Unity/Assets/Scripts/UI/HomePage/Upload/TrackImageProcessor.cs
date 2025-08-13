@@ -138,7 +138,20 @@ public class TrackImageProcessor : MonoBehaviour
 
   private void UpdateInstructions()
   {
-      throw new NotImplementedException();
+    if (instructionText == null) return;
+    if (loadedTexture == null)
+    {
+      instructionText.text = "Upload a track image to begin";
+    }else if (isTracingMode)
+    {
+      instructionText.text = "Click and drag to trace the centerline. First point = start/finish line.";
+    }else if (centerlinePoints.Count > 100)
+    {
+      instructionText.text = $"Centerline traced with {centerlinePoints.Count} points. Ready to process!";
+    }else
+    {
+      instructionText.text = "Click 'Trace Centerline' to begin tracing the track centerline";
+    }
   }
 
     private void ToggleTracingMode()
