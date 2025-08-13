@@ -51,14 +51,14 @@ namespace CSVToBinConverter
         {
           if (trackName == "Losail")
           {
-            float angleDeg = 241.2f;
+            float angleDeg = 241f;
             float angleRad = angleDeg * (float)Math.PI / 180f;
             float cos = MathF.Cos(angleRad);
             float sin = MathF.Sin(angleRad);
             float rotatedX = cos * x - sin * y;
             float rotatedY = sin * x + cos * y;
 
-            float scaleFactor = 0.914f; // Adjust scale factor as needed
+            float scaleFactor = 6.834f; // Adjust scale factor as needed
             rotatedX *= scaleFactor;
             rotatedY *= scaleFactor;
 
@@ -95,7 +95,7 @@ namespace CSVToBinConverter
         return;
       }
 
-      EdgeData edgeData = EdgeData.LoadFromBinary(trackPath);
+      EdgeData edgeData = EdgeData.LoadFromBinary(trackPath, true);
 
       if (edgeData.OuterBoundary.Count == 0 || edgeData.InnerBoundary.Count == 0)
       {
@@ -121,6 +121,11 @@ namespace CSVToBinConverter
       for (int i = 0; i < edgeData.InnerBoundary.Count; i++)
       {
         edgeData.InnerBoundary[i] -= new Vector2(edgeCenterX, edgeCenterY);
+      }
+
+      for (int i = 0; i < edgeData.Raceline.Count; i++)
+      {
+        edgeData.Raceline[i] -= new Vector2(edgeCenterX, edgeCenterY);
       }
 
       float playerMinX = playerline.Min(p => p.X);
@@ -150,7 +155,7 @@ namespace CSVToBinConverter
       {
         WritePoints(writer, edgeData.OuterBoundary);
         WritePoints(writer, edgeData.InnerBoundary);
-        WritePoints(writer, allEdges);
+        WritePoints(writer, edgeData.Raceline);
         WritePoints(writer, playerline);
       }
 
@@ -166,7 +171,7 @@ namespace CSVToBinConverter
         canvasSize: canvasSize,
         includeRaceline: false,
         includeCorners: false,
-        showDirectionGradient: false,
+        showDirectionGradient: true,
         includePlayerline: true
       );
     }
