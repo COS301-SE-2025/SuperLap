@@ -232,7 +232,50 @@ public class TrackImageProcessor : MonoBehaviour
     }
   }
 
-  private void UpdateCenterlineOverlay()
+  public void OnDrag(PointerEventData eventData)
+  {
+    if (!isTracingMode || !isDrawing || loadedTexture == null) return;
+
+    Vector2 localPoint;
+    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(previewImageRect, eventData.position, eventData.pressEventCamera, out localPoint))
+    {
+      Vector2 normalisedPoint = GetNormalisedImagePoint(localPoint);
+      Vector2 imagePoint = new Vector2(normalisedPoint.x * loadedTexture.width, normalisedPoint.y * loadedTexture.height);
+
+      if (centerlinePoints.Count == 0 || Vector2.Distance(imagePoint, centerlinePoints[centerlinePoints.Count - 1]) > minPointDistance)
+      {
+        centerlinePoints.Add(imagePoint);
+
+        //Calculate race direction
+        if (centerlinePoints.Count >= 10)
+        {
+          CalculateRaceDirection();
+        }
+
+        UpdateCenterlineOverlay();
+      }
+    }
+  }
+
+  private void CalculateRaceDirection()
+  {
+    if (centerlinePoints.Count < 5) return;
+
+    int endInx = Mathf.Min(10, centerlinePoints.Count);
+    Vector2 startPoint = centerlinePoints[0];
+    Vector2 endPoint = centerlinePoints[endInx - 1];
+
+    Vector2 dir = endPoint - startPoint;
+    raceDirection = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+    //normalise to 0-360
+    if (raceDirection < 0)
+    {
+      raceDirection += 360f;
+    }
+  }
+
+    private void UpdateCenterlineOverlay()
   {
     if (loadedTexture == null || centerlinePoints.Count == 0) return;
 
