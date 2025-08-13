@@ -37,7 +37,7 @@ public class TrackImageProcessor : MonoBehaviour
   [SerializeField] private int maskWidth = 50;
   [SerializeField] private Color centerlineColor = Color.green;
   [SerializeField] private Color startPositionColor = Color.red;
-  [SerializeField] private int CenterlineThickness = 3;
+  [SerializeField] private int centerlineThickness = 3;
   [SerializeField] private float minPointDistance = 5f;
 
   [Header("Output Settings")]
@@ -234,10 +234,107 @@ public class TrackImageProcessor : MonoBehaviour
 
   private void UpdateCenterlineOverlay()
   {
-    
+    if (loadedTexture == null || centerlinePoints.Count == 0) return;
+
+    if (centerlineOverlay != null)
+    {
+      Destroy(centerlineOverlay);
+    }
+
+    centerlineOverlay = new Texture2D(loadedTexture.width, loadedTexture.height);
+    centerlineOverlay.SetPixels(loadedTexture.GetPixels());
+
+    //Draw centerline
+    for (int i = 1; i < centerlinePoints.Count; i++)
+    {
+      DrawLineOnTexture(centerlineOverlay, centerlinePoints[i - 1], centerlinePoints[i], centerlineColor);
+    }
+
+    //Draw start position
+    if (startPosition.HasValue)
+    {
+      DrawCircleOnTexture(centerlineOverlay, startPosition.Value, 8, startPositionColor);
+    }
+
+    centerlineOverlay.Apply();
+    //Update preview
+    Sprite overlaySprite = Sprite.Create(centerlineOverlay, new Rect(0, 0, centerlineOverlay.width, centerlineOverlay.height), new Vector2(0.5f, 0.5f));
+    previewImage.sprite = overlaySprite;
   }
 
-  private Vector2 GetNormalisedImagePoint(Vector2 localPoint)
+  private void DrawCircleOnTexture(Texture2D texture, Vector2 center, int radius, Color color)
+  {
+    int cx = Mathf.RoundToInt(center.x);
+    int cy = Mathf.RoundToInt(center.y);
+
+    for (int x = -radius; x <= radius; x++)
+    {
+      for (int y = -radius; y <= radius; y++)
+      {
+        if (x * x + y * y <= radius * radius)
+        {
+          int pixelX = cx + x;
+          int pixelY = cy + y;
+
+          if (pixelX >= 0 && pixelX < texture.width && pixelY >= 0 && pixelY < texture.height)
+          {
+            texture.SetPixel(pixelX, pixelY, color);
+          }
+        }
+      }
+    }
+  }
+    private void DrawLineOnTexture(Texture2D texture, Vector2 start, Vector2 end, Color color)
+  {
+    int x1 = Mathf.RoundToInt(start.x);
+    int y1 = Mathf.RoundToInt(start.y);
+    int x2 = Mathf.RoundToInt(end.x);
+    int y2 = Mathf.RoundToInt(end.y);
+
+    // Bresenham's line algorithm
+    int dx = Mathf.Abs(x2 - x1);
+    int dy = Mathf.Abs(y2 - y1);
+    int sx = x1 < x2 ? 1 : -1;
+    int sy = y1 < y2 ? 1 : -1;
+    int err = dx - dy;
+
+    int x = x1;
+    int y = y1;
+
+    while (true)
+    {
+      // Draw thick line
+      for (int offsetX = -centerlineThickness / 2; offsetX <= centerlineThickness / 2; offsetX++)
+      {
+        for (int offsetY = -centerlineThickness / 2; offsetY <= centerlineThickness / 2; offsetY++)
+        {
+          int pixelX = x + offsetX;
+          int pixelY = y + offsetY;
+
+          if (pixelX >= 0 && pixelX < texture.width && pixelY >= 0 && pixelY < texture.height)
+          {
+            texture.SetPixel(pixelX, pixelY, color);
+          }
+        }
+      }
+
+      if (x == x2 && y == y2) break;
+
+      int e2 = 2 * err;
+      if (e2 > -dy)
+      {
+        err -= dy;
+        x += sx;
+      }
+      if (e2 < dx)
+      {
+        err += dx;
+        y += sy;
+      }
+    }
+  }
+
+    private Vector2 GetNormalisedImagePoint(Vector2 localPoint)
   {
     Rect rect = previewImageRect.rect;
     float normalisedX = (localPoint.x + rect.width * 0.5f) / rect.width;
@@ -681,7 +778,7 @@ public class TrackImageProcessor : MonoBehaviour
     }
 
     // Connect last point to first for closed loop
-    if (points.Count > 2)
+    if (points.Count > 2 && points != lastResults.centerlinePoints)
     {
       Vector2 start = points[points.Count - 1];
       Vector2 end = points[0];
