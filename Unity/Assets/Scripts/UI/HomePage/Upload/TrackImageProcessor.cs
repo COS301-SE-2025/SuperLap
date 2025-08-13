@@ -95,20 +95,50 @@ public class TrackImageProcessor : MonoBehaviour
 
   private void SetupUI()
   {
+    //Trace button
     if (traceButton != null)
     {
       traceButton.onClick.AddListener(ToggleTracingMode);
       traceButton.interactable = false;
     }
-
+    //Reset button
     if (resetTraceButton != null)
     {
       resetTraceButton.onClick.AddListener(ResetCenterline);
       resetTraceButton.interactable = false;
     }
+    //Process button
+    if (processButton != null)
+    {
+      processButton.onClick.AddListener(ProcessTrackImage);
+      processButton.interactable = false;
+    }
+    //Setup mask width slider
+    if (maskWidthSlider != null)
+    {
+      maskWidthSlider.value = maskWidth;
+      maskWidthSlider.onValueChanged.AddListener(OnMaskWidthChanged);
+    }
+
+    UpdateInstructions();
+    UpdateMaskWidthLabel();
   }
 
-  private void ResetCenterline()
+  private void UpdateMaskWidthLabel()
+  {
+    if (maskWidthLabel != null)
+    {
+      maskWidthLabel.text = $"Mask Width: {maskWidth}px";
+    }
+  }
+
+  private void OnMaskWidthChanged(float value)
+  {
+    maskWidth = Mathf.RoundToInt(value);
+    UpdateMaskWidthLabel();
+  }
+
+    private void ResetCenterline()
   {
     centerlinePoints.Clear();
     startPosition = null;
