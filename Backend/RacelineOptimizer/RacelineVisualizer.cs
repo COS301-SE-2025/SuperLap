@@ -15,6 +15,7 @@ namespace RacelineVisualizer
             public List<Point> OuterBoundary { get; set; } = new();
             public List<Point> InnerBoundary { get; set; } = new();
             public List<Point> Raceline { get; set; } = new();
+            public List<Point> Playerline { get; set; } = new(); // NEW
             public List<CornerSegment> Corners { get; set; } = new();
         }
 
@@ -31,42 +32,38 @@ namespace RacelineVisualizer
             public int EndIndex;
         }
 
-       public static EdgeData ReadEdgesFromBin(string path, bool includeRaceline = false, bool includeCorners = false)
+        public static EdgeData ReadEdgesFromBin(
+            string path,
+            bool includeRaceline = false,
+            bool includeCorners = false,
+            bool includePlayerline = false) // NEW
         {
             EdgeData data = new();
 
             using var reader = new BinaryReader(File.OpenRead(path));
-
             try
             {
                 data.OuterBoundary = ReadPoints(reader); // always read
                 data.InnerBoundary = ReadPoints(reader); // always read
-                var rawRaceline = ReadPoints(reader);    // always read
 
+                var rawRaceline = ReadPoints(reader);    // always read from file
                 if (includeRaceline)
                     data.Raceline = rawRaceline;
+
+                // Playerline will only exist in new-format files
+                if (reader.BaseStream.Position < reader.BaseStream.Length)
+                {
+                    var rawPlayerline = ReadPoints(reader);
+                    if (includePlayerline)
+                        data.Playerline = rawPlayerline;
+                }
 
                 if (includeCorners && reader.BaseStream.Position < reader.BaseStream.Length)
                 {
                     int cornerCount = reader.ReadInt32();
 
-                    if (cornerCount <= 0)
-                    {
-                        Console.WriteLine("Corner count is 0, skipping corners.");
-                        return data;
-                    }
-
-                    long remaining = reader.BaseStream.Length - reader.BaseStream.Position;
-                    const int approxSize = 4 * 8 + 4 + 1 + 4 + 4;
-                    long required = (long)cornerCount * approxSize;
-
-                    if (remaining < required)
-                    {
-                        Console.WriteLine($"Declared corner count {cornerCount} requires ~{required} bytes, but only {remaining} remain. Skipping corners.");
-                        return data;
-                    }
-
-                    data.Corners = ReadCorners(reader, cornerCount);
+                    if (cornerCount > 0)
+                        data.Corners = ReadCorners(reader, cornerCount);
                 }
             }
             catch (Exception ex)
@@ -76,8 +73,6 @@ namespace RacelineVisualizer
 
             return data;
         }
-
-
 
         private static List<Point> ReadPoints(BinaryReader reader)
         {
@@ -218,25 +213,32 @@ namespace RacelineVisualizer
             g.DrawString("Direction →", font, textBrush, legendRect.Right - 60, legendRect.Bottom + 2);
         }
 
-        public static void DrawEdgesToImage(string binPath, string outputPath, Size canvasSize, bool includeRaceline = false, bool includeCorners = true, bool showDirectionGradient = true)
+        public static void DrawEdgesToImage(
+            string binPath,
+            string outputPath,
+            Size canvasSize,
+            bool includeRaceline = false,
+            bool includeCorners = true,
+            bool showDirectionGradient = true,
+            bool includePlayerline = false) // NEW
         {
-            EdgeData edges = ReadEdgesFromBin(binPath, includeRaceline, includeCorners);
+            EdgeData edges = ReadEdgesFromBin(binPath, includeRaceline, includeCorners, includePlayerline);
 
             var allPoints = edges.OuterBoundary.Concat(edges.InnerBoundary);
             if (includeRaceline) allPoints = allPoints.Concat(edges.Raceline);
-            var allXs = allPoints.Select(p => p.X);
-            var allYs = allPoints.Select(p => p.Y);
+            if (includePlayerline) allPoints = allPoints.Concat(edges.Playerline);
 
             RectangleF bounds = new(
-                allXs.Min(),
-                allYs.Min(),
-                allXs.Max() - allXs.Min(),
-                allYs.Max() - allYs.Min()
+                allPoints.Min(p => p.X),
+                allPoints.Min(p => p.Y),
+                allPoints.Max(p => p.X) - allPoints.Min(p => p.X),
+                allPoints.Max(p => p.Y) - allPoints.Min(p => p.Y)
             );
 
             edges.OuterBoundary = TransformPoints(edges.OuterBoundary, bounds, canvasSize);
             edges.InnerBoundary = TransformPoints(edges.InnerBoundary, bounds, canvasSize);
             if (includeRaceline) edges.Raceline = TransformPoints(edges.Raceline, bounds, canvasSize);
+            if (includePlayerline) edges.Playerline = TransformPoints(edges.Playerline, bounds, canvasSize);
 
             if (includeCorners)
             {
@@ -271,6 +273,12 @@ namespace RacelineVisualizer
                     DrawRacelineWithStartGradient(g, edges.Raceline, gradientSegments: 100, thickness: 3);
                 else
                     DrawContour(g, edges.Raceline, Color.Green, closed: false);
+            }
+
+            if (includePlayerline && edges.Playerline.Count > 1)
+            {
+                // Magenta so it's distinct
+                DrawContour(g, edges.Playerline, Color.Magenta, closed: false, thickness: 2);
             }
 
             if (includeCorners && edges.Corners.Count > 0)
