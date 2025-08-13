@@ -257,6 +257,22 @@ public class TrackImageProcessor : MonoBehaviour
     }
   }
 
+  public void OnPointerUp(PointerEventData eventData)
+  {
+    if (!isTracingMode || isDrawing) return;
+
+    isDrawing = false;
+    if (centerlinePoints.Count >= 5)
+    {
+      CalculateRaceDirection();
+      Debug.Log($"Centerline completed with {centerlinePoints.Count} points");
+      Debug.Log($"Race direction: {raceDirection:F1} degrees ({GetCompassDirection(raceDirection)})");
+    }
+
+    SetTracingMode(false);
+    UpdateInstructions();
+  }
+
   private void CalculateRaceDirection()
   {
     if (centerlinePoints.Count < 5) return;
@@ -275,7 +291,17 @@ public class TrackImageProcessor : MonoBehaviour
     }
   }
 
-    private void UpdateCenterlineOverlay()
+  private string GetCompassDirection(float angle)
+  {
+    string[] directions = {
+      "East", "Southeast", "South", "Southwest",
+      "West", "Northwest", "North", "Northeast"
+    };
+
+    int idx = Mathf.RoundToInt(angle / 45f) % 8;
+    return directions[idx];
+  }
+  private void UpdateCenterlineOverlay()
   {
     if (loadedTexture == null || centerlinePoints.Count == 0) return;
 
