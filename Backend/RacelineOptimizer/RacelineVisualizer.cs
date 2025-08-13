@@ -278,18 +278,18 @@ namespace RacelineVisualizer
             if (includePlayerline && edges.Playerline.Count > 1)
             {
                 // Magenta so it's distinct
-                DrawContour(g, edges.Playerline, Color.Magenta, closed: false, thickness: 2);
+                 DrawContour(g, edges.Playerline, Color.Magenta, closed: false, thickness: 2);
             }
-
+            
             if (includeCorners && edges.Corners.Count > 0)
-            {
-                using Pen cornerPen = new(Color.Purple, 2);
-                foreach (var corner in edges.Corners)
-                {
-                    g.DrawLine(cornerPen, corner.InnerStart, corner.InnerEnd);
-                    g.DrawLine(cornerPen, corner.OuterStart, corner.OuterEnd);
-                }
-            }
+      {
+        using Pen cornerPen = new(Color.Purple, 2);
+        foreach (var corner in edges.Corners)
+        {
+          g.DrawLine(cornerPen, corner.InnerStart, corner.InnerEnd);
+          g.DrawLine(cornerPen, corner.OuterStart, corner.OuterEnd);
+        }
+      }
 
             if (showDirectionGradient && includeRaceline && edges.Raceline.Count > 1)
             {
