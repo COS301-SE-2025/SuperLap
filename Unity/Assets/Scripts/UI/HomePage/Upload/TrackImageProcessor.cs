@@ -232,15 +232,23 @@ public class TrackImageProcessor : MonoBehaviour
     }
   }
 
-    private void UpdateCenterlineOverlay()
-    {
-        throw new NotImplementedException();
-    }
+  private void UpdateCenterlineOverlay()
+  {
+    
+  }
 
-    private Vector2 GetNormalisedImagePoint(Vector2 localPoint)
-    {
-        throw new NotImplementedException();
-    }
+  private Vector2 GetNormalisedImagePoint(Vector2 localPoint)
+  {
+    Rect rect = previewImageRect.rect;
+    float normalisedX = (localPoint.x + rect.width * 0.5f) / rect.width;
+    float normalisedY = (localPoint.y + rect.height * 0.5f) / rect.height;
+
+    //Clamp to image bounds
+    normalisedX = Mathf.Clamp01(normalisedX);
+    normalisedY = Mathf.Clamp01(1f - normalisedY); //Flip Y coord
+
+    return new Vector2(normalisedX, normalisedY);
+  }
 
     public void OpenImageDialog()
   {
