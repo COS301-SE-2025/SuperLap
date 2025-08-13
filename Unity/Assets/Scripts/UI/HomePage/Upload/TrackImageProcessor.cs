@@ -100,9 +100,48 @@ public class TrackImageProcessor : MonoBehaviour
       traceButton.onClick.AddListener(ToggleTracingMode);
       traceButton.interactable = false;
     }
+
+    if (resetTraceButton != null)
+    {
+      resetTraceButton.onClick.AddListener(ResetCenterline);
+      resetTraceButton.interactable = false;
+    }
   }
 
-  private void ToggleTracingMode()
+  private void ResetCenterline()
+  {
+    centerlinePoints.Clear();
+    startPosition = null;
+    raceDirection = 0f;
+    isDrawing = false;
+
+    if (centerlineOverlay != null)
+    {
+      Destroy(centerlineOverlay);
+      centerlineOverlay = null;
+    }
+
+    //Reset image preview
+    if (loadedTexture != null && previewImage != null)
+    {
+      Sprite imageSprite = Sprite.Create(loadedTexture, new Rect(0, 0, loadedTexture.width, loadedTexture.height), new Vector2(0.5f, 0.5f));
+      previewImage.sprite = imageSprite;
+    }
+    if (processButton != null)
+    {
+      processButton.interactable = false;
+    }
+
+    UpdateInstructions();
+    Debug.Log("Centerline reset");
+  }
+
+  private void UpdateInstructions()
+  {
+      throw new NotImplementedException();
+  }
+
+    private void ToggleTracingMode()
   {
     SetTracingMode(!isTracingMode);
   }
