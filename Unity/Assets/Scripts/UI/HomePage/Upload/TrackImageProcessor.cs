@@ -6,11 +6,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using RacelineOptimizer;
-
+using RainbowArt.CleanFlatUI;
 public class TrackImageProcessor : MonoBehaviour
 {
+
+
   [Header("UI References")]
   [SerializeField] private Image previewImage;
+
+  [Header("Progress Bar")]
+  [SerializeField] public ProgressBar progressBar;
 
   [Header("Upload Settings")]
   [SerializeField]
@@ -63,6 +68,7 @@ public class TrackImageProcessor : MonoBehaviour
     }
 
     homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
+    progressBar.gameObject.SetActive(false);
   }
 
   public void OpenImageDialog()
@@ -126,6 +132,7 @@ public class TrackImageProcessor : MonoBehaviour
     }
 
     StartCoroutine(ProcessTrackImageCoroutine());
+
   }
 
   private IEnumerator ProcessTrackImageCoroutine()
@@ -135,10 +142,21 @@ public class TrackImageProcessor : MonoBehaviour
     Debug.Log("Starting track image processing...");
     OnProcessingStarted?.Invoke("Processing track image...");
 
-    // Process the image to get boundaries
+    progressBar.CurrentValue = 0;
+    progressBar.gameObject.SetActive(true);
+
     ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(selectedImagePath);
 
-    yield return null; // Allow UI to update
+    for (int i = 0; i <= 90; i += 10)
+    {
+      progressBar.CurrentValue = i;
+      yield return new WaitForSeconds(0.1f);
+    }
+    for (int i = 90; i <= 99; i += 1)
+    {
+      progressBar.CurrentValue = i;
+      yield return new WaitForSeconds(0.1f);
+    }
 
     if (!boundaries.success)
     {
@@ -194,7 +212,7 @@ public class TrackImageProcessor : MonoBehaviour
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
-
+    progressBar.gameObject.SetActive(false);
     OnProcessingComplete?.Invoke(lastResults);
   }
 
