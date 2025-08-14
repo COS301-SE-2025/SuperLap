@@ -1,18 +1,25 @@
-using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
+using System;
 
 public class CornerDetector
 {
-    // Corner detection settings
-    private const float MinCornerAngle = 20.0f;    // Total accumulated angle to consider as corner
-    private const int MinCornerSegments = 5;       // Minimum consecutive segments to form a corner
-    private const float MinCornerLength = 5.0f;    // Minimum length of a corner
-    private const float AngleThreshold = 2.0f;     // Threshold to start corner detection
-    private const float ContinueThreshold = 2.0f;  // Threshold to continue existing corner
-    private const int SmoothingWindow = 3;         // Window size for angle smoothing
-
+    // Corner Detection Settings
+    public static int AngleWindowSize = 6;             // Number of steps used to compute direction change (must be even)
+    public static int AngleSmoothWindow = 3;           // Window size for smoothing the angle change signal
+    public static float AngleChangeThreshold = 4f;   // Minimum angle change (in degrees) to consider part of a turn
+    public static float NetCornerAngleThreshold = 30f; // Total angle (in degrees) needed to classify a corner
+    public static float MinStartEndAngleChange = 20f; // Minimum angle change (in degrees) from start to end of corner
+    public static int MinCornerSegments = 35;          // Minimum physical length (in meters) for a corner
+    public static int MinCornerSegmentsCount = 40;     // Minimum number of data points that make up a corner
+    public static int MaxCornerSegmentsCount = 2000; // Maximum number of data points allowed in a corner
+    public static int FlatLimit = 10;                  // Max flat/no-turn segments allowed when extending a corner
+    public static int CandidateWindowSize = 15;        // Initial window size to detect potential corner regions
+    public static float CandidateAngleThreshold = 15f; // Minimum angle sum (in degrees) for candidate region
+    public static int MergeGap = 5;                   // Max number of segments between candidates to allow merging
+    public static int SmoothingWindow = 5;             // Window size for smoothing the centerline path
+        
     public struct CornerSegment
     {
         public Vector2 InnerStart { get; }
@@ -23,16 +30,17 @@ public class CornerDetector
         public bool IsLeftTurn { get; }
         public int StartIndex { get; }
         public int EndIndex { get; }
+        public float Length { get; }
 
         public override string ToString() =>
-            $"[Segments {StartIndex}-{EndIndex}] {Angle:F1}° {(IsLeftTurn ? "Left" : "Right")} turn\n" +
-            $"Inner: ({InnerStart.X:F1},{InnerStart.Y:F1})→({InnerEnd.X:F1},{InnerEnd.Y:F1})\n" +
+            $"[{StartIndex}-{EndIndex}] {Angle:F1}° {(IsLeftTurn ? "Left" : "Right")} turn " +
+            $"{Length:F1}m\nInner: ({InnerStart.X:F1},{InnerStart.Y:F1})→({InnerEnd.X:F1},{InnerEnd.Y:F1})\n" +
             $"Outer: ({OuterStart.X:F1},{OuterStart.Y:F1})→({OuterEnd.X:F1},{OuterEnd.Y:F1})";
-            
+
         public CornerSegment(Vector2 innerStart, Vector2 innerEnd,
                             Vector2 outerStart, Vector2 outerEnd,
                             float angle, bool isLeftTurn,
-                            int startIndex, int endIndex)
+                            int startIndex, int endIndex, float length)
         {
             InnerStart = innerStart;
             InnerEnd = innerEnd;
@@ -42,220 +50,336 @@ public class CornerDetector
             IsLeftTurn = isLeftTurn;
             StartIndex = startIndex;
             EndIndex = endIndex;
+            Length = length;
         }
     }
-    
+
     public static List<CornerSegment> DetectCorners(List<(Vector2 inner, Vector2 outer)> track)
     {
-        var corners = new List<CornerSegment>();
-        
-        if (track == null || track.Count < 10)
-            return corners;
-        
-        var rawAngles = CalculateRawAngleChanges(track);
-        var smoothedAngles = SmoothAngles(rawAngles);
-        
-        var cornerRegions = FindCornerRegions(smoothedAngles);
-        
-        foreach (var region in cornerRegions)
-        {
-            if (IsValidCorner(track, region.start, region.end, region.totalAngle))
-            {
-                corners.Add(CreateCornerSegment(track, region.start, region.end, region.totalAngle));
-            }
-        }
-        
-        return corners;
+        if (track == null || track.Count < 20)
+            return new List<CornerSegment>();
+
+        List<Vector2> centerline = GetCenterline(track);
+        List<Vector2> smoothedCenterline = SmoothCenterline(centerline, SmoothingWindow);
+        List<float> angleChanges = CalculateAngleChanges(smoothedCenterline);
+        List<float> smoothedAngles = SmoothAngles(angleChanges, AngleSmoothWindow);
+        return FindCornerRegions(track, smoothedCenterline, smoothedAngles);
     }
-    
-    private static List<float> CalculateRawAngleChanges(List<(Vector2 inner, Vector2 outer)> track)
+
+    private static List<float> CalculateAngleChanges(List<Vector2> centerline)
     {
-        var angleChanges = new List<float>();
-        
-        if (track.Count < 3)
-            return angleChanges;
-        
-        Vector2 prevDirection = GetMidDirection(track, 0, 1);
-        
-        for (int i = 1; i < track.Count - 1; i++)
+        List<float> angleChanges = new List<float>();
+        int half = AngleWindowSize / 2;
+
+        for (int i = 0; i < centerline.Count; i++)
         {
-            Vector2 currentDirection = GetMidDirection(track, i, i + 1);
-            
-            float cross = prevDirection.X * currentDirection.Y - prevDirection.Y * currentDirection.X;
-            float dot = Vector2.Dot(prevDirection, currentDirection);
-            float angleChange = MathF.Atan2(cross, dot) * (180.0f / MathF.PI);
-            
-            angleChanges.Add(angleChange);
-            prevDirection = currentDirection;
-        }
-        
-        return angleChanges;
-    }
-    
-    private static List<float> SmoothAngles(List<float> rawAngles)
-    {
-        if (rawAngles.Count < SmoothingWindow)
-            return rawAngles.ToList();
-        
-        var smoothed = new List<float>();
-        
-        for (int i = 0; i < rawAngles.Count; i++)
-        {
-            float sum = 0;
-            int count = 0;
-            
-            // Average over smoothing window
-            for (int j = Math.Max(0, i - SmoothingWindow/2); 
-                 j <= Math.Min(rawAngles.Count - 1, i + SmoothingWindow/2); 
-                 j++)
+            if (i < half || i >= centerline.Count - half)
             {
-                sum += rawAngles[j];
-                count++;
-            }
-            
-            smoothed.Add(sum / count);
-        }
-        
-        return smoothed;
-    }
-    
-    private static List<(int start, int end, float totalAngle)> FindCornerRegions(List<float> angles)
-    {
-        var regions = new List<(int start, int end, float totalAngle)>();
-        
-        int i = 0;
-        while (i < angles.Count)
-        {
-            if (Math.Abs(angles[i]) < AngleThreshold)
-            {
-                i++;
+                angleChanges.Add(0f);
                 continue;
             }
-            
-            int cornerStart = i;
-            float accumulatedAngle = angles[i];
-            float absAccumulatedAngle = Math.Abs(accumulatedAngle);
-            bool isLeftTurn = accumulatedAngle < 0;
-            
-            i++;
-            
-            // Continue accumulating while in corner
-            while (i < angles.Count)
+
+            Vector2 vec1 = Vector2.Normalize(centerline[i] - centerline[i - half]);
+            Vector2 vec2 = Vector2.Normalize(centerline[i + half] - centerline[i]);
+
+            float angleChange = ComputeSignedAngle(vec1, vec2);
+            angleChanges.Add(angleChange);
+        }
+
+        return angleChanges;
+    }
+
+    private static List<float> SmoothAngles(List<float> angles, int windowSize)
+    {
+        List<float> smoothed = new List<float>();
+        int half = windowSize / 2;
+
+        for (int i = 0; i < angles.Count; i++)
+        {
+            float sum = 0f;
+            int count = 0;
+
+            for (int j = -half; j <= half; j++)
             {
-                float currentAngle = angles[i];
-                bool currentIsLeft = currentAngle < 0;
-                
-                bool shouldContinue = false;
-                
-                if (Math.Abs(currentAngle) >= AngleThreshold && currentIsLeft == isLeftTurn)
+                int idx = i + j;
+                if (idx >= 0 && idx < angles.Count)
                 {
-                    shouldContinue = true;
-                }
-                else if (Math.Abs(currentAngle) < AngleThreshold && absAccumulatedAngle >= ContinueThreshold)
-                {
-                    shouldContinue = true;
-                }
-                else if (Math.Abs(currentAngle) < AngleThreshold * 2 && currentIsLeft == isLeftTurn && absAccumulatedAngle >= ContinueThreshold)
-                {
-                    shouldContinue = true;
-                }
-                
-                if (shouldContinue)
-                {
-                    accumulatedAngle += currentAngle;
-                    absAccumulatedAngle = Math.Abs(accumulatedAngle);
-                    i++;
-                }
-                else
-                {
-                    int straightCount = 0;
-                    int lookAhead = i;
-                    while (lookAhead < angles.Count && lookAhead < i + 5 && Math.Abs(angles[lookAhead]) < AngleThreshold)
-                    {
-                        straightCount++;
-                        lookAhead++;
-                    }
-                    
-                    if (straightCount >= 3 || Math.Abs(currentAngle) > AngleThreshold)
-                    {
-                        // End corner here
-                        break;
-                    }
-                    else
-                    {
-                        accumulatedAngle += currentAngle;
-                        absAccumulatedAngle = Math.Abs(accumulatedAngle);
-                        i++;
-                    }
+                    sum += angles[idx];
+                    count++;
                 }
             }
-            
-            if (Math.Abs(accumulatedAngle) >= AngleThreshold * 2)
+
+            smoothed.Add(sum / count);
+        }
+
+        return smoothed;
+    }
+
+    private static List<CornerSegment> FindCornerRegions(
+        List<(Vector2 inner, Vector2 outer)> track,
+        List<Vector2> centerline,
+        List<float> angleChanges)
+    {
+        List<CornerSegment> corners = new List<CornerSegment>();
+        List<CornerCandidate> candidates = IdentifyCornerCandidates(angleChanges);
+        List<CornerCandidate> mergedCandidates = MergeAndValidateCandidates(candidates, centerline, angleChanges);
+
+        foreach (var candidate in mergedCandidates)
+        {
+            if (IsValidCorner(centerline, candidate.Start, candidate.End, candidate.TotalAngle))
             {
-                regions.Add((cornerStart, i - 1, accumulatedAngle));
+                float cornerLength = CalculateSegmentLength(centerline, candidate.Start, candidate.End);
+
+                CornerSegment corner = new CornerSegment(
+                    track[candidate.Start].inner,
+                    track[candidate.End].inner,
+                    track[candidate.Start].outer,
+                    track[candidate.End].outer,
+                    MathF.Abs(candidate.AngleChange),
+                    !candidate.IsLeftTurn,
+                    candidate.Start,
+                    candidate.End,
+                    cornerLength
+                );
+                corners.Add(corner);
             }
         }
-        
-        return regions;
+
+        return corners;
     }
-    
-    private static Vector2 GetMidDirection(List<(Vector2 inner, Vector2 outer)> track, int from, int to)
+
+    private struct CornerCandidate
     {
-        Vector2 fromMid = (track[from].inner + track[from].outer) * 0.5f;
-        Vector2 toMid = (track[to].inner + track[to].outer) * 0.5f;
-        Vector2 direction = toMid - fromMid;
-        
-        float length = direction.Length();
-        return length > 0.001f ? direction / length : Vector2.UnitX;
+        public int Start { get; set; }
+        public int End { get; set; }
+        public float TotalAngle { get; set; }
+        public float AngleChange { get; set; }
+        public bool IsLeftTurn { get; set; }
+
+        public CornerCandidate(int start, int end, float totalAngle, float angleChange, bool isLeftTurn)
+        {
+            Start = start;
+            End = end;
+            TotalAngle = totalAngle;
+            AngleChange = angleChange;
+            IsLeftTurn = isLeftTurn;
+        }
     }
-    
-    private static bool IsValidCorner(List<(Vector2 inner, Vector2 outer)> track, 
-                                     int startIndex, int endIndex, float totalAngle)
+
+    private static List<CornerCandidate> IdentifyCornerCandidates(List<float> angleChanges)
     {
-        // Check minimum angle requirement
-        if (Math.Abs(totalAngle) < MinCornerAngle)
-            return false;
+        List<CornerCandidate> candidates = new List<CornerCandidate>();
+        int windowSize = CandidateWindowSize;
+        float threshold = CandidateAngleThreshold;
+
+        for (int i = 0; i <= angleChanges.Count - windowSize; i++)
+        {
+            float windowAngle = 0f;
+            for (int j = i; j < i + windowSize; j++)
+                windowAngle += angleChanges[j];
+
+            if (MathF.Abs(windowAngle) >= threshold)
+            {
+                bool isLeftTurn = windowAngle > 0;
+                float angleChange = windowAngle;
+                int start = ExtendCornerStart(angleChanges, i, isLeftTurn);
+                int end = ExtendCornerEnd(angleChanges, i + windowSize - 1, isLeftTurn);
+
+                float totalAngle = 0f;
+                for (int j = start; j <= end && j < angleChanges.Count; j++)
+                {
+                    if ((angleChanges[j] > 0) == isLeftTurn || MathF.Abs(angleChanges[j]) < 1f)
+                        totalAngle += angleChanges[j];
+                }
+
+                candidates.Add(new CornerCandidate(start, end, totalAngle, angleChange, isLeftTurn));
+                i = end;
+            }
+        }
+
+        return candidates;
+    }
+
+    private static int ExtendCornerStart(List<float> angleChanges, int start, bool isLeftTurn)
+    {
+        int extended = start;
+        int flats = 0;
+
+        for (int i = start - 1; i >= 0; i--)
+        {
+            float angle = angleChanges[i];
+            bool sameDirection = angle > 0 == isLeftTurn;
+
+            if (MathF.Abs(angle) >= 2f)
+            {
+                if (sameDirection)
+                {
+                    extended = i;
+                    flats = 0;
+                }
+                else if (MathF.Abs(angle) >= AngleChangeThreshold)
+                    break;
+            }
+            else
+            {
+                flats++;
+                if (flats >= FlatLimit) break;
+            }
+        }
+
+        return extended;
+    }
+
+    private static int ExtendCornerEnd(List<float> angleChanges, int end, bool isLeftTurn)
+    {
+        int extended = end;
+        int flats = 0;
+
+        for (int i = end + 1; i < angleChanges.Count; i++)
+        {
+            float angle = angleChanges[i];
+            bool sameDirection = angle > 0 == isLeftTurn;
+
+            if (MathF.Abs(angle) >= 2f)
+            {
+                if (sameDirection)
+                {
+                    extended = i;
+                    flats = 0;
+                }
+                else if (MathF.Abs(angle) >= AngleChangeThreshold)
+                    break;
+            }
+            else
+            {
+                flats++;
+                if (flats >= FlatLimit) break;
+            }
+        }
+
+        return extended;
+    }
+
+    private static List<CornerCandidate> MergeAndValidateCandidates(
+        List<CornerCandidate> candidates,
+        List<Vector2> centerline,
+        List<float> angleChanges)
+    {
+        if (candidates.Count == 0) return candidates;
+
+        candidates.Sort((a, b) => a.Start.CompareTo(b.Start));
+        List<CornerCandidate> merged = new List<CornerCandidate>();
+
+        CornerCandidate current = candidates[0];
+
+        for (int i = 1; i < candidates.Count; i++)
+        {
+            CornerCandidate next = candidates[i];
+            int gap = next.Start - current.End;
+
+            if (gap <= MergeGap && current.IsLeftTurn == next.IsLeftTurn)
+            {
+                float combinedAngle = current.TotalAngle;
+                for (int j = current.End + 1; j <= next.End && j < angleChanges.Count; j++)
+                {
+                    if ((angleChanges[j] > 0) == current.IsLeftTurn || MathF.Abs(angleChanges[j]) < 1f)
+                        combinedAngle += angleChanges[j];
+                }
+
+                current = new CornerCandidate(current.Start, next.End, combinedAngle, current.AngleChange, current.IsLeftTurn);
+            }
+            else
+            {
+                merged.Add(current);
+                current = next;
+            }
+        }
+
+        merged.Add(current);
+        return merged;
+    }
+
+    private static bool IsValidCorner(List<Vector2> centerline, int start, int end, float accumulatedAngle)
+    {
+        float length = CalculateSegmentLength(centerline, start, end);
+        if (length < MinCornerSegments) return false;
+        if (MathF.Abs(accumulatedAngle) < NetCornerAngleThreshold) return false;
+
+        int segmentCount = end - start;
+        if (segmentCount < MinCornerSegmentsCount) return false;
+        if (segmentCount > MaxCornerSegmentsCount) return false;
+
+        if (start >= centerline.Count - 1 || end >= centerline.Count - 1) return false;
         
-        // Check minimum segment count
-        int segmentCount = endIndex - startIndex + 1;
-        if (segmentCount < MinCornerSegments)
-            return false;
-        
-        // Check minimum corner length
-        float cornerLength = CalculateCornerLength(track, startIndex, endIndex);
-        if (cornerLength < MinCornerLength)
-            return false;
-        
+        float startEndAngleChange = CalculateStartEndAngleChange(centerline, start, end);
+        if (MathF.Abs(startEndAngleChange) < MinStartEndAngleChange) return false;
+
         return true;
     }
-    
-    private static float CalculateCornerLength(List<(Vector2 inner, Vector2 outer)> track, 
-                                             int startIndex, int endIndex)
+
+    private static float CalculateStartEndAngleChange(List<Vector2> centerline, int start, int end)
     {
-        float totalLength = 0;
-        
-        for (int i = startIndex; i < endIndex && i < track.Count - 1; i++)
-        {
-            Vector2 mid1 = (track[i].inner + track[i].outer) * 0.5f;
-            Vector2 mid2 = (track[i + 1].inner + track[i + 1].outer) * 0.5f;
-            totalLength += Vector2.Distance(mid1, mid2);
-        }
-        
-        return totalLength;
+        Vector2 startDirection;
+        if (start > 0)
+            startDirection = Vector2.Normalize(centerline[start] - centerline[start - 1]);
+        else
+            startDirection = Vector2.Normalize(centerline[start + 1] - centerline[start]);
+
+        Vector2 endDirection;
+        if (end < centerline.Count - 1)
+            endDirection = Vector2.Normalize(centerline[end + 1] - centerline[end]);
+        else
+            endDirection = Vector2.Normalize(centerline[end] - centerline[end - 1]);
+
+        return ComputeSignedAngle(startDirection, endDirection);
     }
-    
-    private static CornerSegment CreateCornerSegment(List<(Vector2 inner, Vector2 outer)> track,
-                                                   int startIndex, int endIndex, float totalAngle)
+
+    public static List<Vector2> GetCenterline(List<(Vector2 inner, Vector2 outer)> track)
     {
-        return new CornerSegment(
-            track[startIndex].inner,
-            track[endIndex].inner,
-            track[startIndex].outer,
-            track[endIndex].outer, 
-            totalAngle,
-            totalAngle > 0, // Positive angle = left turn
-            startIndex,
-            endIndex
-        );
+        List<Vector2> centerline = new List<Vector2>();
+        foreach (var segment in track)
+            centerline.Add((segment.inner + segment.outer) * 0.5f);
+        return centerline;
+    }
+
+    private static List<Vector2> SmoothCenterline(List<Vector2> raw, int windowSize = 3)
+    {
+        List<Vector2> smoothed = new List<Vector2>();
+        int half = windowSize / 2;
+
+        for (int i = 0; i < raw.Count; i++)
+        {
+            Vector2 sum = Vector2.Zero;
+            int count = 0;
+
+            for (int j = -half; j <= half; j++)
+            {
+                int idx = i + j;
+                if (idx >= 0 && idx < raw.Count)
+                {
+                    sum += raw[idx];
+                    count++;
+                }
+            }
+
+            smoothed.Add(sum / count);
+        }
+
+        return smoothed;
+    }
+
+    private static float ComputeSignedAngle(Vector2 from, Vector2 to)
+    {
+        float dot = Vector2.Dot(from, to);
+        float det = from.X * to.Y - from.Y * to.X;
+        return MathF.Atan2(det, dot) * (180f / MathF.PI);
+    }
+
+    private static float CalculateSegmentLength(List<Vector2> points, int start, int end)
+    {
+        float length = 0f;
+        for (int i = start; i < end; i++)
+            length += Vector2.Distance(points[i], points[i + 1]);
+        return length;
     }
 }
