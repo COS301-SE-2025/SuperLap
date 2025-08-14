@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: c7e2f3490ffae964eb6a03b2a37007db
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowCheckBox.cs
+  uploadId: 658581

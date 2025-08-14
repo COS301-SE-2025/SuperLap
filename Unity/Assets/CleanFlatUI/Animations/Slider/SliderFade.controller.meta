@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5a8b8b3739ef9e04380a74a79972228e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Slider/SliderFade.controller
+  uploadId: 658581

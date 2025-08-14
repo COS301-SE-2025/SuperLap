@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e496f179c07d95e44b0d8c76d6a21387
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toggle/ToggleJumpText.controller
+  uploadId: 658581

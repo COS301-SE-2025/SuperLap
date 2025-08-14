@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f4b48fb1556cad841b12be144b3a4622
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Slider/SliderBubbleRound/SliderBubbleRound_BubbleScale.prefab
+  uploadId: 658581

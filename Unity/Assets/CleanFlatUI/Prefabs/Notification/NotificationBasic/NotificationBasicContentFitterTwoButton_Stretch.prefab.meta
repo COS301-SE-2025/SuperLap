@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 21cb7699bfa7b6845804cb94e4de1304
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationBasic/NotificationBasicContentFitterTwoButton_Stretch.prefab
+  uploadId: 658581

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5f5b745c3e7fd9f4f8710bba895f1d7d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/InputField/InputFieldSpecialSlideIn.anim
+  uploadId: 658581

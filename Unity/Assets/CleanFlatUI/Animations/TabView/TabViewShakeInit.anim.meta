@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ad0c88c42ea5e0f4692eb07d8abaf0ea
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabViewShakeInit.anim
+  uploadId: 658581

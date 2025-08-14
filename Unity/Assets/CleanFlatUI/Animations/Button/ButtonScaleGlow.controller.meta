@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e73fa82fc1484a64cae274bb93e7e6bc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonScaleGlow.controller
+  uploadId: 658581

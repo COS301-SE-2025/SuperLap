@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2d1c95df47b35c140a53c9315a2aae2f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Notification/NotificationExpand.controller
+  uploadId: 658581

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d3181f356b1be0340b3fd7e121c317fb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabViewPopupOn.anim
+  uploadId: 658581

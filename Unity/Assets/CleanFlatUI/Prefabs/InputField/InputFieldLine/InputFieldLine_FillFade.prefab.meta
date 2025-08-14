@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 89e7f104f094bf54dac8175bba84e202
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/InputField/InputFieldLine/InputFieldLine_FillFade.prefab
+  uploadId: 658581

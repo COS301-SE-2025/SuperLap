@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 48984b8d93d4cda418f7c9a087e263ac
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/TabView/TabViewBasic/TabViewBasic_Popup.prefab
+  uploadId: 658581

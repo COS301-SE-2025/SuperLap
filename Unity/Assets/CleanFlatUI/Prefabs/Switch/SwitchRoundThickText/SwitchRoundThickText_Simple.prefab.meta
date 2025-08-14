@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a399af4eb8f50ff4cb20325859ec1d7f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Switch/SwitchRoundThickText/SwitchRoundThickText_Simple.prefab
+  uploadId: 658581

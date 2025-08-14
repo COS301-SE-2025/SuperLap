@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6e4e5a9a6d487db45bbdaca62119c52d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonGlowAuto.controller
+  uploadId: 658581

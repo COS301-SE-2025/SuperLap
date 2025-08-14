@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 820a897657156ed4d8bde7f96eafd5f6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabViewStretchHorizontalOn.anim
+  uploadId: 658581

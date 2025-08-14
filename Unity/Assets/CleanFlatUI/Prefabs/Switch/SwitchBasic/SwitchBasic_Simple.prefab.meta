@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8c876d3ada0c4d740a9f47de975fd473
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Switch/SwitchBasic/SwitchBasic_Simple.prefab
+  uploadId: 658581

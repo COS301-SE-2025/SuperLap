@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3b98bd20326b6a0459d0bf13385dabdf
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabCommonOnInit.anim
+  uploadId: 658581

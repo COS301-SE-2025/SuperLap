@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bdc86db7aea4e0d469edb29ccacac47e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationRound/NotificationRoundContentFitter_Jump.prefab
+  uploadId: 658581

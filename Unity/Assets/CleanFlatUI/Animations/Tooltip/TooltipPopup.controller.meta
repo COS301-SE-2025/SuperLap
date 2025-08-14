@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2dac22a946e8d12418aa264f083dc4a4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Tooltip/TooltipPopup.controller
+  uploadId: 658581

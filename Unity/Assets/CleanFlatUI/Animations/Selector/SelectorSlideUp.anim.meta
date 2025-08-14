@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 361b2726328b4004aae421e4be267773
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Selector/SelectorSlideUp.anim
+  uploadId: 658581

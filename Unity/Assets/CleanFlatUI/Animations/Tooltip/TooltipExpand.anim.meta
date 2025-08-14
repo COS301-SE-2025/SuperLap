@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 359a4df5c90dea34595f34c7e26f1a33
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Tooltip/TooltipExpand.anim
+  uploadId: 658581

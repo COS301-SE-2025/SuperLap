@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: aace5fb6ea60406438fac4fb901e51a4
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarPatternCircularAuto/ProgressBarPatternCircularAuto_FillRight.prefab
+  uploadId: 658581

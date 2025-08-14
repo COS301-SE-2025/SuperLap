@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5d3adc19b4f2f59438aca7c4dde848d6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Notification/NotificationMoveSlightIn.anim
+  uploadId: 658581

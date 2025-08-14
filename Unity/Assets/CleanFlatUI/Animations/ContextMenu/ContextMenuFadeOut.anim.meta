@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 85a0d414cfbcdb243ac729dfbc56ac4d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ContextMenu/ContextMenuFadeOut.anim
+  uploadId: 658581

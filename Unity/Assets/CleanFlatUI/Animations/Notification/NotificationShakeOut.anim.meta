@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 040c60e501d17ef4187ef7cbc43c3efb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Notification/NotificationShakeOut.anim
+  uploadId: 658581

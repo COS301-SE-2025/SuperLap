@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7c274fd5f8ccb604b9bb39d45a54a245
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/InputField/InputFieldBasic/InputFieldBasic_MoveRight.prefab
+  uploadId: 658581

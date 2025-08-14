@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e0fd42e8fce698a4c860d5823e50ebcc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/PopupMenu/PopupMenuFlip.controller
+  uploadId: 658581

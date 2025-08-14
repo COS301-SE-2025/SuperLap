@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: edeb11b6b9b4f3b4fb1d8bcfc4cfc2d5
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationBasic/NotificationBasicSingleButton_Expand.prefab
+  uploadId: 658581

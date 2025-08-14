@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cc47767320389484ea487953d28ad00b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toggle/ToggleBasic/ToggleBasic_SwapPopup.prefab
+  uploadId: 658581

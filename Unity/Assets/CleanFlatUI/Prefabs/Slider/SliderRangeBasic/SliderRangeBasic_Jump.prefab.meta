@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c1fc16100a56a1e4291b74b2ce160f47
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Slider/SliderRangeBasic/SliderRangeBasic_Jump.prefab
+  uploadId: 658581

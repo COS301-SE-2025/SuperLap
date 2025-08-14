@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3bc919b3bec9b3949a3d12c39e3ca2bb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Image/ImageJump.controller
+  uploadId: 658581

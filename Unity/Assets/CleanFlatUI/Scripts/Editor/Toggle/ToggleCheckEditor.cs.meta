@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 32264bd03b2325c49b72417b28e48fcd
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/Toggle/ToggleCheckEditor.cs
+  uploadId: 658581

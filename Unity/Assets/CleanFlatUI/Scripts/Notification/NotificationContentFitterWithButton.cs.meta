@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a18be1a6271fbaa44957a0225606604c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Notification/NotificationContentFitterWithButton.cs
+  uploadId: 658581

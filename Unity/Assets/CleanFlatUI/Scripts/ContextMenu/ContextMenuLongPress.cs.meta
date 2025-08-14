@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 17b905c1d070a814ea525a6f64ce3637
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ContextMenu/ContextMenuLongPress.cs
+  uploadId: 658581

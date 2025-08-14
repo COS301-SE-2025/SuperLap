@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 02beda76957e72e47bcb43bfd1950ceb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Tooltip/TooltipDetermine.cs
+  uploadId: 658581
