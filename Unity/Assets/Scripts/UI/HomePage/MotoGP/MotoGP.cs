@@ -4,6 +4,7 @@ using SFB;
 using RainbowArt.CleanFlatUI;
 using System.IO;
 using System.Collections.Generic;
+using System;
 
 public class MotoGP : MonoBehaviour
 {
@@ -56,11 +57,6 @@ public class MotoGP : MonoBehaviour
     }
 
     string[] headers = lines[0].Split('\t');
-
-    foreach (string header in headers)
-    {
-      Debug.Log("Header: " + header);
-    }
     int lapIndexCol = System.Array.IndexOf(headers, "lapIndex");
 
     if (lapIndexCol == -1)
@@ -95,20 +91,21 @@ public class MotoGP : MonoBehaviour
     dropdown.options.Clear();
     foreach (int lapIndex in lapIndices)
     {
-      dropdown.options.Add(new DropdownTransition.OptionData(lapIndex.ToString()));
+      dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
     }
 
     if (dropdown.options.Count > 0)
     {
       dropdown.gameObject.SetActive(true);
       dropdown.value = 0;
+      dropdown.RefreshShownValue();
       processButton.SetActive(true);
     }
   }
 
   public void ProcessRacingLine()
   {
-    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, dropdown.value);
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, Math.Max(dropdown.value - 1 , 0));
 
     if (playerline == null)
     {
