@@ -12,7 +12,9 @@ public class MotoGP : MonoBehaviour
   [Header("UI References")]
   [SerializeField] private GameObject previewImage;
   [SerializeField] private DropdownTransition dropdown;
+  [SerializeField] private GameObject DropDownText;
   [SerializeField] private GameObject processButton;
+  [SerializeField] private GameObject controlPanel;
 
 
 
@@ -20,7 +22,9 @@ public class MotoGP : MonoBehaviour
   {
     dropdown.options.Clear();
     dropdown.gameObject.SetActive(false);
+    DropDownText.SetActive(false);
     processButton.SetActive(false);
+    controlPanel.SetActive(false);
   }
   private ExtensionFilter[] extensionFilters = new ExtensionFilter[]
   {
@@ -100,28 +104,30 @@ public class MotoGP : MonoBehaviour
       dropdown.value = 0;
       dropdown.RefreshShownValue();
       processButton.SetActive(true);
+      DropDownText.SetActive(true);
     }
   }
 
   public void ProcessRacingLine()
   {
-    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, Math.Max(dropdown.value - 1 , 0));
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, Math.Max(dropdown.value - 1, 0));
 
     if (playerline == null)
     {
       Debug.LogError("PlayerLine data could not be generated.");
       return;
     }
-    
+
     ShowMotoGP showMotoGP = previewImage.GetComponent<ShowMotoGP>();
     if (showMotoGP != null)
     {
-        showMotoGP.DisplayPlayerLineData(playerline);
+      showMotoGP.DisplayPlayerLineData(playerline);
     }
     else
     {
-        Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
+      Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
     }
+    controlPanel.SetActive(true);
 
   }
 }
