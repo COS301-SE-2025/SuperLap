@@ -311,9 +311,9 @@ public class MotorcycleAgent : MonoBehaviour
         visualEffects.UpdateMotorcycleLeaning(motorcycleModel, currentSpeed, currentTurnAngle, 
                                             maxLeanAngle, optimalLeanSpeed, leanSpeed, 
                                             minSteeringSpeed, turnRate, Time.fixedDeltaTime, ref currentLeanAngle);
-        visualEffects.UpdateCameraFOV(dynamicCamera, currentSpeed, currentAcceleration, 
-                                    minFOV, maxFOV, maxFOVSpeed, accelerationFOVBoost, 
-                                    fovAdjustSpeed, Time.fixedDeltaTime, ref currentFOV);
+        // visualEffects.UpdateCameraFOV(dynamicCamera, currentSpeed, currentAcceleration, 
+        //                             minFOV, maxFOV, maxFOVSpeed, accelerationFOVBoost, 
+        //                             fovAdjustSpeed, Time.fixedDeltaTime, ref currentFOV);
         trajectoryPredictor.UpdateTrajectoryVisualization(showTrajectory, trajectoryColor, trajectoryWidth, 
                                                          trajectoryPoints, trajectoryLength, transform.position, 
                                                          transform.forward, currentSpeed, currentTurnAngle, 
@@ -322,17 +322,6 @@ public class MotorcycleAgent : MonoBehaviour
         // Update current track status
         isCurrentlyOffTrack = IsOffTrack();
 
-        currentSpeedKmh = currentSpeed * 3.6f;
-        if (speedText != null)
-        {
-            speedText.text = $"{currentSpeedKmh:F1} km/h";
-        }
-
-        if (racelineDeviationText != null)
-        {
-            racelineDeviationText.text = $"Raceline Dev: {racelineDeviation:F2}m\nTraj Avg Dev: {averageTrajectoryDeviation:F2}m\n" +
-                                       $"Currently Off Track: {isCurrentlyOffTrack}";
-        }
         Profiler.EndSample();
     }
 

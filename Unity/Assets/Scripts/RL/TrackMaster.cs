@@ -36,6 +36,9 @@ public class TrackMaster : MonoBehaviour
     private static List<Vector2> currentRaceline;
     private static GameObject spawnedAgent;
     private static LineRenderer racelineRenderer;
+    
+    // Event to notify when track is loaded
+    public static System.Action OnTrackLoaded;
 
     void Start()
     {
@@ -89,6 +92,10 @@ public class TrackMaster : MonoBehaviour
 
         AssetDatabase.CreateAsset(mesh, "Assets/GeneratedMeshes/TrackMesh.asset");
         // AssetDatabase.SaveAssets();
+        
+        // Notify that track has been loaded
+        OnTrackLoaded?.Invoke();
+        Debug.Log("Track loaded and processed - notifying listeners");
     }
 
     public static Vector3 GetTrainingSpawnPosition(int agentIndex, List<Vector2> raceline)

@@ -67,6 +67,11 @@ public class Trainer : MonoBehaviour
     
     // Training data structures
     private List<TrainingSession> trainingSessions;
+    
+    // Public accessors for camera controller
+    public List<TrainingSession> TrainingSessions => trainingSessions;
+    public int CurrentSessionIndex => currentSessionIndex;
+    public bool IsTraining => isTraining;
     private List<MotorcycleAgent> agents;
     private List<AgentState> agentStates;
     private List<AgentState> agentGoalStates; // States captured at goal checkpoint for next session

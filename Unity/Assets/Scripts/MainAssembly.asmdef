@@ -10,8 +10,7 @@
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Python.Runtime.dll",
-        "Unity.Mathematics.dll"
+        "Python.Runtime.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],
