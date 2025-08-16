@@ -63,3 +63,4 @@ Backend/RacelineOptimizer/Input
 
 # Ignore Unit Test files
 Unity/TestResults/
+/Backend/ImageProcessing/TEST/data
