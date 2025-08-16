@@ -5,707 +5,540 @@ import cv2
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from PIL import Image
+from datetime import datetime
 
 # Create output directory if it doesn't exist
-output_dir = "CNNoutput"
+output_dir = "LaneDetectionOutput"
 os.makedirs(output_dir, exist_ok=True)
 
 def save_model_summary(model, filename):
     """Save model summary to a text file"""
-    original_stdout = sys.stdout  # Save a reference to the original standard output
+    original_stdout = sys.stdout
     with open(filename, 'w') as f:
-        sys.stdout = f  # Change the standard output to the file we created
+        sys.stdout = f
         model.summary()
-        sys.stdout = original_stdout  # Reset the standard output to its original value
+        sys.stdout = original_stdout
 
-def load_data(frameObj=None, imgPath=None, maskPath=None, shape=128):
+def preprocess_lane_image(img, target_size=(128, 128)):
     """
-    Load data from image and mask directories and resize them to the specified shape.
-
-    Args:
-        frameObj (dict): Dictionary to store the loaded images and masks.
-        imgPath (str): Path to the directory containing the images.
-        maskPath (str): Path to the directory containing the masks.
-        shape (int): Desired shape for resizing the images and masks.
-
-    Returns:
-        dict: Dictionary containing the loaded and resized images and masks.
+    Enhanced preprocessing specifically for lane detection
     """
-    imgNames = os.listdir(imgPath)
-    maskNames = []
+    # Resize image
+    img = cv2.resize(img, target_size)
+    
+    # Convert to RGB if needed
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
+    # Normalize to [0, 1]
+    img = img.astype(np.float32) / 255.0
+    
+    # Optional: Apply histogram equalization for better contrast
+    # This can help detect faint lane markings
+    if len(img.shape) == 3:
+        # Convert to YUV and equalize Y channel
+        img_yuv = cv2.cvtColor((img * 255).astype(np.uint8), cv2.COLOR_RGB2YUV)
+        img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
+        img = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB).astype(np.float32) / 255.0
+    
+    return img
 
-    # Generate mask names
-    for mem in imgNames:
-        mem = mem.split('_')[0]
-        if mem not in maskNames:
-            maskNames.append(mem)
-
+def load_lane_data(frameObj=None, imgPath=None, maskPath=None, shape=128):
+    """
+    Load lane detection training data with enhanced preprocessing
+    
+    Expected file naming:
+    - Images: lane_001.jpg, lane_002.jpg, etc.
+    - Masks: lane_001_mask.png, lane_002_mask.png, etc.
+    """
+    if frameObj is None:
+        frameObj = {'img': [], 'mask': []}
+    
+    imgNames = sorted([f for f in os.listdir(imgPath) if f.endswith(('.jpg', '.jpeg', '.png'))])
+    
     imgAddr = imgPath + '/'
     maskAddr = maskPath + '/'
-
-    for i in range(len(imgNames)):
+    
+    processed_count = 0
+    
+    for img_name in imgNames:
         try:
-            img = plt.imread(imgAddr + maskNames[i] + '_sat.jpg')
-            mask = plt.imread(maskAddr + maskNames[i] + '_mask.png')
-        except:
+            # Extract base name for corresponding mask
+            base_name = os.path.splitext(img_name)[0]
+            mask_name = f"{base_name}_mask.png"
+            
+            # Load image and mask
+            img_path = imgAddr + img_name
+            mask_path = maskAddr + mask_name
+            
+            if not os.path.exists(mask_path):
+                print(f"Warning: Mask not found for {img_name}, skipping...")
+                continue
+            
+            img = plt.imread(img_path)
+            mask = plt.imread(mask_path)
+            
+            # Preprocess image with lane-specific enhancements
+            img = preprocess_lane_image(img, (shape, shape))
+            
+            # Process mask
+            mask = cv2.resize(mask, (shape, shape))
+            
+            # Ensure mask is binary (0 or 1)
+            if len(mask.shape) == 3:
+                mask = mask[:, :, 0]  # Take first channel if RGB
+            
+            # Normalize mask to [0, 1] and ensure binary values
+            mask = (mask > 0.5).astype(np.float32)
+            
+            frameObj['img'].append(img)
+            frameObj['mask'].append(mask)
+            processed_count += 1
+            
+        except Exception as e:
+            print(f"Error loading {img_name}: {str(e)}")
             continue
-        
-        img = cv2.resize(img, (shape, shape))
-        mask = cv2.resize(mask, (shape, shape))
-        frameObj['img'].append(img)
-        frameObj['mask'].append(mask[:, :, 0])  # binary mask is in channel 0
-
+    
+    print(f"Successfully loaded {processed_count} lane training samples")
     return frameObj
 
 def conv2d_block(inputTensor, numFilters, kernelSize=3, doBatchNorm=True):
     """
-    Creates a convolutional block with two Conv2D layers, batch norm, and ReLU activation.
+    Enhanced convolutional block with improved initialization for lane detection
     """
     x = tf.keras.layers.Conv2D(
         filters=numFilters, 
         kernel_size=(kernelSize, kernelSize),
         kernel_initializer='he_normal', 
-        padding='same'
+        padding='same',
+        activation=None  # Will add activation after batch norm
     )(inputTensor)
     
     if doBatchNorm:
         x = tf.keras.layers.BatchNormalization()(x)
-        
+    
     x = tf.keras.layers.Activation('relu')(x)
     
+    # Second convolution
     x = tf.keras.layers.Conv2D(
         filters=numFilters, 
         kernel_size=(kernelSize, kernelSize),
         kernel_initializer='he_normal', 
-        padding='same'
+        padding='same',
+        activation=None
     )(x)
     
     if doBatchNorm:
         x = tf.keras.layers.BatchNormalization()(x)
-        
+    
     x = tf.keras.layers.Activation('relu')(x)
     
     return x
 
-def unet_block(inputImage, numFilters=16, droupouts=0.1, doBatchNorm=True):
+def lane_unet_model(input_shape=(128, 128, 3), numFilters=32, dropout_rate=0.1):
     """
-    Creates a U-Net model for semantic segmentation.
+    Enhanced U-Net architecture optimized for lane detection
     """
-    # Encoder path
-    c1 = conv2d_block(inputImage, numFilters * 1, kernelSize=3, doBatchNorm=doBatchNorm)
+    inputs = tf.keras.layers.Input(input_shape)
+    
+    # Encoder path with increased filters for better feature extraction
+    c1 = conv2d_block(inputs, numFilters * 1, kernelSize=3, doBatchNorm=True)
     p1 = tf.keras.layers.MaxPooling2D((2, 2))(c1)
-    p1 = tf.keras.layers.Dropout(droupouts)(p1)
+    p1 = tf.keras.layers.Dropout(dropout_rate)(p1)
     
-    c2 = conv2d_block(p1, numFilters * 2, kernelSize=3, doBatchNorm=doBatchNorm)
+    c2 = conv2d_block(p1, numFilters * 2, kernelSize=3, doBatchNorm=True)
     p2 = tf.keras.layers.MaxPooling2D((2, 2))(c2)
-    p2 = tf.keras.layers.Dropout(droupouts)(p2)
+    p2 = tf.keras.layers.Dropout(dropout_rate)(p2)
     
-    c3 = conv2d_block(p2, numFilters * 4, kernelSize=3, doBatchNorm=doBatchNorm)
+    c3 = conv2d_block(p2, numFilters * 4, kernelSize=3, doBatchNorm=True)
     p3 = tf.keras.layers.MaxPooling2D((2, 2))(c3)
-    p3 = tf.keras.layers.Dropout(droupouts)(p3)
+    p3 = tf.keras.layers.Dropout(dropout_rate)(p3)
     
-    c4 = conv2d_block(p3, numFilters * 8, kernelSize=3, doBatchNorm=doBatchNorm)
+    c4 = conv2d_block(p3, numFilters * 8, kernelSize=3, doBatchNorm=True)
     p4 = tf.keras.layers.MaxPooling2D((2, 2))(c4)
-    p4 = tf.keras.layers.Dropout(droupouts)(p4)
+    p4 = tf.keras.layers.Dropout(dropout_rate)(p4)
     
-    c5 = conv2d_block(p4, numFilters * 16, kernelSize=3, doBatchNorm=doBatchNorm)
+    # Bottleneck with more filters for complex feature representation
+    c5 = conv2d_block(p4, numFilters * 16, kernelSize=3, doBatchNorm=True)
     
-    # Decoder path
-    u6 = tf.keras.layers.Conv2DTranspose(numFilters*8, (3, 3), strides=(2, 2), padding='same')(c5)
+    # Decoder path with skip connections
+    u6 = tf.keras.layers.Conv2DTranspose(numFilters * 8, (3, 3), strides=(2, 2), padding='same')(c5)
     u6 = tf.keras.layers.concatenate([u6, c4])
-    u6 = tf.keras.layers.Dropout(droupouts)(u6)
-    c6 = conv2d_block(u6, numFilters * 8, kernelSize=3, doBatchNorm=doBatchNorm)
+    u6 = tf.keras.layers.Dropout(dropout_rate)(u6)
+    c6 = conv2d_block(u6, numFilters * 8, kernelSize=3, doBatchNorm=True)
     
-    u7 = tf.keras.layers.Conv2DTranspose(numFilters*4, (3, 3), strides=(2, 2), padding='same')(c6)
+    u7 = tf.keras.layers.Conv2DTranspose(numFilters * 4, (3, 3), strides=(2, 2), padding='same')(c6)
     u7 = tf.keras.layers.concatenate([u7, c3])
-    u7 = tf.keras.layers.Dropout(droupouts)(u7)
-    c7 = conv2d_block(u7, numFilters * 4, kernelSize=3, doBatchNorm=doBatchNorm)
+    u7 = tf.keras.layers.Dropout(dropout_rate)(u7)
+    c7 = conv2d_block(u7, numFilters * 4, kernelSize=3, doBatchNorm=True)
     
-    u8 = tf.keras.layers.Conv2DTranspose(numFilters*2, (3, 3), strides=(2, 2), padding='same')(c7)
+    u8 = tf.keras.layers.Conv2DTranspose(numFilters * 2, (3, 3), strides=(2, 2), padding='same')(c7)
     u8 = tf.keras.layers.concatenate([u8, c2])
-    u8 = tf.keras.layers.Dropout(droupouts)(u8)
-    c8 = conv2d_block(u8, numFilters * 2, kernelSize=3, doBatchNorm=doBatchNorm)
+    u8 = tf.keras.layers.Dropout(dropout_rate)(u8)
+    c8 = conv2d_block(u8, numFilters * 2, kernelSize=3, doBatchNorm=True)
     
-    u9 = tf.keras.layers.Conv2DTranspose(numFilters*1, (3, 3), strides=(2, 2), padding='same')(c8)
+    u9 = tf.keras.layers.Conv2DTranspose(numFilters * 1, (3, 3), strides=(2, 2), padding='same')(c8)
     u9 = tf.keras.layers.concatenate([u9, c1])
-    u9 = tf.keras.layers.Dropout(droupouts)(u9)
-    c9 = conv2d_block(u9, numFilters * 1, kernelSize=3, doBatchNorm=doBatchNorm)
+    u9 = tf.keras.layers.Dropout(dropout_rate)(u9)
+    c9 = conv2d_block(u9, numFilters * 1, kernelSize=3, doBatchNorm=True)
     
-    output = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
-    model = tf.keras.Model(inputs=[inputImage], outputs=[output])
+    # Output layer with sigmoid activation for binary classification
+    outputs = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid', name='lane_output')(c9)
+    
+    model = tf.keras.Model(inputs=[inputs], outputs=[outputs], name='LaneDetectionUNet')
     return model
 
-def save_sample_images(frameObj, output_dir, num_samples=5):
+def dice_coefficient(y_true, y_pred, smooth=1e-7):
     """
-    Save sample images and masks to the output directory.
+    Dice coefficient for evaluating segmentation performance
+    Better for lane detection than standard accuracy
     """
-    for i in range(min(num_samples, len(frameObj['img']))):
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-        
-        ax1.imshow(frameObj['img'][i])
-        ax1.set_title('Input Image')
-        ax1.axis('off')
-        
-        ax2.imshow(frameObj['mask'][i], cmap='gray')
-        ax2.set_title('Ground Truth Mask')
-        ax2.axis('off')
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f'sample_{i}.png'))
-        plt.close()
+    y_true_f = tf.keras.backend.flatten(y_true)
+    y_pred_f = tf.keras.backend.flatten(y_pred)
+    intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+    return (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
 
+def dice_loss(y_true, y_pred):
+    """
+    Dice loss function - better for segmentation tasks with class imbalance
+    """
+    return 1 - dice_coefficient(y_true, y_pred)
 
-def plot_training_history(history, output_dir):
-    """Enhanced plotting function"""
-    plt.figure(figsize=(12, 6))
+def combined_loss(y_true, y_pred, alpha=0.7):
+    """
+    Combined loss function: weighted combination of dice loss and binary crossentropy
+    """
+    dice = dice_loss(y_true, y_pred)
+    bce = tf.keras.losses.binary_crossentropy(y_true, y_pred)
+    return alpha * dice + (1 - alpha) * bce
+
+def train_lane_model(model, x_train, y_train, epochs=50, batch_size=16, validation_split=0.2, output_file=None):
+    """
+    Enhanced training function with better callbacks and monitoring
+    """
+    # Define callbacks
+    callbacks = [
+        tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=10,
+            restore_best_weights=True,
+            verbose=1
+        ),
+        tf.keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.5,
+            patience=5,
+            min_lr=1e-7,
+            verbose=1
+        )
+    ]
     
-    # Plot training & validation loss
-    plt.subplot(1, 2, 1)
-    plt.plot(history.history['loss'], label='Training Loss')
-    if 'val_loss' in history.history:
-        plt.plot(history.history['val_loss'], label='Validation Loss')
-    plt.title('Model Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.grid(True)
-    
-    # Plot training & validation accuracy
-    plt.subplot(1, 2, 2)
-    plt.plot(history.history['accuracy'], label='Training Accuracy')
-    if 'val_accuracy' in history.history:
-        plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-    plt.title('Model Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.legend()
-    plt.grid(True)
-    
-    plt.tight_layout()
-    plot_path = os.path.join(output_dir, 'training_metrics.png')
-    plt.savefig(plot_path)
-    plt.close()
-    print(f"Training metrics plot saved to {plot_path}")
-
-def train_model(model, x_train, y_train, epochs=83, output_file=None):
-    """Train the model with progress bar in terminal and clean logs in file"""
-    class DualOutput:
-        def __init__(self, terminal, log_file):
-            self.terminal = terminal
-            self.log = log_file
-            
-        def write(self, message):
-            self.terminal.write(message)
-            # Only write complete lines (no progress bars) to log file
-            if '\r' not in message and '\x1b' not in message:
-                self.log.write(message)
-                
-        def flush(self):
-            self.terminal.flush()
-            self.log.flush()
-
-    # Open log file if specified
-    log_file = None
-    original_stdout = sys.stdout
-    if output_file:
-        log_file = open(output_file, 'a')
-        print("\n" + "="*50, file=log_file)
-        print("TRAINING OUTPUT", file=log_file)
-        print("="*50 + "\n", file=log_file)
-        sys.stdout = DualOutput(original_stdout, log_file)
-
-    # Train with both progress bar and clean epoch summaries
-    history = model.fit(
-        x_train,
-        y_train,
-        epochs=epochs,
-        batch_size=32,
-        validation_split=0.2,
-        verbose=1  # Keep progress bar in terminal
+    # Add model checkpoint
+    checkpoint_path = os.path.join(output_dir, 'best_lane_model.keras')
+    callbacks.append(
+        tf.keras.callbacks.ModelCheckpoint(
+            checkpoint_path,
+            monitor='val_dice_coefficient',
+            save_best_only=True,
+            mode='max',
+            verbose=1
+        )
     )
-
-    # Print clean epoch summaries
-    print("\nTraining Summary:")
-    for epoch in range(epochs):
-        epoch_log = (f"Epoch {epoch+1}/{epochs}\n"
-                    f" - loss: {history.history['loss'][epoch]:.4f}\n"
-                    f" - accuracy: {history.history['accuracy'][epoch]:.4f}")
-        if 'val_loss' in history.history:
-            epoch_log += (f"\n - val_loss: {history.history['val_loss'][epoch]:.4f}\n"
-                         f" - val_accuracy: {history.history['val_accuracy'][epoch]:.4f}")
-        print(epoch_log + "\n")
-
-    # Clean up
+    
+    print(f"Starting training for {epochs} epochs...")
+    print(f"Training samples: {len(x_train)}")
+    print(f"Validation split: {validation_split}")
+    print(f"Batch size: {batch_size}")
+    
+    history = model.fit(
+        x_train, y_train,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_split=validation_split,
+        callbacks=callbacks,
+        verbose=1
+    )
+    
+    # Save training history
     if output_file:
-        log_file.close()
-        sys.stdout = original_stdout
-        print(f"\nTraining summary saved to {output_file}")
-
+        with open(output_file, 'a') as f:
+            f.write(f"\n{'='*50}\n")
+            f.write("LANE DETECTION TRAINING COMPLETED\n")
+            f.write(f"{'='*50}\n")
+            f.write(f"Final Training Loss: {history.history['loss'][-1]:.4f}\n")
+            f.write(f"Final Validation Loss: {history.history['val_loss'][-1]:.4f}\n")
+            f.write(f"Final Training Dice: {history.history['dice_coefficient'][-1]:.4f}\n")
+            f.write(f"Final Validation Dice: {history.history['val_dice_coefficient'][-1]:.4f}\n")
+    
     return history
 
-
-def predict16(valMap, model, shape=128):
+def visualize_lane_predictions(model, test_images, test_masks, num_samples=5):
     """
-    Predicts the output for a batch of 16 images using the given model.
-
-    Args:
-        valMap (dict): Dictionary containing 'img' and 'mask' arrays
-        model: Trained Keras model
-        shape (int): Image shape (unused in this implementation but kept for compatibility)
-
-    Returns:
-        tuple: (predictions, processed_images, ground_truth_masks)
+    Visualize lane detection predictions
     """
-    img = valMap['img'][0:16]
-    mask = valMap['mask'][0:16]
-    imgProc = np.array(img)  # Convert list to numpy array
+    indices = np.random.choice(len(test_images), min(num_samples, len(test_images)), replace=False)
     
-    predictions = model.predict(imgProc)
-    return predictions, imgProc, mask
-
-def plot_predictions(img, predMask, groundTruth, output_dir, index):
-    """
-    Plots and saves comparison of input image, prediction, and ground truth.
+    fig, axes = plt.subplots(num_samples, 3, figsize=(15, 5 * num_samples))
+    if num_samples == 1:
+        axes = axes.reshape(1, -1)
     
-    Args:
-        img: Input image array
-        predMask: Predicted mask array
-        groundTruth: Ground truth mask array
-        output_dir: Directory to save plots
-        index: Index number for filename
-    """
-    plt.figure(figsize=(9, 9))
-    
-    plt.subplot(1, 3, 1)
-    plt.imshow(img)
-    plt.title('Aerial Image')
-    plt.axis('off')
-    
-    plt.subplot(1, 3, 2)
-    plt.imshow(predMask, cmap='gray')
-    plt.title('Predicted Routes')
-    plt.axis('off')
-    
-    plt.subplot(1, 3, 3)
-    plt.imshow(groundTruth, cmap='gray')
-    plt.title('Actual Routes')
-    plt.axis('off')
+    for i, idx in enumerate(indices):
+        img = test_images[idx]
+        true_mask = test_masks[idx]
+        
+        # Get prediction
+        pred_mask = model.predict(np.expand_dims(img, axis=0))[0]
+        pred_mask = (pred_mask > 0.5).astype(np.float32)
+        
+        # Plot original image
+        axes[i, 0].imshow(img)
+        axes[i, 0].set_title('Original Image')
+        axes[i, 0].axis('off')
+        
+        # Plot predicted lanes
+        axes[i, 1].imshow(pred_mask[:, :, 0], cmap='hot')
+        axes[i, 1].set_title('Predicted Lanes')
+        axes[i, 1].axis('off')
+        
+        # Plot ground truth
+        axes[i, 2].imshow(true_mask, cmap='hot')
+        axes[i, 2].set_title('Ground Truth')
+        axes[i, 2].axis('off')
     
     plt.tight_layout()
-    plot_path = os.path.join(output_dir, f'prediction_comparison_{index}.png')
-    plt.savefig(plot_path)
+    plt.savefig(os.path.join(output_dir, 'lane_predictions_sample.png'), dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"Saved prediction plot to {plot_path}")
+    print(f"Sample predictions saved to {output_dir}/lane_predictions_sample.png")
 
-def save_predictions(model, frameObjTrain, output_dir, num_samples=5):
+def evaluate_lane_model(model, x_test, y_test, output_file=None):
     """
-    Generate and save prediction visualizations for sample images.
-    
-    Args:
-        model: Trained Keras model
-        frameObjTrain: Dictionary containing training data
-        output_dir: Directory to save outputs
-        num_samples: Number of samples to visualize
+    Comprehensive evaluation of lane detection model
     """
-    # Make predictions
-    predictions, actuals, masks = predict16(frameObjTrain, model)
+    print("Evaluating lane detection model...")
     
-    # Plot sample predictions
-    sample_indices = [2, 10, 13, 5, 15]  # Example indices to visualize
-    for i, idx in enumerate(sample_indices[:num_samples]):
-        plot_predictions(
-            actuals[idx],
-            predictions[idx][:, :, 0],  # Remove channel dimension
-            masks[idx],
-            output_dir,
-            i+1
-        )
+    # Get predictions
+    predictions = model.predict(x_test, batch_size=16, verbose=1)
+    pred_binary = (predictions > 0.5).astype(np.float32)
     
-    # Save the model
-    model_path = os.path.join(output_dir, 'MapSegmentationGenerator.keras')
-    model.save(model_path)
-    print(f"\nModel saved to {model_path}")
-
-
-def load_saved_model(model_path):
-    """
-    Load and compile a saved Keras model.
+    # Calculate metrics
+    dice_scores = []
+    iou_scores = []
+    precision_scores = []
+    recall_scores = []
     
-    Args:
-        model_path: Path to the saved .keras model file
+    for i in range(len(y_test)):
+        y_true = y_test[i].flatten()
+        y_pred = pred_binary[i].flatten()
         
-    Returns:
-        Loaded and compiled Keras model
-    """
-    model = tf.keras.models.load_model(model_path, compile=False)
-    model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
-    print(f"Model loaded from {model_path}")
-    return model
-
-def predict_images(model, image_paths, target_size=(128, 128)):
-    """
-    Predict road masks for a list of input images.
-    
-    Args:
-        model: Loaded Keras model
-        image_paths: List of paths to input images
-        target_size: Size to resize images to
+        # Dice coefficient
+        intersection = np.sum(y_true * y_pred)
+        dice = (2. * intersection) / (np.sum(y_true) + np.sum(y_pred) + 1e-7)
+        dice_scores.append(dice)
         
-    Returns:
-        List of predictions (road masks)
-    """
-    predictions = []
-    for path in image_paths:
-        try:
-            # Load and preprocess image
-            img = Image.open(path)
-            img = img.resize(target_size)
-            img_array = np.array(img) / 255.0  # Normalize to [0,1]
-            
-            # Predict and store
-            pred = model.predict(np.expand_dims(img_array, axis=0))
-            predictions.append(pred)
-        except Exception as e:
-            print(f"Error processing {path}: {str(e)}")
-            predictions.append(None)
-    return predictions
-
-def visualize_results(predicted_mask, original_image, save_dir=None, index=None):
-    """
-    Visualize and save comparison of original image and predicted mask.
-    
-    Args:
-        predicted_mask: Model prediction array
-        original_image: Original PIL Image or array
-        save_dir: Directory to save visualization
-        index: Optional index for filename
-    """
-    # Convert inputs to numpy arrays
-    original_img = np.array(original_image)
-    pred_mask = np.squeeze(np.array(predicted_mask))  # Remove extra dimensions
-    
-    # Create figure
-    plt.figure(figsize=(12, 6))
-    
-    # Original image
-    plt.subplot(1, 2, 1)
-    plt.imshow(original_img)
-    plt.title('Original Image')
-    plt.axis('off')
-    
-    # Predicted mask with color
-    plt.subplot(1, 2, 2)
-    # Create blue-green mask (like previous implementation)
-    colored_mask = np.zeros((*pred_mask.shape, 3))
-    colored_mask[..., 1] = pred_mask * 0.7  # Green
-    colored_mask[..., 2] = pred_mask * 0.9  # Blue
-    plt.imshow(colored_mask)
-    plt.title('Predicted Roads')
-    plt.axis('off')
-    
-    # Save or show
-    if save_dir and index is not None:
-        os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, f'test_prediction_{index}.png')
-        plt.savefig(save_path, bbox_inches='tight', dpi=150)
-        plt.close()
-        print(f"Saved test prediction visualization to {save_path}")
-    else:
-        plt.tight_layout()
-        plt.show()
-
-def test_model_predictions(model, test_dir='data/test', output_dir='CNNoutput/test_predictions', max_samples=5):
-    """
-    Run predictions on test images and save visualizations (limited to max_samples).
-    
-    Args:
-        model: Loaded Keras model
-        test_dir: Directory containing test images
-        output_dir: Where to save prediction visualizations
-        max_samples: Maximum number of samples to process (default: 5)
-    """
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Find test images (limited to max_samples)
-    try:
-        test_images = sorted([
-            os.path.join(test_dir, f) for f in os.listdir(test_dir) 
-            if f.endswith('_sat.jpg')
-        ])[:max_samples]  # Only take first max_samples images
+        # IoU
+        union = np.sum(np.logical_or(y_true > 0.5, y_pred > 0.5))
+        iou = intersection / (union + 1e-7)
+        iou_scores.append(iou)
         
-        if not test_images:
-            print(f"No test images found in {test_dir}")
-            return
-            
-        print(f"Processing {len(test_images)} test images (limited to first {max_samples})")
+        # Precision and Recall
+        tp = np.sum((y_true > 0.5) & (y_pred > 0.5))
+        fp = np.sum((y_true <= 0.5) & (y_pred > 0.5))
+        fn = np.sum((y_true > 0.5) & (y_pred <= 0.5))
         
-        # Make predictions
-        predictions = []
-        for i, path in enumerate(test_images, 1):
-            try:
-                img = Image.open(path)
-                img = img.resize((128, 128))
-                img_array = np.array(img) / 255.0
-                pred = model.predict(np.expand_dims(img_array, axis=0))
-                predictions.append(pred)
-                
-                # Save visualization
-                visualize_results(pred, img, output_dir, i)
-                print(f"Processed image {i}/{len(test_images)}: {os.path.basename(path)}")
-                
-            except Exception as e:
-                print(f"Error processing {path}: {str(e)}")
-                predictions.append(None)
-                
-    except Exception as e:
-        print(f"Error accessing test directory: {str(e)}")
-
-
-def calculate_f1_score(model, test_dir='data/test', mask_dir='data/test', 
-                     output_file='CNNoutput/road_extraction_unet.txt', max_samples=None):
-    """
-    Calculate F1-score, precision, and recall for model predictions on test set.
+        precision = tp / (tp + fp + 1e-7)
+        recall = tp / (tp + fn + 1e-7)
+        
+        precision_scores.append(precision)
+        recall_scores.append(recall)
     
-    Args:
-        model: Trained Keras model
-        test_dir: Directory containing test images
-        mask_dir: Directory containing ground truth masks
-        output_file: File path to save results
-        max_samples: Maximum number of samples to evaluate (None for all)
-    """
-    def get_iou(y_true, y_pred):
-        """Calculate Intersection over Union"""
-        intersection = np.logical_and(y_true, y_pred)
-        union = np.logical_or(y_true, y_pred)
-        return np.sum(intersection) / np.sum(union)
+    # Calculate averages
+    avg_dice = np.mean(dice_scores)
+    avg_iou = np.mean(iou_scores)
+    avg_precision = np.mean(precision_scores)
+    avg_recall = np.mean(recall_scores)
+    avg_f1 = 2 * (avg_precision * avg_recall) / (avg_precision + avg_recall + 1e-7)
     
-    # Initialize metrics
-    total_tp = 0
-    total_fp = 0
-    total_fn = 0
-    total_iou = 0
-    processed = 0
-    
-    # Get test images
-    test_images = sorted([f for f in os.listdir(test_dir) if f.endswith('_sat.jpg')])
-    if max_samples:
-        test_images = test_images[:max_samples]
-    
-    if not test_images:
-        print("No test images found!")
-        return
-    
-    print(f"\nEvaluating {len(test_images)} test images...")
-    
-    for img_name in test_images:
-        try:
-            # Load image and corresponding mask
-            base_name = img_name.split('_')[0]
-            img_path = os.path.join(test_dir, img_name)
-            mask_path = os.path.join(mask_dir, f"{base_name}_mask.png")
-            
-            # Process image
-            img = Image.open(img_path).resize((128, 128))
-            img_array = np.array(img) / 255.0
-            
-            # Get prediction
-            pred = model.predict(np.expand_dims(img_array, axis=0))[0]
-            pred_mask = (pred > 0.5).astype(np.uint8)[..., 0]  # Threshold at 0.5
-            
-            # Load ground truth
-            true_mask = np.array(Image.open(mask_path).resize((128, 128)))
-            true_mask = (true_mask > 0).astype(np.uint8)  # Binarize
-            
-            # Calculate metrics
-            tp = np.sum(np.logical_and(pred_mask == 1, true_mask == 1))
-            fp = np.sum(np.logical_and(pred_mask == 1, true_mask == 0))
-            fn = np.sum(np.logical_and(pred_mask == 0, true_mask == 1))
-            
-            total_tp += tp
-            total_fp += fp
-            total_fn += fn
-            total_iou += get_iou(true_mask, pred_mask)
-            processed += 1
-            
-            # Print sample results
-            print(f"\nSample: {img_name}")
-            print(f"True Positives: {tp}")
-            print(f"False Positives: {fp}")
-            print(f"False Negatives: {fn}")
-            print(f"IoU: {get_iou(true_mask, pred_mask):.4f}")
-            
-        except Exception as e:
-            print(f"Error processing {img_name}: {str(e)}")
-    
-    if processed == 0:
-        print("No images processed successfully!")
-        return
-    
-    # Calculate final metrics
-    precision = total_tp / (total_tp + total_fp + 1e-7)
-    recall = total_tp / (total_tp + total_fn + 1e-7)
-    f1 = 2 * (precision * recall) / (precision + recall + 1e-7)
-    mean_iou = total_iou / processed
-    
-    # Format results
     results = f"""
-{'='*50}
-EVALUATION METRICS (N={processed})
-{'='*50}
-Precision: {precision:.4f}
-Recall: {recall:.4f}
-F1-Score: {f1:.4f}
-Mean IoU: {mean_iou:.4f}
+{'='*60}
+LANE DETECTION MODEL EVALUATION
+{'='*60}
+Number of test samples: {len(y_test)}
+Average Dice Coefficient: {avg_dice:.4f}
+Average IoU: {avg_iou:.4f}
+Average Precision: {avg_precision:.4f}
+Average Recall: {avg_recall:.4f}
+Average F1-Score: {avg_f1:.4f}
+{'='*60}
 """
     
-    # Print to console and save to file
     print(results)
-    with open(output_file, 'a') as f:
-        f.write(results)
-    print(f"Metrics saved to {output_file}")
-
-
-
-def predict_custom_image(model, image_path, output_dir):
-    """
-    Process and predict roads for a custom map screenshot.
     
-    Args:
-        model: Loaded Keras model
-        image_path: Path to custom image
-        output_dir: Directory to save results
+    if output_file:
+        with open(output_file, 'a') as f:
+            f.write(results)
+    
+    return {
+        'dice': avg_dice,
+        'iou': avg_iou,
+        'precision': avg_precision,
+        'recall': avg_recall,
+        'f1': avg_f1
+    }
+
+def predict_lanes_on_image(model, image_path, output_path=None):
+    """
+    Predict lane markings on a single image
     """
     try:
-        # Create custom predictions directory
-        custom_dir = os.path.join(output_dir, 'custom_predictions')
-        os.makedirs(custom_dir, exist_ok=True)
-        
         # Load and preprocess image
-        img = Image.open(image_path).convert('RGB')  # Ensure RGB format
-        img = img.resize((128, 128))
-        img_array = np.array(img) / 255.0
+        img = Image.open(image_path).convert('RGB')
+        original_size = img.size
         
-        # Make prediction
-        pred = model.predict(np.expand_dims(img_array, axis=0))[0]
-        pred_mask = (pred > 0.5).astype(np.uint8)[..., 0]  # Threshold at 0.5
+        # Resize for model input
+        img_resized = img.resize((128, 128))
+        img_array = preprocess_lane_image(np.array(img_resized))
+        
+        # Predict
+        prediction = model.predict(np.expand_dims(img_array, axis=0))[0]
+        lane_mask = (prediction > 0.5).astype(np.uint8)[:, :, 0]
+        
+        # Resize prediction back to original size
+        lane_mask_resized = cv2.resize(lane_mask, original_size, interpolation=cv2.INTER_NEAREST)
         
         # Create visualization
-        plt.figure(figsize=(12, 6))
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
         
-        plt.subplot(1, 2, 1)
-        plt.imshow(img)
-        plt.title('Input Map Screenshot')
-        plt.axis('off')
+        # Original image
+        axes[0].imshow(img)
+        axes[0].set_title('Original Image')
+        axes[0].axis('off')
         
-        plt.subplot(1, 2, 2)
-        # Create colored prediction (blue-green)
-        colored_mask = np.zeros((*pred_mask.shape, 3))
-        colored_mask[..., 1] = pred_mask * 0.7  # Green
-        colored_mask[..., 2] = pred_mask * 0.9  # Blue
-        plt.imshow(colored_mask)
-        plt.title('Predicted Roads')
-        plt.axis('off')
+        # Lane prediction overlay
+        img_with_lanes = np.array(img)
+        lane_overlay = np.zeros_like(img_with_lanes)
+        lane_overlay[lane_mask_resized > 0] = [255, 0, 0]  # Red lanes
         
-        # Save results
-        output_path = os.path.join(custom_dir, 'custom_prediction.png')
-        plt.savefig(output_path, bbox_inches='tight', dpi=150)
+        # Blend images
+        blended = cv2.addWeighted(img_with_lanes, 0.7, lane_overlay, 0.3, 0)
+        axes[1].imshow(blended)
+        axes[1].set_title('Lanes Overlay')
+        axes[1].axis('off')
+        
+        # Lane mask only
+        axes[2].imshow(lane_mask_resized, cmap='hot')
+        axes[2].set_title('Detected Lanes')
+        axes[2].axis('off')
+        
+        plt.tight_layout()
+        
+        if output_path:
+            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            print(f"Lane prediction saved to {output_path}")
+        else:
+            plt.show()
+        
         plt.close()
         
-        print(f"\nCustom image prediction saved to {output_path}")
-        return pred_mask
+        return lane_mask_resized
         
     except Exception as e:
-        print(f"\nError processing custom image: {str(e)}")
+        print(f"Error predicting lanes on image: {str(e)}")
         return None
 
-
-
 def main():
-    # Initialize data container
+    """
+    Main function for lane detection training and evaluation
+    """
+    print("Starting Lane Detection Pipeline...")
+    
+    # Initialize data containers
     frameObjTrain = {'img': [], 'mask': []}
-
-    # Load data
-    img_path = "data/train"
-    mask_path = "data/train"
+    
+    # Data paths - adjust these to your lane dataset
+    train_img_path = "data/train_lanes"  # Directory with lane images
+    train_mask_path = "data/train_masks"  # Directory with corresponding masks
+    
+    # Check if data directories exist
+    if not os.path.exists(train_img_path):
+        print(f"Training images directory not found: {train_img_path}")
+        print("Please organize your lane data as follows:")
+        print("data/train/ - contains lane images (lane_001.jpg, lane_002.jpg, etc.)")
+        print("data/train_masks/ - contains corresponding masks (lane_001_mask.png, etc.)")
+        return
+    
+    if not os.path.exists(train_mask_path):
+        print(f"Training masks directory not found: {train_mask_path}")
+        return
+    
+    # Load training data
     try:
-        frameObjTrain = load_data(frameObjTrain, img_path, mask_path)
-        print(f"Loaded {len(frameObjTrain['img'])} training images")
+        frameObjTrain = load_lane_data(frameObjTrain, train_img_path, train_mask_path)
+        if len(frameObjTrain['img']) == 0:
+            print("No training data loaded. Please check your data paths and file naming.")
+            return
     except Exception as e:
         print(f"Error loading training data: {str(e)}")
         return
-
-    # Save sample images
-    save_sample_images(frameObjTrain, output_dir)
-
-    # Build and compile model
-    inputs = tf.keras.layers.Input((128, 128, 3))
-    unet = unet_block(inputs, droupouts=0.07)
-    unet.compile(optimizer='Adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-    # Save model info
-    summary_file = os.path.join(output_dir, 'road_extraction_unet.txt')
-    save_model_summary(unet, summary_file)
-    print(f"Model summary saved to {summary_file}")
-
-    # Train model
+    
+    # Convert to numpy arrays
     x_train = np.array(frameObjTrain['img'])
     y_train = np.array(frameObjTrain['mask'])
-    print(f"\nTraining data shape: {x_train.shape}")
-    print(f"Mask data shape: {y_train.shape}")
+    y_train = np.expand_dims(y_train, axis=-1)  # Add channel dimension
     
-    history = train_model(unet, x_train, y_train, epochs=1, output_file=summary_file)
+    print(f"Training data shape: {x_train.shape}")
+    print(f"Training masks shape: {y_train.shape}")
     
-    # Save and verify model
-    model_path = os.path.join(output_dir, 'MapSegmentationGenerator.keras')
-    try:
-        unet.save(model_path)
-        print(f"\nModel saved to {model_path}")
-    except Exception as e:
-        print(f"Error saving model: {str(e)}")
-        return
+    # Build and compile lane detection model
+    model = lane_unet_model(input_shape=(128, 128, 3), numFilters=32, dropout_rate=0.1)
+    
+    # Compile with combined loss and custom metrics
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+        loss=combined_loss,
+        metrics=['accuracy', dice_coefficient]
+    )
+    
+    # Save model summary
+    summary_file = os.path.join(output_dir, 'lane_detection_model_info.txt')
+    save_model_summary(model, summary_file)
+    print(f"Model summary saved to {summary_file}")
+    
+    # Train model
+    print("\nStarting model training...")
+    history = train_lane_model(
+        model, x_train, y_train, 
+        epochs=50,  # Adjust as needed
+        batch_size=16,
+        validation_split=0.2,
+        output_file=summary_file
+    )
+    
+    # Save final model
+    final_model_path = os.path.join(output_dir, 'LaneDetectionModel.keras')
+    model.save(final_model_path)
+    print(f"Final model saved to {final_model_path}")
+    
+    # Create validation set for evaluation
+    val_split = int(0.8 * len(x_train))
+    x_val = x_train[val_split:]
+    y_val = y_train[val_split:]
+    
+    if len(x_val) > 0:
+        # Evaluate model
+        metrics = evaluate_lane_model(model, x_val, y_val, summary_file)
         
-    if not os.path.exists(model_path):
-        print(f"Model file not found at {model_path}")
-        return
-
-    # Test models
-    print("\nTesting with in-memory model:")
-    test_model_predictions(unet, max_samples=3)
-    calculate_f1_score(unet, max_samples=3)
+        # Generate sample predictions
+        visualize_lane_predictions(model, x_val, y_val[:, :, :, 0], num_samples=3)
     
-    print("\n" + "="*50)
-    print("VERIFYING SAVED MODEL")
-    print("="*50)
+    print(f"\nLane detection pipeline completed!")
+    print(f"Results saved in: {output_dir}")
     
-    try:
-        loaded_model = load_saved_model(model_path)
-        print("\nTesting with loaded model:")
-        test_model_predictions(loaded_model, max_samples=3)
-        calculate_f1_score(loaded_model, max_samples=3)
-        
-        # Custom image test
-        custom_image_path = "testimage/test.jpg"
-        if os.path.exists(custom_image_path):
-            print("\n" + "="*50)
-            print("TESTING CUSTOM MAP SCREENSHOT")
-            print("="*50)
-            
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            road_mask = predict_custom_image(
-                loaded_model, 
-                custom_image_path, 
-                output_dir
-            )
-            
-            if road_mask is not None:
-                print(f"\nRoad pixels detected: {np.sum(road_mask)}")
-        else:
-            print(f"\nCustom image not found at {custom_image_path}")
-            
-    except Exception as e:
-        print(f"\nModel verification failed: {str(e)}")
+    # Test on custom image if available
+    test_image_path = "testimage/test_lane.jpg"
+    if os.path.exists(test_image_path):
+        print(f"\nTesting on custom image: {test_image_path}")
+        output_prediction_path = os.path.join(output_dir, "custom_lane_prediction.png")
+        predict_lanes_on_image(model, test_image_path, output_prediction_path)
 
 if __name__ == "__main__":
-    from datetime import datetime
     main()
