@@ -12,6 +12,7 @@ public class HomePageNavigation : MonoBehaviour
   public GameObject racingLinePage;
   public GameObject teamPage;
   public GameObject supportPage;
+  public GameObject motoGPPage;
 
   [Header("Sidebar")]
   public GameObject activePage;
@@ -66,6 +67,7 @@ public class HomePageNavigation : MonoBehaviour
     racingLinePage.SetActive(false);
     teamPage.SetActive(false);
     supportPage.SetActive(false);
+    motoGPPage.SetActive(false);
     activePageIndex = 0;
     UpdateActivePagePosition();
   }
@@ -84,6 +86,7 @@ public class HomePageNavigation : MonoBehaviour
     racingLinePage.SetActive(false);
     teamPage.SetActive(false);
     supportPage.SetActive(false);
+    motoGPPage.SetActive(false);
     UpdateActivePagePosition();
   }
 
@@ -96,7 +99,7 @@ public class HomePageNavigation : MonoBehaviour
     racingLinePage.SetActive(false);
     teamPage.SetActive(false);
     supportPage.SetActive(false);
-    activePageIndex = 1;
+    motoGPPage.SetActive(false);
     UpdateActivePagePosition();
   }
 
@@ -109,7 +112,7 @@ public class HomePageNavigation : MonoBehaviour
     racingLinePage.SetActive(false);
     teamPage.SetActive(false);
     supportPage.SetActive(false);
-    activePageIndex = 2;
+    motoGPPage.SetActive(false);
     UpdateActivePagePosition();
   }
 
@@ -122,7 +125,7 @@ public class HomePageNavigation : MonoBehaviour
     racingLinePage.SetActive(false);
     teamPage.SetActive(true);
     supportPage.SetActive(false);
-    activePageIndex = 3;
+    motoGPPage.SetActive(false);
     UpdateActivePagePosition();
   }
 
@@ -135,7 +138,7 @@ public class HomePageNavigation : MonoBehaviour
     racingLinePage.SetActive(false);
     teamPage.SetActive(false);
     supportPage.SetActive(true);
-    activePageIndex = 4;
+    motoGPPage.SetActive(false);
     UpdateActivePagePosition();
   }
 
@@ -148,7 +151,20 @@ public class HomePageNavigation : MonoBehaviour
     racingLinePage.SetActive(true);
     teamPage.SetActive(false);
     supportPage.SetActive(false);
-    activePageIndex = 3;
+    motoGPPage.SetActive(false);
+    UpdateActivePagePosition();
+  }
+
+  public void NavigateToMotoGP()
+  {
+    dashboardPage.SetActive(false);
+    uploadPage.SetActive(false);
+    galleryPage.SetActive(false);
+    analysisPage.SetActive(false);
+    racingLinePage.SetActive(false);
+    teamPage.SetActive(false);
+    supportPage.SetActive(false);
+    motoGPPage.SetActive(true);
     UpdateActivePagePosition();
   }
 
@@ -219,6 +235,10 @@ public class HomePageNavigation : MonoBehaviour
     else if (pageIndex == 4)
     {
       NavigateToSupport();
+    }
+    else if (pageIndex == 5)
+    {
+      NavigateToMotoGP();
     }
   }
 

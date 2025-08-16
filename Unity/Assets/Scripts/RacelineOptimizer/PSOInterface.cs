@@ -14,7 +14,6 @@ namespace RacelineOptimizer
     public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 6000)
     {
       Debug.Log($"\nProcessing {Path.GetFileName(edgeDataFilePath)}...");
-
       EdgeData edgeData = EdgeData.LoadFromBinary(edgeDataFilePath);
       if (edgeData.OuterBoundary.Count == 0 || edgeData.InnerBoundary.Count == 0)
       {
@@ -27,11 +26,7 @@ namespace RacelineOptimizer
       Vector2 center = edgeData.GetCenter();
       edgeData.ScaleTrack(center, scaleFactor);
 
-      int numSamples = edgeData.OuterBoundary.Count < 500 || edgeData.InnerBoundary.Count < 500
-          ? 700
-          : (int)(edgeData.InnerBoundary.Count - (500 * scaleFactor));
-
-      var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, numSamples);
+      var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, 400);
       var cornerTrack = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, edgeData.InnerBoundary.Count);
       var corners = CornerDetector.DetectCorners(cornerTrack);
 
@@ -42,7 +37,7 @@ namespace RacelineOptimizer
       }
 
       PSO pso = new PSO();
-      float[] bestRatios = pso.Optimize(track, corners, numParticles, iterations);
+      float[] bestRatios = pso.Optimize(track, corners, cornerTrack, numParticles, iterations);
       if (bestRatios == null || bestRatios.Length == 0)
       {
         Debug.Log("Error: Optimization failed to find a valid solution.");
@@ -77,7 +72,9 @@ namespace RacelineOptimizer
       }
 
       string racelineFilePath = $"{outputPath}/{fileNameNoExt}.bin";
-      RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline);
+      Debug.Log($"Exporting {corners.Count} corners");
+
+      RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline, corners);
       Debug.Log("Raceline optimization completed and saved to " + racelineFilePath);
 
       return true;
@@ -111,17 +108,9 @@ namespace RacelineOptimizer
       float scaleFactor = 125 / avgWidth;
       Vector2 center = edgeData.GetCenter();
 
-      Debug.Log($"Average track width: {avgWidth}, Scale factor: {scaleFactor}, Center: {center}");
-
       edgeData.ScaleTrack(center, scaleFactor);
 
-      Debug.Log($"Scaled track with center: {center}, Scale factor: {scaleFactor}");
-
-      int numSamples = edgeData.OuterBoundary.Count < 500 || edgeData.InnerBoundary.Count < 500
-          ? 700
-          : Math.Max(100, (int)(edgeData.InnerBoundary.Count - (500 * scaleFactor)));
-
-      Debug.Log($"Calculated numSamples: {numSamples}");
+      int numSamples = 400;
 
       var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, numSamples);
       if (track.Count == 0)
@@ -142,16 +131,8 @@ namespace RacelineOptimizer
         return null;
       }
 
-      Debug.Log($"Detected {corners.Count} corners in the track.");
-
-      if (corners.Count == 0)
-      {
-        Debug.Log("Error: No corners detected in the track.");
-        return null;
-      }
-
       PSO pso = new PSO();
-      float[] bestRatios = pso.Optimize(track, corners, numParticles, iterations);
+      float[] bestRatios = pso.Optimize(track, corners, cornerTrack, numParticles, iterations);
       if (bestRatios == null || bestRatios.Length == 0)
       {
         Debug.Log("Error: Optimization failed to find a valid solution.");
