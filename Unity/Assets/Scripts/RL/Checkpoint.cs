@@ -50,8 +50,8 @@ public class Checkpoint : MonoBehaviour
         // Check if the object has the Player tag
         if (other.CompareTag("Player") && isActive)
         {
-            // Mark this checkpoint as completed
-            manager.CheckpointTriggered(checkpointId);
+            // Notify manager but don't auto-complete for training
+            manager.CheckpointTriggered(checkpointId, other.gameObject);
         }
     }
     

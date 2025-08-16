@@ -12458,9 +12458,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39fb8d448b0661a4cbdf5337eb8e6cce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  agentCount: 4
+  agentCount: 50
   agentPrefab: {fileID: 5433541524235702189, guid: ea14785c6087a944cab1cb442dbe6ddd, type: 3}
   decisionInterval: 10
+  iterations: 200
+  currentIteration: 0
+  currentSessionIndex: 0
+  activeAgents: 0
+  isTraining: 0
 --- !u!1 &1224448439
 GameObject:
   m_ObjectHideFlags: 0

@@ -588,20 +588,15 @@ MonoBehaviour:
   fovAdjustSpeed: 3
   showTrajectory: 1
   trajectoryLength: 2
-  trajectoryPoints: 10
+  trajectoryPoints: 5
   trajectoryColor: {r: 0, g: 1, b: 0, a: 1}
   trajectoryWidth: 0.1
   enableRecommendations: 1
-  recommendationSteps: 5
+  recommendationSteps: 4
   steeringSensitivity: 0.1
   throttleSensitivity: 0.3
   testInputStrength: 0.5
   inputThreshold: 0.3
-  recommendationWeight: 3
-  baseActionWeight: 1
-  idleWeight: 0.5
-  minSpeedForIdle: 1
-  enableDecisionLogging: 0
   raycastStartHeight: 0
   raycastDistance: 5
   offTrackThreshold: 0.25
@@ -626,9 +621,6 @@ MonoBehaviour:
   recommendTurnRight: 0
   willGoOffTrack: 0
   offTrackRatio: 0
-  lastSelectedAction: 
-  lastActionWeight: 0
-  totalRecommendations: 0
 --- !u!1 &6285464825667995485
 GameObject:
   m_ObjectHideFlags: 0

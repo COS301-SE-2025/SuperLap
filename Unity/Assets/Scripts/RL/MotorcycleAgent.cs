@@ -120,8 +120,7 @@ public class MotorcycleAgent : MonoBehaviour
     [ReadOnly] [SerializeField] private bool recommendSlowDown = false;
     [ReadOnly] [SerializeField] private bool recommendTurnLeft = false;
     [ReadOnly] [SerializeField] private bool recommendTurnRight = false;
-    [ReadOnly] [SerializeField] private bool willGoOffTrack = false;
-    [ReadOnly] [SerializeField] private float offTrackRatio = 0f;
+    [ReadOnly] [SerializeField] private bool isCurrentlyOffTrack = false;
 
     // Input values
     private float throttleInput = 0f;
@@ -320,6 +319,9 @@ public class MotorcycleAgent : MonoBehaviour
                                                          transform.forward, currentSpeed, currentTurnAngle, 
                                                          throttleInput, steerInput, physicsConfig);
 
+        // Update current track status
+        isCurrentlyOffTrack = IsOffTrack();
+
         currentSpeedKmh = currentSpeed * 3.6f;
         if (speedText != null)
         {
@@ -329,7 +331,7 @@ public class MotorcycleAgent : MonoBehaviour
         if (racelineDeviationText != null)
         {
             racelineDeviationText.text = $"Raceline Dev: {racelineDeviation:F2}m\nTraj Avg Dev: {averageTrajectoryDeviation:F2}m\n" +
-                                       $"Off Track Ratio: {offTrackRatio:F2}\nWill Go Off Track: {willGoOffTrack}";
+                                       $"Currently Off Track: {isCurrentlyOffTrack}";
         }
         Profiler.EndSample();
     }
@@ -369,11 +371,37 @@ public class MotorcycleAgent : MonoBehaviour
         transform.Rotate(Vector3.up * currentTurnAngle * dt);
     }
 
+    // Public methods for training system
+    public bool IsOffTrack()
+    {
+        // Check if the motorcycle is currently off track using a simple raycast
+        // This is used by the training system to determine if an agent should be recycled
+        // Note: The Decide() method still uses predictive track detection for better decision making
+        return !TrackDetector.IsPositionOnTrack(transform.position, trackDetectionConfig);
+    }
+
+    public float GetCurrentSpeed()
+    {
+        return currentSpeed;
+    }
+
+    public float GetCurrentTurnAngle()
+    {
+        return currentTurnAngle;
+    }
+
+    public void SetInitialState(float speed, float turnAngle)
+    {
+        currentSpeed = speed;
+        currentTurnAngle = turnAngle;
+        currentSpeedKmh = currentSpeed * 3.6f;
+    }
 }
 
 // Simple component to mark track surfaces for raycast detection
 public class TrackSurface : MonoBehaviour
 {
     // This component can be attached to track pieces to identify them in raycasts
+    // IMPORTANT: The GameObject must also have the "Track" tag for the raycast detection to work
     // No additional functionality needed - just acts as a marker
 }

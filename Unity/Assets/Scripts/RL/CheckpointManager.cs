@@ -56,6 +56,20 @@ public class CheckpointManager : MonoBehaviour
 
     public void CheckpointTriggered(int checkpointId)
     {
+        CheckpointTriggered(checkpointId, null);
+    }
+
+    public void CheckpointTriggered(int checkpointId, GameObject triggerer)
+    {
+        // For training mode, notify any trainer listening
+        var trainer = FindAnyObjectByType<Trainer>();
+        if (trainer != null)
+        {
+            trainer.OnCheckpointTriggered(checkpointId, triggerer);
+            return; // Let trainer handle checkpoint logic during training
+        }
+
+        // Original checkpoint logic for non-training scenarios
         // Validate that this is the correct next checkpoint
         if (checkpointId != currentTargetCheckpoint)
         {
