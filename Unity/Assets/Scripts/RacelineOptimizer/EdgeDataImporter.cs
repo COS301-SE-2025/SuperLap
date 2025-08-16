@@ -31,20 +31,30 @@ public class EdgeData
     }
     return edgeData;
   }
-
-  public float GetAverageTrackWidth()
-  {
-    int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
-    if (count == 0) return 0f;
-
-    float total = 0f;
-    for (int i = 0; i < count; i++)
+    public static EdgeData LoadFromLists(List<Vector2> outerBoundary, List<Vector2> innerBoundary)
     {
-      total += Vector2.Distance(InnerBoundary[i], OuterBoundary[i]);
+        var edgeData = new EdgeData();
+
+        edgeData.OuterBoundary = new List<Vector2>(outerBoundary);
+        edgeData.InnerBoundary = new List<Vector2>(innerBoundary);
+        edgeData.Raceline = new List<Vector2>();
+
+        return edgeData;
     }
 
-    return total / count;
-  }
+  public float GetAverageTrackWidth()
+    {
+        int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
+        if (count == 0) return 0f;
+
+        float total = 0f;
+        for (int i = 0; i < count; i++)
+        {
+            total += Vector2.Distance(InnerBoundary[i], OuterBoundary[i]);
+        }
+
+        return total / count;
+    }
 
   public Vector2 GetCenter()
   {

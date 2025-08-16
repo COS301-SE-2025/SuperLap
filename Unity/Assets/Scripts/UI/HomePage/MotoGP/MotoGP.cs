@@ -106,7 +106,7 @@ public class MotoGP : MonoBehaviour
 
   public void ProcessRacingLine()
   {
-    PlayerLineFromCSV.Convert(filePath, dropdown.value);
+    CSVToBinConverter.LoadCSV.Convert(filePath, dropdown.value);
   }
 
 
