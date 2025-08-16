@@ -155,7 +155,6 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   private MotoGPDisplayData currentTrackData;
   private Dictionary<string, UILineRenderer> lineRenderers = new Dictionary<string, UILineRenderer>();
 
-  // Zoom/pan variables
   private float currentZoom = 1f;
   private Vector2 panOffset = Vector2.zero;
   private Vector2 initialPosition;
@@ -182,7 +181,6 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
 
   }
 
-  // Input handling methods
   public void OnPointerDown(PointerEventData eventData)
   {
     if (currentZoom > 1f)
@@ -245,12 +243,11 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     Vector2 viewportSize = viewportRect.rect.size;
 
     Vector2 maxOffset = (scaledSize - viewportSize) * 0.5f;
-    maxOffset = Vector2.Max(maxOffset, Vector2.zero); // Ensure no negative values
+    maxOffset = Vector2.Max(maxOffset, Vector2.zero);
 
     panOffset.x = Mathf.Clamp(panOffset.x, -maxOffset.x, maxOffset.x);
     panOffset.y = Mathf.Clamp(panOffset.y, -maxOffset.y, maxOffset.y);
 
-    // Ensure lines stay connected when zoomed
     if (Mathf.Approximately(currentZoom, 1f))
     {
       panOffset = Vector2.zero;
@@ -271,7 +268,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     if (lineRenderers == null || lineRenderers.Count == 0)
       return;
 
-    foreach (var kvp in lineRenderers.ToList()) // Use ToList() to avoid modification during iteration
+    foreach (var kvp in lineRenderers.ToList())
     {
       if (kvp.Value == null)
       {
@@ -329,7 +326,6 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     float scale = CalculateScale(bounds.size);
     Vector2 offset = CalculateOffset(bounds.size, scale);
 
-    // Create a background for the road area
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
 
     if (showOuterBoundary)
@@ -403,7 +399,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
 
   private void CreateRoadArea(List<Vector2> outer, List<Vector2> inner, Vector2 min, float scale, Vector2 offset)
   {
-    if (outer == null || outer.Count < 3) return; // Need at least 3 points
+    if (outer == null || outer.Count < 3) return;
 
     Debug.Log(outer.Count);
     GameObject outerObj = new GameObject("RoadAreaOuter");
@@ -421,12 +417,10 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     outerMesh.material = new Material(Shader.Find("UI/Default"));
     outerMesh.color = roadColor;
 
-    // Convert outer points to List<Vector2>
     List<Vector2> outerPoints = outer.Select(p => TransformPoint(p, min, scale, offset)).ToList();
 
     outerMesh.Points = outerPoints;
 
-    // --- Inner Mask ---
     if (inner != null && inner.Count >= 3)
     {
       GameObject maskObj = new GameObject("InnerMask");
@@ -463,17 +457,15 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     lineRenderer.material = new Material(Shader.Find("UI/Default"));
     lineRenderer.color = color;
     lineRenderer.LineThickness = width;
-    lineRenderer.RelativeSize = false; // Important for absolute sizing
+    lineRenderer.RelativeSize = false;
     lineRenderer.drivenExternally = false;
 
-    // Convert points to local space
     Vector2[] linePoints = points
         .Select(p => TransformPoint(p, min, scale, offset))
         .ToArray();
 
     lineRenderer.Points = linePoints;
 
-    // Add RectTransform and set it to stretch
     RectTransform rt = lineObj.GetComponent<RectTransform>();
     if (rt == null) rt = lineObj.AddComponent<RectTransform>();
     rt.anchorMin = Vector2.zero;
@@ -487,7 +479,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   private Vector2 TransformPoint(Vector2 point, Vector2 min, float scale, Vector2 offset)
   {
     Vector2 transformed = (point - min) * scale + offset;
-    transformed.y = trackContainer.rect.height - transformed.y; // Flip Y coordinate
-    return transformed - trackContainer.rect.size * 0.5f; // Center around (0,0)
+    transformed.y = trackContainer.rect.height - transformed.y;
+    return transformed - trackContainer.rect.size * 0.5f;
   }
 }
