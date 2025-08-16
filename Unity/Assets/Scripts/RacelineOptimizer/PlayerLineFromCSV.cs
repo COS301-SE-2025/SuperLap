@@ -4,6 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using UnityEngine;
+using UnityEngine.UI;
+using Vector2 = System.Numerics.Vector2;
 
 namespace CSVToBinConverter
 {
@@ -85,15 +88,15 @@ namespace CSVToBinConverter
 
       if (playerline.Count == 0)
       {
-        Console.WriteLine("No valid playerline data found.");
+        Debug.Log("No valid playerline data found.");
         return null;
       }
 
       // Load existing edge data
-      string trackPath = $"./CSVInput/MotoGPTracks/{trackName}.bin";
+      string trackPath = Path.Combine(Application.streamingAssetsPath, "MotoGPTracks", $"{trackName}.bin");
       if (!File.Exists(trackPath))
       {
-        Console.WriteLine($"Error: Edge file not found at {trackPath}");
+        Debug.Log($"Error: Edge file not found at {trackPath}");
         return null;
       }
 
@@ -101,7 +104,7 @@ namespace CSVToBinConverter
 
       if (edgeData.OuterBoundary.Count == 0 || edgeData.InnerBoundary.Count == 0)
       {
-        Console.WriteLine($"Error: Edge data for {trackName} is empty or malformed.");
+        Debug.Log($"Error: Edge data for {trackName} is empty or malformed.");
         return null;
       }
 

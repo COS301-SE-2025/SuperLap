@@ -4,14 +4,16 @@ using SFB;
 using RainbowArt.CleanFlatUI;
 using System.IO;
 using System.Collections.Generic;
+
 public class MotoGP : MonoBehaviour
 {
 
   [Header("UI References")]
-  [SerializeField] private Image previewImage;
+  [SerializeField] private GameObject previewImage;
   [SerializeField] private DropdownTransition dropdown;
-
   [SerializeField] private GameObject processButton;
+
+
 
   void Start()
   {
@@ -106,13 +108,23 @@ public class MotoGP : MonoBehaviour
 
   public void ProcessRacingLine()
   {
-    CSVToBinConverter.LoadCSV.Convert(filePath, dropdown.value);
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, dropdown.value);
+
+    if (playerline == null)
+    {
+      Debug.LogError("PlayerLine data could not be generated.");
+      return;
+    }
+    
+    ShowMotoGP showMotoGP = previewImage.GetComponent<ShowMotoGP>();
+    if (showMotoGP != null)
+    {
+        showMotoGP.DisplayPlayerLineData(playerline);
+    }
+    else
+    {
+        Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
+    }
+
   }
-
-
-  // private IEnumerator LoadCSV(string filePath)
-  // {
-  //   //send to integration
-  // }
-
 }
