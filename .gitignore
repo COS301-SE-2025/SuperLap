@@ -65,6 +65,7 @@ Backend/RacelineOptimizer/Input
 Unity/TestResults/
 /Backend/ImageProcessing/TEST/data
 Unity/Assets/StreamingAssets/TrackProcessor.exe
+Unity/Assets/StreamingAssets/TrackProcessor
 
 #Ignore RLMatrix DLL files
 Unity/Assets/Plugins/Windows/x86_64

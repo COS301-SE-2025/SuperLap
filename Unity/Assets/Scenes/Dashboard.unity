@@ -328,6 +328,8 @@ MonoBehaviour:
   trainer: {fileID: 1218835727}
   progressUpdateInterval: 0.5
   saveFilePath: Assets/TrainingData/
+  lastProgressUpdate: 0
+  isTrainingActive: 0
 --- !u!1 &48569704
 GameObject:
   m_ObjectHideFlags: 0
@@ -15687,7 +15689,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   previewImage: {fileID: 1202546393}
-  particleCount: 50
+  particleCount: 100
   maxIterations: 3000
   outputImage: {fileID: 0}
   outputImageWidth: 1024
