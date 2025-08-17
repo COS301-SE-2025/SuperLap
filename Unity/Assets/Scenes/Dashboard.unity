@@ -9420,6 +9420,17 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 606792551724696686, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
   m_PrefabInstance: {fileID: 703033912}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &703033918 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3682349529587583522, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
+  m_PrefabInstance: {fileID: 703033912}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e9dc27e398f25d4791082364588d6f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &705438244
 GameObject:
   m_ObjectHideFlags: 0
@@ -11734,15 +11745,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2423235387983150861, guid: d639e84fc4a19814eb3fd4b896f6d603, type: 3}
       propertyPath: m_Color.b
-      value: 0.20784315
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2423235387983150861, guid: d639e84fc4a19814eb3fd4b896f6d603, type: 3}
       propertyPath: m_Color.g
-      value: 0.21176472
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2423235387983150861, guid: d639e84fc4a19814eb3fd4b896f6d603, type: 3}
       propertyPath: m_Color.r
-      value: 0.21176472
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2971839373268861373, guid: d639e84fc4a19814eb3fd4b896f6d603, type: 3}
       propertyPath: m_Name
@@ -15658,7 +15669,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 540799125138992629, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 40.169983
+      value: 44.725006
       objectReference: {fileID: 0}
     - target: {fileID: 2220609164166950249, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
       propertyPath: m_Pivot.x
@@ -15775,6 +15786,17 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 606792551724696686, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
   m_PrefabInstance: {fileID: 1105655692}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1105655695 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3682349529587583522, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
+  m_PrefabInstance: {fileID: 1105655692}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e9dc27e398f25d4791082364588d6f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1120421958
 GameObject:
   m_ObjectHideFlags: 0
@@ -16407,6 +16429,8 @@ MonoBehaviour:
   motoGPPage: {fileID: 23428809}
   tooltips:
   - {fileID: 978244735}
+  - {fileID: 1105655695}
+  - {fileID: 703033918}
   activePage: {fileID: 1284194292}
   transitionSpeed: 5
 --- !u!114 &1217648705
