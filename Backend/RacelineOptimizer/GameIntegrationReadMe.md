@@ -26,12 +26,28 @@
 
 ## How to export the recorded race from SRT to CSV:
 - Click on the session you would like to export: <br>
-<img src="GIReadMeImages/6.png" alt="SRT Record Page" width="700"/>
+<img src="GIReadMeImages/6.png" alt="SRT Session Page" width="700"/>
 
 - Click on the share button on the top right of the screen (Indicated by the arrow): <br>
-<img src="GIReadMeImages/7.png" alt="SRT Record Page" width="700"/>
+<img src="GIReadMeImages/7.png" alt="SRT Session Page" width="700"/>
 
 - Click on the export to CSV option: <br>
-<img src="GIReadMeImages/8.png" alt="SRT Record Page" width="700"/>
+<img src="GIReadMeImages/8.png" alt="SRT CSV Page" width="700"/>
 
 - Save it to your disk from the file menu that popped up.
+
+## How to import CSV's to SuperLap:
+- Launch SuperLap and login then navigate to the MotoGP tab (Indicated by the arrow): <br>
+<img src="GIReadMeImages/9.png" alt="SuperLap Home Page" width="700"/>
+
+- Click on the upload CSV option and go to the csv you saved in the file exlorer popup <br>
+<img src="GIReadMeImages/10.png" alt="SRT Record Page" width="700"/>
+
+- Select the lap number you would like to analize, then click the Process buton <br>
+<img src="GIReadMeImages/11.png" alt="SRT Record Page" width="700"/>
+
+- Look at the difference between your line and the uploaded line. <br>
+<img src="GIReadMeImages/12.png" alt="SRT Record Page" width="700"/>
+
+- You will see the sliders change the thickness of the lines (Borders, Player line and optimal Race line) <br>
+- You can zoom in on the track using the mouse scroll wheel, and you can move around the track by dragging your mouse.
