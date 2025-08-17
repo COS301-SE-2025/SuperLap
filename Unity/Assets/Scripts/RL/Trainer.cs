@@ -72,6 +72,12 @@ public class Trainer : MonoBehaviour
     public List<TrainingSession> TrainingSessions => trainingSessions;
     public int CurrentSessionIndex => currentSessionIndex;
     public bool IsTraining => isTraining;
+    
+    // Public accessors for UI controller
+    public int AgentCount => agentCount;
+    public int Iterations => iterations;
+    public int CurrentIteration => currentIteration;
+    public int ActiveAgents => activeAgents;
     private List<MotorcycleAgent> agents;
     private List<AgentState> agentStates;
     private List<AgentState> agentGoalStates; // States captured at goal checkpoint for next session
@@ -411,6 +417,54 @@ public class Trainer : MonoBehaviour
     {
         return agent.IsOffTrack();
     }
+
+    #region Public Methods for UI Control
+    
+    public void SetAgentCount(int count)
+    {
+        if (!isTraining && count > 0)
+        {
+            agentCount = Mathf.Clamp(count, 1, 10);
+            Debug.Log($"Agent count set to: {agentCount}");
+        }
+    }
+    
+    public void SetIterations(int count)
+    {
+        if (!isTraining && count > 0)
+        {
+            iterations = count;
+            Debug.Log($"Iterations set to: {iterations}");
+        }
+    }
+    
+    public void StartTraining()
+    {
+        if (!isTraining)
+        {
+            isTraining = true;
+            Debug.Log("Training started via UI");
+        }
+    }
+    
+    public void StopTraining()
+    {
+        if (isTraining)
+        {
+            isTraining = false;
+            Debug.Log("Training stopped via UI");
+        }
+    }
+    
+    public void ResetTraining()
+    {
+        StopTraining();
+        Clear();
+        Initialize();
+        Debug.Log("Training reset via UI");
+    }
+    
+    #endregion
 
     void Clear()
     {
