@@ -9,10 +9,10 @@ public class TrainingCameraController : MonoBehaviour
     
     [Header("Movement Settings")]
     [Tooltip("Speed of WASD movement")]
-    [SerializeField] private float moveSpeed = 20f;
+    [SerializeField] private float moveSpeed = 40f;
     
     [Tooltip("Speed of camera movement (multiplier)")]
-    [SerializeField] private float moveSpeedMultiplier = 2f;
+    [SerializeField] private float moveSpeedMultiplier = 3f;
     
     [Tooltip("Hold this key to move faster")]
     [SerializeField] private KeyCode fastMoveKey = KeyCode.LeftShift;
@@ -25,14 +25,15 @@ public class TrainingCameraController : MonoBehaviour
     [SerializeField] private float minZoomDistance = 10f;
     
     [Tooltip("Maximum distance from ground")]
-    [SerializeField] private float maxZoomDistance = 200f;
+    [SerializeField] private float maxZoomDistance = 150f;
     
     [Header("Rotation Settings")]
     [Tooltip("Rotation angle for Q/E keys (degrees)")]
     [SerializeField] private float rotationAngle = 45f;
     
     [Tooltip("Speed of rotation animation")]
-    [SerializeField] private float rotationSpeed = 180f;
+    // defaults to a very large number since the animation is a bit wonky
+    [SerializeField] private float rotationSpeed = 9999999999f;
     
     [Header("Camera Angle")]
     [Tooltip("Fixed viewing angle (degrees from horizontal)")]
