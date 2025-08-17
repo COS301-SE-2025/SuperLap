@@ -80,8 +80,8 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 <!-- - [Installation Manual](docs/InstallationManual.pdf) -->
 - [Technical Installation Manual](docs/TechnicalInstallationManual.pdf)
 - [User Manual](docs/UserManual.pdf)
-+ [Machine Learning Specification](docs/MachineLearningSpecification.pdf)
-+ [API Documentation](docs/APIDocumentation.pdf)
+<!-- + [Machine Learning Specification](docs/MachineLearningSpecification.pdf)
++ [API Documentation](docs/APIDocumentation.pdf) -->
 - [Coding Standards](docs/CodingStandards.pdf)
 - [Testing Policy](docs/TestingPolicy.pdf)
 - [Contributing](docs/Contributing.pdf)
