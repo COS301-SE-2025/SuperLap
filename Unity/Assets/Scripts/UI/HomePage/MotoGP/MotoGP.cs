@@ -17,7 +17,7 @@ public class MotoGP : MonoBehaviour
   [SerializeField] private GameObject controlPanel;
 
 
-
+  List<int> lapIndexList = new List<int>();
   void Start()
   {
     dropdown.options.Clear();
@@ -61,7 +61,7 @@ public class MotoGP : MonoBehaviour
     }
 
     string[] headers = lines[0].Split('\t');
-    int lapIndexCol = System.Array.IndexOf(headers, "lapIndex");
+    int lapIndexCol = System.Array.IndexOf(headers, "lap_number");
 
     if (lapIndexCol == -1)
     {
@@ -88,30 +88,37 @@ public class MotoGP : MonoBehaviour
 
       if (int.TryParse(rawValue, out int lapVal))
       {
-        lapIndices.Add(lapVal);
+        if (lapVal != -1)
+          lapIndices.Add(lapVal);
       }
+    }
+
+    if (lapIndices.Count > 0)
+    {
+        int lastLap = Mathf.Max(new List<int>(lapIndices).ToArray());
+        lapIndices.Remove(lastLap);
     }
 
     dropdown.options.Clear();
     foreach (int lapIndex in lapIndices)
     {
-      dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
+        dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
+        lapIndexList.Add(lapIndex);
     }
 
-    if (dropdown.options.Count > 0)
-    {
-      dropdown.gameObject.SetActive(true);
-      dropdown.value = 0;
-      dropdown.RefreshShownValue();
-      processButton.SetActive(true);
-      DropDownText.SetActive(true);
-    }
+    dropdown.value = 0;
+    dropdown.gameObject.SetActive(true);
+    dropdown.RefreshShownValue();
+    processButton.SetActive(true);
+    DropDownText.SetActive(true);
   }
 
   public void ProcessRacingLine()
   {
-    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, Math.Max(dropdown.value - 1, 0));
+    int selectedLapIndex = lapIndexList[dropdown.value];
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, selectedLapIndex);
 
+    Debug.Log("Raceline Count: " + playerline.Raceline.Count);
     if (playerline == null)
     {
       Debug.LogError("PlayerLine data could not be generated.");

@@ -4409,7 +4409,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -18, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &359843310
@@ -5482,7 +5482,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3083274347408712454, guid: 70798743882786144aa5eec0828433ba, type: 3}
       propertyPath: m_Value
-      value: 0
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 3083274347408712454, guid: 70798743882786144aa5eec0828433ba, type: 3}
       propertyPath: m_MaxValue
@@ -7856,7 +7856,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3083274347408712454, guid: 70798743882786144aa5eec0828433ba, type: 3}
       propertyPath: m_Value
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3083274347408712454, guid: 70798743882786144aa5eec0828433ba, type: 3}
       propertyPath: m_MaxValue
@@ -12445,7 +12445,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3083274347408712454, guid: 70798743882786144aa5eec0828433ba, type: 3}
       propertyPath: m_Value
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3083274347408712454, guid: 70798743882786144aa5eec0828433ba, type: 3}
       propertyPath: m_MaxValue
@@ -15397,12 +15397,12 @@ MonoBehaviour:
   zoomContainer: {fileID: 772830797}
   viewportRect: {fileID: 1167116597}
   lineMaterial: {fileID: 0}
-  outerBoundaryWidth: 5
-  innerBoundaryWidth: 5
-  racelineWidth: 3
-  playerPathWidth: 3
-  outerBoundaryColor: {r: 0, g: 0, b: 1, a: 1}
-  innerBoundaryColor: {r: 1, g: 0, b: 0, a: 1}
+  outerBoundaryWidth: 3
+  innerBoundaryWidth: 3
+  racelineWidth: 5
+  playerPathWidth: 5
+  outerBoundaryColor: {r: 1, g: 1, b: 1, a: 1}
+  innerBoundaryColor: {r: 1, g: 1, b: 1, a: 1}
   roadColor: {r: 0, g: 0, b: 0, a: 1}
   racelineColor: {r: 0, g: 1, b: 0, a: 1}
   playerRaceLineColor: {r: 0, g: 0.5, b: 1, a: 1}
@@ -17234,7 +17234,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3083274347408712454, guid: 70798743882786144aa5eec0828433ba, type: 3}
       propertyPath: m_Value
-      value: 0
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 3083274347408712454, guid: 70798743882786144aa5eec0828433ba, type: 3}
       propertyPath: m_MaxValue

@@ -100,7 +100,7 @@ namespace CSVToBinConverter
         return null;
       }
 
-      EdgeData edgeData = EdgeData.LoadFromBinary(trackPath);
+      EdgeData edgeData = EdgeData.LoadFromBinary(trackPath, true);
 
       if (edgeData.OuterBoundary.Count == 0 || edgeData.InnerBoundary.Count == 0)
       {

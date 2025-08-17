@@ -247,7 +247,6 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   {
       outerBoundaryWidth = newWidth;
       
-      // Update the line renderer if it exists
       if (lineRenderers.TryGetValue("OuterBoundary", out UILineRenderer renderer))
       {
           renderer.LineThickness = outerBoundaryWidth / currentZoom;
@@ -258,7 +257,6 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   {
       innerBoundaryWidth = newWidth;
       
-      // Update the line renderer if it exists
       if (lineRenderers.TryGetValue("InnerBoundary", out UILineRenderer renderer))
       {
           renderer.LineThickness = innerBoundaryWidth / currentZoom;
@@ -268,9 +266,8 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   public void changeRaceLineWidth(float newWidth)
   {
       racelineWidth = newWidth;
-      
-      // Update the line renderer if it exists
-      if (lineRenderers.TryGetValue("RaceLine", out UILineRenderer renderer))
+
+      if (lineRenderers.TryGetValue("Raceline", out UILineRenderer renderer))
       {
           renderer.LineThickness = racelineWidth / currentZoom;
       }
@@ -280,7 +277,6 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   {
       playerPathWidth = newWidth;
       
-      // Update the line renderer if it exists
       if (lineRenderers.TryGetValue("PlayerPath", out UILineRenderer renderer))
       {
           renderer.LineThickness = playerPathWidth / currentZoom;
