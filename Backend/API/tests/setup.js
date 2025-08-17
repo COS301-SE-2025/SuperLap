@@ -2,17 +2,21 @@
 const { MongoClient } = require('mongodb');
 
 // Increase timeout for all async operations
-jest.setTimeout(30000);
+jest.setTimeout(60000); // Increased to 60 seconds
 
 // Add a global beforeAll to wait for MongoDB to be ready
 beforeAll(async () => {
   // Wait for MongoDB to be ready with retry logic
-  const maxRetries = 10;
-  const retryDelay = 2000; // 2 seconds
+  const maxRetries = 20; // Increased retries
+  const retryDelay = 3000; // 3 seconds
   
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const client = await MongoClient.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/Superlap_test');
+      const client = await MongoClient.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/Superlap_test', {
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 5000,
+      });
+      await client.db().admin().ping(); // Test the connection
       await client.close();
       console.log('MongoDB is ready for testing');
       break;
@@ -24,4 +28,4 @@ beforeAll(async () => {
       await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
   }
-});
+}, 120000); // 2 minute timeout for the setup
