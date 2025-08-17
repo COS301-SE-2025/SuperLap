@@ -95,7 +95,7 @@ public class Trainer : MonoBehaviour
 
     void Start()
     {
-        Initialize();
+
     }
 
     void Initialize()
