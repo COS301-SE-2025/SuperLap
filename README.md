@@ -74,7 +74,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 - [Deployment Model](https://drive.google.com/file/d/1kxbC_id77u7d69tKbW4dKoUZLJgVVtEM/view?usp=sharing)
 <!-- + [Class Diagram](docs/images/ClassDiagram.png) -->
 + [Architecture Diagram](docs/images/ArchitectureDiagram.png)
-+ [Domain Model](docs/images/DomainModel.png)
++ [Domain Model](docs/images/ClassDiagram.png)
 + [Deployment Diagram](docs/images/DeploymentDiagram.png)
 + [Use Case Diagrams](docs/images/UsecaseDiagarms.png)
 <!-- - [Installation Manual](docs/InstallationManual.pdf) -->
