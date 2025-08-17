@@ -37,5 +37,4 @@ jobs:
         run: npx jest --forceExit
         env:
           # Set up MongoDB connection for tests
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          PORT: 3000
+          MONGO_URI: mongodb://localhost:27017/Superlap_test

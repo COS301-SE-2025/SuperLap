@@ -80,6 +80,50 @@ public class APIManagerIntegrationTest
         Assert.IsNotNull(instance1);
     }
 
+    // [UnityTest]
+    // public IEnumerator RegisterUser_EmptyEmail_HandlesGracefully()
+    // {
+    //     // Test registration with empty email
+    //     bool callbackCalled = false;
+    //     bool success = true; // Expect this to be false after the call
+    //     string message = "";
+
+    //     apiManager.RegisterUser("testuser", "", "password123", (isSuccess, msg) =>
+    //     {
+    //         callbackCalled = true;
+    //         success = isSuccess;
+    //         message = msg;
+    //     });
+
+    //     yield return new WaitForSeconds(0.1f);
+
+    //     Assert.IsTrue(callbackCalled);
+    //     // The actual success/failure depends on server validation
+    // }
+
+    // [UnityTest]
+    // public IEnumerator LoginUser_EmptyUsername_HandlesGracefully()
+    // {
+    //     // Test login with empty username
+    //     bool callbackCalled = false;
+    //     bool success = true; // Expect this to be false after the call
+    //     string message = "";
+    //     User returnedUser = null;
+
+    //     apiManager.LoginUser("", "password123", (isSuccess, msg, user) =>
+    //     {
+    //         callbackCalled = true;
+    //         success = isSuccess;
+    //         message = msg;
+    //         returnedUser = user;
+    //     });
+
+    //     yield return new WaitForSeconds(0.1f);
+
+    //     Assert.IsTrue(callbackCalled);
+    //     // The actual success/failure depends on server validation
+    // }
+
     [Test]
     public void JsonSerialization_SpecialCharacters_HandledCorrectly()
     {
@@ -133,4 +177,32 @@ public class APIManagerIntegrationTest
         apiManager.baseURL = urlWithoutSlash;
         Assert.AreEqual(urlWithoutSlash, apiManager.baseURL);
     }
+
+    // [UnityTest]
+    // public IEnumerator APIManager_ConcurrentRequests_HandleCorrectly()
+    // {
+    //     // Test multiple concurrent API requests
+    //     List<bool> callbackResults = new List<bool>();
+    //     int expectedCallbacks = 5;
+
+    //     // Start multiple concurrent requests
+    //     for (int i = 0; i < expectedCallbacks; i++)
+    //     {
+    //         int index = i; // Capture for closure
+    //         apiManager.RegisterUser($"user{index}", $"user{index}@test.com", $"pass{index}", 
+    //             (success, msg) => { callbackResults.Add(true); });
+    //     }
+
+    //     // Wait for all requests to complete
+    //     float timeout = 2.0f;
+    //     float elapsed = 0f;
+    //     while (callbackResults.Count < expectedCallbacks && elapsed < timeout)
+    //     {
+    //         elapsed += Time.deltaTime;
+    //         yield return null;
+    //     }
+
+    //     Assert.AreEqual(expectedCallbacks, callbackResults.Count, 
+    //         "All concurrent requests should complete");
+    // }
 }
