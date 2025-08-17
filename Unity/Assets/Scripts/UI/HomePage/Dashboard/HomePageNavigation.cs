@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.SceneManagement;
 
+using RainbowArt.CleanFlatUI;
 public class HomePageNavigation : MonoBehaviour
 {
   [Header("Pages")]
@@ -13,6 +14,9 @@ public class HomePageNavigation : MonoBehaviour
   public GameObject teamPage;
   public GameObject supportPage;
   public GameObject motoGPPage;
+
+  [Header("Help Tooltips")]
+  [SerializeField] private Tooltip[] tooltips;
 
   [Header("Sidebar")]
   public GameObject activePage;
@@ -29,6 +33,10 @@ public class HomePageNavigation : MonoBehaviour
   void Awake()
   {
     NavigateToDashboard();
+    if (tooltips == null || tooltips.Length == 0)
+      tooltips = GetComponentsInChildren<Tooltip>(true);
+
+    hideSupportPopups();
   }
 
   void Update()
@@ -301,6 +309,7 @@ public class HomePageNavigation : MonoBehaviour
 
   private void UpdateActivePagePosition()
   {
+    hideSupportPopups();
     if (activePage != null)
     {
       RectTransform activePageRect = activePage.GetComponent<RectTransform>();
@@ -316,4 +325,60 @@ public class HomePageNavigation : MonoBehaviour
       }
     }
   }
+
+  private void hideSupportPopups()
+  {
+    foreach (var tip in tooltips)
+    {
+      if (tip != null)
+      {
+        tip.HideTooltip();
+      }
+    }
+  }
+
+  public void ShowSupportPopups()
+  {
+    StopAllCoroutines(); // ensure no overlap
+    StartCoroutine(ShowTooltipsForActivePage());
+  }
+
+  private IEnumerator ShowTooltipsForActivePage()
+  {
+    if (tooltips == null || tooltips.Length == 0)
+      yield break;
+
+    (int start, int end) = GetTooltipRangeForPage();
+
+   
+
+    if (start == -1 || end == -1) yield break;
+
+    if (start > tooltips.Length || end > tooltips.Length) yield break;
+
+    hideSupportPopups();
+    for (int i = start; i <= end; i++)
+    {
+      if (tooltips[i] == null)
+      {
+        continue;
+      }
+      tooltips[i].ShowTooltip();
+      yield return new WaitForSeconds(3f);
+      tooltips[i].HideTooltip();
+    }
+  }
+
+  private (int start, int end) GetTooltipRangeForPage()
+  {
+      if (dashboardPage != null && dashboardPage.activeSelf) return (0, 2);
+      if (galleryPage != null && galleryPage.activeSelf) return (3, 5);
+      if (analysisPage != null && analysisPage.activeSelf) return (6, 8);
+      if (teamPage != null && teamPage.activeSelf) return (9, 11);
+      if (supportPage != null && supportPage.activeSelf) return (12, 14);
+      if (motoGPPage != null && motoGPPage.activeSelf) return (15, 17);
+
+      return (-1, -1);
+  }
+
 }

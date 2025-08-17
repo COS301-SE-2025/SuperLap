@@ -25,11 +25,11 @@ namespace RainbowArt.CleanFlatUI
         {
             if(tooltip.gameObject.activeSelf == true && cachedEnterEventCamera != null)
             {
-#if ENABLE_INPUT_SYSTEM
-                Vector2 mousePosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
-#elif ENABLE_LEGACY_INPUT_MANAGER
-                Vector2 mousePosition = Input.mousePosition;
-#endif
+//#if ENABLE_INPUT_SYSTEM
+       //         Vector2 mousePosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+// #elif ENABLE_LEGACY_INPUT_MANAGER
+              Vector2 mousePosition = Input.mousePosition;
+// #endif
                 Vector2 localMousePos;
                 if (RectTransformUtility.ScreenPointToLocalPointInRectangle(cachedRect, mousePosition, cachedEnterEventCamera, out localMousePos))
                 {
@@ -46,11 +46,11 @@ namespace RainbowArt.CleanFlatUI
             {
                 return;
             }
-#if ENABLE_INPUT_SYSTEM
-            Vector2 mousePosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
-#elif ENABLE_LEGACY_INPUT_MANAGER
+//#if ENABLE_INPUT_SYSTEM
+           // Vector2 mousePosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+// #elif ENABLE_LEGACY_INPUT_MANAGER
             Vector2 mousePosition = Input.mousePosition;
-#endif
+// #endif
             Vector2 mousePos;
             bool success = RectTransformUtility.ScreenPointToLocalPointInRectangle(tooltipParentRect, mousePosition, cachedEnterEventCamera, out mousePos);
             Vector3 position = new Vector3(mousePos.x,mousePos.y,0);   

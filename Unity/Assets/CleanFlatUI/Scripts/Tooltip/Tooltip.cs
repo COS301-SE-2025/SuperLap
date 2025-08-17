@@ -8,7 +8,7 @@ using TMPro;
 
 namespace RainbowArt.CleanFlatUI
 {
-    [ExecuteAlways]
+    //[ExecuteAlways]
     public class Tooltip : MonoBehaviour
     {
         [SerializeField]
