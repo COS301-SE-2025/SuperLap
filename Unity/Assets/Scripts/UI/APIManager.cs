@@ -31,7 +31,7 @@ public class TrackImageResponse
 public class APIManager : MonoBehaviour
 {
   [Header("API Configuration")]
-  public string baseURL = "http://localhost:3000";
+  public string baseURL = "https://superlap-api.duckdns.org";
 
   private static APIManager _instance;
   public static APIManager Instance
