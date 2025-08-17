@@ -32,6 +32,17 @@ jobs:
         working-directory: Backend/API
         run: npm install
 
+      - name: Wait for MongoDB to be ready
+        run: |
+          for i in {1..30}; do
+            if nc -z localhost 27017; then
+              echo "MongoDB is ready!"
+              break
+            fi
+            echo "Waiting for MongoDB... ($i/30)"
+            sleep 2
+          done
+
       - name: Run Jest tests
         working-directory: Backend/API
         run: npx jest --forceExit
