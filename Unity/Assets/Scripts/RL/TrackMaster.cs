@@ -81,7 +81,7 @@ public class TrackMaster : MonoBehaviour
         MeshCollider meshCollider = instance.gameObject.AddComponent<MeshCollider>();
         meshCollider.sharedMesh = mesh;
 
-        CreateCheckpoints(results.raceline);
+        CreateCheckpoints(results);
         CreateRacelineVisualization(results.raceline);
 
         // Initialize the RacelineAnalyzer with the raceline data for optimized queries
@@ -148,13 +148,15 @@ public class TrackMaster : MonoBehaviour
         return direction3D != Vector3.zero ? direction3D : Vector3.forward;
     }
 
-    private static void CreateCheckpoints(List<Vector2> raceline)
+    private static void CreateCheckpoints(TrackImageProcessor.ProcessingResults racelineResult)
     {
         if (instance.checkpointPrefab == null)
         {
             Debug.LogWarning("Checkpoint prefab not assigned in TrackMaster!");
             return;
         }
+
+        List<Vector2> raceline = racelineResult.raceline;
 
         // Create checkpoints at split points
         int checkpointId = 0;

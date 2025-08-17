@@ -143,7 +143,7 @@ def get_unity_editor_path():
     try:
         # Run the Unity Hub command to list installed editors
         result = subprocess.run(
-            ["unityhub", "--headless", "editors", "-i"],
+            ["unityhub", "--headless", "editors", "-i", "--gtk-version=3"],
             capture_output=True,
             text=True,
             check=True
