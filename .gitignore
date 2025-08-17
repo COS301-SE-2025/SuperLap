@@ -51,3 +51,4 @@ build/
 act/
 /Unity/CodeCoverage/Report
 /Unity/CodeCoverage/Report-history
+Unity/Assets/StreamingAssets/TrackProcessor.exe
