@@ -48,20 +48,45 @@ namespace TrackProcessorTest
             Assert.AreEqual("North", method.Invoke(processor, new object[] { 270f }));
             Assert.AreEqual("Northeast", method.Invoke(processor, new object[] { 315f }));
         }
-        
+
         [Test]
         public void CalculateRaceDirection_HandlesEmptyPointsList()
         {
-            var method = typeof(TrackImageProcessor).GetMethod("CalculateRaceDirection", 
+            var method = typeof(TrackImageProcessor).GetMethod("CalculateRaceDirection",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             //Set empty centerline points
-            var centerlineField = typeof(TrackImageProcessor).GetField("centerlinePoints", 
+            var centerlineField = typeof(TrackImageProcessor).GetField("centerlinePoints",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             centerlineField.SetValue(processor, new List<Vector2>());
 
             //Should not throw exception with empty points
             Assert.DoesNotThrow(() => method.Invoke(processor, null));
+        }
+        
+        [Test]
+        public void CalculateRaceDirection_CalculatesCorrectAngle_ForKnownPoints()
+        {
+            //Set up points
+            var centerlineField = typeof(TrackImageProcessor).GetField("centerlinePoints", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var raceDirectionField = typeof(TrackImageProcessor).GetField("raceDirection", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            var testPoints = new List<Vector2>
+            {
+                new Vector2(0, 0),  // Start point
+                new Vector2(10, 0)  // End point (moving east)
+            };
+            centerlineField.SetValue(processor, testPoints);
+
+            var method = typeof(TrackImageProcessor).GetMethod("CalculateRaceDirection", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            method.Invoke(processor, null);
+            
+            float direction = (float)raceDirectionField.GetValue(processor);
+            Assert.AreEqual(0f, direction, 0.1f, "Should calculate 0 degrees for eastward movement");
         }
     }
 }
