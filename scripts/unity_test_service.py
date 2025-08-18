@@ -256,6 +256,9 @@ def run_unity_tests(test_result):
             # Parse test results
             parse_test_results_xml(test_result)
             
+            # Calculate coverage if available
+            calculate_coverage_results(test_result)
+            
             if result.returncode == 0:
                 log_message(test_result, "Unity tests completed successfully")
                 test_result.success = test_result.failed_tests == 0
@@ -274,6 +277,56 @@ def run_unity_tests(test_result):
         log_message(test_result, f"Error running Unity tests: {str(e)}")
         test_result.error_message = str(e)
         test_result.success = False
+
+def calculate_coverage_results(test_result):
+    """Calculate Unity test coverage using the coverage script"""
+    try:
+        if not test_result.workspace_path:
+            return
+        
+        coverage_script = os.path.join(test_result.workspace_path, "scripts", "calculate-coverage.py")
+        coverage_file = os.path.join(test_result.workspace_path, "Unity", "CodeCoverage", "Report", "Summary.json")
+        
+        if not os.path.exists(coverage_script):
+            log_message(test_result, "Coverage calculation script not found")
+            return
+        
+        if not os.path.exists(coverage_file):
+            log_message(test_result, "No coverage results file found")
+            return
+        
+        # Run coverage calculation
+        original_cwd = os.getcwd()
+        os.chdir(test_result.workspace_path)
+        
+        try:
+            result = subprocess.run(
+                [sys.executable, coverage_script, "--json", coverage_file],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if result.returncode == 0 and result.stdout.strip():
+                import json
+                coverage_data = json.loads(result.stdout)
+                
+                if coverage_data.get('editmode_tests_found', False):
+                    line_cov = coverage_data['overall_line_coverage']
+                    method_cov = coverage_data['overall_method_coverage']
+                    test_count = coverage_data['test_count']
+                    
+                    log_message(test_result, f"Coverage calculated: {line_cov}% lines, {method_cov}% methods, {test_count} test classes")
+                else:
+                    log_message(test_result, "No coverage data found for specified test classes")
+            else:
+                log_message(test_result, f"Coverage calculation failed: {result.stderr}")
+                
+        finally:
+            os.chdir(original_cwd)
+            
+    except Exception as e:
+        log_message(test_result, f"Error calculating coverage: {str(e)}")
 
 def parse_test_results_xml(test_result):
     """Parse Unity test results from XML file"""
@@ -477,6 +530,191 @@ def get_test_logs(test_id):
             'testId': test_id,
             'logs': test_result.log_output
         })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/coverage/<test_id>', methods=['GET'])
+def get_coverage_info(test_id):
+    """Get code coverage information for a test run"""
+    try:
+        if test_id not in active_tests:
+            return jsonify({'error': 'Test not found'}), 404
+        
+        test_result = active_tests[test_id]
+        
+        if not test_result.workspace_path:
+            return jsonify({'error': 'No workspace path available'}), 404
+        
+        coverage_dir = os.path.join(test_result.workspace_path, "Unity", "CodeCoverage")
+        
+        if not os.path.exists(coverage_dir):
+            return jsonify({'error': 'No code coverage results found'}), 404
+        
+        # List coverage files
+        coverage_files = []
+        try:
+            for root, dirs, files in os.walk(coverage_dir):
+                for file in files:
+                    rel_path = os.path.relpath(os.path.join(root, file), coverage_dir)
+                    coverage_files.append(rel_path)
+        except Exception as e:
+            return jsonify({'error': f'Error listing coverage files: {str(e)}'}), 500
+        
+        return jsonify({
+            'testId': test_id,
+            'coverageAvailable': len(coverage_files) > 0,
+            'coverageFiles': coverage_files,
+            'coveragePath': coverage_dir
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/coverage/<test_id>/calculate', methods=['GET'])
+def calculate_coverage_metrics(test_id):
+    """Calculate coverage metrics using the calculate-coverage.py script"""
+    try:
+        if test_id not in active_tests:
+            return jsonify({'error': 'Test not found'}), 404
+        
+        test_result = active_tests[test_id]
+        
+        if not test_result.workspace_path:
+            return jsonify({'error': 'No workspace path available'}), 404
+        
+        coverage_file = os.path.join(test_result.workspace_path, "Unity", "CodeCoverage", "Report", "Summary.json")
+        
+        if not os.path.exists(coverage_file):
+            return jsonify({'error': 'No coverage summary file found'}), 404
+        
+        # Import and use the coverage calculation function
+        import sys
+        script_dir = os.path.dirname(__file__)
+        calculate_script_path = os.path.join(script_dir, "calculate-coverage.py")
+        
+        # Run the coverage calculation script
+        try:
+            result = subprocess.run(
+                [sys.executable, calculate_script_path, "--json", coverage_file],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if result.returncode == 0:
+                import json
+                coverage_data = json.loads(result.stdout)
+                return jsonify(coverage_data)
+            else:
+                return jsonify({
+                    'error': 'Coverage calculation failed', 
+                    'details': result.stderr
+                }), 500
+                
+        except subprocess.TimeoutExpired:
+            return jsonify({'error': 'Coverage calculation timed out'}), 500
+        except json.JSONDecodeError:
+            return jsonify({'error': 'Invalid JSON from coverage calculation'}), 500
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/coverage/<test_id>/download', methods=['GET'])
+def download_coverage(test_id):
+    """Download code coverage results as a zip file"""
+    try:
+        if test_id not in active_tests:
+            return jsonify({'error': 'Test not found'}), 404
+        
+        test_result = active_tests[test_id]
+        
+        if not test_result.workspace_path:
+            return jsonify({'error': 'No workspace path available'}), 404
+        
+        coverage_dir = os.path.join(test_result.workspace_path, "Unity", "CodeCoverage")
+        
+        if not os.path.exists(coverage_dir):
+            return jsonify({'error': 'No code coverage results found'}), 404
+        
+        # Create a temporary zip file
+        import zipfile
+        import tempfile
+        from flask import send_file
+        
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        temp_zip.close()
+        
+        try:
+            with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root, dirs, files in os.walk(coverage_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arc_name = os.path.relpath(file_path, coverage_dir)
+                        zipf.write(file_path, arc_name)
+            
+            return send_file(
+                temp_zip.name,
+                as_attachment=True,
+                download_name=f'coverage-{test_id}.zip',
+                mimetype='application/zip'
+            )
+            
+        except Exception as e:
+            # Clean up temp file on error
+            try:
+                os.unlink(temp_zip.name)
+            except:
+                pass
+            raise e
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    """Download code coverage results as a zip file"""
+    try:
+        if test_id not in active_tests:
+            return jsonify({'error': 'Test not found'}), 404
+        
+        test_result = active_tests[test_id]
+        
+        if not test_result.workspace_path:
+            return jsonify({'error': 'No workspace path available'}), 404
+        
+        coverage_dir = os.path.join(test_result.workspace_path, "Unity", "CodeCoverage")
+        
+        if not os.path.exists(coverage_dir):
+            return jsonify({'error': 'No code coverage results found'}), 404
+        
+        # Create a temporary zip file
+        import zipfile
+        import tempfile
+        from flask import send_file
+        
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        temp_zip.close()
+        
+        try:
+            with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root, dirs, files in os.walk(coverage_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arc_name = os.path.relpath(file_path, coverage_dir)
+                        zipf.write(file_path, arc_name)
+            
+            return send_file(
+                temp_zip.name,
+                as_attachment=True,
+                download_name=f'coverage-{test_id}.zip',
+                mimetype='application/zip'
+            )
+            
+        except Exception as e:
+            # Clean up temp file on error
+            try:
+                os.unlink(temp_zip.name)
+            except:
+                pass
+            raise e
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

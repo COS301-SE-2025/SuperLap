@@ -345,14 +345,17 @@ def run_unity_tests_with_custom_script(unity_path, project_path="Unity"):
     results_dir = os.path.join(project_path, "TestResults")
     os.makedirs(results_dir, exist_ok=True)
     
-    # Construct the Unity test command
+    # Construct the Unity test command with code coverage
     test_command = [
         unity_path,
         "-batchmode",
         "-projectPath", project_path,
         "-runTests",
         "-logFile", f"{results_dir}/unity_test_log.txt",
-        "-testResults", "TestResults/results.xml"
+        "-testResults", "TestResults/results.xml",
+        "-enableCodeCoverage",
+        "-coverageResultsPath", "CodeCoverage",
+        "-coverageOptions", "generateAdditionalMetrics;generateHtmlReport;generateBadgeReport"
     ]
     
     print(f"Running Unity tests with command:")
@@ -379,6 +382,24 @@ def run_unity_tests_with_custom_script(unity_path, project_path="Unity"):
             passed_count, failed_count, total_count = parse_test_results(results_file)
         else:
             print("No results.xml file was created")
+        
+        # Check for code coverage results
+        coverage_dir = os.path.join(project_path, "CodeCoverage")
+        if os.path.exists(coverage_dir):
+            print(f"Code coverage results generated at: {coverage_dir}")
+            # List coverage files
+            try:
+                coverage_files = os.listdir(coverage_dir)
+                if coverage_files:
+                    print("Coverage files generated:")
+                    for file in coverage_files:
+                        print(f"  - {file}")
+                else:
+                    print("No coverage files found in CodeCoverage directory")
+            except Exception as e:
+                print(f"Error listing coverage files: {e}")
+        else:
+            print("No code coverage directory found")
         
         if os.path.exists(log_file):
             print(f"Test log created at: {log_file}")
