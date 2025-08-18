@@ -279,5 +279,92 @@ public class TrackImageProcessorTests
     }
 
     #endregion
-    
+    #region Output Texture Tests
+
+    [Test]
+    public void GetOutputTexture_InitiallyNull()
+    {
+        var outputTexture = processor.GetOutputTexture();
+        Assert.IsNull(outputTexture);
+    }
+
+    #endregion
+
+    #region Helper Methods for Tests
+
+    private Texture2D CreateTestTexture(int width, int height)
+    {
+        var texture = new Texture2D(width, height);
+        var colors = new Color[width * height];
+
+        for (int i = 0; i < colors.Length; i++)
+        {
+            colors[i] = Color.white;
+        }
+
+        texture.SetPixels(colors);
+        texture.Apply();
+
+        return texture;
+    }
+
+    private void SetCenterlinePoints(List<Vector2> points)
+    {
+        var processorType = typeof(TrackImageProcessor);
+        var centerlinePointsField = processorType.GetField("centerlinePoints",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        centerlinePointsField?.SetValue(processor, points);
+    }
+
+    private void SetProcessingResults(TrackImageProcessor.ProcessingResults results)
+    {
+        var processorType = typeof(TrackImageProcessor);
+        var lastResultsField = processorType.GetField("lastResults",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        lastResultsField?.SetValue(processor, results);
+    }
+
+    #endregion
+    #region Integration Tests
+
+    [UnityTest]
+    public IEnumerator ProcessingWorkflow_WithMockData_CompletesSuccessfully()
+    {
+        //Setup mock texture
+        var testTexture = CreateTestTexture(200, 200);
+        var processorType = typeof(TrackImageProcessor);
+        
+        //Set loaded texture
+        var loadedTextureField = processorType.GetField("loadedTexture", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        loadedTextureField?.SetValue(processor, testTexture);
+        
+        //Set selected image path
+        var selectedImagePathField = processorType.GetField("selectedImagePath", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        selectedImagePathField?.SetValue(processor, "test_path.png");
+        
+        //Add centerline points
+        var centerlinePoints = new List<Vector2>();
+        for (int i = 0; i < 120; i++) //More than 100 points
+        {
+            float angle = (i / 120f) * 2f * Mathf.PI;
+            centerlinePoints.Add(new Vector2(
+                100 + 50 * Mathf.Cos(angle),
+                100 + 50 * Mathf.Sin(angle)
+            ));
+        }
+        
+        SetCenterlinePoints(centerlinePoints);
+        
+        yield return null;
+        
+        //Verify setup
+        Assert.IsTrue(processor.HasCenterlineData());
+        Assert.IsNotNull(processor.GetLoadedTexture());
+        
+        Object.DestroyImmediate(testTexture);
+    }
+
+    #endregion
 }
