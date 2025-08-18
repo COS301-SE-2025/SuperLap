@@ -166,4 +166,75 @@ public class TrackImageProcessorTests
     }
 
     #endregion
+    #region Image Loading Tests
+
+    [UnityTest]
+    public IEnumerator LoadImage_WithValidTexture_SetsLoadedTexture()
+    {
+        //Create test texture
+        var testTexture = CreateTestTexture(256, 256);
+
+        //Can't easily test the file loading without actual files,
+        //instead test the texture assignment
+        var processorType = typeof(TrackImageProcessor);
+        var loadedTextureField = processorType.GetField("loadedTexture",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        loadedTextureField?.SetValue(processor, testTexture);
+
+        yield return null;
+
+        var retrievedTexture = processor.GetLoadedTexture();
+        Assert.IsNotNull(retrievedTexture);
+        Assert.AreEqual(testTexture, retrievedTexture);
+
+        Object.DestroyImmediate(testTexture);
+    }
+
+    #endregion
+    #region Results Management Tests
+
+    [Test]
+    public void GetLastResults_InitiallyNull()
+    {
+        var results = processor.GetLastResults();
+        Assert.IsNull(results);
+    }
+
+    [Test]
+    public void HasValidResults_ReturnsFalseWithoutResults()
+    {
+        Assert.IsFalse(processor.HasValidResults());
+    }
+
+    [Test]
+    public void ClearResults_ResetsResultsToNull()
+    {
+        //Mock results
+        var processorType = typeof(TrackImageProcessor);
+        var lastResultsField = processorType.GetField("lastResults", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        
+        var mockResults = new TrackImageProcessor.ProcessingResults
+        {
+            success = true,
+            innerBoundary = new List<Vector2>(),
+            outerBoundary = new List<Vector2>(),
+            raceline = new List<Vector2>()
+        };
+        
+        lastResultsField?.SetValue(processor, mockResults);
+        
+        //Verify results set
+        Assert.IsTrue(processor.HasValidResults());
+        
+        //Clear results
+        processor.ClearResults();
+        
+        //Verify results cleared
+        Assert.IsFalse(processor.HasValidResults());
+        Assert.IsNull(processor.GetLastResults());
+    }
+
+    #endregion
 }
