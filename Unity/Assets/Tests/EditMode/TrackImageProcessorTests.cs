@@ -212,9 +212,9 @@ public class TrackImageProcessorTests
     {
         //Mock results
         var processorType = typeof(TrackImageProcessor);
-        var lastResultsField = processorType.GetField("lastResults", 
+        var lastResultsField = processorType.GetField("lastResults",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        
+
         var mockResults = new TrackImageProcessor.ProcessingResults
         {
             success = true,
@@ -222,19 +222,62 @@ public class TrackImageProcessorTests
             outerBoundary = new List<Vector2>(),
             raceline = new List<Vector2>()
         };
-        
+
         lastResultsField?.SetValue(processor, mockResults);
-        
+
         //Verify results set
         Assert.IsTrue(processor.HasValidResults());
-        
+
         //Clear results
         processor.ClearResults();
-        
+
         //Verify results cleared
         Assert.IsFalse(processor.HasValidResults());
         Assert.IsNull(processor.GetLastResults());
     }
 
     #endregion
+    #region Mask Creation Tests
+
+    [Test]
+    public void GetCenterlineMask_WithNullTexture_ReturnsNull()
+    {
+        var mask = processor.GetCenterlineMask();
+        Assert.IsNull(mask);
+    }
+
+    [Test]
+    public void GetCenterlineMask_WithValidTexture_ReturnsTexture()
+    {
+        //Setup test texture
+        var testTexture = CreateTestTexture(100, 100);
+
+        //Set loaded texture
+        var processorType = typeof(TrackImageProcessor);
+        var loadedTextureField = processorType.GetField("loadedTexture",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        loadedTextureField?.SetValue(processor, testTexture);
+
+        // Add some centerline points
+        var centerlinePointsField = processorType.GetField("centerlinePoints",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var centerlinePoints = new List<Vector2>
+        {
+            new Vector2(10, 10),
+            new Vector2(50, 50),
+            new Vector2(90, 90)
+        };
+        centerlinePointsField?.SetValue(processor, centerlinePoints);
+
+        var mask = processor.GetCenterlineMask();
+        Assert.IsNotNull(mask);
+        Assert.AreEqual(testTexture.width, mask.width);
+        Assert.AreEqual(testTexture.height, mask.height);
+
+        Object.DestroyImmediate(testTexture);
+        Object.DestroyImmediate(mask);
+    }
+
+    #endregion
+    
 }
