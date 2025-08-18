@@ -135,6 +135,35 @@ public class TrackImageProcessorTests
     }
 
     #endregion
-    
-    
+    #region Centerline Tracing Tests
+
+    [Test]
+    public void CenterlinePoints_InitiallyEmpty()
+    {
+        var centerlinePoints = processor.GetCenterlinePoints();
+        Assert.IsNotNull(centerlinePoints);
+        Assert.AreEqual(0, centerlinePoints.Count);
+    }
+
+    [Test]
+    public void StartPosition_InitiallyNull()
+    {
+        var startPosition = processor.GetStartPosition();
+        Assert.IsNull(startPosition);
+    }
+
+    [Test]
+    public void RaceDirection_InitiallyZero()
+    {
+        var raceDirection = processor.GetRaceDirection();
+        Assert.AreEqual(0f, raceDirection);
+    }
+
+    [Test]
+    public void HasCenterlineData_ReturnsFalseInitially()
+    {
+        Assert.IsFalse(processor.HasCenterlineData());
+    }
+
+    #endregion
 }
