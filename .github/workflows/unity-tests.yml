@@ -120,50 +120,21 @@ jobs:
               continue
             fi
             
-                echo "Response: $RESPONSE"
-                STATUS=$(echo "$RESPONSE" | jq -r '.status // "unknown"')
-                
-                case "$STATUS" in
-                  "completed")
-                    SUCCESS=$(echo "$RESPONSE" | jq -r '.success // false')
-                    TOTAL_TESTS=$(echo "$RESPONSE" | jq -r '.totalTests // 0')
-                    FAILED_TESTS=$(echo "$RESPONSE" | jq -r '.failedTests // 0')
-                    PASSED_TESTS=$(echo "$RESPONSE" | jq -r '.passedTests // 0')
-                    
-                    # Extract coverage data
-                    COVERAGE_AVAILABLE=$(echo "$RESPONSE" | jq -r '.coverage.available // false')
-                    LINE_COVERAGE=$(echo "$RESPONSE" | jq -r '.coverage.lineCoverage // 0')
-                    METHOD_COVERAGE=$(echo "$RESPONSE" | jq -r '.coverage.methodCoverage // 0')
-                    TEST_CLASS_COUNT=$(echo "$RESPONSE" | jq -r '.coverage.testClassCount // 0')
-                    
-                    echo ""
-                    echo "🎯 Unity Tests Completed!"
-                    echo "📊 Results Summary:"
-                    echo "   • Total Tests: $TOTAL_TESTS"
-                    echo "   • Passed: $PASSED_TESTS"
-                    echo "   • Failed: $FAILED_TESTS"
-                    
-                    if [ "$COVERAGE_AVAILABLE" = "true" ]; then
-                      echo "📈 Coverage Summary:"
-                      echo "   • Line Coverage: $LINE_COVERAGE%"
-                      echo "   • Method Coverage: $METHOD_COVERAGE%"
-                      echo "   • Test Classes: $TEST_CLASS_COUNT"
-                      
-                      # Set environment variables for later steps
-                      echo "coverage_available=true" >> $GITHUB_ENV
-                      echo "line_coverage=$LINE_COVERAGE" >> $GITHUB_ENV
-                      echo "method_coverage=$METHOD_COVERAGE" >> $GITHUB_ENV
-                      echo "test_class_count=$TEST_CLASS_COUNT" >> $GITHUB_ENV
-                    else
-                      echo "ℹ️  No coverage data available"
-                      echo "coverage_available=false" >> $GITHUB_ENV
-                    fi
-                    echo ""            case "$STATUS" in
+            echo "Response: $RESPONSE"
+            STATUS=$(echo "$RESPONSE" | jq -r '.status // "unknown"')
+            
+            case "$STATUS" in
               "completed")
                 SUCCESS=$(echo "$RESPONSE" | jq -r '.success // false')
                 TOTAL_TESTS=$(echo "$RESPONSE" | jq -r '.totalTests // 0')
                 FAILED_TESTS=$(echo "$RESPONSE" | jq -r '.failedTests // 0')
                 PASSED_TESTS=$(echo "$RESPONSE" | jq -r '.passedTests // 0')
+                
+                # Extract coverage data
+                COVERAGE_AVAILABLE=$(echo "$RESPONSE" | jq -r '.coverage.available // false')
+                LINE_COVERAGE=$(echo "$RESPONSE" | jq -r '.coverage.lineCoverage // 0')
+                METHOD_COVERAGE=$(echo "$RESPONSE" | jq -r '.coverage.methodCoverage // 0')
+                TEST_CLASS_COUNT=$(echo "$RESPONSE" | jq -r '.coverage.testClassCount // 0')
                 
                 echo ""
                 echo "🎯 Unity Tests Completed!"
@@ -171,6 +142,25 @@ jobs:
                 echo "   • Total Tests: $TOTAL_TESTS"
                 echo "   • Passed: $PASSED_TESTS"
                 echo "   • Failed: $FAILED_TESTS"
+                
+                if [ "$COVERAGE_AVAILABLE" = "true" ]; then
+                  echo "📈 Coverage Summary:"
+                  echo "   • Line Coverage: $LINE_COVERAGE%"
+                  echo "   • Method Coverage: $METHOD_COVERAGE%"
+                  echo "   • Test Classes: $TEST_CLASS_COUNT"
+                  
+                  # Set environment variables for later steps
+                  echo "coverage_available=true" >> $GITHUB_ENV
+                  echo "line_coverage=$LINE_COVERAGE" >> $GITHUB_ENV
+                  echo "method_coverage=$METHOD_COVERAGE" >> $GITHUB_ENV
+                  echo "test_class_count=$TEST_CLASS_COUNT" >> $GITHUB_ENV
+                else
+                  echo "ℹ️  No coverage data available"
+                  echo "coverage_available=false" >> $GITHUB_ENV
+                  echo "line_coverage=0" >> $GITHUB_ENV
+                  echo "method_coverage=0" >> $GITHUB_ENV
+                  echo "test_class_count=0" >> $GITHUB_ENV
+                fi
                 echo ""
                 
                 # Get detailed logs
@@ -186,27 +176,6 @@ jobs:
                 
                 if [ "$SUCCESS" = "true" ] && [ "$FAILED_TESTS" = "0" ] && [ "$TOTAL_TESTS" != "0" ]; then
                   echo "✅ All Unity tests passed!"
-                  
-                  # Try to get coverage data from the test service
-                  echo "📊 Attempting to retrieve coverage data from test service..."
-                  COVERAGE_RESPONSE=$(curl -s \
-                    -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
-                    "$SERVICE_URL/api/coverage/$TEST_ID" || echo "")
-                  
-                  if [ -n "$COVERAGE_RESPONSE" ] && echo "$COVERAGE_RESPONSE" | jq -e '.coverageAvailable' >/dev/null 2>&1; then
-                    echo "✅ Coverage data available from test service"
-                    
-                    # Extract coverage info from service response
-                    COVERAGE_AVAILABLE=$(echo "$COVERAGE_RESPONSE" | jq -r '.coverageAvailable')
-                    if [ "$COVERAGE_AVAILABLE" = "true" ]; then
-                      echo "test_service_coverage=true" >> $GITHUB_ENV
-                      echo "test_service_id=$TEST_ID" >> $GITHUB_ENV
-                    fi
-                  else
-                    echo "ℹ️  No coverage data available from test service"
-                    echo "test_service_coverage=false" >> $GITHUB_ENV
-                  fi
-                  
                   exit 0
                 else
                   echo "❌ Unity tests failed!"
