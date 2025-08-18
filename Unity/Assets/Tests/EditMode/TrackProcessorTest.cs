@@ -63,16 +63,16 @@ namespace TrackProcessorTest
             //Should not throw exception with empty points
             Assert.DoesNotThrow(() => method.Invoke(processor, null));
         }
-        
+
         [Test]
         public void CalculateRaceDirection_CalculatesCorrectAngle_ForKnownPoints()
         {
             //Set up points
-            var centerlineField = typeof(TrackImageProcessor).GetField("centerlinePoints", 
+            var centerlineField = typeof(TrackImageProcessor).GetField("centerlinePoints",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var raceDirectionField = typeof(TrackImageProcessor).GetField("raceDirection", 
+            var raceDirectionField = typeof(TrackImageProcessor).GetField("raceDirection",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             var testPoints = new List<Vector2>
             {
                 new Vector2(0, 0),  // Start point
@@ -80,13 +80,45 @@ namespace TrackProcessorTest
             };
             centerlineField.SetValue(processor, testPoints);
 
-            var method = typeof(TrackImageProcessor).GetMethod("CalculateRaceDirection", 
+            var method = typeof(TrackImageProcessor).GetMethod("CalculateRaceDirection",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+
             method.Invoke(processor, null);
-            
+
             float direction = (float)raceDirectionField.GetValue(processor);
             Assert.AreEqual(0f, direction, 0.1f, "Should calculate 0 degrees for eastward movement");
+        }
+        
+        [Test]
+        public void HasCenterlineData_ReturnsFalse_WhenNoCenterline()
+        {
+            Assert.IsFalse(processor.HasCenterlineData());
+        }
+
+        [Test]
+        public void HasValidResults_ReturnsFalse_Initially()
+        {
+            Assert.IsFalse(processor.HasValidResults());
+        }
+
+        [Test]
+        public void GetCenterlinePoints_ReturnsEmptyList_Initially()
+        {
+            var points = processor.GetCenterlinePoints();
+            Assert.IsNotNull(points);
+            Assert.AreEqual(0, points.Count);
+        }
+
+        [Test]
+        public void GetStartPosition_ReturnsNull_Initially()
+        {
+            Assert.IsNull(processor.GetStartPosition());
+        }
+
+        [Test]
+        public void GetRaceDirection_ReturnsZero_Initially()
+        {
+            Assert.AreEqual(0f, processor.GetRaceDirection());
         }
     }
 }
