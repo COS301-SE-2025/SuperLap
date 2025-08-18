@@ -34,6 +34,27 @@ public static class RacelineDisplayImporter
     return data;
   }
 
+  public static RacelineDisplayData LoadFromBinaryBytes(byte[] data)
+  {
+    var racelineData = new RacelineDisplayData();
+
+    using (var ms = new MemoryStream(data))
+    using (var br = new BinaryReader(ms))
+    {
+      racelineData.OuterBoundary = ReadPoints(br);
+      racelineData.InnerBoundary = ReadPoints(br);
+      racelineData.Raceline = ReadPoints(br);
+
+      int trailing = br.ReadInt32();
+      if (trailing != 0)
+      {
+        Debug.LogWarning("Warning: trailing value is not zero. Data may be corrupted.");
+      }
+    }
+
+    return racelineData;
+  }
+
   private static List<Vector2> ReadPoints(BinaryReader br)
   {
     int count = br.ReadInt32();
@@ -87,6 +108,9 @@ public class ShowRacingLine : MonoBehaviour
   private int textureWidth = 1024;
   private int textureHeight = 1024;
 
+  private APIManager apiManager;
+  private bool isInitialized = false;
+
   void Update()
   {
     if (!staticDisplayMode && isAnimating && currentTrackData != null && currentTrackData.Raceline != null &&
@@ -117,30 +141,21 @@ public class ShowRacingLine : MonoBehaviour
 
   void OnEnable()
   {
-    if (currentTrackData != null)
+    if (isInitialized && currentTrackData != null)
     {
       Debug.Log("ShowRacingLine re-enabled, refreshing display.");
       RefreshDisplay();
-    }
-    else
-    {
-      TryLoadFirstAvailableTrack();
     }
   }
 
 
   void Start()
   {
-    if (!IsTrackDataLoaded())
-    {
-      TryLoadFirstAvailableTrack();
-    }
   }
 
 
   private void TryLoadFirstAvailableTrack()
   {
-    // Ensure binaryDataPath is just a relative folder name like "tracks"
     string tracksDirectory = Path.Combine(Application.dataPath, binaryDataPath.TrimEnd('/', '\\'));
 
     Debug.Log($"Trying to load first track from directory: {tracksDirectory}");
@@ -219,7 +234,6 @@ public class ShowRacingLine : MonoBehaviour
       Sprite sprite = Sprite.Create(baseTexture, new Rect(0, 0, baseTexture.width, baseTexture.height), Vector2.one * 0.5f);
       racelineImage.sprite = sprite;
 
-      // Only start animation if not in static display mode
       if (!staticDisplayMode && currentTrackData.Raceline != null && currentTrackData.Raceline.Count > 0)
       {
         isAnimating = true;
@@ -306,7 +320,6 @@ public class ShowRacingLine : MonoBehaviour
       DrawLine(pixels, textureWidth, textureHeight, trackData.InnerBoundary, innerBoundaryColor, min, scale, offset);
     }
 
-    // Draw racing line if in static display mode
     if (staticDisplayMode && trackData.Raceline != null && trackData.Raceline.Count > 0)
     {
       DrawLine(pixels, textureWidth, textureHeight, trackData.Raceline, racelineColor, min, scale, offset);
@@ -512,7 +525,6 @@ public class ShowRacingLine : MonoBehaviour
     staticDisplayMode = !staticDisplayMode;
     Debug.Log($"Static display mode toggled: {staticDisplayMode}");
 
-    // Refresh the display when mode changes
     if (currentTrackData != null)
     {
       RefreshDisplay();
@@ -524,7 +536,6 @@ public class ShowRacingLine : MonoBehaviour
     staticDisplayMode = isStatic;
     Debug.Log($"Static display mode set to: {staticDisplayMode}");
 
-    // Refresh the display when mode changes
     if (currentTrackData != null)
     {
       RefreshDisplay();
@@ -641,11 +652,26 @@ public class ShowRacingLine : MonoBehaviour
     Debug.Log($"Track name set to: {currentTrackName}");
   }
 
-  public void InitializeWithTrack(string trackName)
-  {
+public void InitializeWithTrack(string trackName)
+{
+    if (string.IsNullOrEmpty(trackName))
+    {
+        Debug.LogError("Track name is null or empty in InitializeWithTrack");
+        return;
+    }
+
+    if (currentTrackName == trackName && currentTrackData != null)
+    {
+        Debug.Log($"Track {trackName} is already loaded");
+        RefreshDisplay();
+        return;
+    }
+
     SetTrackName(trackName);
     LoadTrackData(trackName);
-  }
+    isInitialized = true;
+}
+
 
   public void InitializeWithTrack(APIManager.Track track)
   {
@@ -672,44 +698,36 @@ public class ShowRacingLine : MonoBehaviour
 
   private void LoadTrackData(string trackName)
   {
-    Debug.Log($"Loading track data for: {trackName}");
+    Debug.Log($"Loading track data for: {trackName} via API...");
 
-    string binaryFilePath = GetBinaryFilePath(trackName);
+    currentTrackData = null;
 
-    string fullPath = Path.GetFullPath(binaryFilePath);
-    Debug.Log($"Looking for binary file at relative path: {binaryFilePath}");
-    Debug.Log($"Full absolute path: {fullPath}");
-    Debug.Log($"Current working directory: {System.IO.Directory.GetCurrentDirectory()}");
-    Debug.Log($"Application data path: {Application.dataPath}");
-    Debug.Log($"Application persistent data path: {Application.persistentDataPath}");
-    Debug.Log($"File exists check: {File.Exists(binaryFilePath)}");
-    Debug.Log($"File exists check (full path): {File.Exists(fullPath)}");
-
-    if (File.Exists(binaryFilePath))
+    if (racelineImage != null)
     {
-      LoadTrackFromBinary(binaryFilePath);
+      racelineImage.sprite = null;
     }
-    else
-    {
-      Debug.LogWarning($"Binary file not found for track: {trackName} at path: {binaryFilePath}");
-      Debug.LogWarning($"Also checked full path: {fullPath}");
 
-      string tracksDir = binaryDataPath;
-      if (Directory.Exists(tracksDir))
+    APIManager.Instance.GetTrackBorder(trackName, (success, message, bytes) =>
+    {
+      if (success && bytes != null)
       {
-        string[] files = Directory.GetFiles(tracksDir);
-        Debug.Log($"Files found in tracks directory ({tracksDir}):");
-        foreach (string file in files)
+        RacelineDisplayData trackData = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
+        if (trackData != null)
         {
-          Debug.Log($"  - {file}");
+          Debug.Log($"Successfully loaded track data for {trackName}");
+          DisplayRacelineData(trackData, trackName);
+        }
+        else
+        {
+          Debug.LogError($"Failed to parse track data for {trackName}");
         }
       }
       else
       {
-        Debug.LogWarning($"Tracks directory does not exist: {tracksDir}");
-        Debug.Log($"Full tracks directory path: {Path.GetFullPath(tracksDir)}");
+        Debug.LogError($"Failed to load track borders: {message}");
+
       }
-    }
+    });
   }
 
   private string GetBinaryFilePath(string trackName)

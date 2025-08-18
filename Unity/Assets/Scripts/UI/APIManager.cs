@@ -65,8 +65,6 @@ public class APIManager : MonoBehaviour
       Destroy(gameObject);
     }
   }
-
-  // Register a new user
   public void RegisterUser(string username, string email, string password, System.Action<bool, string> callback)
   {
     Debug.Log($"Registering user: {username}, Email: {email} with password: {password}");
@@ -116,7 +114,6 @@ public class APIManager : MonoBehaviour
     }
   }
 
-  // Login user (check if user exists)
   public void LoginUser(string username, string password, System.Action<bool, string, User> callback)
   {
     Debug.Log($"Logging in user: {username} with password: {password}");
@@ -127,7 +124,6 @@ public class APIManager : MonoBehaviour
   {
     string loginUrl = $"{baseURL}/users/login";
 
-    // Construct the login payload
     User Login = new User
     {
       username = username,
@@ -136,7 +132,6 @@ public class APIManager : MonoBehaviour
 
     string jsonData = JsonUtility.ToJson(Login);
 
-    // Set up the POST request
     using (UnityWebRequest request = new UnityWebRequest(loginUrl, "POST"))
     {
       byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
@@ -180,7 +175,6 @@ public class APIManager : MonoBehaviour
   }
 
 
-  // Get all users (for testing purposes)
   public void GetAllUsers(System.Action<bool, string, List<User>> callback)
   {
     StartCoroutine(GetAllUsersCoroutine(callback));
@@ -197,7 +191,6 @@ public class APIManager : MonoBehaviour
         try
         {
           string jsonResponse = request.downloadHandler.text;
-          // Unity's JsonUtility doesn't handle arrays directly, so we need to wrap it
           string wrappedJson = "{\"users\":" + jsonResponse + "}";
           UserListWrapper wrapper = JsonUtility.FromJson<UserListWrapper>(wrappedJson);
 
@@ -216,14 +209,14 @@ public class APIManager : MonoBehaviour
     }
   }
 
-  // Helper class for JSON array parsing
+
   [System.Serializable]
   private class UserListWrapper
   {
     public List<User> users;
   }
 
-  //Track routes
+
 
   [System.Serializable]
   public class Track
@@ -238,6 +231,7 @@ public class APIManager : MonoBehaviour
     public string description;
     public string dateUploaded;
     public string _id;
+    public string borders;
   }
 
   [System.Serializable]
@@ -290,7 +284,6 @@ public class APIManager : MonoBehaviour
     StartCoroutine(GetAllTracksCoroutine(callback));
   }
 
-  // Fetch a track by name
   public void GetTrackByName(string name, System.Action<bool, string, Track> callback)
   {
     StartCoroutine(GetTrackByNameCoroutine(name, callback));
@@ -330,7 +323,7 @@ public class APIManager : MonoBehaviour
   private IEnumerator GetTrackImageCoroutine(string name, System.Action<bool, string, Texture2D> callback)
   {
     string url = $"{baseURL}/images/{name}";
-    Debug.Log($"Requesting track image from: {url}");
+
 
     using (UnityWebRequest request = UnityWebRequest.Get(url))
     {
@@ -339,15 +332,12 @@ public class APIManager : MonoBehaviour
       if (request.result == UnityWebRequest.Result.Success)
       {
         string base64Data = request.downloadHandler.text.Trim();
-        Debug.Log($"Received raw data: {base64Data}");
 
-        // Remove surrounding quotation marks if present
         if (base64Data.StartsWith("\"") && base64Data.EndsWith("\""))
         {
           base64Data = base64Data.Substring(1, base64Data.Length - 2);
         }
 
-        // Clean the Base64 string
         base64Data = CleanBase64String(base64Data);
 
         if (string.IsNullOrEmpty(base64Data))
@@ -386,15 +376,70 @@ public class APIManager : MonoBehaviour
     }
   }
 
+  public void GetTrackBorder(string name, System.Action<bool, string, byte[]> callback)
+  {
+    StartCoroutine(GetTrackBorderCoroutine(name, callback));
+  }
+
+  private IEnumerator GetTrackBorderCoroutine(string name, System.Action<bool, string, byte[]> callback)
+  {
+    string url = $"{baseURL}/tracks/{name}";
+
+    using (UnityWebRequest request = UnityWebRequest.Get(url))
+    {
+      yield return request.SendWebRequest();
+
+      if (request.result == UnityWebRequest.Result.Success)
+      {
+        string baseData = request.downloadHandler.text.Trim();
+
+        Track track = JsonUtility.FromJson<Track>(baseData);
+
+        if (string.IsNullOrEmpty(track.borders))
+        {
+          string errorMsg = $"No border data found for track: {name}";
+          Debug.LogError(errorMsg);
+          callback?.Invoke(false, errorMsg, null);
+          yield break;
+        }
+
+        try
+        {
+          byte[] borderBytes = Convert.FromBase64String(track.borders);
+          int trailingIndex = borderBytes.Length - 4;
+          if (trailingIndex >= 0)
+          {
+            int trailingValue = BitConverter.ToInt32(borderBytes, trailingIndex);
+            if (trailingValue == 0)
+            {
+              Array.Resize(ref borderBytes, trailingIndex);
+            }
+          }
+          callback(true, "Success", borderBytes);
+        }
+        catch (FormatException ex)
+        {
+          string errorMsg = $"Failed to decode base64 border: {ex.Message}";
+          Debug.LogError(errorMsg);
+          callback?.Invoke(false, errorMsg, null);
+        }
+      }
+      else
+      {
+        string errorMsg = request.responseCode == 404
+            ? $"Image not found for track: {name}"
+            : $"Failed to load image: {request.error}";
+        Debug.LogError(errorMsg);
+        callback?.Invoke(false, errorMsg, null);
+      }
+    }
+  }
+
+
   private string CleanBase64String(string input)
   {
-    // Remove all whitespace and special characters except Base64 valid ones
     input = Regex.Replace(input, @"[^\w\d+/=]", "");
-
-    // Convert URL-safe Base64 to standard Base64 if needed
     input = input.Replace('-', '+').Replace('_', '/');
-
-    // Ensure proper padding
     int mod4 = input.Length % 4;
     if (mod4 > 0)
     {
@@ -403,7 +448,6 @@ public class APIManager : MonoBehaviour
 
     return input;
   }
-
   public Vector2[] GetDataPoints()
   {
     return new Vector2[] { new Vector2(1, 0.5f), new Vector2(2, 1), new Vector2(3, 1.5f), new Vector2(4, 2.0f) };
