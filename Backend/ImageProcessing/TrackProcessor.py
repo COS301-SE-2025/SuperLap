@@ -431,7 +431,6 @@ def processTrack(img_path, output_base_dir="processedTracks", show_debug=True, c
 
             # Draw edges visualization if debug is enabled
             if show_debug:
-                centerline_img = None
                 if extract_centerline and processor.centerline:
                     centerline_img = processor.visualizeCenterline()
                 if centerline_img is not None:

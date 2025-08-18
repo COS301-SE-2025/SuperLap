@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------- Download Button Functionality
 function download() {
     // Placeholder download action
-    alert("❌ Download unavailable at the Moment. But we're working on it!");
+    alert("Download unavailable at the Moment. But we're working on it!");
     // You can also trigger an actual file download like this:
     // window.location.href = 'path/to/your/file.pdf';
 }
@@ -65,7 +65,7 @@ leftButton.addEventListener('click', () => {
     container.classList.remove('right-open'); // Close right panel
 });
 
-//------------------------------------------------------------------------- Send Eamil
+//------------------------------------------------------------------------- Sent Eamil
 
 const form = document.getElementById("contact_form");
 const popup = document.getElementById("popup");
@@ -102,8 +102,6 @@ function showPopup(message) {
         popup.style.display = "none";
     }, 4000);
 }
-
-//------------------------------------------------------------------------- Slider code
 
 // Right button (starts the slider)
 document.querySelector('.right-button').addEventListener('click', function () {
