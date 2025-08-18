@@ -95,7 +95,6 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
-    UpdateActivePagePosition();
   }
 
   public void NavigateToGallery()
@@ -108,6 +107,7 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
+    activePageIndex = 1;
     UpdateActivePagePosition();
   }
 
@@ -121,6 +121,7 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
+    activePageIndex = 2;
     UpdateActivePagePosition();
   }
 
@@ -147,6 +148,7 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(true);
     motoGPPage.SetActive(false);
+    activePageIndex = 3;
     UpdateActivePagePosition();
   }
 
@@ -173,6 +175,7 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(false);
     motoGPPage.SetActive(true);
+    activePageIndex = 4;
     UpdateActivePagePosition();
   }
 
