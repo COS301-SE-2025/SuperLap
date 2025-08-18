@@ -333,17 +333,17 @@ public class TrackImageProcessorTests
         //Setup mock texture
         var testTexture = CreateTestTexture(200, 200);
         var processorType = typeof(TrackImageProcessor);
-        
+
         //Set loaded texture
-        var loadedTextureField = processorType.GetField("loadedTexture", 
+        var loadedTextureField = processorType.GetField("loadedTexture",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         loadedTextureField?.SetValue(processor, testTexture);
-        
+
         //Set selected image path
-        var selectedImagePathField = processorType.GetField("selectedImagePath", 
+        var selectedImagePathField = processorType.GetField("selectedImagePath",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         selectedImagePathField?.SetValue(processor, "test_path.png");
-        
+
         //Add centerline points
         var centerlinePoints = new List<Vector2>();
         for (int i = 0; i < 120; i++) //More than 100 points
@@ -354,16 +354,38 @@ public class TrackImageProcessorTests
                 100 + 50 * Mathf.Sin(angle)
             ));
         }
-        
+
         SetCenterlinePoints(centerlinePoints);
-        
+
         yield return null;
-        
+
         //Verify setup
         Assert.IsTrue(processor.HasCenterlineData());
         Assert.IsNotNull(processor.GetLoadedTexture());
-        
+
         Object.DestroyImmediate(testTexture);
+    }
+
+    #endregion
+    #region Event Tests
+
+    [Test]
+    public void OnProcessingComplete_EventCanBeSubscribed()
+    {
+        bool eventCalled = false;
+        processor.OnProcessingComplete += (results) => eventCalled = true;
+        
+        //Simulate processing complete by invoking the event
+        var processorType = typeof(TrackImageProcessor);
+        var eventField = processorType.GetField("OnProcessingComplete", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        
+        if (eventField?.GetValue(processor) is System.Action<TrackImageProcessor.ProcessingResults> eventAction)
+        {
+            eventAction.Invoke(new TrackImageProcessor.ProcessingResults { success = true });
+        }
+        
+        Assert.IsTrue(eventCalled);
     }
 
     #endregion
