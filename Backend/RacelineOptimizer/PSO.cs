@@ -17,7 +17,7 @@ namespace RacelineOptimizer
         public PSO(
             float smoothnessWeight = 10f, //Favours less sharp turns (25f)
             float distanceWeight = 0.0f, //Favours shorter paths(typically more straight) (4f)
-            float racingBiasWeight = 0.21f,  //Favours paths opposite to upcoming corner direction.
+            float racingBiasWeight = 0.38f,  //Favours paths opposite to upcoming corner direction.
             float inertiaStart = 0.6f,
             float inertiaEnd = 0.1f,
             float cognitiveWeight = 1.7f,

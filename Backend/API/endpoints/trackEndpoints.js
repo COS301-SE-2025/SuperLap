@@ -87,7 +87,8 @@ module.exports = function (db) {
         location,
         uploadedBy,
         image,
-        description
+        description,
+        borders
       } = req.body;
 
       // Check if the track already exists
@@ -105,6 +106,7 @@ module.exports = function (db) {
         uploadedBy,
         image,
         description,
+        borders,
         dateUploaded: new Date().toISOString(), // Set date here
       };
 

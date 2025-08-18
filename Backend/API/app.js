@@ -7,6 +7,9 @@ const app = express();
 // Swagger setup
 setupSwagger(app);
 
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
 app.use(express.json());
 const uri = process.env.MONGO_URI;
 let db;
