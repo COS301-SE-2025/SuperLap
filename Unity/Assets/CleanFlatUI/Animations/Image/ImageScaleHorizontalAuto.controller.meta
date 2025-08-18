@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e7c0b9634a73a7c4ba6ce3e6d2fc992d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Image/ImageScaleHorizontalAuto.controller
+  uploadId: 658581

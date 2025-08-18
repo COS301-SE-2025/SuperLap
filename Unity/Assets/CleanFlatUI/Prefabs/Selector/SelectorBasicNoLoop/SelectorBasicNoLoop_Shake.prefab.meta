@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: dfae7b1651035ff4290f1c55e8eacdfa
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Selector/SelectorBasicNoLoop/SelectorBasicNoLoop_Shake.prefab
+  uploadId: 658581

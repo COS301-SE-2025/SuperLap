@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b70e91d2653da0d47a1d8f79fa5905f0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Switch/SwitchPopupOffInit.anim
+  uploadId: 658581

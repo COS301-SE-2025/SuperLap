@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a5f430e8fbc9f264fb16617011e43c76
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ProgressBar/ProgressBarCircularLoop_FillMultiple.anim
+  uploadId: 658581

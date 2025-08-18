@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a8c8bf8701f9c7845bdce8fa28c99995
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBar/ProgressBar_RoundOutline.prefab
+  uploadId: 658581

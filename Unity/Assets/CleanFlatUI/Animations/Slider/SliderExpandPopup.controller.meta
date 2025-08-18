@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: dfe8fd763f2cfe14ba8463f58277851b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Slider/SliderExpandPopup.controller
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 22cd582eb2791d247bda8e2501de21c3
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarLoop/ProgressBarLoop_MoveMultiple.prefab
+  uploadId: 658581

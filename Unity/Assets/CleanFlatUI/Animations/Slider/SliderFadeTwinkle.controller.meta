@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: af2d80f9b5cd60544a76fa3bd64a1d85
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Slider/SliderFadeTwinkle.controller
+  uploadId: 658581

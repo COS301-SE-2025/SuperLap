@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e1e28b8144ae0ff429db809fe2eb720a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/PopupMenu/PopupMenuFlipInLeft.anim
+  uploadId: 658581

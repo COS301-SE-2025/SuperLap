@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ea2558abaf5ac524f98d8d2540ec8307
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarCircularLoop/ProgressBarCircularLoop_ArcMultiple.prefab
+  uploadId: 658581

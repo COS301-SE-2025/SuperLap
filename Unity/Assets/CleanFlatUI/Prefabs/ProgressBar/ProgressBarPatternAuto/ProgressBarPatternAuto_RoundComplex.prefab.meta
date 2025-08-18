@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c6f9e98583e3f28459dd389866bb472e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarPatternAuto/ProgressBarPatternAuto_RoundComplex.prefab
+  uploadId: 658581

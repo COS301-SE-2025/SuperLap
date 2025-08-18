@@ -1,39 +1,48 @@
 //Used for getting the edge data from a binary file
+using System.Numerics;
+using UnityEngine;
+using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Numerics;
+using Vector2 = System.Numerics.Vector2;
 
 public class EdgeData
 {
-    public List<Vector2> OuterBoundary { get; private set; } = new List<Vector2>();
-    public List<Vector2> InnerBoundary { get; private set; } = new List<Vector2>();
+  public List<Vector2> OuterBoundary { get; private set; } = new List<Vector2>();
+  public List<Vector2> InnerBoundary { get; private set; } = new List<Vector2>();
+  public List<Vector2> Raceline { get; private set; } = new List<Vector2>();
+  public static EdgeData LoadFromBinary(string filePath, bool hasRaceline = false)
+  {
+    var edgeData = new EdgeData();
 
-    public static EdgeData LoadFromBinary(string filePath)
+    using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+    using (var br = new BinaryReader(fs))
     {
-        var edgeData = new EdgeData();
-
-        using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-        using (var br = new BinaryReader(fs))
-        {
-            edgeData.OuterBoundary = ReadPoints(br);
-            edgeData.InnerBoundary = ReadPoints(br);
-        }
-
-        return edgeData;
+      edgeData.OuterBoundary = ReadPoints(br);
+      edgeData.InnerBoundary = ReadPoints(br);
+      if (hasRaceline)
+      {
+        edgeData.Raceline = ReadPoints(br);
+      }
     }
-
-        public static EdgeData LoadFromLists(List<Vector2> outerBoundary, List<Vector2> innerBoundary)
+    return edgeData;
+  }
+    public static EdgeData LoadFromLists(List<Vector2> outerBoundary, List<Vector2> innerBoundary)
     {
         var edgeData = new EdgeData();
 
         edgeData.OuterBoundary = new List<Vector2>(outerBoundary);
         edgeData.InnerBoundary = new List<Vector2>(innerBoundary);
+        edgeData.Raceline = new List<Vector2>();
 
         return edgeData;
     }
 
-    public float GetAverageTrackWidth()
+  public float GetAverageTrackWidth()
     {
         int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
         if (count == 0) return 0f;
@@ -45,47 +54,47 @@ public class EdgeData
         }
 
         return total / count;
-    }    
-
-    public Vector2 GetCenter()
-    {
-        int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
-        Vector2 sum = Vector2.Zero;
-
-        for (int i = 0; i < count; i++)
-        {
-            sum += (InnerBoundary[i] + OuterBoundary[i]) * 0.5f;
-        }
-
-        return sum / count;
     }
 
-    public void ScaleTrack(Vector2 origin, float scaleFactor)
-    {
-        for (int i = 0; i < OuterBoundary.Count; i++)
-        {
-            OuterBoundary[i] = origin + (OuterBoundary[i] - origin) * scaleFactor;
-        }
+  public Vector2 GetCenter()
+  {
+    int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
+    Vector2 sum = Vector2.Zero;
 
-        for (int i = 0; i < InnerBoundary.Count; i++)
-        {
-            InnerBoundary[i] = origin + (InnerBoundary[i] - origin) * scaleFactor;
-        }
+    for (int i = 0; i < count; i++)
+    {
+      sum += (InnerBoundary[i] + OuterBoundary[i]) * 0.5f;
     }
 
+    return sum / count;
+  }
 
-    private static List<Vector2> ReadPoints(BinaryReader br)
+  public void ScaleTrack(Vector2 origin, float scaleFactor)
+  {
+    for (int i = 0; i < OuterBoundary.Count; i++)
     {
-        List<Vector2> points = new List<Vector2>();
-        int numPoints = br.ReadInt32();
-
-        for (int i = 0; i < numPoints; i++)
-        {
-            float x = br.ReadSingle();
-            float y = br.ReadSingle();
-            points.Add(new Vector2(x, y));
-        }
-
-        return points;
+      OuterBoundary[i] = origin + (OuterBoundary[i] - origin) * scaleFactor;
     }
+
+    for (int i = 0; i < InnerBoundary.Count; i++)
+    {
+      InnerBoundary[i] = origin + (InnerBoundary[i] - origin) * scaleFactor;
+    }
+  }
+
+
+  private static List<Vector2> ReadPoints(BinaryReader br)
+  {
+    List<Vector2> points = new List<Vector2>();
+    int numPoints = br.ReadInt32();
+
+    for (int i = 0; i < numPoints; i++)
+    {
+      float x = br.ReadSingle();
+      float y = br.ReadSingle();
+      points.Add(new Vector2(x, y));
+    }
+
+    return points;
+  }
 }

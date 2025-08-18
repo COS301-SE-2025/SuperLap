@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 13783e259efa2cb47abf619a5c9199e1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toggle/ToggleSlideVerticalText.controller
+  uploadId: 658581

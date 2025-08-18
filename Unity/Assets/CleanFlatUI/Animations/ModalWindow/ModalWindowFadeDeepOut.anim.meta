@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 61431ff967a769f419d76e9954fbb7d9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ModalWindow/ModalWindowFadeDeepOut.anim
+  uploadId: 658581

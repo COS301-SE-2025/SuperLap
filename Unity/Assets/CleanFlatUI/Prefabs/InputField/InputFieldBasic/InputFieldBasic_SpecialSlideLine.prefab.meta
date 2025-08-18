@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c625e49315c81104da3dbcb47663e34c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/InputField/InputFieldBasic/InputFieldBasic_SpecialSlideLine.prefab
+  uploadId: 658581

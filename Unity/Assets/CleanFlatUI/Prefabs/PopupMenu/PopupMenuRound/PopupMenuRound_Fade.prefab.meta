@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3f68c357e376a974a96c77902fbc26ea
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/PopupMenu/PopupMenuRound/PopupMenuRound_Fade.prefab
+  uploadId: 658581

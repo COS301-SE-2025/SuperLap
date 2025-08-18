@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 05f3d4fcdffc00343bcdb5c17c4ea9ab
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/Toggle/ToggleTransitionEditor.cs
+  uploadId: 658581

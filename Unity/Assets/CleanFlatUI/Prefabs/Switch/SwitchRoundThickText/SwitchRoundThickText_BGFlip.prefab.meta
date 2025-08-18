@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8ed052156f404fc4b861811ae3c59d40
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Switch/SwitchRoundThickText/SwitchRoundThickText_BGFlip.prefab
+  uploadId: 658581

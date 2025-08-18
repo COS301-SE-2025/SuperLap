@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a444431f98154e64d91150374a20a707
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ContextMenu/ContextMenuRound/ContextMenuRound_Flip.prefab
+  uploadId: 658581

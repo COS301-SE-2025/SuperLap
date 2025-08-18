@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 254b2d683cbc3b7479ed379a8ac79d27
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonBeamFillMultiple.controller
+  uploadId: 658581

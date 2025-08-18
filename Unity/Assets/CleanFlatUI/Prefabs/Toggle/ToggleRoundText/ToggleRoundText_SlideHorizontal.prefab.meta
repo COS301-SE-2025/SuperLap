@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4ce9239fb24bbd0468dcabdd04fcc735
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toggle/ToggleRoundText/ToggleRoundText_SlideHorizontal.prefab
+  uploadId: 658581

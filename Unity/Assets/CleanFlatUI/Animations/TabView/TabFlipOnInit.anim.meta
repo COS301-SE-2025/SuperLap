@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a6a97bb27a4264e4e84a238e7649c413
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabFlipOnInit.anim
+  uploadId: 658581

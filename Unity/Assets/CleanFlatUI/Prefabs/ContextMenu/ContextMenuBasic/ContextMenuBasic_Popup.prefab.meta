@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d6a7f3ec4304ce84dbab24e5ece7442a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ContextMenu/ContextMenuBasic/ContextMenuBasic_Popup.prefab
+  uploadId: 658581

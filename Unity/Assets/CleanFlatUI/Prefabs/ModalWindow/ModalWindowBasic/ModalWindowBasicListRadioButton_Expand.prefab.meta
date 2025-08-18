@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a0a9eeb5f372de4468ab6ae5ca37b961
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ModalWindow/ModalWindowBasic/ModalWindowBasicListRadioButton_Expand.prefab
+  uploadId: 658581

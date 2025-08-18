@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5fffa778ee2bdd04da5d5298ce7e704d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonPullVerticalAuto.controller
+  uploadId: 658581

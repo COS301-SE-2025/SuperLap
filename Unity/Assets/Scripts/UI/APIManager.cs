@@ -31,7 +31,7 @@ public class TrackImageResponse
 public class APIManager : MonoBehaviour
 {
   [Header("API Configuration")]
-  public string baseURL = "http://localhost:3000";
+  public string baseURL = "https://superlap-api.duckdns.org";
 
   private static APIManager _instance;
   public static APIManager Instance
@@ -157,7 +157,7 @@ public class APIManager : MonoBehaviour
         }
         catch (Exception e)
         {
-          Debug.LogError("Error parsing login response: " + e.Message);
+          Debug.Log("Error parsing login response: " + e.Message);
           callback?.Invoke(false, "Error parsing server response", null);
         }
       }
@@ -373,5 +373,10 @@ public class APIManager : MonoBehaviour
         callback?.Invoke(false, request.error, null);
       }
     }
+  }
+
+  public Vector2[] GetDataPoints()
+  {
+    return new Vector2[] { new Vector2(1, 0.5f), new Vector2(2, 1), new Vector2(3, 1.5f), new Vector2(4, 2.0f) };
   }
 }

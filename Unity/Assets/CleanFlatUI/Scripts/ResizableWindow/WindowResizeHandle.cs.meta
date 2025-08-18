@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 7c2dac0c475b79042b0177817e61d8bf
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ResizableWindow/WindowResizeHandle.cs
+  uploadId: 658581

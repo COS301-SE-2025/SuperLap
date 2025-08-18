@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 258c0fa94a6d79c438f4e94d81657eac
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toast/ToastBasic/ToastBasic_Simple.prefab
+  uploadId: 658581

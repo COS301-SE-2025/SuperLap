@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fce7b38ea28e40e40a85edcce094d6f5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/PopupMenu/PopupMenuFlipOutRight.anim
+  uploadId: 658581

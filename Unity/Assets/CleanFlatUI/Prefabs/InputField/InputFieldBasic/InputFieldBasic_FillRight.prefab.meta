@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cdc568d12bb25e842971e92803e219a5
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/InputField/InputFieldBasic/InputFieldBasic_FillRight.prefab
+  uploadId: 658581
