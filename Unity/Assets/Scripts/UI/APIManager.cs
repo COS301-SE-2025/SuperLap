@@ -324,7 +324,7 @@ public class APIManager : MonoBehaviour
   {
     string url = $"{baseURL}/images/{name}";
 
-
+    Debug.Log(url);
     using (UnityWebRequest request = UnityWebRequest.Get(url))
     {
       yield return request.SendWebRequest();
@@ -332,6 +332,8 @@ public class APIManager : MonoBehaviour
       if (request.result == UnityWebRequest.Result.Success)
       {
         string base64Data = request.downloadHandler.text.Trim();
+
+
 
         if (base64Data.StartsWith("\"") && base64Data.EndsWith("\""))
         {

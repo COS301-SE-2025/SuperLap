@@ -78,7 +78,6 @@ public class GalleryGetInfo : MonoBehaviour
       return;
     }
 
-    Debug.Log($"Successfully loaded {tracks.Count} tracks");
     foreach (var track in tracks)
     {
       CreateTrackPanel(track);
