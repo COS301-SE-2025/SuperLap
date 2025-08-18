@@ -49,6 +49,19 @@ namespace TrackProcessorTest
             Assert.AreEqual("Northeast", method.Invoke(processor, new object[] { 315f }));
         }
         
-        
+        [Test]
+        public void CalculateRaceDirection_HandlesEmptyPointsList()
+        {
+            var method = typeof(TrackImageProcessor).GetMethod("CalculateRaceDirection", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            //Set empty centerline points
+            var centerlineField = typeof(TrackImageProcessor).GetField("centerlinePoints", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            centerlineField.SetValue(processor, new List<Vector2>());
+
+            //Should not throw exception with empty points
+            Assert.DoesNotThrow(() => method.Invoke(processor, null));
+        }
     }
 }
