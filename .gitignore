@@ -47,8 +47,23 @@ build/
 # Ignore npm package lock files if you want to regenerate fresh every time (optional)
 # package-lock.json
 
-
+# GitHub Actions (if using act)
 act/
+
 /Unity/CodeCoverage/Report
 /Unity/CodeCoverage/Report-history
 Unity/Assets/StreamingAssets/TrackProcessor.exe
+
+
+# Ignore all image files and json data generated from the imageProcessor
+#processedTracks/
+#trackImages/
+#Backend/ImageProcessing/venv
+#Backend/ImageProcessing/debug
+#Backend/RacelineOptimizer/bin
+#Backend/RacelineOptimizer/obj
+#Backend/RacelineOptimizer/Output
+#Backend/RacelineOptimizer/Input
+
+# Ignore Unit Test files
+#Unity/TestResults/
