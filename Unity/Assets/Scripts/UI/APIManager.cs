@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.Text.RegularExpressions;
 
 [System.Serializable]
 public class User
@@ -321,7 +322,6 @@ public class APIManager : MonoBehaviour
     }
   }
 
-  // Fetch a track image (base64 or binary)
   public void GetTrackImage(string name, System.Action<bool, string, Texture2D> callback)
   {
     StartCoroutine(GetTrackImageCoroutine(name, callback));
@@ -329,50 +329,79 @@ public class APIManager : MonoBehaviour
 
   private IEnumerator GetTrackImageCoroutine(string name, System.Action<bool, string, Texture2D> callback)
   {
-    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/images/{name}"))
+    string url = $"{baseURL}/images/{name}";
+    Debug.Log($"Requesting track image from: {url}");
+
+    using (UnityWebRequest request = UnityWebRequest.Get(url))
     {
       yield return request.SendWebRequest();
 
       if (request.result == UnityWebRequest.Result.Success)
       {
+        string base64Data = request.downloadHandler.text.Trim();
+        Debug.Log($"Received raw data: {base64Data}");
+
+        // Remove surrounding quotation marks if present
+        if (base64Data.StartsWith("\"") && base64Data.EndsWith("\""))
+        {
+          base64Data = base64Data.Substring(1, base64Data.Length - 2);
+        }
+
+        // Clean the Base64 string
+        base64Data = CleanBase64String(base64Data);
+
+        if (string.IsNullOrEmpty(base64Data))
+        {
+          callback?.Invoke(false, "Invalid image data after cleaning", null);
+          yield break;
+        }
+
         try
         {
-          // Print the response data for debugging
-          Debug.Log($"Track image response for {name}: {request.downloadHandler.text}");
-          // Parse JSON and extract base64 data
-          string text = request.downloadHandler.text;
+          byte[] imageBytes = Convert.FromBase64String(base64Data);
           Texture2D texture = new Texture2D(2, 2);
-          bool loaded = false;
-          try
+          if (texture.LoadImage(imageBytes))
           {
-            TrackImageResponse imgResp = JsonUtility.FromJson<TrackImageResponse>(text);
-            if (imgResp != null && !string.IsNullOrEmpty(imgResp.data))
-            {
-              byte[] imageBytes = Convert.FromBase64String(imgResp.data);
-              loaded = texture.LoadImage(imageBytes);
-            }
+            callback?.Invoke(true, "Image loaded successfully", texture);
           }
-          catch
-          {
-            // If not base64, try as binary
-            byte[] imageBytes = request.downloadHandler.data;
-            loaded = texture.LoadImage(imageBytes);
-          }
-          if (loaded)
-            callback?.Invoke(true, "Image fetched successfully", texture);
           else
-            callback?.Invoke(false, "Failed to load image data", null);
+          {
+            callback?.Invoke(false, "Failed to load texture from bytes", null);
+          }
         }
-        catch
+        catch (Exception ex)
         {
-          callback?.Invoke(false, "Error parsing image data", null);
+          Debug.LogError($"Base64 decode error: {ex.Message}\nCleaned data: {base64Data}");
+          callback?.Invoke(false, $"Base64 decode error: {ex.Message}", null);
         }
       }
       else
       {
-        callback?.Invoke(false, request.error, null);
+        string errorMsg = request.responseCode == 404
+            ? $"Image not found for track: {name}"
+            : $"Failed to load image: {request.error}";
+        Debug.LogError(errorMsg);
+        callback?.Invoke(false, errorMsg, null);
       }
     }
+  }
+
+  private string CleanBase64String(string input)
+  {
+    // Remove all whitespace and special characters except Base64 valid ones
+    input = Regex.Replace(input, @"[^\w\d+/=]", "");
+
+    // Convert URL-safe Base64 to standard Base64 if needed
+    input = input.Replace('-', '+').Replace('_', '/');
+
+    // Ensure proper padding
+    int mod4 = input.Length % 4;
+    if (mod4 > 0)
+    {
+      input += new string('=', 4 - mod4);
+    }
+
+    return input;
   }
 
   public Vector2[] GetDataPoints()
