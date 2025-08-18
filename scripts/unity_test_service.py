@@ -53,6 +53,11 @@ class TestResult:
         self.error_message = None
         self.log_output = []
         self.workspace_path = None
+        # Coverage data
+        self.coverage_available = False
+        self.line_coverage = 0.0
+        self.method_coverage = 0.0
+        self.test_class_count = 0
 
 def log_message(test_result, message):
     """Add a timestamped log message to test result"""
@@ -312,11 +317,12 @@ def calculate_coverage_results(test_result):
                 coverage_data = json.loads(result.stdout)
                 
                 if coverage_data.get('editmode_tests_found', False):
-                    line_cov = coverage_data['overall_line_coverage']
-                    method_cov = coverage_data['overall_method_coverage']
-                    test_count = coverage_data['test_count']
+                    test_result.coverage_available = True
+                    test_result.line_coverage = coverage_data['overall_line_coverage']
+                    test_result.method_coverage = coverage_data['overall_method_coverage']
+                    test_result.test_class_count = coverage_data['test_count']
                     
-                    log_message(test_result, f"Coverage calculated: {line_cov}% lines, {method_cov}% methods, {test_count} test classes")
+                    log_message(test_result, f"Coverage calculated: {test_result.line_coverage}% lines, {test_result.method_coverage}% methods, {test_result.test_class_count} test classes")
                 else:
                     log_message(test_result, "No coverage data found for specified test classes")
             else:
@@ -489,7 +495,13 @@ def get_test_status(test_id):
             'success': test_result.success,
             'startTime': test_result.start_time.isoformat() if test_result.start_time else None,
             'endTime': test_result.end_time.isoformat() if test_result.end_time else None,
-            'logs': test_result.log_output[-20:]  # Return last 20 log entries
+            'logs': test_result.log_output[-20:],  # Return last 20 log entries
+            'coverage': {
+                'available': test_result.coverage_available,
+                'lineCoverage': test_result.line_coverage,
+                'methodCoverage': test_result.method_coverage,
+                'testClassCount': test_result.test_class_count
+            }
         }
         
         if test_result.error_message:
