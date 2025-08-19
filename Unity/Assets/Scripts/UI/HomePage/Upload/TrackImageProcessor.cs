@@ -294,28 +294,30 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   {
     if (loadedTexture == null || centerlinePoints.Count == 0) return;
 
-    if (centerlineOverlay != null)
+    if (centerlineOverlay == null ||
+        centerlineOverlay.width != loadedTexture.width ||
+        centerlineOverlay.height != loadedTexture.height)
     {
-      Destroy(centerlineOverlay);
+      if (centerlineOverlay != null) Destroy(centerlineOverlay);
+      centerlineOverlay = new Texture2D(loadedTexture.width, loadedTexture.height);
+      centerlineOverlay.SetPixels(loadedTexture.GetPixels());
+      centerlineOverlay.Apply();
     }
 
-    centerlineOverlay = new Texture2D(loadedTexture.width, loadedTexture.height);
-    centerlineOverlay.SetPixels(loadedTexture.GetPixels());
+    if (centerlinePoints.Count >= 2)
+      {
+        Vector2 start = centerlinePoints[centerlinePoints.Count - 2];
+        Vector2 end = centerlinePoints[centerlinePoints.Count - 1];
+        DrawLineOnTexture(centerlineOverlay, start, end, centerlineColor);
+      }
 
-    //Draw centerline
-    for (int i = 1; i < centerlinePoints.Count; i++)
-    {
-      DrawLineOnTexture(centerlineOverlay, centerlinePoints[i - 1], centerlinePoints[i], centerlineColor);
-    }
-
-    //Draw start position
     if (startPosition.HasValue)
     {
       DrawCircleOnTexture(centerlineOverlay, startPosition.Value, 8, startPositionColor);
     }
 
     centerlineOverlay.Apply();
-    //Update preview
+
     Sprite overlaySprite = Sprite.Create(centerlineOverlay, new Rect(0, 0, centerlineOverlay.width, centerlineOverlay.height), new Vector2(0.5f, 0.5f));
     previewImage.sprite = overlaySprite;
   }
@@ -349,7 +351,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     int x2 = Mathf.RoundToInt(end.x);
     int y2 = Mathf.RoundToInt(end.y);
 
-    // Bresenham's line algorithm
+    int thickness = centerlineThickness;
+    int halfThickness = thickness / 2;
+    int textureWidth = texture.width;
+    int textureHeight = texture.height;
+
     int dx = Mathf.Abs(x2 - x1);
     int dy = Mathf.Abs(y2 - y1);
     int sx = x1 < x2 ? 1 : -1;
@@ -361,17 +367,18 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     while (true)
     {
-      // Draw thick line
-      for (int offsetX = -centerlineThickness / 2; offsetX <= centerlineThickness / 2; offsetX++)
+      for (int offsetX = -halfThickness; offsetX <= halfThickness; offsetX++)
       {
-        for (int offsetY = -centerlineThickness / 2; offsetY <= centerlineThickness / 2; offsetY++)
+        for (int offsetY = -halfThickness; offsetY <= halfThickness; offsetY++)
         {
           int pixelX = x + offsetX;
           int pixelY = y + offsetY;
 
-          if (pixelX >= 0 && pixelX < texture.width && pixelY >= 0 && pixelY < texture.height)
+          if (pixelX >= 0 && pixelX < textureWidth && pixelY >= 0 && pixelY < textureHeight)
           {
-            texture.SetPixel(pixelX, pixelY, color);
+            Color originalPixel = loadedTexture.GetPixel(pixelX, pixelY);
+            Color blended = Color.Lerp(originalPixel, color, 0.5f);
+            texture.SetPixel(pixelX, pixelY, blended);
           }
         }
       }
@@ -379,16 +386,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       if (x == x2 && y == y2) break;
 
       int e2 = 2 * err;
-      if (e2 > -dy)
-      {
-        err -= dy;
-        x += sx;
-      }
-      if (e2 < dx)
-      {
-        err += dx;
-        y += sy;
-      }
+      if (e2 > -dy) { err -= dy; x += sx; }
+      if (e2 < dx) { err += dx; y += sy; }
     }
   }
 
