@@ -49,6 +49,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   [SerializeField] private Color outerBoundaryColor = Color.blue;
   [SerializeField] private Color racelineColor = Color.green;
   [SerializeField] private int lineThickness = 3;
+  [SerializeField] private int pointCount = 100;
+  [SerializeField] private GameObject meshHolder;
+
 
   //Centerline tracing state
   private bool isTracingMode = false;
@@ -631,7 +634,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     Debug.Log($"Track processing completed successfully in {processingTime:F2} seconds.");
 
     // Generate output image
-    GenerateOutputImage();
+    // GenerateOutputImage();
+
+    TrackMaster.LoadTrack(lastResults);
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();

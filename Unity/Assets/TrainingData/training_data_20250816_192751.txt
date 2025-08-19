@@ -1,0 +1,904 @@
+SuperLap Training Data Export
+Export Date: 2025-08-16 19:27:51
+Total Sessions: 39
+
+=== SESSION 1 ===
+Start Checkpoint: 0
+Goal Checkpoint: 1
+Validate Checkpoint: 2
+Best Time: 5.640s
+Completed: True
+Valid Data: True
+Best Position: (454.81, 1.00, 129.35)
+Best Direction: (-1.00, 0.00, 0.03)
+Best Speed: 38.49 m/s
+Best Turn Angle: -3.68°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=0
+  Step 6: Speed=1, Turn=0
+  Step 7: Speed=1, Turn=-1
+  Step 8: Speed=1, Turn=0
+  Step 9: Speed=1, Turn=0
+  Step 10: Speed=1, Turn=0
+  Step 11: Speed=0, Turn=0
+  Step 12: Speed=1, Turn=0
+  Step 13: Speed=0, Turn=-1
+  Step 14: Speed=1, Turn=0
+  Step 15: Speed=1, Turn=0
+  Step 16: Speed=1, Turn=0
+
+=== SESSION 2 ===
+Start Checkpoint: 1
+Goal Checkpoint: 2
+Validate Checkpoint: 3
+Best Time: 4.240s
+Completed: True
+Valid Data: True
+Best Position: (360.71, 1.00, 142.90)
+Best Direction: (-0.95, 0.00, 0.32)
+Best Speed: 46.17 m/s
+Best Turn Angle: 2.66°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=-1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=1, Turn=1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=1, Turn=0
+  Step 7: Speed=0, Turn=0
+  Step 8: Speed=1, Turn=0
+  Step 9: Speed=1, Turn=0
+  Step 10: Speed=0, Turn=0
+  Step 11: Speed=1, Turn=0
+
+=== SESSION 3 ===
+Start Checkpoint: 2
+Goal Checkpoint: 3
+Validate Checkpoint: 4
+Best Time: 3.800s
+Completed: True
+Valid Data: True
+Best Position: (268.31, 1.00, 164.75)
+Best Direction: (-1.00, 0.00, 0.03)
+Best Speed: 51.66 m/s
+Best Turn Angle: -6.36°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=1, Turn=-1
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=0, Turn=-1
+  Step 4: Speed=0, Turn=0
+  Step 5: Speed=1, Turn=-1
+  Step 6: Speed=1, Turn=-1
+  Step 7: Speed=1, Turn=0
+  Step 8: Speed=0, Turn=0
+  Step 9: Speed=1, Turn=0
+  Step 10: Speed=1, Turn=0
+
+=== SESSION 4 ===
+Start Checkpoint: 3
+Goal Checkpoint: 4
+Validate Checkpoint: 5
+Best Time: 3.320s
+Completed: True
+Valid Data: True
+Best Position: (170.55, 1.00, 166.11)
+Best Direction: (-1.00, 0.00, 0.08)
+Best Speed: 54.68 m/s
+Best Turn Angle: 13.25°
+Input Sequence:
+  Step 0: Speed=0, Turn=0
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=0, Turn=0
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=0, Turn=0
+  Step 5: Speed=1, Turn=0
+  Step 6: Speed=1, Turn=0
+  Step 7: Speed=0, Turn=0
+  Step 8: Speed=1, Turn=0
+  Step 9: Speed=1, Turn=0
+  Step 10: Speed=0, Turn=0
+  Step 11: Speed=1, Turn=0
+  Step 12: Speed=0, Turn=0
+  Step 13: Speed=0, Turn=0
+  Step 14: Speed=0, Turn=0
+  Step 15: Speed=1, Turn=0
+  Step 16: Speed=1, Turn=0
+  Step 17: Speed=0, Turn=0
+  Step 18: Speed=0, Turn=0
+  Step 19: Speed=1, Turn=0
+  Step 20: Speed=0, Turn=0
+  Step 21: Speed=1, Turn=0
+  Step 22: Speed=1, Turn=0
+  Step 23: Speed=0, Turn=0
+  Step 24: Speed=0, Turn=0
+  Step 25: Speed=1, Turn=0
+  Step 26: Speed=0, Turn=0
+  Step 27: Speed=1, Turn=1
+  Step 28: Speed=1, Turn=0
+  Step 29: Speed=0, Turn=0
+  Step 30: Speed=1, Turn=0
+  Step 31: Speed=0, Turn=0
+  Step 32: Speed=1, Turn=0
+  Step 33: Speed=1, Turn=0
+  Step 34: Speed=0, Turn=0
+  Step 35: Speed=0, Turn=0
+  Step 36: Speed=1, Turn=0
+  Step 37: Speed=1, Turn=0
+  Step 38: Speed=1, Turn=1
+  Step 39: Speed=1, Turn=0
+  Step 40: Speed=1, Turn=0
+  Step 41: Speed=0, Turn=0
+  Step 42: Speed=1, Turn=1
+  Step 43: Speed=1, Turn=0
+  Step 44: Speed=1, Turn=1
+  Step 45: Speed=1, Turn=1
+
+=== SESSION 5 ===
+Start Checkpoint: 4
+Goal Checkpoint: 5
+Validate Checkpoint: 6
+Best Time: 4.140s
+Completed: True
+Valid Data: True
+Best Position: (92.44, 1.00, 190.71)
+Best Direction: (-0.82, 0.00, 0.57)
+Best Speed: 49.66 m/s
+Best Turn Angle: 24.21°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=1, Turn=1
+  Step 2: Speed=0, Turn=1
+  Step 3: Speed=-1, Turn=0
+  Step 4: Speed=1, Turn=1
+  Step 5: Speed=-1, Turn=1
+  Step 6: Speed=1, Turn=1
+
+=== SESSION 6 ===
+Start Checkpoint: 5
+Goal Checkpoint: 6
+Validate Checkpoint: 7
+Best Time: 5.400s
+Completed: True
+Valid Data: True
+Best Position: (53.22, 1.00, 270.79)
+Best Direction: (0.13, 0.00, 0.99)
+Best Speed: 40.65 m/s
+Best Turn Angle: 14.05°
+Input Sequence:
+  Step 0: Speed=-1, Turn=1
+  Step 1: Speed=0, Turn=1
+  Step 2: Speed=-1, Turn=1
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=-1, Turn=1
+  Step 5: Speed=0, Turn=0
+  Step 6: Speed=0, Turn=1
+  Step 7: Speed=1, Turn=1
+  Step 8: Speed=1, Turn=1
+  Step 9: Speed=0, Turn=1
+  Step 10: Speed=1, Turn=1
+  Step 11: Speed=1, Turn=1
+  Step 12: Speed=0, Turn=0
+  Step 13: Speed=1, Turn=0
+  Step 14: Speed=1, Turn=0
+
+=== SESSION 7 ===
+Start Checkpoint: 6
+Goal Checkpoint: 7
+Validate Checkpoint: 8
+Best Time: 4.080s
+Completed: True
+Valid Data: True
+Best Position: (73.41, 1.00, 363.71)
+Best Direction: (0.06, 0.00, 1.00)
+Best Speed: 47.17 m/s
+Best Turn Angle: -7.04°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=-1
+  Step 3: Speed=0, Turn=0
+  Step 4: Speed=1, Turn=-1
+  Step 5: Speed=1, Turn=-1
+  Step 6: Speed=1, Turn=0
+  Step 7: Speed=0, Turn=0
+  Step 8: Speed=0, Turn=0
+  Step 9: Speed=0, Turn=0
+
+=== SESSION 8 ===
+Start Checkpoint: 7
+Goal Checkpoint: 8
+Validate Checkpoint: 9
+Best Time: 3.740s
+Completed: True
+Valid Data: True
+Best Position: (74.30, 1.00, 463.19)
+Best Direction: (-0.10, 0.00, 0.99)
+Best Speed: 54.27 m/s
+Best Turn Angle: -15.06°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=0
+  Step 6: Speed=1, Turn=-1
+  Step 7: Speed=1, Turn=-1
+  Step 8: Speed=1, Turn=0
+
+=== SESSION 9 ===
+Start Checkpoint: 8
+Goal Checkpoint: 9
+Validate Checkpoint: 10
+Best Time: 3.140s
+Completed: True
+Valid Data: True
+Best Position: (55.60, 1.00, 556.42)
+Best Direction: (-0.12, 0.00, 0.99)
+Best Speed: 57.79 m/s
+Best Turn Angle: 14.56°
+Input Sequence:
+  Step 0: Speed=0, Turn=0
+  Step 1: Speed=1, Turn=-1
+  Step 2: Speed=1, Turn=1
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=1
+
+=== SESSION 10 ===
+Start Checkpoint: 9
+Goal Checkpoint: 10
+Validate Checkpoint: 11
+Best Time: 4.080s
+Completed: True
+Valid Data: True
+Best Position: (64.52, 1.00, 632.67)
+Best Direction: (0.43, 0.00, 0.90)
+Best Speed: 42.76 m/s
+Best Turn Angle: 25.81°
+Input Sequence:
+  Step 0: Speed=0, Turn=1
+  Step 1: Speed=0, Turn=1
+  Step 2: Speed=0, Turn=1
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=-1, Turn=1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=-1, Turn=1
+  Step 7: Speed=0, Turn=1
+
+=== SESSION 11 ===
+Start Checkpoint: 10
+Goal Checkpoint: 11
+Validate Checkpoint: 12
+Best Time: 5.260s
+Completed: True
+Valid Data: True
+Best Position: (133.78, 1.00, 674.34)
+Best Direction: (0.97, 0.00, -0.26)
+Best Speed: 30.01 m/s
+Best Turn Angle: 32.04°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=-1, Turn=1
+  Step 2: Speed=0, Turn=0
+  Step 3: Speed=0, Turn=1
+  Step 4: Speed=1, Turn=1
+  Step 5: Speed=-1, Turn=1
+  Step 6: Speed=1, Turn=1
+  Step 7: Speed=-1, Turn=1
+  Step 8: Speed=1, Turn=1
+  Step 9: Speed=-1, Turn=1
+  Step 10: Speed=0, Turn=1
+  Step 11: Speed=1, Turn=1
+  Step 12: Speed=1, Turn=1
+  Step 13: Speed=0, Turn=1
+  Step 14: Speed=0, Turn=1
+  Step 15: Speed=0, Turn=1
+
+=== SESSION 12 ===
+Start Checkpoint: 11
+Goal Checkpoint: 12
+Validate Checkpoint: 13
+Best Time: 4.540s
+Completed: True
+Valid Data: True
+Best Position: (184.72, 1.00, 616.49)
+Best Direction: (0.20, 0.00, -0.98)
+Best Speed: 41.76 m/s
+Best Turn Angle: 12.36°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=1, Turn=1
+  Step 2: Speed=0, Turn=1
+  Step 3: Speed=0, Turn=1
+  Step 4: Speed=0, Turn=1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=1, Turn=1
+  Step 7: Speed=1, Turn=1
+  Step 8: Speed=1, Turn=1
+  Step 9: Speed=1, Turn=0
+  Step 10: Speed=0, Turn=-1
+
+=== SESSION 13 ===
+Start Checkpoint: 12
+Goal Checkpoint: 13
+Validate Checkpoint: 14
+Best Time: 4.580s
+Completed: True
+Valid Data: True
+Best Position: (219.70, 1.00, 522.18)
+Best Direction: (0.65, 0.00, -0.76)
+Best Speed: 48.43 m/s
+Best Turn Angle: -15.15°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=1, Turn=-1
+  Step 2: Speed=0, Turn=-1
+  Step 3: Speed=1, Turn=-1
+  Step 4: Speed=1, Turn=-1
+  Step 5: Speed=1, Turn=-1
+  Step 6: Speed=0, Turn=0
+  Step 7: Speed=1, Turn=-1
+  Step 8: Speed=1, Turn=-1
+  Step 9: Speed=0, Turn=0
+
+=== SESSION 14 ===
+Start Checkpoint: 13
+Goal Checkpoint: 14
+Validate Checkpoint: 15
+Best Time: 5.280s
+Completed: True
+Valid Data: True
+Best Position: (312.37, 1.00, 471.53)
+Best Direction: (1.00, 0.00, 0.00)
+Best Speed: 43.41 m/s
+Best Turn Angle: -26.48°
+Input Sequence:
+  Step 0: Speed=1, Turn=-1
+  Step 1: Speed=0, Turn=-1
+  Step 2: Speed=0, Turn=-1
+  Step 3: Speed=0, Turn=-1
+  Step 4: Speed=1, Turn=-1
+  Step 5: Speed=0, Turn=-1
+  Step 6: Speed=1, Turn=-1
+  Step 7: Speed=-1, Turn=-1
+  Step 8: Speed=0, Turn=-1
+
+=== SESSION 15 ===
+Start Checkpoint: 14
+Goal Checkpoint: 15
+Validate Checkpoint: 16
+Best Time: 4.940s
+Completed: True
+Valid Data: True
+Best Position: (396.26, 1.00, 534.06)
+Best Direction: (0.34, 0.00, 0.94)
+Best Speed: 43.00 m/s
+Best Turn Angle: 1.34°
+Input Sequence:
+  Step 0: Speed=-1, Turn=-1
+  Step 1: Speed=0, Turn=-1
+  Step 2: Speed=-1, Turn=-1
+  Step 3: Speed=1, Turn=-1
+  Step 4: Speed=-1, Turn=-1
+  Step 5: Speed=0, Turn=-1
+  Step 6: Speed=1, Turn=-1
+  Step 7: Speed=0, Turn=-1
+  Step 8: Speed=0, Turn=-1
+  Step 9: Speed=1, Turn=-1
+  Step 10: Speed=1, Turn=-1
+  Step 11: Speed=0, Turn=0
+  Step 12: Speed=0, Turn=-1
+  Step 13: Speed=1, Turn=0
+  Step 14: Speed=1, Turn=1
+  Step 15: Speed=1, Turn=1
+
+=== SESSION 16 ===
+Start Checkpoint: 15
+Goal Checkpoint: 16
+Validate Checkpoint: 17
+Best Time: 3.740s
+Completed: True
+Valid Data: True
+Best Position: (440.58, 1.00, 615.90)
+Best Direction: (0.74, 0.00, 0.67)
+Best Speed: 49.83 m/s
+Best Turn Angle: 25.05°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=-1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=0, Turn=1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=0, Turn=1
+  Step 7: Speed=1, Turn=1
+  Step 8: Speed=1, Turn=1
+  Step 9: Speed=1, Turn=1
+  Step 10: Speed=1, Turn=1
+
+=== SESSION 17 ===
+Start Checkpoint: 16
+Goal Checkpoint: 17
+Validate Checkpoint: 18
+Best Time: 3.400s
+Completed: True
+Valid Data: True
+Best Position: (518.28, 1.00, 655.94)
+Best Direction: (0.92, 0.00, 0.38)
+Best Speed: 54.40 m/s
+Best Turn Angle: -0.46°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=0, Turn=1
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=0
+  Step 6: Speed=1, Turn=-1
+  Step 7: Speed=1, Turn=0
+  Step 8: Speed=1, Turn=0
+  Step 9: Speed=0, Turn=1
+
+=== SESSION 18 ===
+Start Checkpoint: 17
+Goal Checkpoint: 18
+Validate Checkpoint: 19
+Best Time: 3.300s
+Completed: True
+Valid Data: True
+Best Position: (607.33, 1.00, 679.35)
+Best Direction: (0.99, 0.00, 0.11)
+Best Speed: 56.71 m/s
+Best Turn Angle: 13.50°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=1, Turn=1
+  Step 2: Speed=0, Turn=0
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=0, Turn=1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=-1, Turn=0
+  Step 7: Speed=1, Turn=0
+
+=== SESSION 19 ===
+Start Checkpoint: 18
+Goal Checkpoint: 19
+Validate Checkpoint: 20
+Best Time: 3.100s
+Completed: True
+Valid Data: True
+Best Position: (698.01, 1.00, 680.10)
+Best Direction: (0.99, 0.00, -0.10)
+Best Speed: 57.79 m/s
+Best Turn Angle: 11.57°
+Input Sequence:
+  Step 0: Speed=-1, Turn=0
+  Step 1: Speed=0, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=0, Turn=1
+  Step 6: Speed=1, Turn=1
+
+=== SESSION 20 ===
+Start Checkpoint: 19
+Goal Checkpoint: 20
+Validate Checkpoint: 21
+Best Time: 3.180s
+Completed: True
+Valid Data: True
+Best Position: (778.71, 1.00, 653.52)
+Best Direction: (0.85, 0.00, -0.53)
+Best Speed: 59.07 m/s
+Best Turn Angle: 11.28°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=1, Turn=1
+  Step 2: Speed=0, Turn=1
+  Step 3: Speed=0, Turn=1
+  Step 4: Speed=0, Turn=1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=1, Turn=1
+  Step 7: Speed=1, Turn=0
+
+=== SESSION 21 ===
+Start Checkpoint: 20
+Goal Checkpoint: 21
+Validate Checkpoint: 22
+Best Time: 3.340s
+Completed: True
+Valid Data: True
+Best Position: (860.76, 1.00, 596.20)
+Best Direction: (0.86, 0.00, -0.52)
+Best Speed: 60.32 m/s
+Best Turn Angle: -11.28°
+Input Sequence:
+  Step 0: Speed=0, Turn=0
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=0, Turn=-1
+  Step 4: Speed=0, Turn=-1
+  Step 5: Speed=0, Turn=-1
+  Step 6: Speed=1, Turn=-1
+  Step 7: Speed=1, Turn=0
+
+=== SESSION 22 ===
+Start Checkpoint: 21
+Goal Checkpoint: 22
+Validate Checkpoint: 23
+Best Time: 3.320s
+Completed: True
+Valid Data: True
+Best Position: (953.18, 1.00, 562.38)
+Best Direction: (0.99, 0.00, -0.13)
+Best Speed: 60.90 m/s
+Best Turn Angle: -11.51°
+Input Sequence:
+  Step 0: Speed=1, Turn=-1
+  Step 1: Speed=1, Turn=-1
+  Step 2: Speed=0, Turn=-1
+  Step 3: Speed=1, Turn=-1
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=-1
+  Step 6: Speed=0, Turn=-1
+  Step 7: Speed=1, Turn=0
+
+=== SESSION 23 ===
+Start Checkpoint: 22
+Goal Checkpoint: 23
+Validate Checkpoint: 24
+Best Time: 3.320s
+Completed: True
+Valid Data: True
+Best Position: (1051.80, 1.00, 556.89)
+Best Direction: (1.00, 0.00, 0.02)
+Best Speed: 60.59 m/s
+Best Turn Angle: 1.76°
+Input Sequence:
+  Step 0: Speed=0, Turn=0
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=0, Turn=0
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=1, Turn=-1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=1, Turn=1
+
+=== SESSION 24 ===
+Start Checkpoint: 23
+Goal Checkpoint: 24
+Validate Checkpoint: 25
+Best Time: 3.340s
+Completed: True
+Valid Data: True
+Best Position: (1147.71, 1.00, 556.01)
+Best Direction: (1.00, 0.00, -0.10)
+Best Speed: 58.97 m/s
+Best Turn Angle: 6.84°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=0, Turn=1
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=0, Turn=1
+  Step 4: Speed=0, Turn=0
+
+=== SESSION 25 ===
+Start Checkpoint: 24
+Goal Checkpoint: 25
+Validate Checkpoint: 26
+Best Time: 3.540s
+Completed: True
+Valid Data: True
+Best Position: (1247.46, 1.00, 546.42)
+Best Direction: (1.00, 0.00, -0.06)
+Best Speed: 55.44 m/s
+Best Turn Angle: -0.58°
+Input Sequence:
+  Step 0: Speed=-1, Turn=0
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=-1
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=-1, Turn=0
+  Step 6: Speed=1, Turn=0
+  Step 7: Speed=1, Turn=0
+  Step 8: Speed=0, Turn=0
+  Step 9: Speed=1, Turn=0
+
+=== SESSION 26 ===
+Start Checkpoint: 25
+Goal Checkpoint: 26
+Validate Checkpoint: 27
+Best Time: 3.260s
+Completed: True
+Valid Data: True
+Best Position: (1346.73, 1.00, 544.44)
+Best Direction: (1.00, 0.00, 0.05)
+Best Speed: 58.78 m/s
+Best Turn Angle: 6.50°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=1, Turn=-1
+  Step 2: Speed=1, Turn=-1
+  Step 3: Speed=1, Turn=-1
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=0
+  Step 6: Speed=1, Turn=1
+  Step 7: Speed=1, Turn=1
+
+=== SESSION 27 ===
+Start Checkpoint: 26
+Goal Checkpoint: 27
+Validate Checkpoint: 28
+Best Time: 2.840s
+Completed: True
+Valid Data: True
+Best Position: (1434.16, 1.00, 531.41)
+Best Direction: (0.91, 0.00, -0.41)
+Best Speed: 59.14 m/s
+Best Turn Angle: 22.58°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=0, Turn=1
+  Step 2: Speed=1, Turn=1
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=1, Turn=1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=0, Turn=1
+  Step 7: Speed=1, Turn=1
+  Step 8: Speed=0, Turn=1
+  Step 9: Speed=1, Turn=1
+
+=== SESSION 28 ===
+Start Checkpoint: 27
+Goal Checkpoint: 28
+Validate Checkpoint: 29
+Best Time: 2.860s
+Completed: True
+Valid Data: True
+Best Position: (1496.68, 1.00, 480.25)
+Best Direction: (0.55, 0.00, -0.83)
+Best Speed: 56.72 m/s
+Best Turn Angle: 23.77°
+Input Sequence:
+  Step 0: Speed=0, Turn=1
+  Step 1: Speed=0, Turn=1
+  Step 2: Speed=0, Turn=1
+  Step 3: Speed=0, Turn=1
+  Step 4: Speed=1, Turn=1
+  Step 5: Speed=0, Turn=1
+  Step 6: Speed=1, Turn=1
+
+=== SESSION 29 ===
+Start Checkpoint: 28
+Goal Checkpoint: 29
+Validate Checkpoint: 30
+Best Time: 340282300000000000000000000000000000000.000s
+Completed: True
+Valid Data: False
+
+=== SESSION 30 ===
+Start Checkpoint: 29
+Goal Checkpoint: 30
+Validate Checkpoint: 31
+Best Time: 7.140s
+Completed: True
+Valid Data: True
+Best Position: (1480.27, 1.00, 348.47)
+Best Direction: (-0.99, 0.00, -0.16)
+Best Speed: 32.43 m/s
+Best Turn Angle: 10.94°
+Input Sequence:
+  Step 0: Speed=0, Turn=1
+  Step 1: Speed=0, Turn=0
+  Step 2: Speed=0, Turn=1
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=-1, Turn=1
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=-1, Turn=1
+  Step 7: Speed=1, Turn=0
+  Step 8: Speed=-1, Turn=1
+  Step 9: Speed=1, Turn=1
+  Step 10: Speed=-1, Turn=1
+  Step 11: Speed=1, Turn=1
+  Step 12: Speed=-1, Turn=1
+  Step 13: Speed=1, Turn=1
+  Step 14: Speed=-1, Turn=1
+  Step 15: Speed=1, Turn=1
+  Step 16: Speed=0, Turn=1
+  Step 17: Speed=1, Turn=1
+  Step 18: Speed=1, Turn=1
+  Step 19: Speed=0, Turn=0
+  Step 20: Speed=0, Turn=0
+  Step 21: Speed=1, Turn=0
+
+=== SESSION 31 ===
+Start Checkpoint: 30
+Goal Checkpoint: 31
+Validate Checkpoint: 32
+Best Time: 4.540s
+Completed: True
+Valid Data: True
+Best Position: (1384.71, 1.00, 340.93)
+Best Direction: (-1.00, 0.00, 0.00)
+Best Speed: 45.28 m/s
+Best Turn Angle: 3.95°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=0, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=1
+  Step 6: Speed=1, Turn=0
+  Step 7: Speed=0, Turn=0
+  Step 8: Speed=0, Turn=0
+
+=== SESSION 32 ===
+Start Checkpoint: 31
+Goal Checkpoint: 32
+Validate Checkpoint: 33
+Best Time: 3.900s
+Completed: True
+Valid Data: True
+Best Position: (1284.53, 1.00, 342.99)
+Best Direction: (-1.00, 0.00, 0.03)
+Best Speed: 53.25 m/s
+Best Turn Angle: -2.13°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=0
+  Step 6: Speed=1, Turn=0
+  Step 7: Speed=1, Turn=0
+  Step 8: Speed=0, Turn=-1
+
+=== SESSION 33 ===
+Start Checkpoint: 32
+Goal Checkpoint: 33
+Validate Checkpoint: 34
+Best Time: 3.540s
+Completed: True
+Valid Data: True
+Best Position: (1184.39, 1.00, 333.22)
+Best Direction: (-1.00, 0.00, -0.09)
+Best Speed: 58.57 m/s
+Best Turn Angle: 1.79°
+Input Sequence:
+  Step 0: Speed=1, Turn=-1
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=1, Turn=0
+  Step 5: Speed=1, Turn=0
+  Step 6: Speed=1, Turn=-1
+
+=== SESSION 34 ===
+Start Checkpoint: 33
+Goal Checkpoint: 34
+Validate Checkpoint: 35
+Best Time: 3.320s
+Completed: True
+Valid Data: True
+Best Position: (1089.44, 1.00, 309.90)
+Best Direction: (-0.87, 0.00, -0.49)
+Best Speed: 60.32 m/s
+Best Turn Angle: -22.29°
+Input Sequence:
+  Step 0: Speed=1, Turn=-1
+  Step 1: Speed=1, Turn=-1
+  Step 2: Speed=1, Turn=-1
+  Step 3: Speed=1, Turn=-1
+  Step 4: Speed=1, Turn=-1
+  Step 5: Speed=1, Turn=-1
+  Step 6: Speed=1, Turn=-1
+  Step 7: Speed=0, Turn=-1
+
+=== SESSION 35 ===
+Start Checkpoint: 34
+Goal Checkpoint: 35
+Validate Checkpoint: 36
+Best Time: 2.960s
+Completed: True
+Valid Data: True
+Best Position: (1017.17, 1.00, 246.26)
+Best Direction: (-0.69, 0.00, -0.72)
+Best Speed: 61.91 m/s
+Best Turn Angle: 10.55°
+Input Sequence:
+  Step 0: Speed=0, Turn=-1
+  Step 1: Speed=1, Turn=-1
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=1, Turn=1
+  Step 5: Speed=1, Turn=1
+
+=== SESSION 36 ===
+Start Checkpoint: 35
+Goal Checkpoint: 36
+Validate Checkpoint: 37
+Best Time: 2.820s
+Completed: True
+Valid Data: True
+Best Position: (951.81, 1.00, 195.89)
+Best Direction: (-0.91, 0.00, -0.42)
+Best Speed: 62.94 m/s
+Best Turn Angle: 21.49°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=1, Turn=1
+  Step 2: Speed=1, Turn=1
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=1, Turn=1
+  Step 5: Speed=0, Turn=1
+
+=== SESSION 37 ===
+Start Checkpoint: 36
+Goal Checkpoint: 37
+Validate Checkpoint: 38
+Best Time: 3.120s
+Completed: True
+Valid Data: True
+Best Position: (860.26, 1.00, 176.04)
+Best Direction: (-1.00, 0.00, -0.04)
+Best Speed: 61.19 m/s
+Best Turn Angle: 4.82°
+Input Sequence:
+  Step 0: Speed=1, Turn=1
+  Step 1: Speed=0, Turn=1
+  Step 2: Speed=1, Turn=1
+  Step 3: Speed=1, Turn=0
+  Step 4: Speed=0, Turn=0
+
+=== SESSION 38 ===
+Start Checkpoint: 37
+Goal Checkpoint: 38
+Validate Checkpoint: 39
+Best Time: 3.180s
+Completed: True
+Valid Data: True
+Best Position: (760.60, 1.00, 169.52)
+Best Direction: (-0.97, 0.00, -0.24)
+Best Speed: 62.15 m/s
+Best Turn Angle: -20.23°
+Input Sequence:
+  Step 0: Speed=1, Turn=0
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=0
+  Step 3: Speed=1, Turn=-1
+  Step 4: Speed=0, Turn=-1
+  Step 5: Speed=1, Turn=-1
+  Step 6: Speed=1, Turn=-1
+  Step 7: Speed=0, Turn=-1
+  Step 8: Speed=1, Turn=-1
+  Step 9: Speed=1, Turn=-1
+
+=== SESSION 39 ===
+Start Checkpoint: 38
+Goal Checkpoint: 39
+Validate Checkpoint: 40
+Best Time: 3.000s
+Completed: True
+Valid Data: True
+Best Position: (675.92, 1.00, 135.71)
+Best Direction: (-0.94, 0.00, -0.34)
+Best Speed: 62.59 m/s
+Best Turn Angle: 16.26°
+Input Sequence:
+  Step 0: Speed=1, Turn=-1
+  Step 1: Speed=1, Turn=0
+  Step 2: Speed=1, Turn=1
+  Step 3: Speed=1, Turn=1
+  Step 4: Speed=0, Turn=1
+  Step 5: Speed=0, Turn=1
+

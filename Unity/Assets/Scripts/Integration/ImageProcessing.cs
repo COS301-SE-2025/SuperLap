@@ -31,10 +31,11 @@ public class ImageProcessing
             }
 
             // Get the path to the executable
-            string exePath = Path.Combine(Application.streamingAssetsPath, "TrackProcessor.exe");
+            string exeName = (Application.platform == RuntimePlatform.WindowsPlayer) ? "TrackProcessor.exe" : "TrackProcessor";
+            string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
             if (!File.Exists(exePath))
             {
-                result.errorMessage = $"TrackProcessor.exe not found at: {exePath}";
+                result.errorMessage = $"TrackProcessor executable not found at: {exePath}";
                 return result;
             }
 
@@ -60,7 +61,7 @@ public class ImageProcessing
             {
                 if (process == null)
                 {
-                    result.errorMessage = "Failed to start TrackProcessor.exe";
+                    result.errorMessage = "Failed to start TrackProcessor";
                     return result;
                 }
 
@@ -72,7 +73,7 @@ public class ImageProcessing
                 // Check if process executed successfully
                 if (process.ExitCode != 0)
                 {
-                    result.errorMessage = $"TrackProcessor.exe failed with exit code {process.ExitCode}. Error: {error}";
+                    result.errorMessage = $"TrackProcessor failed with exit code {process.ExitCode}. Error: {error}";
                     CleanupOutputFile(outputFilePath);
                     return result;
                 }
@@ -80,7 +81,7 @@ public class ImageProcessing
                 // Check if output file was created
                 if (!File.Exists(outputFilePath))
                 {
-                    result.errorMessage = "TrackProcessor.exe did not create output file";
+                    result.errorMessage = "TrackProcessor did not create output file";
                     return result;
                 }
 
@@ -299,11 +300,12 @@ public class ImageProcessing
     {
         try
         {
-            string exePath = Path.Combine(Application.streamingAssetsPath, "TrackProcessor.exe");
-            
+            string exeName = (Application.platform == RuntimePlatform.WindowsPlayer) ? "TrackProcessor.exe" : "TrackProcessor";
+            string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
+
             if (!File.Exists(exePath))
             {
-                Debug.LogError($"TrackProcessor.exe not found at: {exePath}");
+                Debug.LogError($"TrackProcessor executable not found at: {exePath}");
                 return false;
             }
 
