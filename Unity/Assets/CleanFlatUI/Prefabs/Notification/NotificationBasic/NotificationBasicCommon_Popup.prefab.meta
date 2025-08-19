@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 689a1e24a4f7f8b4aa9d9593f1d64b0a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationBasic/NotificationBasicCommon_Popup.prefab
+  uploadId: 658581

@@ -8,7 +8,10 @@ public class GalleryGetInfo : MonoBehaviour
   [Header("Getters")]
   public GameObject defaultPanel;
 
+  public GameObject scrollPanel;
+
   [Header("Layout Settings")]
+  public RectTransform contentPanel;
   public Transform column1Parent;
   public Transform column2Parent;
   public Transform column3Parent;
@@ -48,7 +51,7 @@ public class GalleryGetInfo : MonoBehaviour
   {
     if (apiManager == null)
     {
-      Debug.LogError("APIManager instance not found!");
+      Debug.Log("APIManager instance not found!");
       backupPanel.SetActive(true);
       return;
     }
@@ -61,8 +64,9 @@ public class GalleryGetInfo : MonoBehaviour
   {
     if (!success)
     {
-      Debug.LogError($"Failed to load tracks: {message}");
+      Debug.Log($"Failed to load tracks: {message}");
       backupPanel.SetActive(true);
+      scrollPanel.SetActive(false);
       return;
     }
 
@@ -70,10 +74,10 @@ public class GalleryGetInfo : MonoBehaviour
     {
       Debug.LogWarning("No tracks found in the database");
       backupPanel.SetActive(true);
+      scrollPanel.SetActive(false);
       return;
     }
 
-    Debug.Log($"Successfully loaded {tracks.Count} tracks");
     foreach (var track in tracks)
     {
       CreateTrackPanel(track);
@@ -84,7 +88,7 @@ public class GalleryGetInfo : MonoBehaviour
   {
     if (defaultPanel == null)
     {
-      Debug.LogError("Default panel is not assigned!");
+      Debug.Log("Default panel is not assigned!");
       return;
     }
     GameObject newPanel = Instantiate(defaultPanel);
@@ -146,7 +150,7 @@ public class GalleryGetInfo : MonoBehaviour
     }
     else
     {
-      Debug.LogError("HomePageNavigation component not found!");
+      Debug.Log("HomePageNavigation component not found!");
     }
   }
 

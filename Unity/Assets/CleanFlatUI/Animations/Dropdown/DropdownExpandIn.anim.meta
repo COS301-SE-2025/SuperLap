@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 13bc096dfe6754f4180754cbb2bbfa0b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Dropdown/DropdownExpandIn.anim
+  uploadId: 658581

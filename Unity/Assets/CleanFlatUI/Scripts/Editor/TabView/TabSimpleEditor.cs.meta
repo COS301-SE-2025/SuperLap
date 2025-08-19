@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 76a67c49f533cf44f9e37b82012dcb9e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/TabView/TabSimpleEditor.cs
+  uploadId: 658581

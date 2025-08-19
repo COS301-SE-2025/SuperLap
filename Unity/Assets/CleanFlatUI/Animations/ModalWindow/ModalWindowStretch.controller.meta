@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f1e0a02bbae00ba49aeb54adc81d2144
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ModalWindow/ModalWindowStretch.controller
+  uploadId: 658581

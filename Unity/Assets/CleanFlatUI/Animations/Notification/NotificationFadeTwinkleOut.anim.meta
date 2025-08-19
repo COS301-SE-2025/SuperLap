@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1cc6d6724c043ba4abfdadae539f8c57
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Notification/NotificationFadeTwinkleOut.anim
+  uploadId: 658581

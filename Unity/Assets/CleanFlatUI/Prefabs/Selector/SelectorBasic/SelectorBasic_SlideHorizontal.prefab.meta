@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a2075bc6d79008a41a7cd2beba90d5eb
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Selector/SelectorBasic/SelectorBasic_SlideHorizontal.prefab
+  uploadId: 658581

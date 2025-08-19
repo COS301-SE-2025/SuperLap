@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 66611641c28cdfc41956f895ce96e6b2
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Slider/SliderScaleBasic/SliderScaleBasic_Simple.prefab
+  uploadId: 658581

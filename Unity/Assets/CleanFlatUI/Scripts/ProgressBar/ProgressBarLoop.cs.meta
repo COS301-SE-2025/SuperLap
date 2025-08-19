@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 4735dc8d239256941b4e7b6770cee5bb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ProgressBar/ProgressBarLoop.cs
+  uploadId: 658581

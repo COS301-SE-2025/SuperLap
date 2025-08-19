@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: eedf20a5dcd37c74fa7919da4230c56f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ProgressBar/ProgressBarPatternCircularAuto.cs
+  uploadId: 658581

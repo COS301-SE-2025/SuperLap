@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 91a68b364b8f20c4c9be2367126a4af5
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Selector/SelectorBasic/SelectorBasic_Fade.prefab
+  uploadId: 658581

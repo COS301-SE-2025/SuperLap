@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5c6814b8ab69bec4ea498fc83c43cbd4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Dropdown/DropdownTransition.cs
+  uploadId: 658581

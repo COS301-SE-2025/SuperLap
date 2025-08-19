@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d9ccf4afe9290d1468885a63238b8afb
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarBubble/ProgressBarBubble_Basic.prefab
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d3e3473697a511f459fea29fec5df8e6
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Button/ButtonRoundOutline/ButtonRoundOutline_White_SwapScale.prefab
+  uploadId: 658581

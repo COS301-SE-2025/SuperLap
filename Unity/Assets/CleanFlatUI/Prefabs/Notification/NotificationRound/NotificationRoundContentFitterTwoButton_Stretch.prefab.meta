@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4788aaf4ef1e9504da706e1fe1774add
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationRound/NotificationRoundContentFitterTwoButton_Stretch.prefab
+  uploadId: 658581

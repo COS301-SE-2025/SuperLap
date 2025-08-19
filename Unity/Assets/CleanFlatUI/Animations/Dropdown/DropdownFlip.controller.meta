@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a10b3bfb5979ecf44b1fa787e8d15a69
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Dropdown/DropdownFlip.controller
+  uploadId: 658581

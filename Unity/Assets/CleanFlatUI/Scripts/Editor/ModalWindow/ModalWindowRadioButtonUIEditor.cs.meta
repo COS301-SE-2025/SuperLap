@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b45eef6d5a7635647b084a876b5140cb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/ModalWindow/ModalWindowRadioButtonUIEditor.cs
+  uploadId: 658581

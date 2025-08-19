@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 504bb66d05aebcd4b99b1550fa54c206
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Switch/SwitchBasicText/SwitchBasicText_BGJump.prefab
+  uploadId: 658581

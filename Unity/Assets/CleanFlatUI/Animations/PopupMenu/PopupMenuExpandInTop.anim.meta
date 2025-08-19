@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2e62800b694dac54cb418de03957f7b5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/PopupMenu/PopupMenuExpandInTop.anim
+  uploadId: 658581

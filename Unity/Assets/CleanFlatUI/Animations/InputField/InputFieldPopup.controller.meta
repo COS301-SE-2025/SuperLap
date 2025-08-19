@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c2133b03898920c4a81c2eb568398c31
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/InputField/InputFieldPopup.controller
+  uploadId: 658581

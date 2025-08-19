@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 9e1442e83f995e2408f951514977afb3
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ContextMenu/ContextMenuRound/ContextMenuRound_Expand.prefab
+  uploadId: 658581

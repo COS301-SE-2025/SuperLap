@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d5cd99dc06201a646953ef3cd7466942
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Tooltip/TooltipBasic/TooltipBasicRight.prefab
+  uploadId: 658581

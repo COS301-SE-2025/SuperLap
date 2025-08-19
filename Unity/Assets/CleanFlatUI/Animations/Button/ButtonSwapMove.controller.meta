@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6d2f552964f71ea41bb6d1204f0cf5ca
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonSwapMove.controller
+  uploadId: 658581

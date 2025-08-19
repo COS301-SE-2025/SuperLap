@@ -61,34 +61,32 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 🔹 [Demo 2 Video](https://www.youtube.com/watch?v=1qIO83R0MSg)  
 🔹 [Demo 2 Presentation](https://www.canva.com/design/DAGrRB9FtQU/wg4VrVYik9MhCpSTy4eLzA/edit?utm_content=DAGrRB9FtQU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
-🔹 [Demo 3 Video](https://www.youtube.com/watch?v=dQw4w9WgXcQ)  
-🔹 [Demo 3 Presentation](https://www.canva.com/design/DAGwWVct_5E/t6GvNHMUKxhPdGHImorjKg/edit?utm_content=DAGwWVct_5E&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+<!-- 🔹 [Demo 3 Video](lk)  
+🔹 [Demo 3 Presentation](vd)
 
-<!--🔹 [Demo 4 Video](lk)  
+🔹 [Demo 4 Video](lk)  
 🔹 [Demo 4 Presentation](vd) -->
 
 
 <h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
 
 + [Project Board](https://github.com/orgs/COS301-SE-2025/projects/227?query=is%3Aopen)
-- [Software Requirements Specification](https://drive.google.com/file/d/1JVoedYRQwiwmW4Hm1UECwJvs-9Z6TlSJ/view?usp=sharing)
-- [Functional Requirements](https://drive.google.com/file/d/1pn0vYUoMiVoSpRDKIi1Jas7gbBUHUsyY/view?usp=sharing)
-- [Architectural Requirements](https://drive.google.com/file/d/1xP-0g8ttMVAUbZDo6pwQAowe1QMp0AbL/view?usp=sharing)
-- [Deployment Model](https://drive.google.com/file/d/1kxbC_id77u7d69tKbW4dKoUZLJgVVtEM/view?usp=sharing)
-<!-- + [Class Diagram](docs/images/ClassDiagram.png) -->
-+ [Architecture Diagram](docs/images/ArchitectureDiagram.png)
-+ [Domain Model](docs/images/ClassDiagram.png)
-+ [Deployment Diagram](docs/images/DeploymentDiagram.png)
-+ [Use Case Diagrams](docs/images/UsecaseDiagarms.png)
-<!-- - [Installation Manual](docs/InstallationManual.pdf) -->
-- [Technical Installation Manual](https://drive.google.com/file/d/1-P39Vv7wJEDh_s1MCAsHNzOWM_JQnx0h/view?usp=sharing)
-- [User Manual](https://drive.google.com/file/d/1h14OaWsIty5Z83xGXcIF2FWWVh2rJREx/view?usp=sharing)
-<!-- + [Machine Learning Specification](docs/MachineLearningSpecification.pdf)
-+ [API Documentation](docs/APIDocumentation.pdf) -->
-- [Coding Standards](https://drive.google.com/file/d/13vJdwcqotYIvku_PrO6dKVI2bykApJ9s/view?usp=sharing)
-- [Testing Policy](https://drive.google.com/file/d/1cWvrLKw6hS0eZ8IitY6ProIX5aQbx8Uk/view?usp=sharing)
-- [Contributing](https://drive.google.com/file/d/1vg7mrDxEnjkhBG6X7uOjDxjf01KT6TKp/view?usp=sharing)
-+ [Appendix: Old Versions of SRS](https://drive.google.com/file/d/1zdwrbSxmcCjOkBtnCEUe0HdT_nOEzQjJ/view?usp=sharing)
+- [Functional Requirements (SRS)](docs/FunctionalRequirements.pdf)
+- [Architectural Requirements](docs/ArchitecturalRequirements.pdf)
+<!-- + [Architecture Diagram](docs/ArchitectureDiagram.pdf) -->
++ [Class Diagram](docs/ClassDiagram.pdf)
++ [Domain Model](docs/DomainModel.pdf)
++ [Deployment Diagram](docs/DeploymentDiagram.pdf)
++ [Use Case Diagrams](docs/UseCaseDiagrams.pdf)
+- [Installation Manual](docs/InstallationManual.pdf)
+- [Technical Installation Manual](docs/TechnicalInstallationManual.pdf)
+- [User Manual](docs/UserManualnual.pdf)
++ [Machine Learning Specification](docs/MachineLearningSpecification.pdf)
++ [API Documentation](docs/APIDocumentation.pdf)
+- [Coding Standards](docs/CodingStandards.pdf)
+- [Testing Policy](docs/TestingPolicy.pdf)
+- [Contributing](docs/Contributing.pdf)
++ [Appendix: Old Versions of SRS](docs/Appendix.pdf)
 
 <h2 style="font-weight: bold; color: #E54B4B;">Meet the Quintessential Team</h2>
 

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b9f56c59933c8e240995a7f7aa99b5d8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/InputField/InputFieldSpecialSlideOutValue.anim
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 64cf5b95971247c47a2690584434f82a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toast/ToastRound/ToastRound_Move.prefab
+  uploadId: 658581

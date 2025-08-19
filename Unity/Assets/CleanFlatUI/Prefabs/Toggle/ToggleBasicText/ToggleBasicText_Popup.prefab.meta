@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 09b1aa2a119923147a6aafbd9ad74d5e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toggle/ToggleBasicText/ToggleBasicText_Popup.prefab
+  uploadId: 658581

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 60b2047142df50a4f8995880ee454fac
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/InputField/InputFieldSlideUp.controller
+  uploadId: 658581

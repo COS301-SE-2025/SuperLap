@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 773ce690fe4fbfe40a4d897b7242ab7d
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/TabView/TabViewBasic/TabViewBasic_StretchVertical.prefab
+  uploadId: 658581

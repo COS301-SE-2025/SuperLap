@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 2449d2775e0d9564c9ea2caef010f0e3
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/ModalWindow/ModalWindowUIEditor.cs
+  uploadId: 658581

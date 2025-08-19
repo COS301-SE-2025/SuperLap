@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6a284584fd8f61c4090ba727f27dbd09
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonSweepHorizontalAuto.controller
+  uploadId: 658581
