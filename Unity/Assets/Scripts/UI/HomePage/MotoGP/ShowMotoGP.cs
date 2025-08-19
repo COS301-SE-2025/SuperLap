@@ -5,108 +5,179 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.UI.Extensions;
 
+using LibTessDotNet;
 public class UIMeshPolygon : MaskableGraphic
 {
-  public List<Vector2> Points = new List<Vector2>();
+    public List<Vector2> Points = new List<Vector2>();
 
-  protected override void OnPopulateMesh(VertexHelper vh)
-  {
-    vh.Clear();
-    if (Points == null || Points.Count < 3) return;
+    private List<int> cachedIndices;
+    private List<Vector2> lastPoints;
 
-    List<int> indices = Triangulate(Points);
-
-    foreach (Vector2 point in Points)
+    protected override void OnPopulateMesh(VertexHelper vh)
     {
-      vh.AddVert(point, color, Vector2.zero);
-    }
+        vh.Clear();
+        if (Points == null || Points.Count < 3) return;
 
-    for (int i = 0; i < indices.Count; i += 3)
-    {
-      vh.AddTriangle(indices[i], indices[i + 1], indices[i + 2]);
-    }
-  }
-
-  private List<int> Triangulate(List<Vector2> points)
-  {
-    List<int> indices = new List<int>();
-
-    if (points.Count < 3)
-      return indices;
-
-    List<int> indexList = new List<int>();
-    for (int i = 0; i < points.Count; i++)
-    {
-      indexList.Add(i);
-    }
-
-    int totalTriangleCount = points.Count - 2;
-    int triangleCount = 0;
-
-    while (triangleCount < totalTriangleCount)
-    {
-      for (int i = 0; i < indexList.Count; i++)
-      {
-        int a = indexList[i];
-        int b = indexList[(i + 1) % indexList.Count];
-        int c = indexList[(i + 2) % indexList.Count];
-
-        Vector2 va = points[a];
-        Vector2 vb = points[b];
-        Vector2 vc = points[c];
-
-        Vector2 ab = vb - va;
-        Vector2 ac = vc - va;
-
-        if (ab.x * ac.y - ab.y * ac.x <= 0)
-          continue;
-
-        bool isValid = true;
-        for (int j = 0; j < points.Count; j++)
+        if (cachedIndices == null || lastPoints == null || !ArePointsEqual(lastPoints, Points))
         {
-          if (j == a || j == b || j == c)
-            continue;
-
-          if (IsPointInTriangle(points[j], va, vb, vc))
-          {
-            isValid = false;
-            break;
-          }
+            cachedIndices = Triangulate(Points);
+            lastPoints = new List<Vector2>(Points);
         }
 
-        if (isValid)
-        {
-          indices.Add(a);
-          indices.Add(b);
-          indices.Add(c);
-          indexList.RemoveAt((i + 1) % indexList.Count);
-          triangleCount++;
-          break;
-        }
-      }
+        foreach (Vector2 point in Points)
+            vh.AddVert(point, color, Vector2.zero);
+
+        for (int i = 0; i < cachedIndices.Count; i += 3)
+            vh.AddTriangle(cachedIndices[i], cachedIndices[i + 1], cachedIndices[i + 2]);
     }
 
-    return indices;
-  }
+    private List<int> Triangulate(List<Vector2> points)
+    {
+        var tess = new Tess();
 
-  private bool IsPointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
-  {
-    Vector2 ab = b - a;
-    Vector2 bc = c - b;
-    Vector2 ca = a - c;
+        // Add contour
+        var contour = new ContourVertex[points.Count];
+        for (int i = 0; i < points.Count; i++)
+        {
+            contour[i].Position = new Vec3(points[i].x, points[i].y, 0);
+            contour[i].Data = i; // store original index
+        }
+        tess.AddContour(contour, ContourOrientation.Original);
 
-    Vector2 ap = p - a;
-    Vector2 bp = p - b;
-    Vector2 cp = p - c;
+        // Tessellate into triangles
+        tess.Tessellate(WindingRule.Positive, ElementType.Polygons, 3);
 
-    float cross1 = ab.x * ap.y - ab.y * ap.x;
-    float cross2 = bc.x * bp.y - bc.y * bp.x;
-    float cross3 = ca.x * cp.y - ca.y * cp.x;
+        var indices = new List<int>();
+        for (int i = 0; i < tess.ElementCount; i++)
+        {
+            int i0 = tess.Elements[i * 3];
+            int i1 = tess.Elements[i * 3 + 1];
+            int i2 = tess.Elements[i * 3 + 2];
 
-    return cross1 >= 0 && cross2 >= 0 && cross3 >= 0 ||
-           cross1 <= 0 && cross2 <= 0 && cross3 <= 0;
-  }
+            if (i0 == -1 || i1 == -1 || i2 == -1) continue;
+
+            indices.Add((int)tess.Vertices[i0].Data);
+            indices.Add((int)tess.Vertices[i1].Data);
+            indices.Add((int)tess.Vertices[i2].Data);
+        }
+
+        return indices;
+    }
+
+    private bool ArePointsEqual(List<Vector2> a, List<Vector2> b)
+    {
+        if (a.Count != b.Count) return false;
+        for (int i = 0; i < a.Count; i++)
+        {
+            if (a[i] != b[i]) return false;
+        }
+        return true;
+    }
 }
+// public class UIMeshPolygon : MaskableGraphic
+// {
+//   public List<Vector2> Points = new List<Vector2>();
+
+//   private List<int> cachedIndices;
+//   private List<Vector2> lastPoints;
+//   protected override void OnPopulateMesh(VertexHelper vh)
+//   {
+//     vh.Clear();
+//     if (Points == null || Points.Count < 3) return;
+
+//     if (cachedIndices == null || lastPoints != Points)
+//     {
+//       cachedIndices = Triangulate(Points);
+//       lastPoints = new List<Vector2>(Points);
+//     }
+
+//     foreach (Vector2 point in Points)
+//       vh.AddVert(point, color, Vector2.zero);
+
+//     for (int i = 0; i < cachedIndices.Count; i += 3)
+//       vh.AddTriangle(cachedIndices[i], cachedIndices[i + 1], cachedIndices[i + 2]);
+//   }
+
+//   private List<int> Triangulate(List<Vector2> points)
+//   {
+//     List<int> indices = new List<int>();
+
+//     if (points.Count < 3)
+//       return indices;
+
+//     List<int> indexList = new List<int>();
+//     for (int i = 0; i < points.Count; i++)
+//     {
+//       indexList.Add(i);
+//     }
+
+//     int totalTriangleCount = points.Count - 2;
+//     int triangleCount = 0;
+
+//     while (triangleCount < totalTriangleCount)
+//     {
+//       for (int i = 0; i < indexList.Count; i++)
+//       {
+//         int a = indexList[i];
+//         int b = indexList[(i + 1) % indexList.Count];
+//         int c = indexList[(i + 2) % indexList.Count];
+
+//         Vector2 va = points[a];
+//         Vector2 vb = points[b];
+//         Vector2 vc = points[c];
+
+//         Vector2 ab = vb - va;
+//         Vector2 ac = vc - va;
+
+//         if (ab.x * ac.y - ab.y * ac.x <= 0)
+//           continue;
+
+//         bool isValid = true;
+//         for (int j = 0; j < points.Count; j++)
+//         {
+//           if (j == a || j == b || j == c)
+//             continue;
+
+//           if (IsPointInTriangle(points[j], va, vb, vc))
+//           {
+//             isValid = false;
+//             break;
+//           }
+//         }
+
+//         if (isValid)
+//         {
+//           indices.Add(a);
+//           indices.Add(b);
+//           indices.Add(c);
+//           indexList.RemoveAt((i + 1) % indexList.Count);
+//           triangleCount++;
+//           break;
+//         }
+//       }
+//     }
+
+//     return indices;
+//   }
+
+//   private bool IsPointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+//   {
+//     Vector2 ab = b - a;
+//     Vector2 bc = c - b;
+//     Vector2 ca = a - c;
+
+//     Vector2 ap = p - a;
+//     Vector2 bp = p - b;
+//     Vector2 cp = p - c;
+
+//     float cross1 = ab.x * ap.y - ab.y * ap.x;
+//     float cross2 = bc.x * bp.y - bc.y * bp.x;
+//     float cross3 = ca.x * cp.y - ca.y * cp.x;
+
+//     return cross1 >= 0 && cross2 >= 0 && cross3 >= 0 ||
+//            cross1 <= 0 && cross2 <= 0 && cross3 <= 0;
+//   }
+// }
 
 [System.Serializable]
 public class MotoGPDisplayData
@@ -245,42 +316,42 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
 
   public void changeOuterBoundaryWidth(float newWidth)
   {
-      outerBoundaryWidth = newWidth;
-      
-      if (lineRenderers.TryGetValue("OuterBoundary", out UILineRenderer renderer))
-      {
-          renderer.LineThickness = outerBoundaryWidth / currentZoom;
-      }
+    outerBoundaryWidth = newWidth;
+
+    if (lineRenderers.TryGetValue("OuterBoundary", out UILineRenderer renderer))
+    {
+      renderer.LineThickness = outerBoundaryWidth / currentZoom;
+    }
   }
 
   public void changeInnerBoundaryWidth(float newWidth)
   {
-      innerBoundaryWidth = newWidth;
-      
-      if (lineRenderers.TryGetValue("InnerBoundary", out UILineRenderer renderer))
-      {
-          renderer.LineThickness = innerBoundaryWidth / currentZoom;
-      }
+    innerBoundaryWidth = newWidth;
+
+    if (lineRenderers.TryGetValue("InnerBoundary", out UILineRenderer renderer))
+    {
+      renderer.LineThickness = innerBoundaryWidth / currentZoom;
+    }
   }
 
   public void changeRaceLineWidth(float newWidth)
   {
-      racelineWidth = newWidth;
+    racelineWidth = newWidth;
 
-      if (lineRenderers.TryGetValue("Raceline", out UILineRenderer renderer))
-      {
-          renderer.LineThickness = racelineWidth / currentZoom;
-      }
+    if (lineRenderers.TryGetValue("Raceline", out UILineRenderer renderer))
+    {
+      renderer.LineThickness = racelineWidth / currentZoom;
+    }
   }
 
   public void changePlayerPathWidth(float newWidth)
   {
-      playerPathWidth = newWidth;
-      
-      if (lineRenderers.TryGetValue("PlayerPath", out UILineRenderer renderer))
-      {
-          renderer.LineThickness = playerPathWidth / currentZoom;
-      }
+    playerPathWidth = newWidth;
+
+    if (lineRenderers.TryGetValue("PlayerPath", out UILineRenderer renderer))
+    {
+      renderer.LineThickness = playerPathWidth / currentZoom;
+    }
   }
 
   private void ConstrainToViewport()
@@ -331,7 +402,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
         case "InnerBoundary": baseWidth = innerBoundaryWidth; break;
         case "Raceline": baseWidth = racelineWidth; break;
         case "PlayerPath": baseWidth = playerPathWidth; break;
-      } 
+      }
 
       kvp.Value.LineThickness = baseWidth / currentZoom;
     }
