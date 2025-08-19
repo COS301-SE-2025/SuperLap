@@ -33,6 +33,7 @@ public class APIManager : MonoBehaviour
 {
   [Header("API Configuration")]
   public string baseURL = "https://superlap-api.online";
+
   private static APIManager _instance;
   public static APIManager Instance
   {
