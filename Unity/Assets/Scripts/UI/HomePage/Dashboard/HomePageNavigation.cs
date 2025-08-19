@@ -30,6 +30,9 @@ public class HomePageNavigation : MonoBehaviour
   private float targetBottomPosition;
   private bool isTransitioning = false;
 
+
+  private Coroutine tooltipCoroutine = null;
+
   void Awake()
   {
     NavigateToDashboard();
@@ -95,7 +98,6 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
-    UpdateActivePagePosition();
   }
 
   public void NavigateToGallery()
@@ -108,6 +110,7 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
+    activePageIndex = 1;
     UpdateActivePagePosition();
   }
 
@@ -121,6 +124,7 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
+    activePageIndex = 2;
     UpdateActivePagePosition();
   }
 
@@ -147,6 +151,7 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(true);
     motoGPPage.SetActive(false);
+    activePageIndex = 3;
     UpdateActivePagePosition();
   }
 
@@ -173,6 +178,7 @@ public class HomePageNavigation : MonoBehaviour
     teamPage.SetActive(false);
     supportPage.SetActive(false);
     motoGPPage.SetActive(true);
+    activePageIndex = 4;
     UpdateActivePagePosition();
   }
 
@@ -328,6 +334,12 @@ public class HomePageNavigation : MonoBehaviour
 
   private void hideSupportPopups()
   {
+    if (tooltipCoroutine != null)
+    {
+      StopCoroutine(tooltipCoroutine);
+      tooltipCoroutine = null;
+    }
+
     foreach (var tip in tooltips)
     {
       if (tip != null)
@@ -337,11 +349,17 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
+
   public void ShowSupportPopups()
   {
-    StopAllCoroutines(); // ensure no overlap
-    StartCoroutine(ShowTooltipsForActivePage());
+    if (tooltipCoroutine != null)
+    {
+      StopCoroutine(tooltipCoroutine);
+      tooltipCoroutine = null;
+    }
+    tooltipCoroutine = StartCoroutine(ShowTooltipsForActivePage());
   }
+
 
   private IEnumerator ShowTooltipsForActivePage()
   {
@@ -350,7 +368,7 @@ public class HomePageNavigation : MonoBehaviour
 
     (int start, int end) = GetTooltipRangeForPage();
 
-   
+
 
     if (start == -1 || end == -1) yield break;
 
@@ -371,14 +389,14 @@ public class HomePageNavigation : MonoBehaviour
 
   private (int start, int end) GetTooltipRangeForPage()
   {
-      if (dashboardPage != null && dashboardPage.activeSelf) return (0, 2);
-      if (galleryPage != null && galleryPage.activeSelf) return (3, 5);
-      if (analysisPage != null && analysisPage.activeSelf) return (6, 8);
-      if (teamPage != null && teamPage.activeSelf) return (9, 11);
-      if (supportPage != null && supportPage.activeSelf) return (12, 14);
-      if (motoGPPage != null && motoGPPage.activeSelf) return (15, 17);
+    if (dashboardPage != null && dashboardPage.activeSelf) return (0, 2);
+    if (galleryPage != null && galleryPage.activeSelf) return (3, 5);
+    if (analysisPage != null && analysisPage.activeSelf) return (6, 8);
+    if (teamPage != null && teamPage.activeSelf) return (9, 11);
+    if (supportPage != null && supportPage.activeSelf) return (12, 14);
+    if (motoGPPage != null && motoGPPage.activeSelf) return (15, 17);
 
-      return (-1, -1);
+    return (-1, -1);
   }
 
 }

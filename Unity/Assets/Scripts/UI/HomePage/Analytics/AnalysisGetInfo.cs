@@ -18,6 +18,8 @@ public class AnalysisGetInfo : MonoBehaviour
   private APIManager apiManager;
   private int trackIndex = 0;
 
+  private string trackName;
+
   public void Awake()
   {
     try
@@ -25,6 +27,11 @@ public class AnalysisGetInfo : MonoBehaviour
       apiManager = APIManager.Instance;
       homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
       racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
+
+      if (racingLinePreview != null)
+      {
+        racingLinePreview.gameObject.SetActive(false);
+      }
     }
     catch (System.Exception e)
     {
@@ -82,7 +89,6 @@ public class AnalysisGetInfo : MonoBehaviour
       return;
     }
 
-    Debug.Log($"Successfully loaded {tracks.Count} tracks");
     if (trackIndex < tracks.Count)
     {
       DisplayTrackInfo(tracks[trackIndex]);
@@ -109,7 +115,6 @@ public class AnalysisGetInfo : MonoBehaviour
 
     if (trackDescriptionText != null)
       trackDescriptionText.text = track.description ?? "No description available";
-
 
     if (trackLocationText != null)
     {
@@ -139,6 +144,18 @@ public class AnalysisGetInfo : MonoBehaviour
       }
     }
 
+    trackName = track.name;
+
+    if (racingLinePreview != null)
+    {
+        racingLinePreview.gameObject.SetActive(true);
+        racingLinePreview.InitializeWithTrack(trackName);
+    }
+    else
+    {
+        Debug.LogWarning("Racing line preview component not assigned");
+    }
+
     LoadRacingLinePreview();
   }
 
@@ -165,6 +182,7 @@ public class AnalysisGetInfo : MonoBehaviour
   }
   public void DisplayTrackByName(string trackName)
   {
+    this.trackName = trackName;
     try
     {
       if (apiManager != null)
@@ -242,21 +260,15 @@ public class AnalysisGetInfo : MonoBehaviour
 
   public string GetCurrentTrackName()
   {
-    if (trackNameText != null && !string.IsNullOrEmpty(trackNameText.text))
-    {
-      return trackNameText.text;
-    }
-
-    return "Unknown Track";
+    return trackName;
   }
 
   public void OpenRacingLineForCurrentTrack()
   {
     if (homePageNavigation != null)
     {
-      string trackName = "test1";
+      string trackName = GetCurrentTrackName();
       homePageNavigation.NavigateToRacingLineWithTrack(trackName);
-      Debug.Log($"Opening racing line for test track: {trackName}");
     }
     else
     {
@@ -268,9 +280,8 @@ public class AnalysisGetInfo : MonoBehaviour
   {
     if (homePageNavigation != null)
     {
-      string trackName = "test1";
+      string trackName = GetCurrentTrackName();
       homePageNavigation.NavigateToRacingLineWithTrack(trackName);
-      Debug.Log($"Opening racing line for test track: {trackName}");
     }
     else
     {
@@ -282,15 +293,14 @@ public class AnalysisGetInfo : MonoBehaviour
   {
     if (racingLinePreview != null)
     {
-      string trackName = "test1";
       racingLinePreview.InitializeWithTrack(trackName);
-      Debug.Log($"Loading racing line preview for: {trackName}");
     }
     else
     {
       Debug.LogWarning("Racing line preview component not assigned");
     }
   }
+
 
   public void RefreshRacingLinePreview()
   {

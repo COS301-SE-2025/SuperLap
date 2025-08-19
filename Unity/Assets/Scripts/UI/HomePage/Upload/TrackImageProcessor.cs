@@ -397,7 +397,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     //Clamp to image bounds
     normalisedX = Mathf.Clamp01(normalisedX);
-    normalisedY = Mathf.Clamp01(normalisedY); //Flip Y coord
+    normalisedY = Mathf.Clamp01(normalisedY);
 
     return new Vector2(normalisedX, normalisedY);
   }
