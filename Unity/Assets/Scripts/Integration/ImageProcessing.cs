@@ -31,7 +31,17 @@ public class ImageProcessing
             }
 
             // Get the path to the executable
-            string exeName = (Application.platform == RuntimePlatform.WindowsPlayer) ? "TrackProcessor.exe" : "TrackProcessor";
+            string exeName;
+            if (Application.platform == RuntimePlatform.WindowsPlayer || 
+                Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                exeName = "TrackProcessor.exe";
+            }
+            else
+            {
+                exeName = "TrackProcessor"; // Linux / macOS (no .exe)
+            }
+
             string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
             if (!File.Exists(exePath))
             {
