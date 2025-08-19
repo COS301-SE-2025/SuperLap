@@ -9,7 +9,7 @@ namespace RacelineOptimizer
 {
     public static class PSOInterface
     {
-        public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 60000)
+        public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 4000)
         {
             Console.WriteLine($"\nProcessing {Path.GetFileName(edgeDataFilePath)}...");
 
@@ -25,11 +25,7 @@ namespace RacelineOptimizer
             Vector2 center = edgeData.GetCenter();
             edgeData.ScaleTrack(center, scaleFactor);
 
-            int numSamples = edgeData.OuterBoundary.Count < 500 || edgeData.InnerBoundary.Count < 500
-                ? 700
-                : (int)(edgeData.InnerBoundary.Count - (500 * scaleFactor));
-
-            var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, numSamples);
+            var track = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, 400);
             var cornerTrack = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, edgeData.InnerBoundary.Count);
             var corners = CornerDetector.DetectCorners(cornerTrack);
 
@@ -40,7 +36,7 @@ namespace RacelineOptimizer
             }
 
             PSO pso = new PSO();
-            float[] bestRatios = pso.Optimize(track, corners, numParticles, iterations);
+            float[] bestRatios = pso.Optimize(track, corners, cornerTrack, numParticles, iterations);
             if (bestRatios == null || bestRatios.Length == 0)
             {
                 Console.WriteLine("Error: Optimization failed to find a valid solution.");
@@ -75,7 +71,9 @@ namespace RacelineOptimizer
             }
 
             string racelineFilePath = $"{outputPath}/{fileNameNoExt}.bin";
-            RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline);
+            Console.WriteLine($"Exporting {corners.Count} corners");
+
+            RacelineExporter.SaveToBinary(racelineFilePath, edgeData.InnerBoundary, edgeData.OuterBoundary, raceline, corners);
             Console.WriteLine("Raceline optimization completed and saved to " + racelineFilePath);
 
             return true;

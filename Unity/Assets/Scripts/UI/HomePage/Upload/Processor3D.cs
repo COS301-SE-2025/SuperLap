@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Processor3D
 {
-    public static Mesh GenerateOutputMesh(TrackImageProcessor.ProcessingResults lastResults, int pointCount)
+    public static (List<Vector2>, List<Vector2>) GetNewBoundaries(TrackImageProcessor.ProcessingResults lastResults, int pointCount)
     {
         // get total distances of inner and outer boundaries
         float innerDistance = GetTotalLineDistance(lastResults.innerBoundary);
@@ -26,6 +26,10 @@ public class Processor3D
             outerPoints.Add(outerPoint);
         }
 
+        return (innerPoints, outerPoints);
+    }
+    public static Mesh GenerateOutputMesh(List<Vector2> innerPoints, List<Vector2> outerPoints)
+    {
         // Create a mesh from the inner and outer points
         Mesh mesh = new Mesh();
         Vector3[] vertices = new Vector3[innerPoints.Count * 2];

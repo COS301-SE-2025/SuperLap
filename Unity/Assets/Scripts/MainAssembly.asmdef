@@ -3,8 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Unity.TextMeshPro",
-        "StandaloneFileBrowser",
-        "Unity.ML-Agents"
+        "StandaloneFileBrowser"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

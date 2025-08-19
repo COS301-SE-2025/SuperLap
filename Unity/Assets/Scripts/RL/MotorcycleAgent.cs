@@ -1,15 +1,9 @@
-using System;
 using UnityEngine;
 using TMPro;
-using Unity.MLAgents;
-using Unity.MLAgents.Sensors;
-using Unity.MLAgents.Actuators;
-
-public class MotorcycleAgent : Agent
+using System.Collections.Generic;
+using UnityEngine.Profiling;
+public class MotorcycleAgent : MonoBehaviour
 {
-    private const float AIR_DENSITY = 1.225f;
-    private const float GRAVITY = 9.81f;
-
     [Header("Engine & Power")]
     [Tooltip("Engine power in Watts. ~750W = 1 horsepower.")]
     [SerializeField] private float enginePower = 150000f;
@@ -64,15 +58,53 @@ public class MotorcycleAgent : Agent
     [Tooltip("How quickly the FOV adjusts to changes.")]
     [SerializeField] private float fovAdjustSpeed = 3f;
 
+    [Header("Trajectory Prediction")]
+    [Tooltip("Enable/disable trajectory line visualization.")]
+    [SerializeField] private bool showTrajectory = false;
+    [Tooltip("Length of the predicted trajectory in seconds.")]
+    [SerializeField] private float trajectoryLength = 3f;
+    [Tooltip("Number of points to calculate for the trajectory line.")]
+    [SerializeField] private int trajectoryPoints = 50;
+    [Tooltip("Color of the trajectory line.")]
+    [SerializeField] private Color trajectoryColor = Color.green;
+    [Tooltip("Width of the trajectory line.")]
+    [SerializeField] private float trajectoryWidth = 0.1f;
+
+    [Header("Driving Recommendations")]
+    [Tooltip("Enable/disable driving recommendations based on raceline analysis.")]
+    [SerializeField] private bool enableRecommendations = true;
+    [Tooltip("Number of simulation steps to test each recommendation.")]
+    [SerializeField] private int recommendationSteps = 10;
+    [Tooltip("Sensitivity threshold for steering recommendations (lower = more sensitive).")]
+    [SerializeField] private float steeringSensitivity = 0.1f;
+    [Tooltip("Sensitivity threshold for throttle/brake recommendations (lower = more sensitive).")]
+    [SerializeField] private float throttleSensitivity = 0.15f;
+    [Tooltip("Input strength for testing recommendations (0-1).")]
+    [SerializeField] private float testInputStrength = 0.5f;
+    [Tooltip("Minimum input threshold to consider an action as 'following' a recommendation.")]
+    [SerializeField] private float inputThreshold = 0.3f;
+    
+    [Header("Track Detection")]
+    [Tooltip("Height above ground to start raycast for track detection (in meters).")]
+    [SerializeField] private float raycastStartHeight = 2f;
+    [Tooltip("Maximum distance to check for track surface (in meters).")]
+    [SerializeField] private float raycastDistance = 5f;
+    [Tooltip("Ratio of off-track points that triggers braking recommendation (0-1).")]
+    [SerializeField] private float offTrackThreshold = 0.25f;
+    [Tooltip("Maximum speed ratio (of theoretical top speed) before stopping speed-up recommendations.")]
+    [SerializeField] private float maxSpeedRatio = 0.8f;
+    [Tooltip("Enable debug visualization of track detection raycasts.")]
+    [SerializeField] private bool showTrackDetectionDebug = false;
+    [Tooltip("Color for raycasts that hit track surface.")]
+    [SerializeField] private Color onTrackRayColor = Color.green;
+    [Tooltip("Color for raycasts that miss track surface.")]
+    [SerializeField] private Color offTrackRayColor = Color.red;
+
     [Header("GUI")]
     [Tooltip("Displays the current speed of the motorcycle.")]
     [SerializeField] private TextMeshProUGUI speedText;
-
-    [Header("ML-Agents Training")]
-    [Tooltip("Starting position for episode reset.")]
-    [SerializeField] private Vector3 startingPosition;
-    [Tooltip("Starting rotation for episode reset.")]
-    [SerializeField] private Vector3 startingRotation;
+    [Tooltip("Displays the distance deviation from optimal raceline.")]
+    [SerializeField] private TextMeshProUGUI racelineDeviationText;
 
     [Header("Current State (for debugging)")]
     [ReadOnly] [SerializeField] private float currentSpeed = 0f;
@@ -82,145 +114,222 @@ public class MotorcycleAgent : Agent
     [ReadOnly] [SerializeField] private float currentLeanAngle = 0f;
     [ReadOnly] [SerializeField] private float currentFOV = 0f;
     [ReadOnly] [SerializeField] private float theoreticalTopSpeed = 0f;
+    [ReadOnly] [SerializeField] private float racelineDeviation = 0f;
+    [ReadOnly] [SerializeField] private float averageTrajectoryDeviation = 0f;
+    [ReadOnly] [SerializeField] private bool recommendSpeedUp = false;
+    [ReadOnly] [SerializeField] private bool recommendSlowDown = false;
+    [ReadOnly] [SerializeField] private bool recommendTurnLeft = false;
+    [ReadOnly] [SerializeField] private bool recommendTurnRight = false;
+    [ReadOnly] [SerializeField] private bool isCurrentlyOffTrack = false;
 
-    // Input values (now controlled by ML-Agents or heuristic)
+    // Input values
     private float throttleInput = 0f;
     private float steerInput = 0f;
     
-    // Internal tracking
-    private float previousSpeed = 0f;
+    // Helper components
+    private TrajectoryPredictor trajectoryPredictor;
+    private MotorcycleVisualEffects visualEffects;
+    
+    // Physics configuration
+    private MotorcyclePhysicsConfig physicsConfig;
+    private RecommendationConfig recommendationConfig;
+    private TrackDetectionConfig trackDetectionConfig;
 
-    // Store initial values for episode reset
-    private Vector3 initialPosition;
-    private Quaternion initialRotation;
-
-    public override void Initialize()
+    void Start()
     {
-        // Store initial transform values for episode resets
-        initialPosition = transform.position;
-        initialRotation = transform.rotation;
-        
-        // Use custom starting position/rotation if provided
-        if (startingPosition != Vector3.zero)
-            initialPosition = startingPosition;
-        if (startingRotation != Vector3.zero)
-            initialRotation = Quaternion.Euler(startingRotation);
-
-        CalculateTheoreticalTopSpeed();
+        InitializeConfigurations();
+        InitializeComponents();
+        theoreticalTopSpeed = MotorcyclePhysicsCalculator.CalculateTheoreticalTopSpeed(
+            enginePower, dragCoefficient, frontalArea, rollingResistanceCoefficient, mass);
     }
 
-    public override void OnEpisodeBegin()
+    private void InitializeConfigurations()
     {
-        // Reset motorcycle state for new episode
-        transform.position = initialPosition;
-        transform.rotation = initialRotation;
-        
-        // Reset physics state
-        currentSpeed = 0f;
-        currentAcceleration = 0f;
-        currentTurnAngle = 0f;
-        currentLeanAngle = 0f;
-        previousSpeed = 0f;
-        
-        // Reset inputs
-        throttleInput = 0f;
-        steerInput = 0f;
-        
-        // Reset motorcycle model rotation if available
-        if (motorcycleModel != null)
+        physicsConfig = new MotorcyclePhysicsConfig
         {
-            motorcycleModel.localRotation = Quaternion.identity;
-        }
-        
-        // Reset camera FOV if available
-        if (dynamicCamera != null)
+            enginePower = this.enginePower,
+            maxTractionForce = this.maxTractionForce,
+            brakingForce = this.brakingForce,
+            mass = this.mass,
+            dragCoefficient = this.dragCoefficient,
+            frontalArea = this.frontalArea,
+            rollingResistanceCoefficient = this.rollingResistanceCoefficient,
+            turnRate = this.turnRate,
+            steeringDecay = this.steeringDecay,
+            minSteeringSpeed = this.minSteeringSpeed,
+            fullSteeringSpeed = this.fullSteeringSpeed,
+            steeringIntensity = this.steeringIntensity
+        };
+
+        recommendationConfig = new RecommendationConfig
         {
-            currentFOV = minFOV;
-            dynamicCamera.fieldOfView = currentFOV;
+            recommendationSteps = this.recommendationSteps,
+            steeringSensitivity = this.steeringSensitivity,
+            throttleSensitivity = this.throttleSensitivity,
+            testInputStrength = this.testInputStrength,
+            inputThreshold = this.inputThreshold,
+            offTrackThreshold = this.offTrackThreshold,
+            maxSpeedRatio = this.maxSpeedRatio,
+            trajectoryLength = this.trajectoryLength
+        };
+
+        trackDetectionConfig = new TrackDetectionConfig
+        {
+            raycastStartHeight = this.raycastStartHeight,
+            raycastDistance = this.raycastDistance,
+            showTrackDetectionDebug = this.showTrackDetectionDebug,
+            onTrackRayColor = this.onTrackRayColor,
+            offTrackRayColor = this.offTrackRayColor
+        };
+    }
+
+    private void InitializeComponents()
+    {
+        trajectoryPredictor = GetComponent<TrajectoryPredictor>();
+        if (trajectoryPredictor == null)
+        {
+            trajectoryPredictor = gameObject.AddComponent<TrajectoryPredictor>();
         }
+
+        visualEffects = GetComponent<MotorcycleVisualEffects>();
+        if (visualEffects == null)
+        {
+            visualEffects = gameObject.AddComponent<MotorcycleVisualEffects>();
+        }
+
+        trajectoryPredictor.SetupTrajectoryLineRenderer(trajectoryPoints, trajectoryColor, trajectoryWidth, showTrajectory);
     }
 
-    public override void CollectObservations(VectorSensor sensor)
+    public void SetInput(int throttle, int steer)
     {
-        // Add current motorcycle state as observations
-        // These observations will be fed to the neural network
-        
-        // Speed and acceleration (2 observations)
-        sensor.AddObservation(currentSpeed / 50f); // Normalized by approximate max speed
-        sensor.AddObservation(currentAcceleration / 10f); // Normalized by reasonable acceleration range
-        
-        // Turn angle and lean angle (2 observations)
-        sensor.AddObservation(currentTurnAngle / turnRate); // Normalized by max turn rate
-        sensor.AddObservation(currentLeanAngle / maxLeanAngle); // Normalized by max lean angle
-        
-        // Position and rotation (6 observations)
-        sensor.AddObservation(transform.position); // x, y, z position
-        sensor.AddObservation(transform.rotation); // x, y, z rotation (quaternion converted to 3 values)
-        
-        // Relative position to starting point (3 observations)
-        Vector3 relativePosition = transform.position - initialPosition;
-        sensor.AddObservation(relativePosition);
-        
-        // Forward direction vector (3 observations)
-        sensor.AddObservation(transform.forward);
-        
-        // Previous inputs (2 observations) - helps with temporal understanding
-        sensor.AddObservation(throttleInput);
-        sensor.AddObservation(steerInput);
-        
-        // Total: 21 observations
+        throttleInput = throttle;
+        steerInput = steer;
     }
 
-    public override void OnActionReceived(ActionBuffers actionBuffers)
+    public (int, int) Decide()
     {
-        // Extract actions from the neural network
-        // Continuous actions: [throttle, steering]
-        throttleInput = Mathf.Clamp(actionBuffers.ContinuousActions[0], -1f, 1f);
-        steerInput = Mathf.Clamp(actionBuffers.ContinuousActions[1], -1f, 1f);
+        Profiler.BeginSample("MotorcycleAgent.UpdateRacelineDeviation");
+        RacelineAnalyzer.UpdateRacelineDeviation(transform.position, showTrajectory, 
+                                               trajectoryPredictor.GetComponent<LineRenderer>(), 
+                                               out racelineDeviation, out averageTrajectoryDeviation);
+        Profiler.EndSample();
         
-        // Update motorcycle physics using the ML-Agent actions
+        Profiler.BeginSample("MotorcycleAgent.UpdateDrivingRecommendations");
+        DrivingRecommendationEngine.UpdateDrivingRecommendations(enableRecommendations, transform.position, 
+                                                               transform.forward, currentSpeed, currentTurnAngle, 
+                                                               throttleInput, theoreticalTopSpeed, recommendationConfig, 
+                                                               physicsConfig, trackDetectionConfig, out recommendSpeedUp, 
+                                                               out recommendSlowDown, out recommendTurnLeft, out recommendTurnRight);
+        Profiler.EndSample();
+
+        List<(int, int)> options = new List<(int, int)>();
+
+        Profiler.BeginSample("MotorcycleAgent.GenerateActionOptions");
+
+        if (recommendTurnLeft)
+        {
+            float offTrackRatio;
+            if(TrackDetector.CheckIfPathGoesOffTrack(-1, transform.position, transform.forward, 
+                                                   currentSpeed, currentTurnAngle, throttleInput, 
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
+            {
+                options.Add((-1, -1)); // Brake
+            }
+            else
+            {
+                options.Add((0, -1)); // Turn left
+                options.Add((1, -1)); // Accelerate and turn left
+            }
+        }
+
+        if(recommendTurnRight)
+        {
+            float offTrackRatio;
+            if(TrackDetector.CheckIfPathGoesOffTrack(1, transform.position, transform.forward, 
+                                                   currentSpeed, currentTurnAngle, throttleInput, 
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
+            {
+                options.Add((-1, 1)); // Brake
+            }
+            else
+            {
+                options.Add((0, 1)); // Turn right
+                options.Add((1, 1)); // Accelerate and turn right
+            }
+        }
+
+        if(recommendSpeedUp)
+        {
+            float offTrackRatio;
+            if(TrackDetector.CheckIfPathGoesOffTrack(0, transform.position, transform.forward, 
+                                                   currentSpeed, currentTurnAngle, throttleInput, 
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
+            {
+                options.Add((-1, 0)); // Brake
+            }
+            else
+            {
+                options.Add((1, 0)); // Accelerate
+                options.Add((0, 0)); // Idle
+            }
+        }
+
+        // Fallback: if no options were added, provide default actions
+        if (options.Count == 0)
+        {
+            // If we're stationary, always try to accelerate
+            if (currentSpeed < 0.1f)
+            {
+                options.Add((1, 0)); // Accelerate
+            }
+            else
+            {
+                // Add some basic options when no recommendations are active
+                options.Add((1, 0));  // Accelerate
+                options.Add((0, 0));  // Idle
+                options.Add((-1, 0)); // Brake
+            }
+        }
+
+        // Randomly select one of the available options
+        int randomIndex = UnityEngine.Random.Range(0, options.Count);
+        (int, int) selectedAction = options[randomIndex];
+
+        Profiler.EndSample();
+
+        return selectedAction;
+    }
+
+    public void Step()
+    {
+        Profiler.BeginSample("MotorcycleAgent.Step");
         UpdateMovement(Time.fixedDeltaTime);
         UpdateTurning(Time.fixedDeltaTime);
-        UpdateMotorcycleLeaning(Time.fixedDeltaTime);
-        UpdateCameraFOV(Time.fixedDeltaTime);
+        visualEffects.UpdateMotorcycleLeaning(motorcycleModel, currentSpeed, currentTurnAngle, 
+                                            maxLeanAngle, optimalLeanSpeed, leanSpeed, 
+                                            minSteeringSpeed, turnRate, Time.fixedDeltaTime, ref currentLeanAngle);
+        // visualEffects.UpdateCameraFOV(dynamicCamera, currentSpeed, currentAcceleration, 
+        //                             minFOV, maxFOV, maxFOVSpeed, accelerationFOVBoost, 
+        //                             fovAdjustSpeed, Time.fixedDeltaTime, ref currentFOV);
+        trajectoryPredictor.UpdateTrajectoryVisualization(showTrajectory, trajectoryColor, trajectoryWidth, 
+                                                         trajectoryPoints, trajectoryLength, transform.position, 
+                                                         transform.forward, currentSpeed, currentTurnAngle, 
+                                                         throttleInput, steerInput, physicsConfig);
 
-        // Update display
-        currentSpeedKmh = currentSpeed * 3.6f;
-        if (speedText != null)
-        {
-            speedText.text = $"{currentSpeedKmh:F1} km/h";
-        }
-        
-        // Add rewards based on performance
-        // This is where you would implement your reward function
-        // For example:
-        // - Reward for maintaining speed
-        // - Reward for smooth turning
-        // - Penalty for going too slow or too fast
-        // - Penalty for excessive lean angles
-        
-        // Example reward (you should customize this based on your training goals):
-        float speedReward = currentSpeed > 5f ? 0.1f : -0.1f; // Encourage movement
-        AddReward(speedReward * Time.fixedDeltaTime);
-    }
+        // Update current track status
+        isCurrentlyOffTrack = IsOffTrack();
 
-    public override void Heuristic(in ActionBuffers actionsOut)
-    {
-        // This method provides manual control for testing and demonstration
-        // It should map human input to the same action space as the neural network
-        
-        // Get human input from keyboard/controller
-        var continuousActionsOut = actionsOut.ContinuousActions;
-        continuousActionsOut[0] = Input.GetAxis("Vertical");   // Throttle (W/S or Up/Down arrows)
-        continuousActionsOut[1] = Input.GetAxis("Horizontal"); // Steering (A/D or Left/Right arrows)
+        Profiler.EndSample();
     }
 
     private void UpdateMovement(float dt)
     {
-        previousSpeed = currentSpeed;
-
-        float drivingForce = CalculateDrivingForce();
-        float resistanceForces = CalculateResistanceForces();
+        float drivingForce = MotorcyclePhysicsCalculator.CalculateDrivingForce(enginePower, currentSpeed, maxTractionForce);
+        float resistanceForces = MotorcyclePhysicsCalculator.CalculateResistanceForces(currentSpeed, dragCoefficient, 
+                                                                                      frontalArea, rollingResistanceCoefficient, mass);
 
         float netForce = (drivingForce * throttleInput) - resistanceForces;
 
@@ -241,7 +350,8 @@ public class MotorcycleAgent : Agent
 
     private void UpdateTurning(float dt)
     {
-        float steeringMultiplier = CalculateSteeringMultiplier();
+        float steeringMultiplier = MotorcyclePhysicsCalculator.CalculateSteeringMultiplier(currentSpeed, minSteeringSpeed, 
+                                                                                         fullSteeringSpeed, steeringIntensity);
         
         currentTurnAngle += steerInput * turnRate * steeringMultiplier * dt;
         
@@ -250,110 +360,37 @@ public class MotorcycleAgent : Agent
         transform.Rotate(Vector3.up * currentTurnAngle * dt);
     }
 
-    private void UpdateMotorcycleLeaning(float dt)
+    // Public methods for training system
+    public bool IsOffTrack()
     {
-        if (motorcycleModel == null) return;
-
-        float targetLeanAngle = CalculateTargetLeanAngle();
-        
-        currentLeanAngle = Mathf.Lerp(currentLeanAngle, targetLeanAngle, leanSpeed * dt);
-        
-        motorcycleModel.localRotation = Quaternion.Euler(0, 0, -currentLeanAngle);
+        // Check if the motorcycle is currently off track using a simple raycast
+        // This is used by the training system to determine if an agent should be recycled
+        // Note: The Decide() method still uses predictive track detection for better decision making
+        return !TrackDetector.IsPositionOnTrack(transform.position, trackDetectionConfig);
     }
 
-    private void UpdateCameraFOV(float dt)
+    public float GetCurrentSpeed()
     {
-        if (dynamicCamera == null) return;
-
-        float targetFOV = CalculateTargetFOV();
-        
-        currentFOV = Mathf.Lerp(currentFOV, targetFOV, fovAdjustSpeed * dt);
-        
-        dynamicCamera.fieldOfView = currentFOV;
+        return currentSpeed;
     }
 
-    private float CalculateDrivingForce()
+    public float GetCurrentTurnAngle()
     {
-        float powerLimitedForce = enginePower / Mathf.Max(currentSpeed, 0.1f);
-        
-        return Mathf.Min(maxTractionForce, powerLimitedForce);
-    }
-    
-    private float CalculateResistanceForces()
-    {
-        float dragForce = 0.5f * AIR_DENSITY * dragCoefficient * frontalArea * currentSpeed * currentSpeed;
-
-        float rollingForce = rollingResistanceCoefficient * mass * GRAVITY;
-
-        return dragForce + rollingForce;
+        return currentTurnAngle;
     }
 
-    private float CalculateSteeringMultiplier()
+    public void SetInitialState(float speed, float turnAngle)
     {
-        if (currentSpeed < minSteeringSpeed)
-        {
-            return 0f;
-        }
-
-        float normalizedSpeed = currentSpeed / fullSteeringSpeed;
-        
-        float steeringMultiplier = 1f / (1f + normalizedSpeed * steeringIntensity);
-        
-        float fadeInMultiplier = Mathf.Clamp01((currentSpeed - minSteeringSpeed) / (fullSteeringSpeed - minSteeringSpeed));
-        
-        return steeringMultiplier * fadeInMultiplier;
+        currentSpeed = speed;
+        currentTurnAngle = turnAngle;
+        currentSpeedKmh = currentSpeed * 3.6f;
     }
+}
 
-    private float CalculateTargetLeanAngle()
-    {
-        if (currentSpeed < minSteeringSpeed || Mathf.Abs(currentTurnAngle) < 0.1f)
-        {
-            return 0f;
-        }
-
-        float speedMultiplier = CalculateSpeedLeanMultiplier();
-        
-        float turnIntensity = Mathf.Abs(currentTurnAngle) / turnRate;
-        turnIntensity = Mathf.Clamp01(turnIntensity);
-        
-        float baseLeanAngle = turnIntensity * maxLeanAngle * speedMultiplier;
-        
-        return Mathf.Sign(currentTurnAngle) * baseLeanAngle;
-    }
-
-    private float CalculateSpeedLeanMultiplier()
-    {
-        if (currentSpeed <= optimalLeanSpeed)
-        {
-            return Mathf.Lerp(0.2f, 1f, currentSpeed / optimalLeanSpeed);
-        }
-        else
-        {
-            float excessSpeed = currentSpeed - optimalLeanSpeed;
-            float reductionFactor = 1f / (1f + excessSpeed * 0.02f);
-            return Mathf.Max(0.3f, reductionFactor);
-        }
-    }
-
-    private float CalculateTargetFOV()
-    {
-        float speedBasedFOV = Mathf.Lerp(minFOV, maxFOV, currentSpeed / maxFOVSpeed);
-        
-        float accelerationBoost = Mathf.Max(0f, currentAcceleration) * accelerationFOVBoost;
-        
-        float targetFOV = speedBasedFOV + accelerationBoost;
-        
-        return Mathf.Clamp(targetFOV, minFOV, maxFOV + (accelerationFOVBoost * 10f));
-    }
-
-    private void CalculateTheoreticalTopSpeed()
-    {
-        float dragTerm = 0.5f * AIR_DENSITY * dragCoefficient * frontalArea;
-        float rollingTerm = rollingResistanceCoefficient * mass * GRAVITY;
-        
-        theoreticalTopSpeed = Mathf.Pow(enginePower / dragTerm, 1f/3f);
-        
-        Debug.Log($"Theoretical Top Speed: {theoreticalTopSpeed * 3.6f:F1} km/h");
-        Debug.Log($"Cd x A = {dragCoefficient * frontalArea:F3}");
-    }
+// Simple component to mark track surfaces for raycast detection
+public class TrackSurface : MonoBehaviour
+{
+    // This component can be attached to track pieces to identify them in raycasts
+    // IMPORTANT: The GameObject must also have the "Track" tag for the raycast detection to work
+    // No additional functionality needed - just acts as a marker
 }

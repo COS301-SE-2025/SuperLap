@@ -5,7 +5,7 @@ const { expect } = require('chai');
 describe('API Endpoints', function () {
   beforeAll(async function () {
     await connectToDb();
-  });
+  }, 60000); // 60 second timeout for database connection
 
   const testUser = {
     username: 'testuser',
