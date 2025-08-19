@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 918763f4129ec244487a27370614aeba
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ModalWindow/ModalWindowRound/ModalWindowRoundCommon_Simple.prefab
+  uploadId: 658581

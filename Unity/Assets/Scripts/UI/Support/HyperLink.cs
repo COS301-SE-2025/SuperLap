@@ -17,7 +17,7 @@ public class HyperLink : MonoBehaviour, IPointerClickHandler
 
         if (linkId == "myLink")
         {
-          Application.OpenURL("https://cos301-se-2025.github.io/SuperLap/"); // Replace with your URL
+          Application.OpenURL("https://cos301-se-2025.github.io/SuperLap/Support/"); // Replace with your URL
         }
       }
     }

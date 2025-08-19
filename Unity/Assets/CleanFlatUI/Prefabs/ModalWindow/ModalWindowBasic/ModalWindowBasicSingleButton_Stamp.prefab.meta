@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ad4eeb77017523e44a270e8f79897e87
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ModalWindow/ModalWindowBasic/ModalWindowBasicSingleButton_Stamp.prefab
+  uploadId: 658581

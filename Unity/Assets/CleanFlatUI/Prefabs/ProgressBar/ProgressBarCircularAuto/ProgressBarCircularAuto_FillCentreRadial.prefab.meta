@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1374da3a8898d954bb7f897ad811e6bc
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarCircularAuto/ProgressBarCircularAuto_FillCentreRadial.prefab
+  uploadId: 658581

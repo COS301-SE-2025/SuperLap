@@ -1,11 +1,8 @@
 name: Unity Integration Tests with Backend
 
 on:
-  push:
-    branches: [main, dev]
   pull_request:
     branches: [main, dev]
-  workflow_dispatch:
 
 jobs:
   unity-tests:
@@ -130,12 +127,37 @@ jobs:
                 FAILED_TESTS=$(echo "$RESPONSE" | jq -r '.failedTests // 0')
                 PASSED_TESTS=$(echo "$RESPONSE" | jq -r '.passedTests // 0')
                 
+                # Extract coverage data
+                COVERAGE_AVAILABLE=$(echo "$RESPONSE" | jq -r '.coverage.available // false')
+                LINE_COVERAGE=$(echo "$RESPONSE" | jq -r '.coverage.lineCoverage // 0')
+                METHOD_COVERAGE=$(echo "$RESPONSE" | jq -r '.coverage.methodCoverage // 0')
+                TEST_CLASS_COUNT=$(echo "$RESPONSE" | jq -r '.coverage.testClassCount // 0')
+                
                 echo ""
                 echo "🎯 Unity Tests Completed!"
                 echo "📊 Results Summary:"
                 echo "   • Total Tests: $TOTAL_TESTS"
                 echo "   • Passed: $PASSED_TESTS"
                 echo "   • Failed: $FAILED_TESTS"
+                
+                if [ "$COVERAGE_AVAILABLE" = "true" ]; then
+                  echo "📈 Coverage Summary:"
+                  echo "   • Line Coverage: $LINE_COVERAGE%"
+                  echo "   • Method Coverage: $METHOD_COVERAGE%"
+                  echo "   • Test Classes: $TEST_CLASS_COUNT"
+                  
+                  # Set environment variables for later steps
+                  echo "coverage_available=true" >> $GITHUB_ENV
+                  echo "line_coverage=$LINE_COVERAGE" >> $GITHUB_ENV
+                  echo "method_coverage=$METHOD_COVERAGE" >> $GITHUB_ENV
+                  echo "test_class_count=$TEST_CLASS_COUNT" >> $GITHUB_ENV
+                else
+                  echo "ℹ️  No coverage data available"
+                  echo "coverage_available=false" >> $GITHUB_ENV
+                  echo "line_coverage=0" >> $GITHUB_ENV
+                  echo "method_coverage=0" >> $GITHUB_ENV
+                  echo "test_class_count=0" >> $GITHUB_ENV
+                fi
                 echo ""
                 
                 # Get detailed logs
@@ -184,3 +206,75 @@ jobs:
           echo "⏰ Test polling timed out after $((MAX_ATTEMPTS * 10)) seconds!"
           echo "::error::Test polling timeout - Unity tests may still be running"
           exit 1
+
+      - name: Calculate and Report Coverage
+        if: always()
+        run: |
+          # Run our coverage calculation locally if coverage files exist
+          if [ -f "Unity/CodeCoverage/Report/Summary.json" ]; then
+            echo "📊 Calculating coverage for selected test classes..."
+            python scripts/calculate-coverage.py --github
+            
+            # Also generate JSON for artifacts
+            python scripts/calculate-coverage.py --json > coverage-summary.json
+            
+            echo "✅ Coverage calculation completed"
+          else
+            echo "ℹ️  No local coverage data found"
+          fi
+
+      - name: Upload Coverage Summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-coverage-summary-${{ github.run_number }}
+          path: |
+            coverage-summary.json
+            Unity/CodeCoverage/Report/Summary.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Update Coverage Badge Gist
+        if: env.coverage_available == 'true' && github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GIST_TOKEN }}
+          script: |
+            const coverage = '${{ env.line_coverage }}';
+            const coverageFloat = parseFloat(coverage);
+            
+            // Determine badge color based on coverage percentage
+            let color = 'red';
+            if (coverageFloat >= 90) color = 'brightgreen';
+            else if (coverageFloat >= 80) color = 'green';
+            else if (coverageFloat >= 70) color = 'yellow';
+            else if (coverageFloat >= 60) color = 'orange';
+            
+            // Create the badge JSON for shields.io endpoint
+            const badgeData = {
+              schemaVersion: 1,
+              label: 'Unity Coverage',
+              message: `${coverage}%`,
+              color: color
+            };
+            
+            // Update or create the gist
+            const gistId = '${{ secrets.COVERAGE_GIST_ID }}';
+            const filename = 'unity-coverage.json';
+            
+            try {
+              // Try to update existing gist
+              await github.rest.gists.update({
+                gist_id: gistId,
+                files: {
+                  [filename]: {
+                    content: JSON.stringify(badgeData, null, 2)
+                  }
+                }
+              });
+              console.log(`✅ Updated coverage gist: ${coverage}%`);
+            } catch (error) {
+              console.log(`❌ Failed to update gist: ${error.message}`);
+              // If gist doesn't exist or token doesn't have access, log the error
+              core.setFailed(`Failed to update coverage gist: ${error.message}`);
+            }

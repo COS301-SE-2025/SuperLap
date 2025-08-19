@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e47cd37fe00f9ae41958d4e78b5d7fc9
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/TabView/TabViewLine/TabViewLine_Flip.prefab
+  uploadId: 658581

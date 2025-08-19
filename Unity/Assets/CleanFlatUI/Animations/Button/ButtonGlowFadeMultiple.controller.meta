@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: cdceae8b40215ac40b32f15e6e5daaf0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonGlowFadeMultiple.controller
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0ea21041d73ec1b47bcd3cf464f28db5
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressbarGridLinearAuto/ProgressBarGridLinearAuto_Square.prefab
+  uploadId: 658581

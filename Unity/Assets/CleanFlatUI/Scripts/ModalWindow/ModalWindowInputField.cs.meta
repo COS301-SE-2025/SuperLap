@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1eb31fac0d7f89140a653b4b0f5d4cfd
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowInputField.cs
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0393f6d182eb2ff43807f081b298ebcc
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/TabView/TabViewRound/TabViewRound_ExpandSide.prefab
+  uploadId: 658581

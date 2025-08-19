@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f24d63bc666901e47893feadf1ab2f8b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Slider/SliderScaleVertical.controller
+  uploadId: 658581

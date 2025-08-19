@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: be18e7dc9345dcb418ee2fb2de9d350a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toast/ToastMove.controller
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ded6df012704fc94db4f19541566c40f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarCircularRound/ProgressBarCircularRound_Top.prefab
+  uploadId: 658581

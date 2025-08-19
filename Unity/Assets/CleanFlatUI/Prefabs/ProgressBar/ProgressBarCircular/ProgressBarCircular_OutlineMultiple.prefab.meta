@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6896bb793fdd42348a4acf090b6adb1c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarCircular/ProgressBarCircular_OutlineMultiple.prefab
+  uploadId: 658581

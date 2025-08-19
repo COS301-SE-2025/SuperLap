@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d87c172feb16e254281ed640cec4e333
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toast/ToastMoveOut.anim
+  uploadId: 658581

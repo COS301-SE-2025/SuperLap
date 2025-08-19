@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 36162d46ca4a9ab46a410d46e668f16c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Notification/NotificationStretchHorizontal.controller
+  uploadId: 658581

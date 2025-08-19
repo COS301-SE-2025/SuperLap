@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 06e1175075076d0469978046a0fb51ea
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Slider/SliderRangeBasic/SliderRangeBasic_Shake.prefab
+  uploadId: 658581

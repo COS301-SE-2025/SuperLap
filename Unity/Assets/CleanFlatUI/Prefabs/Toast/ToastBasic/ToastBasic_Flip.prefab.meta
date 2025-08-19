@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 32ca33194d387f24cb08368f240ec8c1
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toast/ToastBasic/ToastBasic_Flip.prefab
+  uploadId: 658581

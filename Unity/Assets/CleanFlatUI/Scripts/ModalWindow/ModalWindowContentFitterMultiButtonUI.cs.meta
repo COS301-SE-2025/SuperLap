@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 077146219fc49334f9429b87163ba93d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowContentFitterMultiButtonUI.cs
+  uploadId: 658581

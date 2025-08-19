@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3d4edf0886f5df04ea0fc00b34d010cb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toggle/ToggleSlideVerticalTextOff.anim
+  uploadId: 658581

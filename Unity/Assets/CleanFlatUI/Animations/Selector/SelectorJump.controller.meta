@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 312356f0524abb0469ae12ead87daf84
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Selector/SelectorJump.controller
+  uploadId: 658581

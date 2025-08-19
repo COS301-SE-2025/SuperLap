@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f9c7983ebcf90184ca077fd76a5ee34a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ModalWindow/ModalWindowStretchReverseIn.anim
+  uploadId: 658581

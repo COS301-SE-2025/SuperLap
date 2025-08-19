@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4ddd6c8b54cd9454cafec6976bff8a6a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Button/ButtonBasicOutline/ButtonBasicOutline_Gray_SwapPattern.prefab
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c77f8aed324108c4f8d0eea4e2ec7ba2
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Dropdown/DropdownMultiCheckboxRound/DropdownMultiCheckboxRound_Expand.prefab
+  uploadId: 658581

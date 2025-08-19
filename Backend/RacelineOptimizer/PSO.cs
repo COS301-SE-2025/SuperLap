@@ -15,9 +15,9 @@ namespace RacelineOptimizer
         private int patience;
 
         public PSO(
-            float smoothnessWeight = 25f, //Favours less sharp turns (25f)
-            float distanceWeight = 4f, //Favours shorter paths(typically more straight) (4f)
-            float racingBiasWeight = 0.5f,  //Favours paths opposite to upcoming corner direction.
+            float smoothnessWeight = 10f, //Favours less sharp turns (25f)
+            float distanceWeight = 0.0f, //Favours shorter paths(typically more straight) (4f)
+            float racingBiasWeight = 0.21f,  //Favours paths opposite to upcoming corner direction.
             float inertiaStart = 0.6f,
             float inertiaEnd = 0.1f,
             float cognitiveWeight = 1.7f,
@@ -42,18 +42,28 @@ namespace RacelineOptimizer
             return MathF.Max(min, MathF.Min(max, value));
         }
 
-        private static float GetCornerBias(List<CornerDetector.CornerSegment> corners, int index)
+        private static float GetCornerBias(
+            List<CornerDetector.CornerSegment> corners,
+            int index,
+            int currentTrackLength,
+            int cornerTrackLength)
         {
+            // Remap the index from the current track to cornerTrack space
+            int mappedIndex = (int)(index * (cornerTrackLength / (float)currentTrackLength));
+
             foreach (var corner in corners)
             {
-                if (corner.EndIndex < index)
+                if (corner.EndIndex < mappedIndex)
                     continue;
 
                 float severity = MathF.Min(1f, MathF.Abs(corner.Angle) / 90f);
-                float t = Math.Clamp((index - corner.StartIndex) / (float)(corner.EndIndex - corner.StartIndex), 0f, 1f);
+                float t = Math.Clamp((mappedIndex - corner.StartIndex) / (float)(corner.EndIndex - corner.StartIndex), 0f, 1f);
 
-                // Outer -> inner -> outer
-                float baseBias = MathF.Cos(t * MathF.PI);
+                // Jump immediately to ideal bias at entry (cosine step removed)
+                float baseBias = (mappedIndex < corner.StartIndex + (corner.EndIndex - corner.StartIndex) / 3f) ? -1f :
+                                (mappedIndex > corner.StartIndex + 2 * (corner.EndIndex - corner.StartIndex) / 3f) ? 1f :
+                                0f;
+
                 float biasOffset = baseBias * 0.5f * severity;
 
                 return corner.IsLeftTurn
@@ -63,14 +73,15 @@ namespace RacelineOptimizer
 
             return 0.5f;
         }
+
         
-        private float CalculateCorneringCost(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, float[] ratios)
+        private float CalculateCorneringCost(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners,  float[] ratios, List<(Vector2 inner, Vector2 outer)> cornerTrack)
         {
             float cost = 0f;
             for (int i = 0; i < track.Count; i++)
             {
-                float idealBias = GetCornerBias(corners, i);
-                float ratio = ratios[i];
+                float idealBias = GetCornerBias(corners, i, track.Count, cornerTrack.Count);
+
 
                 if (idealBias > 0.5f)
                 {
@@ -123,7 +134,7 @@ namespace RacelineOptimizer
                 totalCost += curvature * curvature;
             }
 
-            return totalCost * 100f;
+            return totalCost * 100000f;
         }
 
         private float EvaluateDistanceCost(List<Vector2> path)
@@ -136,14 +147,14 @@ namespace RacelineOptimizer
             return totalDistance;
         }
 
-        private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios, List<CornerDetector.CornerSegment> corners)
+        private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> cornerTrack)
         {
             List<Vector2> path = new(track.Count);
             for (int i = 0; i < track.Count; i++)
                 path.Add(Vector2.Lerp(track[i].inner, track[i].outer, ratios[i]));
 
             float cost = 0f;
-            float corneringCost = CalculateCorneringCost(track, corners, ratios);
+            float corneringCost = CalculateCorneringCost(track, corners, ratios, cornerTrack);
             float smoothnessCost = CalculateSmoothnessCost(path);
             float distanceCost = EvaluateDistanceCost(path);
             cost += distanceCost * distanceWeight
@@ -154,7 +165,7 @@ namespace RacelineOptimizer
         }
 
 
-        public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, int numParticles = 30, int iterations = 100)
+        public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> cornerTrack, int numParticles = 30, int iterations = 100)
         {
             object globalLock = new();
             ThreadLocal<Random> threadRand = new(() => new Random(Guid.NewGuid().GetHashCode()));
@@ -173,7 +184,7 @@ namespace RacelineOptimizer
                 p.Position[^1] = p.Position[0];
                 p.BestPosition[^1] = p.BestPosition[0];
 
-                p.BestCost = EvaluateCost(track, p.Position, corners);
+                p.BestCost = EvaluateCost(track, p.Position, corners, cornerTrack);
                 if (p.BestCost < globalBestCost)
                 {
                     globalBestCost = p.BestCost;
@@ -202,7 +213,7 @@ namespace RacelineOptimizer
                     }
                     p.Position[^1] = p.Position[0]; // Ensure loop closure
 
-                    float cost = EvaluateCost(track, p.Position, corners);
+                    float cost = EvaluateCost(track, p.Position, corners, cornerTrack);
                     if (cost < p.BestCost)
                     {
                         p.BestCost = cost;
@@ -239,7 +250,7 @@ namespace RacelineOptimizer
                         worst.Randomize(rand);
                         worst.Position[^1] = worst.Position[0];
                         worst.BestPosition[^1] = worst.BestPosition[0];
-                        worst.BestCost = EvaluateCost(track, worst.Position, corners);
+                        worst.BestCost = EvaluateCost(track, worst.Position, corners, cornerTrack);
                         if (worst.BestCost < globalBestCost)
                         {
                             globalBestCost = worst.BestCost;
