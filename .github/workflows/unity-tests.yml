@@ -236,3 +236,48 @@ jobs:
             Unity/CodeCoverage/Report/Summary.json
           retention-days: 30
           if-no-files-found: warn
+
+      - name: Update Coverage Badge Gist
+        if: env.coverage_available == 'true' && github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GIST_TOKEN }}
+          script: |
+            const coverage = '${{ env.line_coverage }}';
+            const coverageFloat = parseFloat(coverage);
+            
+            // Determine badge color based on coverage percentage
+            let color = 'red';
+            if (coverageFloat >= 90) color = 'brightgreen';
+            else if (coverageFloat >= 80) color = 'green';
+            else if (coverageFloat >= 70) color = 'yellow';
+            else if (coverageFloat >= 60) color = 'orange';
+            
+            // Create the badge JSON for shields.io endpoint
+            const badgeData = {
+              schemaVersion: 1,
+              label: 'Unity Coverage',
+              message: `${coverage}%`,
+              color: color
+            };
+            
+            // Update or create the gist
+            const gistId = '${{ secrets.COVERAGE_GIST_ID }}';
+            const filename = 'unity-coverage.json';
+            
+            try {
+              // Try to update existing gist
+              await github.rest.gists.update({
+                gist_id: gistId,
+                files: {
+                  [filename]: {
+                    content: JSON.stringify(badgeData, null, 2)
+                  }
+                }
+              });
+              console.log(`✅ Updated coverage gist: ${coverage}%`);
+            } catch (error) {
+              console.log(`❌ Failed to update gist: ${error.message}`);
+              // If gist doesn't exist or token doesn't have access, log the error
+              core.setFailed(`Failed to update coverage gist: ${error.message}`);
+            }
