@@ -2,8 +2,7 @@ name: Backend API Tests
 
 on:
   pull_request:
-    branches: [ dev ]
-  workflow_dispatch:
+    branches: [main, dev]
 
 jobs:
   test:
