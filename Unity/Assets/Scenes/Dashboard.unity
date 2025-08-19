@@ -157,15 +157,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3113676909939675384, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
       propertyPath: m_Value
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3113676909939675384, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
       propertyPath: m_MaxValue
       value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 3113676909939675384, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
+      propertyPath: m_MinValue
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3113676909939675384, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
       propertyPath: m_WholeNumbers
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3113676909939675384, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.size

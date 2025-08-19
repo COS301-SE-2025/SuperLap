@@ -172,6 +172,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private void ToggleTracingMode()
   {
     SetTracingMode(!isTracingMode);
+    ResetCenterline();
   }
 
   private void SetTracingMode(bool enabled)
@@ -181,15 +182,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       traceButton.GetComponentInChildren<TextMeshProUGUI>().text = isTracingMode ? "Stop Tracing" : "Trace Centerline";
     }
-    if (resetTraceButton != null)
-    {
-      //resetTraceButton.interactable = isTracingMode || centerlinePoints.Count > 0;
-    }
-    if (processButton != null)
-    {
-      //processButton.interactable = !isTracingMode && centerlinePoints.Count > 100;
-    }
-
     UpdateInstructions();
   }
 
@@ -212,6 +204,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       UpdateCenterlineOverlay();
     }
   }
+  
 
   public void OnDrag(PointerEventData eventData)
   {
@@ -259,7 +252,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
 
     SetTracingMode(false);
-    UpdateInstructions();
   }
 
   private void CalculateRaceDirection()
