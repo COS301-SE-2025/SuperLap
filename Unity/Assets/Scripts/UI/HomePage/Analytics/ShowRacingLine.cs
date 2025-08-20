@@ -108,7 +108,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public float maxZoom = 3f;
   [SerializeField] public float currentZoom = 1f;
   public float panSpeed = 1f;
-  public bool invertZoom = false;
   public bool enablePanZoom = true;
 
   [Header("Car Cursor Settings")]
@@ -118,8 +117,10 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public Color trailColor = new Color(1f, 1f, 0f, 0.8f);
 
   [Header("Camera Follow")]
-  public bool followCar = true;
+  private bool followCar = true;
   public float lerpSpeed = 5f;
+  private float initialLerpSpeed = 5f;
+  private bool goingToCar = true;
 
   [Header("Time Control")]
   public float currentTime = 0f;
@@ -144,34 +145,11 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   {
     if (!isRacing || racelinePoints == null || racelinePoints.Length < 2) return;
 
-    if (!firstFollowExecuted)
-    {
-      followDelayTimer += Time.deltaTime;
-      if (followDelayTimer >= followDelay)
-      {
-        if (followCar && carCursor)
-        {
-          Vector2 targetPos = -carCursor.anchoredPosition * currentZoom;
-          panOffset = Vector2.Lerp(panOffset, targetPos, Time.deltaTime * lerpSpeed);
-          UpdateZoomContainer();
-        }
-        firstFollowExecuted = true;
-      }
-    }
-    else
-    {
-      if (followCar && carCursor)
-      {
-        Vector2 targetPos = -carCursor.anchoredPosition * currentZoom;
-        panOffset = Vector2.Lerp(panOffset, targetPos, Time.deltaTime * lerpSpeed);
-        UpdateZoomContainer();
-      }
-    }
+    HandleCameraFollow();
 
     carCursor.sizeDelta = new Vector2(cursorSize, cursorSize);
 
     currentTime += Time.deltaTime * timeSpeed;
-
     float totalRaceTime = GetTotalRaceTime();
 
     if (timeline != null)
@@ -180,12 +158,15 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       timeline.minValue = 0f;
     }
 
-    if (currentTime > totalRaceTime) currentTime = 0f;
-    if (currentTime < 0f) currentTime = totalRaceTime;
-
+    currentTime = Mathf.Repeat(currentTime, totalRaceTime);
     GoToTime(currentTime, totalRaceTime);
 
     if (timeline) timeline.value = currentTime;
+
+    if (Input.GetKeyDown(KeyCode.Space))
+    {
+      ToggleFollowCar();
+    }
   }
 
   void Start()
@@ -195,6 +176,30 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     initialPosition = zoomContainer.anchoredPosition;
     UpdateLineWidths();
   }
+
+  private void HandleCameraFollow()
+  {
+    if (!followCar || carCursor == null) return;
+
+    Vector2 targetPos = -carCursor.anchoredPosition * currentZoom;
+    if (goingToCar)
+    {
+      panOffset = Vector2.Lerp(panOffset, targetPos, Time.deltaTime * lerpSpeed);
+      if (Vector2.Distance(panOffset, targetPos) < 0.1f)
+      {
+        panOffset = targetPos;
+        goingToCar = false;
+      }
+      lerpSpeed++;
+    }
+    else
+    {
+      panOffset = targetPos;
+      lerpSpeed = initialLerpSpeed;
+    }
+    UpdateZoomContainer();
+  }
+
 
   private float[] racelineSegmentLengths;
   private float totalRacelineLength;
@@ -286,7 +291,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public void OnScroll(PointerEventData eventData)
   {
     if (!enablePanZoom) return;
-    float zoomDelta = eventData.scrollDelta.y * zoomSpeed * (invertZoom ? -1 : 1);
+    float zoomDelta = eventData.scrollDelta.y * zoomSpeed;
     float previousZoom = currentZoom;
     currentZoom = Mathf.Clamp(currentZoom + zoomDelta, minZoom, maxZoom);
 
@@ -339,6 +344,16 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     if (lineRenderers.TryGetValue("Raceline", out UILineRenderer renderer))
     {
       renderer.LineThickness = racelineWidth / currentZoom;
+    }
+  }
+
+  public void ToggleFollowCar()
+  {
+    followCar = !followCar;
+    goingToCar = followCar;
+    if (goingToCar)
+    {
+      initialLerpSpeed = lerpSpeed;
     }
   }
 
