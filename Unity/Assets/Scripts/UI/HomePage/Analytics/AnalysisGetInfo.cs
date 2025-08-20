@@ -18,8 +18,13 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private APIManager apiManager;
   private int trackIndex = 0;
-
   private string trackName;
+
+  private int retryCount = 0;
+  private const int maxRetries = 5;
+  private const float retryInterval = 2.0f;
+  private float retryTimer = 0.0f;
+  private bool isWaitingForRetry = false;
 
   public void Awake()
   {
@@ -65,6 +70,9 @@ public class AnalysisGetInfo : MonoBehaviour
     }
 
     trackName = "";
+    retryCount = 0;
+    isWaitingForRetry = false;
+    retryTimer = 0.0f;
   }
 
   public void OnDisable()
@@ -73,6 +81,12 @@ public class AnalysisGetInfo : MonoBehaviour
   }
 
   public void Start()
+  {
+    ResetValues();
+    AttemptToLoadTracks();
+  }
+
+  private void AttemptToLoadTracks()
   {
     try
     {
@@ -83,34 +97,43 @@ public class AnalysisGetInfo : MonoBehaviour
       else
       {
         Debug.Log("APIManager is null");
-        SetDefaultValues();
+        HandleLoadFailure();
       }
-
     }
     catch (System.Exception e)
     {
-      Debug.Log($"Error in Start: {e.Message}");
-      SetDefaultValues();
+      Debug.Log($"Error in AttemptToLoadTracks: {e.Message}");
+      HandleLoadFailure();
     }
   }
 
-  private void SetDefaultValues()
+  private void HandleLoadFailure()
   {
-    if (trackNameText != null) trackNameText.text = "Default Track";
-    if (trackTypeText != null) trackTypeText.text = "Default Type";
-    if (trackCityText != null) trackCityText.text = "Default City";
-    if (trackCountryText != null) trackCountryText.text = "Default Country";
-    if (trackDescriptionText != null) trackDescriptionText.text = "Default track description";
-    if (trackLocationText != null) trackLocationText.text = "Lat: 0.000000, Lon: 0.000000";
-  }
+    retryCount++;
 
+    if (retryCount <= maxRetries)
+    {
+      Debug.Log($"API load failed. Retry {retryCount}/{maxRetries} in {retryInterval} seconds...");
+      isWaitingForRetry = true;
+      retryTimer = 0.0f;
+
+      if (trackNameText != null)
+        trackNameText.text = $"Loading... (Retry {retryCount}/{maxRetries})";
+    }
+    else
+    {
+      Debug.Log("Maximum retry attempts reached. Giving up.");
+      DisplayErrorMessage("Failed to load track data after multiple attempts");
+      isWaitingForRetry = false;
+    }
+  }
 
   private void OnTracksLoaded(bool success, string message, List<APIManager.Track> tracks)
   {
     if (!success)
     {
       Debug.Log($"Failed to load tracks: {message}");
-      DisplayErrorMessage("Failed to load track data");
+      HandleLoadFailure();
       return;
     }
 
@@ -120,6 +143,8 @@ public class AnalysisGetInfo : MonoBehaviour
       DisplayErrorMessage("No tracks available");
       return;
     }
+    retryCount = 0;
+    isWaitingForRetry = false;
 
     if (trackIndex < tracks.Count)
     {
@@ -211,6 +236,7 @@ public class AnalysisGetInfo : MonoBehaviour
       SetDefaultValues();
     }
   }
+
   public void DisplayTrackByName(string trackName)
   {
     this.trackName = trackName;
@@ -243,6 +269,7 @@ public class AnalysisGetInfo : MonoBehaviour
       SetDefaultValues();
     }
   }
+
   public void DisplaySpecificTrack(APIManager.Track track)
   {
     if (track != null)
@@ -254,6 +281,16 @@ public class AnalysisGetInfo : MonoBehaviour
       Debug.Log("Track object is null");
       DisplayErrorMessage("Invalid track data");
     }
+  }
+
+  private void SetDefaultValues()
+  {
+    if (trackNameText != null) trackNameText.text = "Default Track";
+    if (trackTypeText != null) trackTypeText.text = "Default Type";
+    if (trackCityText != null) trackCityText.text = "Default City";
+    if (trackCountryText != null) trackCountryText.text = "Default Country";
+    if (trackDescriptionText != null) trackDescriptionText.text = "Default track description";
+    if (trackLocationText != null) trackLocationText.text = "Lat: 0.000000, Lon: 0.000000";
   }
 
   private void DisplayErrorMessage(string errorMsg)
@@ -337,9 +374,22 @@ public class AnalysisGetInfo : MonoBehaviour
     }
   }
 
-
   public void RefreshRacingLinePreview()
   {
     LoadRacingLinePreview();
+  }
+
+  void Update()
+  {
+    if (isWaitingForRetry)
+    {
+      retryTimer += Time.deltaTime;
+
+      if (retryTimer >= retryInterval)
+      {
+        isWaitingForRetry = false;
+        AttemptToLoadTracks();
+      }
+    }
   }
 }

@@ -106,6 +106,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public float zoomSpeed = 0.1f;
   public float minZoom = 0.5f;
   public float maxZoom = 3f;
+  public float panPadding = 100f;
   [SerializeField] public float currentZoom = 1f;
   public float panSpeed = 1f;
   public bool enablePanZoom = true;
@@ -239,12 +240,9 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   {
     if (!enablePanZoom) return;
 
-    if (currentZoom > 1f)
-    {
-      isDragging = true;
-      dragStartPosition = eventData.position;
-      followCar = false;
-    }
+    isDragging = true;
+    dragStartPosition = eventData.position;
+    followCar = false;
   }
 
   public void setZoom(float newZoom)
@@ -280,7 +278,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   {
     if (!enablePanZoom) return;
 
-    if (currentZoom <= 1f || !isDragging) return;
+    if (!isDragging) return;
 
     panOffset += (eventData.position - dragStartPosition) * panSpeed;
     dragStartPosition = eventData.position;
@@ -357,18 +355,19 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
   }
 
-  private void ConstrainToViewport()
-  {
+private void ConstrainToViewport()
+{
     if (!viewportRect || !trackContainer || followCar) return;
 
     Vector2 scaledSize = trackContainer.rect.size * currentZoom;
     Vector2 viewportSize = viewportRect.rect.size;
-    Vector2 maxOffset = Vector2.Max((scaledSize - viewportSize) * 0.5f, Vector2.zero);
+    
+    // Calculate maximum offset with padding
+    Vector2 maxOffset = Vector2.Max((scaledSize - viewportSize) * 0.5f + new Vector2(panPadding, panPadding), Vector2.zero);
 
     panOffset.x = Mathf.Clamp(panOffset.x, -maxOffset.x, maxOffset.x);
     panOffset.y = Mathf.Clamp(panOffset.y, -maxOffset.y, maxOffset.y);
-  }
-
+}
 
   private void UpdateZoomContainer()
   {
