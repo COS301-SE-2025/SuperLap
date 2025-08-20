@@ -323,8 +323,6 @@ public class APIManager : MonoBehaviour
   private IEnumerator GetTrackImageCoroutine(string name, System.Action<bool, string, Texture2D> callback)
   {
     string url = $"{baseURL}/images/{name}";
-
-    Debug.Log(url);
     using (UnityWebRequest request = UnityWebRequest.Get(url))
     {
       yield return request.SendWebRequest();

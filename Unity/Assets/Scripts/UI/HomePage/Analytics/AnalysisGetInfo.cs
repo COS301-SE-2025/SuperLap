@@ -12,6 +12,7 @@ public class AnalysisGetInfo : MonoBehaviour
   public TMP_Text trackDescriptionText;
   public TMP_Text trackCityText;
   public TMP_Text trackCountryText;
+  public Button racingLineButton;
   private ShowRacingLine racingLinePreview;
   private HomePageNavigation homePageNavigation;
 
@@ -32,12 +33,43 @@ public class AnalysisGetInfo : MonoBehaviour
       {
         racingLinePreview.gameObject.SetActive(false);
       }
+      if (racingLineButton != null)
+      {
+        racingLineButton.interactable = false;
+      }
     }
     catch (System.Exception e)
     {
       Debug.Log($"Failed to initialize components: {e.Message}");
       SetDefaultValues();
     }
+  }
+
+  private void ResetValues()
+  {
+    if (trackNameText != null) trackNameText.text = "Loading...";
+    if (trackTypeText != null) trackTypeText.text = "";
+    if (trackCityText != null) trackCityText.text = "";
+    if (trackCountryText != null) trackCountryText.text = "";
+    if (trackDescriptionText != null) trackDescriptionText.text = "";
+    if (trackLocationText != null) trackLocationText.text = "";
+
+    if (racingLineButton != null)
+    {
+      racingLineButton.interactable = false;
+    }
+
+    if (racingLinePreview != null)
+    {
+      racingLinePreview.gameObject.SetActive(false);
+    }
+
+    trackName = "";
+  }
+
+  public void OnDisable()
+  {
+    ResetValues();
   }
 
   public void Start()
@@ -145,15 +177,14 @@ public class AnalysisGetInfo : MonoBehaviour
     }
 
     trackName = track.name;
-
     if (racingLinePreview != null)
     {
-        racingLinePreview.gameObject.SetActive(true);
-        racingLinePreview.InitializeWithTrack(trackName);
+      racingLinePreview.gameObject.SetActive(true);
+      racingLinePreview.InitializeWithTrack(trackName);
     }
     else
     {
-        Debug.LogWarning("Racing line preview component not assigned");
+      Debug.LogWarning("Racing line preview component not assigned");
     }
 
     LoadRacingLinePreview();
@@ -291,8 +322,13 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private void LoadRacingLinePreview()
   {
+    if (racingLineButton != null)
+    {
+      racingLineButton.interactable = true;
+    }
     if (racingLinePreview != null)
     {
+      racingLinePreview.gameObject.SetActive(true);
       racingLinePreview.InitializeWithTrack(trackName);
     }
     else

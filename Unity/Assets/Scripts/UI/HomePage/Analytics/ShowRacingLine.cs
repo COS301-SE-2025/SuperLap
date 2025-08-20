@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEngine.UI.Extensions;
+using LibTessDotNet;
 using System.IO;
 
 [System.Serializable]
@@ -69,629 +73,405 @@ public static class RacelineDisplayImporter
   }
 }
 
-public class ShowRacingLine : MonoBehaviour
+public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPointerDownHandler
 {
   [Header("Display Settings")]
-  public Image racelineImage;
+  public RectTransform trackContainer;
+  public RectTransform zoomContainer;
+  public RectTransform viewportRect;
+  public Slider timeline;
+  public Texture2D playTexture;
+  public Texture2D pauseTexture;
 
-  [Header("Data Source")]
-  public string binaryDataPath = "tracks";
+  public Image playPauseImage;
 
-  [Header("Animation Settings")]
-  public float animationSpeed = 200.0f;
-  public Color cursorColor = Color.yellow;
-  public int cursorSize = 8;
-  public Color trailColor = Color.green;
-  public float trailFadeLength = 50f;
-  public bool reverseAnimation = false;
+  [Header("Line Renderer Settings")]
+  public Material lineMaterial;
+  public float outerBoundaryWidth = 1f;
+  public float innerBoundaryWidth = 1f;
+  public float racelineWidth = 1f;
 
   [Header("Track Colors")]
   public Color outerBoundaryColor = Color.blue;
   public Color innerBoundaryColor = Color.red;
+  public Color roadColor = new Color(0.0f, 0.0f, 0.0f, 1);
   public Color racelineColor = Color.green;
-  public Color backgroundColor = new Color(54f / 255f, 54f / 255f, 54f / 255f, 1.0f);
 
-  [Header("Static Display Mode")]
-  public bool staticDisplayMode = false;
+  [Header("Track Controls")]
+  public bool showOuterBoundary = true;
+  public bool showInnerBoundary = true;
+  public bool showRaceLine = true;
+
+  [Header("Zoom/Pan Settings")]
+  public float zoomSpeed = 0.1f;
+  public float minZoom = 0.5f;
+  public float maxZoom = 3f;
+  [SerializeField] public float currentZoom = 1f;
+  public float panSpeed = 1f;
+  public bool invertZoom = false;
+  public bool enablePanZoom = true;
+
+  [Header("Car Cursor Settings")]
+  public RectTransform carCursorPrefab;
+  public float cursorSize = 5f;
+  public float carSpeed = 50f;
+  public int trailMaxPoints = 30;
+  public Color trailColor = new Color(1f, 1f, 0f, 0.8f);
+
+  [Header("Camera Follow")]
+  public bool followCar = true;
+  public float lerpSpeed = 5f;
+
+  [Header("Time Control")]
+  public float currentTime = 0f;
+  public float timeSpeed = 1f;
+  public bool isRacing = false;
+
+  private RectTransform carCursor;
+  private UILineRenderer trailLineRenderer;
+  private List<Vector2> trailPositions = new List<Vector2>();
+  private Vector2[] racelinePoints;
+  private float traveledDistance = 0f;
 
   private RacelineDisplayData currentTrackData;
-  private string currentTrackName = "";
-  private Texture2D baseTexture;
-  private Texture2D animatedTexture;
-  private Color[] basePixels;
-  private bool isAnimating = false;
-  private float animationTime = 0f;
-  private bool isReverse = false;
-  private Vector2 trackMin, trackMax;
-  private float trackScale;
-  private Vector2 trackOffset;
-  private int textureWidth = 1024;
-  private int textureHeight = 1024;
-
-  private APIManager apiManager;
-  private bool isInitialized = false;
-
-  void Update()
-  {
-    if (!staticDisplayMode && isAnimating && currentTrackData != null && currentTrackData.Raceline != null &&
-        currentTrackData.Raceline.Count > 0 && baseTexture != null)
-    {
-      float deltaTime = Time.deltaTime * animationSpeed;
-
-      if (isReverse)
-      {
-        animationTime -= deltaTime;
-        if (animationTime < 0f)
-        {
-          animationTime = currentTrackData.Raceline.Count - 1;
-        }
-      }
-      else
-      {
-        animationTime += deltaTime;
-        if (animationTime >= currentTrackData.Raceline.Count)
-        {
-          animationTime = 0f;
-        }
-      }
-
-      UpdateAnimatedTexture();
-    }
-  }
-
-  void OnEnable()
-  {
-    if (isInitialized && currentTrackData != null)
-    {
-      RefreshDisplay();
-    }
-  }
-
+  private Dictionary<string, UILineRenderer> lineRenderers = new Dictionary<string, UILineRenderer>();
+  private Vector2 panOffset = Vector2.zero;
+  private Vector2 initialPosition;
+  private bool isDragging = false;
+  private Vector2 dragStartPosition;
 
   void Start()
   {
+    if (!zoomContainer && trackContainer) zoomContainer = trackContainer.parent as RectTransform;
+    if (!viewportRect) viewportRect = GetComponentInParent<Canvas>().GetComponent<RectTransform>();
+    initialPosition = zoomContainer.anchoredPosition;
+    UpdateLineWidths();
+  }
+
+  private float[] racelineSegmentLengths;
+  private float totalRacelineLength;
+
+  private void SetupRacelineSegments()
+  {
+    if (racelinePoints == null || racelinePoints.Length < 2) return;
+
+    racelineSegmentLengths = new float[racelinePoints.Length - 1];
+    totalRacelineLength = 0f;
+
+    for (int i = 1; i < racelinePoints.Length; i++)
+    {
+      racelineSegmentLengths[i - 1] = Vector2.Distance(racelinePoints[i - 1], racelinePoints[i]);
+      totalRacelineLength += racelineSegmentLengths[i - 1];
+    }
+  }
+
+  private float CalculateTotalLength()
+  {
+    float totalLength = 0f;
+    for (int i = 1; i < racelinePoints.Length; i++)
+    {
+      totalLength += Vector2.Distance(racelinePoints[i - 1], racelinePoints[i]);
+    }
+    return totalLength;
+  }
+
+  private float GetTotalRaceTime()
+  {
+    float totalLength = CalculateTotalLength();
+    return totalLength / carSpeed;
   }
 
 
-  private void TryLoadFirstAvailableTrack()
+  public void OnPointerDown(PointerEventData eventData)
   {
-    string tracksDirectory = Path.Combine(Application.dataPath, binaryDataPath.TrimEnd('/', '\\'));
+    if (!enablePanZoom) return;
 
-    if (Directory.Exists(tracksDirectory))
+    if (currentZoom > 1f)
     {
-      string[] binFiles = Directory.GetFiles(tracksDirectory, "*.bin");
+      isDragging = true;
+      dragStartPosition = eventData.position;
+      followCar = false;
+    }
+  }
 
-      if (binFiles.Length > 0)
+  public void setZoom(float newZoom)
+  {
+    currentZoom = newZoom;
+  }
+
+  public void GoToTime(float targetTime, float totalLapTime)
+  {
+    if (racelinePoints == null || racelinePoints.Length < 2 || racelineSegmentLengths == null) return;
+
+    targetTime = Mathf.Clamp(targetTime, 0f, totalLapTime);
+
+    float fraction = targetTime / totalLapTime;
+
+    float targetDistance = totalRacelineLength * fraction;
+
+    float accumulated = 0f;
+    for (int i = 0; i < racelineSegmentLengths.Length; i++)
+    {
+      if (accumulated + racelineSegmentLengths[i] >= targetDistance)
       {
-        string firstFile = binFiles[0];
-        string trackName = Path.GetFileNameWithoutExtension(firstFile);
-
-        InitializeWithTrack(trackName);
+        float segmentFraction = (targetDistance - accumulated) / racelineSegmentLengths[i];
+        carCursor.anchoredPosition = Vector2.Lerp(racelinePoints[i], racelinePoints[i + 1], segmentFraction);
+        return;
       }
-      else
+      accumulated += racelineSegmentLengths[i];
+    }
+    carCursor.anchoredPosition = racelinePoints[racelinePoints.Length - 1];
+  }
+
+  public void OnDrag(PointerEventData eventData)
+  {
+    if (!enablePanZoom) return;
+
+    if (currentZoom <= 1f || !isDragging) return;
+
+    panOffset += (eventData.position - dragStartPosition) * panSpeed;
+    dragStartPosition = eventData.position;
+    ConstrainToViewport();
+    UpdateZoomContainer();
+  }
+
+  public void OnScroll(PointerEventData eventData)
+  {
+    if (!enablePanZoom) return;
+    float zoomDelta = eventData.scrollDelta.y * zoomSpeed * (invertZoom ? -1 : 1);
+    float previousZoom = currentZoom;
+    currentZoom = Mathf.Clamp(currentZoom + zoomDelta, minZoom, maxZoom);
+
+
+    if (!Mathf.Approximately(previousZoom, currentZoom))
+    {
+      RectTransformUtility.ScreenPointToLocalPointInRectangle(zoomContainer, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
+      float zoomRatio = currentZoom / previousZoom;
+      panOffset = (panOffset - localPoint) * zoomRatio + localPoint;
+    }
+
+    if (Mathf.Approximately(currentZoom, 1f)) panOffset = Vector2.zero;
+    ConstrainToViewport();
+    UpdateZoomContainer();
+    UpdateLineWidths();
+  }
+
+  public void ResetView()
+  {
+    currentZoom = 1f;
+    panOffset = Vector2.zero;
+    UpdateZoomContainer();
+    UpdateLineWidths();
+  }
+
+  public void changeOuterBoundaryWidth(float newWidth)
+  {
+    outerBoundaryWidth = newWidth;
+
+    if (lineRenderers.TryGetValue("OuterBoundary", out UILineRenderer renderer))
+    {
+      renderer.LineThickness = outerBoundaryWidth / currentZoom;
+    }
+  }
+
+  public void changeInnerBoundaryWidth(float newWidth)
+  {
+    innerBoundaryWidth = newWidth;
+
+    if (lineRenderers.TryGetValue("InnerBoundary", out UILineRenderer renderer))
+    {
+      renderer.LineThickness = innerBoundaryWidth / currentZoom;
+    }
+  }
+
+  public void changeRaceLineWidth(float newWidth)
+  {
+    racelineWidth = newWidth;
+
+    if (lineRenderers.TryGetValue("Raceline", out UILineRenderer renderer))
+    {
+      renderer.LineThickness = racelineWidth / currentZoom;
+    }
+  }
+
+  private void ConstrainToViewport()
+  {
+    if (!viewportRect || !trackContainer || followCar) return;
+
+    Vector2 scaledSize = trackContainer.rect.size * currentZoom;
+    Vector2 viewportSize = viewportRect.rect.size;
+    Vector2 maxOffset = Vector2.Max((scaledSize - viewportSize) * 0.5f, Vector2.zero);
+
+    panOffset.x = Mathf.Clamp(panOffset.x, -maxOffset.x, maxOffset.x);
+    panOffset.y = Mathf.Clamp(panOffset.y, -maxOffset.y, maxOffset.y);
+  }
+
+
+  private void UpdateZoomContainer()
+  {
+    if (!zoomContainer) return;
+    zoomContainer.localScale = Vector3.one * currentZoom;
+    zoomContainer.anchoredPosition = initialPosition + panOffset;
+  }
+
+  private void UpdateLineWidths()
+  {
+    foreach (var kvp in lineRenderers)
+    {
+      if (!kvp.Value) continue;
+      float baseWidth = kvp.Key switch
       {
-        Debug.LogWarning("No .bin files found in track directory.");
-      }
-    }
-    else
-    {
-      Debug.LogWarning($"Track directory does not exist: {tracksDirectory}");
+        "OuterBoundary" => outerBoundaryWidth,
+        "InnerBoundary" => innerBoundaryWidth,
+        "Raceline" => racelineWidth,
+        _ => 1f
+      };
+      kvp.Value.LineThickness = baseWidth / currentZoom;
     }
   }
 
-
-  void OnDestroy()
+  List<UnityEngine.Vector2> ConvertToUnityVector2(List<System.Numerics.Vector2> list)
   {
-    CleanupTextures();
+    return list.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList();
   }
 
-  void OnDisable()
+  public void DisplayRacelineData(RacelineDisplayData trackData)
   {
-    CleanupTextures();
-  }
+    if (!trackContainer || trackData == null) return;
 
-  private void CleanupTextures()
-  {
-    if (baseTexture != null)
-    {
-      DestroyImmediate(baseTexture);
-      baseTexture = null;
-    }
-
-    if (animatedTexture != null)
-    {
-      DestroyImmediate(animatedTexture);
-      animatedTexture = null;
-    }
-
-    basePixels = null;
-  }
-
-  public void DisplayRacelineData(RacelineDisplayData trackData, string trackName = "")
-  {
-    if (trackData == null)
-    {
-      Debug.LogError("Track data is null");
-      return;
-    }
-
-    CleanupTextures();
-
+    ClearExistingLines();
     currentTrackData = trackData;
-    currentTrackName = trackName;
-    baseTexture = GenerateTrackTexture(currentTrackData);
+    (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(trackData);
+    float scale = CalculateScale(bounds.size);
+    Vector2 offset = CalculateOffset(bounds.size, scale);
 
-    if (baseTexture != null && racelineImage != null)
-    {
-      basePixels = baseTexture.GetPixels();
 
-      animatedTexture = new Texture2D(baseTexture.width, baseTexture.height);
+    CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
 
-      Sprite sprite = Sprite.Create(baseTexture, new Rect(0, 0, baseTexture.width, baseTexture.height), Vector2.one * 0.5f);
-      racelineImage.sprite = sprite;
+    if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
+    if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
+    if (showRaceLine) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
 
-      if (!staticDisplayMode && currentTrackData.Raceline != null && currentTrackData.Raceline.Count > 0)
-      {
-        isAnimating = true;
-        animationTime = 0f;
-      }
-      else if (staticDisplayMode)
-      {
-        isAnimating = false;
-      }
-    }
-    else
-    {
-      Debug.LogError("Failed to generate texture or racelineImage is null");
-    }
+    panOffset = Vector2.zero;
+    UpdateZoomContainer();
+    UpdateLineWidths();
   }
 
-  private Texture2D GenerateTrackTexture(RacelineDisplayData trackData)
+
+  private void ClearExistingLines()
   {
-    Texture2D texture = new Texture2D(textureWidth, textureHeight);
-    Color[] pixels = new Color[textureWidth * textureHeight];
+    foreach (Transform child in trackContainer) Destroy(child.gameObject);
+    lineRenderers.Clear();
+  }
 
-    for (int i = 0; i < pixels.Length; i++)
-    {
-      pixels[i] = backgroundColor;
-    }
-
+  private (Vector2 min, Vector2 max, Vector2 size) CalculateBounds(RacelineDisplayData trackData)
+  {
     Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
     Vector2 max = new Vector2(float.MinValue, float.MinValue);
 
-    if (trackData.OuterBoundary != null && trackData.OuterBoundary.Count > 0)
+    void UpdateBounds(List<Vector2> points)
     {
-      foreach (var point in trackData.OuterBoundary)
+      if (points == null) return;
+      for (int i = 0; i < points.Count; i++)
       {
-        min = Vector2.Min(min, point);
-        max = Vector2.Max(max, point);
+        min = Vector2.Min(min, points[i]);
+        max = Vector2.Max(max, points[i]);
       }
     }
 
-    if (trackData.InnerBoundary != null && trackData.InnerBoundary.Count > 0)
-    {
-      foreach (var point in trackData.InnerBoundary)
-      {
-        min = Vector2.Min(min, point);
-        max = Vector2.Max(max, point);
-      }
-    }
+    UpdateBounds(trackData.OuterBoundary);
+    UpdateBounds(trackData.InnerBoundary);
+    UpdateBounds(trackData.Raceline);
 
-    if (trackData.Raceline != null && trackData.Raceline.Count > 0)
-    {
-      foreach (var point in trackData.Raceline)
-      {
-        min = Vector2.Min(min, point);
-        max = Vector2.Max(max, point);
-      }
-    }
-
-    Vector2 size = max - min;
-
-    float margin = 50f;
-    float scaleX = (textureWidth - 2 * margin) / size.x;
-    float scaleY = (textureHeight - 2 * margin) / size.y;
-    float scale = Mathf.Min(scaleX, scaleY);
-
-    Vector2 scaledSize = size * scale;
-    Vector2 offset = new Vector2(
-        (textureWidth - scaledSize.x) * 0.5f,
-        (textureHeight - scaledSize.y) * 0.5f
-    );
-
-    trackMin = min;
-    trackMax = max;
-    trackScale = scale;
-    trackOffset = offset;
-
-    if (trackData.OuterBoundary != null && trackData.OuterBoundary.Count > 0)
-    {
-      DrawLine(pixels, textureWidth, textureHeight, trackData.OuterBoundary, outerBoundaryColor, min, scale, offset);
-    }
-
-    if (trackData.InnerBoundary != null && trackData.InnerBoundary.Count > 0)
-    {
-      DrawLine(pixels, textureWidth, textureHeight, trackData.InnerBoundary, innerBoundaryColor, min, scale, offset);
-    }
-
-    if (staticDisplayMode && trackData.Raceline != null && trackData.Raceline.Count > 0)
-    {
-      DrawLine(pixels, textureWidth, textureHeight, trackData.Raceline, racelineColor, min, scale, offset);
-    }
-
-    texture.SetPixels(pixels);
-    texture.Apply();
-
-    return texture;
+    return (min, max, max - min);
   }
 
-  private void DrawLine(Color[] pixels, int width, int height, List<Vector2> points, Color color, Vector2 min, float scale, Vector2 offset)
+  private float CalculateScale(Vector2 size)
   {
-    if (points == null || points.Count < 2) return;
-
-    for (int i = 0; i < points.Count - 1; i++)
-    {
-      Vector2 from = TransformPoint(points[i], min, scale, offset);
-      Vector2 to = TransformPoint(points[i + 1], min, scale, offset);
-
-      DrawPixelLine(pixels, width, height, from, to, color);
-    }
-
-    if (points.Count > 2)
-    {
-      Vector2 from = TransformPoint(points[points.Count - 1], min, scale, offset);
-      Vector2 to = TransformPoint(points[0], min, scale, offset);
-      DrawPixelLine(pixels, width, height, from, to, color);
-    }
+    float margin = 50f;
+    return Mathf.Min((trackContainer.rect.width - 2 * margin) / size.x, (trackContainer.rect.height - 2 * margin) / size.y);
   }
+
+  private Vector2 CalculateOffset(Vector2 size, float scale)
+  {
+    Vector2 scaledSize = size * scale;
+    return new Vector2(
+        (trackContainer.rect.width - scaledSize.x) * 0.5f,
+        (trackContainer.rect.height - scaledSize.y) * 0.5f
+    );
+  }
+
 
   private Vector2 TransformPoint(Vector2 point, Vector2 min, float scale, Vector2 offset)
   {
     Vector2 transformed = (point - min) * scale + offset;
-    transformed.y = textureHeight - transformed.y;
-    return transformed;
+    transformed.y = trackContainer.rect.height - transformed.y;
+    return transformed - trackContainer.rect.size * 0.5f;
   }
 
-  private void DrawPixelLine(Color[] pixels, int width, int height, Vector2 from, Vector2 to, Color color)
+  private void CreateRoadArea(List<Vector2> outer, List<Vector2> inner, Vector2 min, float scale, Vector2 offset)
   {
-    int x0 = Mathf.RoundToInt(from.x);
-    int y0 = Mathf.RoundToInt(from.y);
-    int x1 = Mathf.RoundToInt(to.x);
-    int y1 = Mathf.RoundToInt(to.y);
+    if (outer == null || inner == null || outer.Count < 3 || inner.Count < 3) return;
 
-    int dx = Mathf.Abs(x1 - x0);
-    int dy = Mathf.Abs(y1 - y0);
-    int sx = x0 < x1 ? 1 : -1;
-    int sy = y0 < y1 ? 1 : -1;
-    int err = dx - dy;
+    List<Vector2> combined = new List<Vector2>(outer.Count + inner.Count);
+    combined.AddRange(outer);
+    inner.Reverse();
+    combined.AddRange(inner);
 
-    while (true)
-    {
-      for (int offsetX = -1; offsetX <= 1; offsetX++)
-      {
-        for (int offsetY = -1; offsetY <= 1; offsetY++)
-        {
-          int pixelX = x0 + offsetX;
-          int pixelY = y0 + offsetY;
-          if (pixelX >= 0 && pixelX < width && pixelY >= 0 && pixelY < height)
-          {
-            Color existingColor = pixels[pixelY * width + pixelX];
-            pixels[pixelY * width + pixelX] = Color.Lerp(existingColor, color, color.a);
-          }
-        }
-      }
+    GameObject roadGO = new GameObject("RoadMesh", typeof(RectTransform), typeof(CanvasRenderer), typeof(UIMeshPolygon));
+    roadGO.transform.SetParent(trackContainer, false);
 
-      if (x0 == x1 && y0 == y1) break;
-
-      int e2 = 2 * err;
-      if (e2 > -dy)
-      {
-        err -= dy;
-        x0 += sx;
-      }
-      if (e2 < dx)
-      {
-        err += dx;
-        y0 += sy;
-      }
-    }
+    UIMeshPolygon roadMesh = roadGO.GetComponent<UIMeshPolygon>();
+    roadMesh.Points = combined.ConvertAll(p => TransformPoint(p, min, scale, offset));
+    roadMesh.color = roadColor;
   }
 
-  private void UpdateAnimatedTexture()
+
+  private void CreateLineRenderer(string key, List<Vector2> points, Color color, float width, Vector2 min, float scale, Vector2 offset)
   {
-    if (animatedTexture == null || basePixels == null)
-    {
-      Debug.LogError("Animated texture or base pixels not initialized");
-      return;
-    }
+    if (points == null || points.Count < 2) return;
 
-    Color[] pixels = new Color[basePixels.Length];
-    System.Array.Copy(basePixels, pixels, basePixels.Length);
-
-    int currentPointIndex = Mathf.FloorToInt(animationTime);
-    float t = animationTime - currentPointIndex;
-
-    Vector2 currentPoint = currentTrackData.Raceline[currentPointIndex];
-    Vector2 nextPoint;
-
-    if (isReverse)
-    {
-      int prevIndex = (currentPointIndex - 1 + currentTrackData.Raceline.Count) % currentTrackData.Raceline.Count;
-      nextPoint = currentTrackData.Raceline[prevIndex];
-      t = 1.0f - t;
-    }
-    else
-    {
-      nextPoint = currentTrackData.Raceline[(currentPointIndex + 1) % currentTrackData.Raceline.Count];
-    }
-
-    Vector2 animatedPosition = Vector2.Lerp(currentPoint, nextPoint, t);
-
-    DrawAnimatedTrail(pixels, animatedTexture.width, animatedTexture.height, currentPointIndex, t);
-
-    Vector2 texturePos = TransformPoint(animatedPosition, trackMin, trackScale, trackOffset);
-
-    DrawCursor(pixels, animatedTexture.width, animatedTexture.height, texturePos, cursorColor, cursorSize);
-
-    animatedTexture.SetPixels(pixels);
-    animatedTexture.Apply();
-
-    Sprite animatedSprite = Sprite.Create(animatedTexture, new Rect(0, 0, animatedTexture.width, animatedTexture.height), Vector2.one * 0.5f);
-    racelineImage.sprite = animatedSprite;
+    UILineRenderer lr = new GameObject(key, typeof(RectTransform), typeof(UILineRenderer)).GetComponent<UILineRenderer>();
+    lr.transform.SetParent(trackContainer, false);
+    lr.material = lineMaterial;
+    lr.color = color;
+    lr.LineThickness = width / currentZoom;
+    lr.Points = points.ConvertAll(p => TransformPoint(p, min, scale, offset)).ToArray();
+    lineRenderers[key] = lr;
   }
 
-  private void DrawAnimatedTrail(Color[] pixels, int width, int height, int currentPointIndex, float t)
+  public void InitializeWithTrack(string trackName)
   {
-    int totalPoints = currentTrackData.Raceline.Count;
-    int trailLength = Mathf.Min(Mathf.RoundToInt(trailFadeLength), totalPoints);
-
-    for (int i = 0; i < trailLength; i++)
-    {
-      int pointIndex, nextPointIndex;
-
-      if (isReverse)
-      {
-        pointIndex = (currentPointIndex + i) % totalPoints;
-        nextPointIndex = (pointIndex + 1) % totalPoints;
-      }
-      else
-      {
-        pointIndex = (currentPointIndex - i + totalPoints) % totalPoints;
-        nextPointIndex = (pointIndex + 1) % totalPoints;
-      }
-
-      float fadeIntensity = 1.0f - (float)i / trailLength;
-
-      if (i == 0)
-      {
-        fadeIntensity *= (1.0f - t);
-      }
-
-      Color segmentColor = new Color(trailColor.r, trailColor.g, trailColor.b, trailColor.a * fadeIntensity);
-
-      Vector2 from = TransformPoint(currentTrackData.Raceline[pointIndex], trackMin, trackScale, trackOffset);
-      Vector2 to = TransformPoint(currentTrackData.Raceline[nextPointIndex], trackMin, trackScale, trackOffset);
-
-      DrawPixelLine(pixels, width, height, from, to, segmentColor);
-    }
-  }
-
-  private void DrawCursor(Color[] pixels, int width, int height, Vector2 position, Color color, int size)
-  {
-    int centerX = Mathf.RoundToInt(position.x);
-    int centerY = Mathf.RoundToInt(position.y);
-    int radius = size / 2;
-
-    for (int x = centerX - radius; x <= centerX + radius; x++)
-    {
-      for (int y = centerY - radius; y <= centerY + radius; y++)
-      {
-        if (x >= 0 && x < width && y >= 0 && y < height)
-        {
-          float distance = Vector2.Distance(new Vector2(x, y), new Vector2(centerX, centerY));
-          if (distance <= radius)
-          {
-            float intensity = 1.0f - (distance / radius);
-            Color finalColor = Color.Lerp(Color.clear, color, intensity);
-
-            Color existingColor = pixels[y * width + x];
-            pixels[y * width + x] = Color.Lerp(existingColor, finalColor, finalColor.a);
-          }
-        }
-      }
-    }
-  }
-
-  public void ToggleAnimation()
-  {
-    isAnimating = !isAnimating;
-  }
-
-  public void ToggleDirection()
-  {
-    isReverse = !isReverse;
-  }
-
-  public void ToggleStaticDisplay()
-  {
-    staticDisplayMode = !staticDisplayMode;
-
-    if (currentTrackData != null)
-    {
-      RefreshDisplay();
-    }
-  }
-
-  public void SetStaticDisplayMode(bool isStatic)
-  {
-    staticDisplayMode = isStatic;
-
-    if (currentTrackData != null)
-    {
-      RefreshDisplay();
-    }
-  }
-
-  public bool IsStaticDisplayMode()
-  {
-    return staticDisplayMode;
-  }
-
-  private void RefreshDisplay()
-  {
-    if (currentTrackData != null)
-    {
-      DisplayRacelineData(currentTrackData, currentTrackName);
-    }
-  }
-
-  public void SetReverseDirection(bool reverse)
-  {
-    isReverse = reverse;
-  }
-
-  public bool IsReverse()
-  {
-    return isReverse;
-  }
-
-  public void SetAnimationSpeed(float speed)
-  {
-    animationSpeed = speed;
-  }
-
-  public void StartAnimation()
-  {
-    if (currentTrackData != null && currentTrackData.Raceline != null && currentTrackData.Raceline.Count > 0)
-    {
-      isAnimating = true;
-      animationTime = 0f;
-    }
-  }
-
-  public void StopAnimation()
-  {
-    isAnimating = false;
-  }
-
-  public void SetTrailLength(float length)
-  {
-    trailFadeLength = length;
-  }
-
-  public void OnSpeedSliderChanged(float sliderValue)
-  {
-    animationSpeed = Mathf.Lerp(50f, 1000f, sliderValue);
-  }
-
-  public void OnCursorSizeSliderChanged(float sliderValue)
-  {
-    cursorSize = Mathf.RoundToInt(Mathf.Lerp(5f, 50f, sliderValue));
-  }
-
-  public void OnTrailLengthSliderChanged(float sliderValue)
-  {
-    trailFadeLength = Mathf.Lerp(10f, 300f, sliderValue);
-  }
-
-  public void SetAnimationSpeedFromSlider(float sliderValue, float minSpeed = 25f, float maxSpeed = 750f)
-  {
-    animationSpeed = Mathf.Lerp(minSpeed, maxSpeed, sliderValue);
-  }
-
-  public void SetCursorSizeFromSlider(float sliderValue, int minSize = 2, int maxSize = 30)
-  {
-    cursorSize = Mathf.RoundToInt(Mathf.Lerp(minSize, maxSize, sliderValue));
-  }
-
-  public void SetTrailLengthFromSlider(float sliderValue, float minLength = 5f, float maxLength = 150f)
-  {
-    trailFadeLength = Mathf.Lerp(minLength, maxLength, sliderValue);
-  }
-
-  public float GetNormalizedAnimationSpeed(float minSpeed = 50f, float maxSpeed = 500f)
-  {
-    return Mathf.InverseLerp(minSpeed, maxSpeed, animationSpeed);
-  }
-
-  public float GetNormalizedCursorSize(int minSize = 4, int maxSize = 20)
-  {
-    return Mathf.InverseLerp(minSize, maxSize, cursorSize);
-  }
-
-  public float GetNormalizedTrailLength(float minLength = 10f, float maxLength = 100f)
-  {
-    return Mathf.InverseLerp(minLength, maxLength, trailFadeLength);
-  }
-
-  public string GetCurrentTrackName()
-  {
-    return currentTrackName;
-  }
-
-  public void SetTrackName(string trackName)
-  {
-    currentTrackName = trackName;
-  }
-
-public void InitializeWithTrack(string trackName)
-{
     if (string.IsNullOrEmpty(trackName))
     {
-        Debug.LogError("Track name is null or empty in InitializeWithTrack");
-        return;
+      Debug.LogError("Track name is null or empty in InitializeWithTrack");
+      return;
     }
-
-    if (currentTrackName == trackName && currentTrackData != null)
-    {
-        RefreshDisplay();
-        return;
-    }
-
-    SetTrackName(trackName);
     LoadTrackData(trackName);
-    isInitialized = true;
-}
-
-
-  public void InitializeWithTrack(APIManager.Track track)
-  {
-    if (track != null)
-    {
-      SetTrackName(track.name);
-      LoadTrackData(track.name);
-    }
-    else
-    {
-      Debug.LogError("Track object is null");
-      SetTrackName("Unknown Track");
-    }
-  }
-
-  public void InitializeWithTrackByIndex(int trackIndex)
-  {
-    string defaultTrackName = $"Track_{trackIndex}";
-    SetTrackName(defaultTrackName);
-    LoadTrackData(defaultTrackName);
   }
 
   private void LoadTrackData(string trackName)
   {
     currentTrackData = null;
 
-    if (racelineImage != null)
-    {
-      racelineImage.sprite = null;
-    }
-
     APIManager.Instance.GetTrackBorder(trackName, (success, message, bytes) =>
     {
       if (success && bytes != null)
       {
-        RacelineDisplayData trackData = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
+        RacelineDisplayData Data = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
+
+        float simplificationTolerance = 10f;
+
+        RacelineDisplayData trackData = new RacelineDisplayData
+        {
+          InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(Data.InnerBoundary, simplificationTolerance)),
+          OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(Data.OuterBoundary, simplificationTolerance)),
+          Raceline = Data.Raceline
+        };
         if (trackData != null)
         {
-          DisplayRacelineData(trackData, trackName);
+          DisplayRacelineData(trackData);
+          SetupCarCursor();
         }
         else
         {
@@ -706,75 +486,218 @@ public void InitializeWithTrack(string trackName)
     });
   }
 
-  private string GetBinaryFilePath(string trackName)
+  private void SetupCarCursor()
   {
-    string fileName = trackName.ToLower().Replace(" ", "_") + ".bin";
-    if (trackName.ToLower().Contains("test"))
-    {
-      fileName = "test1.bin";
-    }
+    if (!carCursorPrefab || !trackContainer) return;
 
-    string assetsPath = Path.Combine(Application.dataPath, "tracks", fileName);
-    return assetsPath;
+    carCursor = Instantiate(carCursorPrefab, trackContainer);
+    carCursor.name = "CarCursor";
+    carCursor.anchorMin = carCursor.anchorMax = new Vector2(0.5f, 0.5f);
+
+    GameObject trailGO = new GameObject("CarTrail", typeof(RectTransform), typeof(UILineRenderer));
+    trailGO.transform.SetParent(trackContainer, false);
+    trailLineRenderer = trailGO.GetComponent<UILineRenderer>();
+    trailLineRenderer.material = lineMaterial;
+    trailLineRenderer.color = trailColor;
+    trailLineRenderer.LineThickness = racelineWidth / currentZoom;
+
+    (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(currentTrackData);
+    float scale = CalculateScale(bounds.size);
+    Vector2 offset = CalculateOffset(bounds.size, scale);
+
+    racelinePoints = currentTrackData.Raceline.ConvertAll(p => TransformPoint(p, bounds.min, scale, offset)).ToArray();
+    SetupRacelineSegments();
+
+    traveledDistance = 0f;
+    trailPositions.Clear();
   }
 
-  private void LoadTrackFromBinary(string filePath)
+  void Update()
   {
-    try
+    if (!isRacing || racelinePoints == null || racelinePoints.Length < 2) return;
+
+    if (followCar && carCursor)
     {
-      RacelineDisplayData trackData = RacelineDisplayImporter.LoadFromBinary(filePath);
-      DisplayRacelineData(trackData, currentTrackName);
+      Vector2 targetPos = -carCursor.anchoredPosition * currentZoom;
+      panOffset = Vector2.Lerp(panOffset, targetPos, Time.deltaTime * lerpSpeed);
+      UpdateZoomContainer();
     }
-    catch (System.Exception e)
+
+    carCursor.sizeDelta = new Vector2(cursorSize, cursorSize);
+
+    currentTime += Time.deltaTime * timeSpeed;
+
+    float totalRaceTime = GetTotalRaceTime();
+
+    if (timeline != null)
     {
-      Debug.LogError($"Error loading track from binary file {filePath}: {e.Message}");
+      timeline.maxValue = totalRaceTime;
+      timeline.minValue = 0f;
     }
+
+    if (currentTime > totalRaceTime) currentTime = 0f;
+    if (currentTime < 0f) currentTime = totalRaceTime;
+
+    GoToTime(currentTime, totalRaceTime);
+
+    if (timeline) timeline.value = currentTime;
   }
 
-  public bool IsTrackDataLoaded()
+
+  public void SetCarSpeed(float newSpeed)
   {
-    return currentTrackData != null &&
-           currentTrackData.Raceline != null &&
-           currentTrackData.Raceline.Count > 0;
+    if (carSpeed <= 0) return;
+
+    float oldTotalTime = GetTotalRaceTime();
+    float progress = currentTime / oldTotalTime;
+
+    carSpeed = newSpeed;
+
+    float newTotalTime = GetTotalRaceTime();
+    currentTime = progress * newTotalTime;
   }
 
-  public void LogTrackInfo()
+  public void setCurrentTime(float time)
   {
-    if (currentTrackData != null)
+    currentTime = time;
+  }
+
+  public void FastForward()
+  {
+    switch (timeSpeed)
     {
-      Debug.Log($"Track: {currentTrackName}");
-      Debug.Log($"Outer Boundary Points: {currentTrackData.OuterBoundary?.Count ?? 0}");
-      Debug.Log($"Inner Boundary Points: {currentTrackData.InnerBoundary?.Count ?? 0}");
-      Debug.Log($"Raceline Points: {currentTrackData.Raceline?.Count ?? 0}");
-      Debug.Log($"Animation Active: {isAnimating}");
-      Debug.Log($"Static Display Mode: {staticDisplayMode}");
+      case 1f:
+        timeSpeed = 2f;
+        lerpSpeed = 15f;
+        break;
+      case 2f:
+        timeSpeed = 4f;
+        lerpSpeed = 30f;
+        break;
+      case 4f:
+        timeSpeed = 8f;
+        lerpSpeed = 60f;
+        break;
+      case 8f:
+        timeSpeed = 16f;
+        lerpSpeed = 120f;
+        break;
+      case 16f:
+        timeSpeed = 32f;
+        lerpSpeed = 240f;
+        break;
+      default:
+        timeSpeed = 1f;
+        lerpSpeed = 10f;
+        break;
+    }
+    playPauseImage.sprite = SpriteFromTexture(playTexture);
+  }
+
+  public void PlayPause()
+  {
+    if (timeSpeed != 0)
+    {
+      timeSpeed = 0f;
+      playPauseImage.sprite = SpriteFromTexture(pauseTexture);
     }
     else
     {
-      Debug.Log("No track data loaded");
+      timeSpeed = 1f;
+      playPauseImage.sprite = SpriteFromTexture(playTexture);
     }
   }
 
-  /// <summary>
-  /// Displays all track lines in static mode (inner boundary, outer boundary, and racing line)
-  /// Similar to the PSOTest.cs DrawLines functionality
-  /// </summary>
-  public void DisplayStaticLines()
+  public void Rewind()
   {
-    SetStaticDisplayMode(true);
-    Debug.Log("Displaying all track lines in static mode: inner boundary, outer boundary, and racing line");
-  }
-
-  /// <summary>
-  /// Returns to animated racing line display mode
-  /// </summary>
-  public void DisplayAnimatedRaceline()
-  {
-    SetStaticDisplayMode(false);
-    if (currentTrackData != null && currentTrackData.Raceline != null && currentTrackData.Raceline.Count > 0)
+    switch (timeSpeed)
     {
-      StartAnimation();
+      case -1f:
+        timeSpeed = -2f;
+        lerpSpeed = 15f;
+        break;
+      case -2f:
+        timeSpeed = -4f;
+        lerpSpeed = 30f;
+        break;
+      case -4f:
+        timeSpeed = -8f;
+        lerpSpeed = 60f;
+        break;
+      case -8f:
+        timeSpeed = -16f;
+        lerpSpeed = 120f;
+        break;
+      case -16f:
+        timeSpeed = -32f;
+        lerpSpeed = 240f;
+        break;
+      default:
+        timeSpeed = -1f;
+        lerpSpeed = 10f;
+        break;
     }
-    Debug.Log("Displaying animated racing line mode");
+    playPauseImage.sprite = SpriteFromTexture(playTexture);
+  }
+
+
+  private Sprite SpriteFromTexture(Texture2D texture)
+  {
+    return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+                         new Vector2(0.5f, 0.5f));
+  }
+
+
+  private void AnimateCar()
+  {
+    if (racelinePoints == null || racelinePoints.Length < 2 || !carCursor) return;
+
+    float totalLength = CalculateTotalLength();
+    float totalRaceTime = GetTotalRaceTime();
+    float distanceAlongLine = (currentTime / totalRaceTime) * totalLength;
+
+    float accumulatedLength = 0f;
+    for (int i = 0; i < racelinePoints.Length - 1; i++)
+    {
+      float segmentLength = Vector2.Distance(racelinePoints[i], racelinePoints[i + 1]);
+      if (distanceAlongLine <= accumulatedLength + segmentLength)
+      {
+        float t = (distanceAlongLine - accumulatedLength) / segmentLength;
+        carCursor.anchoredPosition = Vector2.Lerp(racelinePoints[i], racelinePoints[i + 1], t);
+        break;
+      }
+      accumulatedLength += segmentLength;
+    }
+  }
+
+
+  private void UpdateTrail()
+  {
+    if (!trailLineRenderer || !carCursor) return;
+
+    trailPositions.Add(carCursor.anchoredPosition);
+    if (trailPositions.Count > trailMaxPoints)
+      trailPositions.RemoveAt(0);
+
+    trailLineRenderer.Points = trailPositions.ToArray();
+
+    int count = trailPositions.Count;
+    if (count < 2) return;
+
+    UnityEngine.Gradient gradient = new UnityEngine.Gradient();
+    int keyCount = Mathf.Min(count, 8);
+    GradientColorKey[] colorKeys = new GradientColorKey[keyCount];
+    GradientAlphaKey[] alphaKeys = new GradientAlphaKey[keyCount];
+
+    for (int i = 0; i < keyCount; i++)
+    {
+      int index = Mathf.RoundToInt((i / (float)(keyCount - 1)) * (count - 1));
+      float alpha = (float)i / (keyCount - 1);
+      colorKeys[i] = new GradientColorKey(trailColor, alpha);
+      alphaKeys[i] = new GradientAlphaKey(alpha * trailColor.a, alpha);
+    }
+
+    gradient.SetKeys(colorKeys, alphaKeys);
+    trailLineRenderer.color = trailColor;
   }
 }

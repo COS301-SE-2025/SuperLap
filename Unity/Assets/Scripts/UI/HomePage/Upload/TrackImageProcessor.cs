@@ -822,7 +822,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         string trackName = GenerateTrackNameFromImage();
 
         // Send the processed data to the racing line display
-        racingLineComponent.DisplayRacelineData(racelineData, trackName);
+        racingLineComponent.DisplayRacelineData(racelineData);
 
         Debug.Log($"Successfully sent processed track data to racing line page. Track: {trackName}");
       }

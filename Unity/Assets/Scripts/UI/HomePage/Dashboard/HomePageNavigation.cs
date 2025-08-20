@@ -299,20 +299,6 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-  public void NavigateToRacingLineWithTrackIndex(int trackIndex)
-  {
-    NavigateToRacingLine();
-
-    if (racingLinePage != null)
-    {
-      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
-      if (racingLineComponent != null)
-      {
-        racingLineComponent.InitializeWithTrackByIndex(trackIndex);
-      }
-    }
-  }
-
   private void UpdateActivePagePosition()
   {
     hideSupportPopups();
