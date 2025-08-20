@@ -82,8 +82,15 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public Slider timeline;
   public Texture2D playTexture;
   public Texture2D pauseTexture;
-
+  public Texture2D play_0;
+  public Texture2D play_1;
+  public Texture2D play_2;
+  public Texture2D play_3;
+  public Texture2D play_4;
+  public Texture2D play_5;
   public Image playPauseImage;
+  public Image ForwardImage;
+  public Image ReverseImage;
 
   [Header("Line Renderer Settings")]
   public Material lineMaterial;
@@ -355,19 +362,19 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
   }
 
-private void ConstrainToViewport()
-{
+  private void ConstrainToViewport()
+  {
     if (!viewportRect || !trackContainer || followCar) return;
 
     Vector2 scaledSize = trackContainer.rect.size * currentZoom;
     Vector2 viewportSize = viewportRect.rect.size;
-    
+
     // Calculate maximum offset with padding
     Vector2 maxOffset = Vector2.Max((scaledSize - viewportSize) * 0.5f + new Vector2(panPadding, panPadding), Vector2.zero);
 
     panOffset.x = Mathf.Clamp(panOffset.x, -maxOffset.x, maxOffset.x);
     panOffset.y = Mathf.Clamp(panOffset.y, -maxOffset.y, maxOffset.y);
-}
+  }
 
   private void UpdateZoomContainer()
   {
@@ -594,31 +601,33 @@ private void ConstrainToViewport()
 
   public void FastForward()
   {
+    ReverseImage.sprite = SpriteFromTexture(play_0);
     switch (timeSpeed)
     {
       case 1f:
         timeSpeed = 2f;
         lerpSpeed = 15f;
+        ForwardImage.sprite = SpriteFromTexture(play_2);
         break;
       case 2f:
         timeSpeed = 4f;
         lerpSpeed = 30f;
+        ForwardImage.sprite = SpriteFromTexture(play_3);
         break;
       case 4f:
         timeSpeed = 8f;
         lerpSpeed = 60f;
+        ForwardImage.sprite = SpriteFromTexture(play_4);
         break;
       case 8f:
         timeSpeed = 16f;
         lerpSpeed = 120f;
-        break;
-      case 16f:
-        timeSpeed = 32f;
-        lerpSpeed = 240f;
+        ForwardImage.sprite = SpriteFromTexture(play_5);
         break;
       default:
         timeSpeed = 1f;
         lerpSpeed = 10f;
+        ForwardImage.sprite = SpriteFromTexture(play_1);
         break;
     }
     playPauseImage.sprite = SpriteFromTexture(playTexture);
@@ -630,41 +639,47 @@ private void ConstrainToViewport()
     {
       timeSpeed = 0f;
       playPauseImage.sprite = SpriteFromTexture(pauseTexture);
+      ForwardImage.sprite = SpriteFromTexture(play_0);
+      ReverseImage.sprite = SpriteFromTexture(play_0);
     }
     else
     {
       timeSpeed = 1f;
       playPauseImage.sprite = SpriteFromTexture(playTexture);
+      ForwardImage.sprite = SpriteFromTexture(play_1);
+      ReverseImage.sprite = SpriteFromTexture(play_0);
     }
   }
 
   public void Rewind()
   {
+    ForwardImage.sprite = SpriteFromTexture(play_0);
     switch (timeSpeed)
     {
       case -1f:
         timeSpeed = -2f;
         lerpSpeed = 15f;
+        ReverseImage.sprite = SpriteFromTexture(play_2);
         break;
       case -2f:
         timeSpeed = -4f;
         lerpSpeed = 30f;
+        ReverseImage.sprite = SpriteFromTexture(play_3);
         break;
       case -4f:
         timeSpeed = -8f;
         lerpSpeed = 60f;
+        ReverseImage.sprite = SpriteFromTexture(play_4);
         break;
       case -8f:
         timeSpeed = -16f;
         lerpSpeed = 120f;
-        break;
-      case -16f:
-        timeSpeed = -32f;
-        lerpSpeed = 240f;
+        ReverseImage.sprite = SpriteFromTexture(play_5);
         break;
       default:
         timeSpeed = -1f;
         lerpSpeed = 10f;
+        ReverseImage.sprite = SpriteFromTexture(play_1);
         break;
     }
     playPauseImage.sprite = SpriteFromTexture(playTexture);
