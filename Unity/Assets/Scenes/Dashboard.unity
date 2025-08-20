@@ -18320,19 +18320,19 @@ MonoBehaviour:
   zoomSpeed: 0.1
   minZoom: 10
   maxZoom: 30
-  currentZoom: 20
+  currentZoom: 10
   panSpeed: 20
   invertZoom: 0
   enablePanZoom: 0
   carCursorPrefab: {fileID: 780130757}
-  cursorSize: 5
-  carSpeed: 50
+  cursorSize: 3
+  carSpeed: 100
   trailMaxPoints: 30
   trailColor: {r: 1, g: 1, b: 0, a: 0.8}
   followCar: 1
   lerpSpeed: 1000
   currentTime: 0
-  timeSpeed: 1
+  timeSpeed: 0.5
   isRacing: 1
 --- !u!1 &1345279357
 GameObject:
@@ -21496,7 +21496,7 @@ MonoBehaviour:
   trailMaxPoints: 30
   trailColor: {r: 1, g: 1, b: 0, a: 0.8}
   followCar: 1
-  lerpSpeed: 5
+  lerpSpeed: 10
   currentTime: 0
   timeSpeed: 1
   isRacing: 1
