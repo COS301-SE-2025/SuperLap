@@ -120,6 +120,8 @@ public static class LineSimplifier
       SimplifySection(points, firstIndex, indexFarthest, tolerance, pointIndicesToKeep);
       SimplifySection(points, indexFarthest, lastIndex, tolerance, pointIndicesToKeep);
     }
+
+
   }
 
   private static float PerpendicularDistance(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
@@ -133,6 +135,28 @@ public static class LineSimplifier
     float numerator = Mathf.Abs(dy * point.x - dx * point.y + lineEnd.x * lineStart.y - lineEnd.y * lineStart.x);
     float denominator = Mathf.Sqrt(dx * dx + dy * dy);
     return numerator / denominator;
+  }
+
+  public static List<Vector2> SmoothLine(List<Vector2> points, int iterations = 2)
+  {
+    for (int k = 0; k < iterations; k++)
+    {
+      List<Vector2> newPoints = new List<Vector2>();
+      newPoints.Add(points[0]); // keep start
+
+      for (int i = 0; i < points.Count - 1; i++)
+      {
+        Vector2 Q = Vector2.Lerp(points[i], points[i + 1], 0.25f);
+        Vector2 R = Vector2.Lerp(points[i], points[i + 1], 0.75f);
+        newPoints.Add(Q);
+        newPoints.Add(R);
+      }
+
+      newPoints.Add(points[points.Count - 1]); // keep end
+      points = newPoints;
+    }
+
+    return points;
   }
 }
 
@@ -186,7 +210,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   private Vector2 initialPosition;
   private bool isDragging = false;
   private Vector2 dragStartPosition;
-  
+
   void Start()
   {
     if (!zoomContainer && trackContainer) zoomContainer = trackContainer.parent as RectTransform;
@@ -319,14 +343,14 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
 
   public void DisplayPlayerLineData(CSVToBinConverter.LoadCSV.PlayerLine playerLine)
   {
-    float simplificationTolerance = 4f; // Adjust as needed
+    float simplificationTolerance = 10f;
 
     MotoGPDisplayData displayData = new MotoGPDisplayData
     {
-      PlayerPath = LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.PlayerPath), simplificationTolerance),
-      InnerBoundary = LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.InnerBoundary), simplificationTolerance),
-      OuterBoundary = LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.OuterBoundary), simplificationTolerance),
-      Raceline = LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.Raceline), simplificationTolerance)
+      PlayerPath = ConvertToUnityVector2(playerLine.PlayerPath),
+      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.InnerBoundary), simplificationTolerance)),
+      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.OuterBoundary), simplificationTolerance)),
+      Raceline = ConvertToUnityVector2(playerLine.Raceline)
     };
 
     DisplayRacelineData(displayData);
@@ -438,8 +462,8 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     lr.material = lineMaterial;
     lr.color = color;
     lr.LineThickness = width / currentZoom;
+    //lr.Points = LineSimplifier.CatmullRomSpline(points.ConvertAll(p => TransformPoint(p, min, scale, offset))).ToArray();
     lr.Points = points.ConvertAll(p => TransformPoint(p, min, scale, offset)).ToArray();
-
     lineRenderers[key] = lr;
   }
 }
