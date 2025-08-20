@@ -115,7 +115,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public RectTransform carCursorPrefab;
   public float cursorSize = 5f;
   public float carSpeed = 50f;
-  public int trailMaxPoints = 30;
   public Color trailColor = new Color(1f, 1f, 0f, 0.8f);
 
   [Header("Camera Follow")]
@@ -126,19 +125,68 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public float currentTime = 0f;
   public float timeSpeed = 1f;
   public bool isRacing = false;
-
   private RectTransform carCursor;
   private UILineRenderer trailLineRenderer;
   private List<Vector2> trailPositions = new List<Vector2>();
   private Vector2[] racelinePoints;
   private float traveledDistance = 0f;
-
   private RacelineDisplayData currentTrackData;
   private Dictionary<string, UILineRenderer> lineRenderers = new Dictionary<string, UILineRenderer>();
   private Vector2 panOffset = Vector2.zero;
   private Vector2 initialPosition;
   private bool isDragging = false;
   private Vector2 dragStartPosition;
+  private bool firstFollowExecuted = false;
+  private float followDelayTimer = 0f;
+  private const float followDelay = 0.5f; // 500ms
+
+  void Update()
+  {
+    if (!isRacing || racelinePoints == null || racelinePoints.Length < 2) return;
+
+    if (!firstFollowExecuted)
+    {
+      followDelayTimer += Time.deltaTime;
+      if (followDelayTimer >= followDelay)
+      {
+        if (followCar && carCursor)
+        {
+          Vector2 targetPos = -carCursor.anchoredPosition * currentZoom;
+          panOffset = Vector2.Lerp(panOffset, targetPos, Time.deltaTime * lerpSpeed);
+          UpdateZoomContainer();
+        }
+        firstFollowExecuted = true;
+      }
+    }
+    else
+    {
+      if (followCar && carCursor)
+      {
+        Vector2 targetPos = -carCursor.anchoredPosition * currentZoom;
+        panOffset = Vector2.Lerp(panOffset, targetPos, Time.deltaTime * lerpSpeed);
+        UpdateZoomContainer();
+      }
+    }
+
+    carCursor.sizeDelta = new Vector2(cursorSize, cursorSize);
+
+    currentTime += Time.deltaTime * timeSpeed;
+
+    float totalRaceTime = GetTotalRaceTime();
+
+    if (timeline != null)
+    {
+      timeline.maxValue = totalRaceTime;
+      timeline.minValue = 0f;
+    }
+
+    if (currentTime > totalRaceTime) currentTime = 0f;
+    if (currentTime < 0f) currentTime = totalRaceTime;
+
+    GoToTime(currentTime, totalRaceTime);
+
+    if (timeline) timeline.value = currentTime;
+  }
 
   void Start()
   {
@@ -512,38 +560,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     trailPositions.Clear();
   }
 
-  void Update()
-  {
-    if (!isRacing || racelinePoints == null || racelinePoints.Length < 2) return;
-
-    if (followCar && carCursor)
-    {
-      Vector2 targetPos = -carCursor.anchoredPosition * currentZoom;
-      panOffset = Vector2.Lerp(panOffset, targetPos, Time.deltaTime * lerpSpeed);
-      UpdateZoomContainer();
-    }
-
-    carCursor.sizeDelta = new Vector2(cursorSize, cursorSize);
-
-    currentTime += Time.deltaTime * timeSpeed;
-
-    float totalRaceTime = GetTotalRaceTime();
-
-    if (timeline != null)
-    {
-      timeline.maxValue = totalRaceTime;
-      timeline.minValue = 0f;
-    }
-
-    if (currentTime > totalRaceTime) currentTime = 0f;
-    if (currentTime < 0f) currentTime = totalRaceTime;
-
-    GoToTime(currentTime, totalRaceTime);
-
-    if (timeline) timeline.value = currentTime;
-  }
-
-
   public void SetCarSpeed(float newSpeed)
   {
     if (carSpeed <= 0) return;
@@ -645,59 +661,5 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   {
     return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
                          new Vector2(0.5f, 0.5f));
-  }
-
-
-  private void AnimateCar()
-  {
-    if (racelinePoints == null || racelinePoints.Length < 2 || !carCursor) return;
-
-    float totalLength = CalculateTotalLength();
-    float totalRaceTime = GetTotalRaceTime();
-    float distanceAlongLine = (currentTime / totalRaceTime) * totalLength;
-
-    float accumulatedLength = 0f;
-    for (int i = 0; i < racelinePoints.Length - 1; i++)
-    {
-      float segmentLength = Vector2.Distance(racelinePoints[i], racelinePoints[i + 1]);
-      if (distanceAlongLine <= accumulatedLength + segmentLength)
-      {
-        float t = (distanceAlongLine - accumulatedLength) / segmentLength;
-        carCursor.anchoredPosition = Vector2.Lerp(racelinePoints[i], racelinePoints[i + 1], t);
-        break;
-      }
-      accumulatedLength += segmentLength;
-    }
-  }
-
-
-  private void UpdateTrail()
-  {
-    if (!trailLineRenderer || !carCursor) return;
-
-    trailPositions.Add(carCursor.anchoredPosition);
-    if (trailPositions.Count > trailMaxPoints)
-      trailPositions.RemoveAt(0);
-
-    trailLineRenderer.Points = trailPositions.ToArray();
-
-    int count = trailPositions.Count;
-    if (count < 2) return;
-
-    UnityEngine.Gradient gradient = new UnityEngine.Gradient();
-    int keyCount = Mathf.Min(count, 8);
-    GradientColorKey[] colorKeys = new GradientColorKey[keyCount];
-    GradientAlphaKey[] alphaKeys = new GradientAlphaKey[keyCount];
-
-    for (int i = 0; i < keyCount; i++)
-    {
-      int index = Mathf.RoundToInt((i / (float)(keyCount - 1)) * (count - 1));
-      float alpha = (float)i / (keyCount - 1);
-      colorKeys[i] = new GradientColorKey(trailColor, alpha);
-      alphaKeys[i] = new GradientAlphaKey(alpha * trailColor.a, alpha);
-    }
-
-    gradient.SetKeys(colorKeys, alphaKeys);
-    trailLineRenderer.color = trailColor;
   }
 }
