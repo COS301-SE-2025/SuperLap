@@ -18320,6 +18320,7 @@ MonoBehaviour:
   zoomSpeed: 0.1
   minZoom: 10
   maxZoom: 30
+  panPadding: 100
   currentZoom: 10
   panSpeed: 20
   enablePanZoom: 0
@@ -21483,7 +21484,8 @@ MonoBehaviour:
   zoomSpeed: 0.1
   minZoom: 0.5
   maxZoom: 100
-  currentZoom: 5
+  panPadding: 1000
+  currentZoom: 1
   panSpeed: 1
   enablePanZoom: 1
   carCursorPrefab: {fileID: 780130757}
