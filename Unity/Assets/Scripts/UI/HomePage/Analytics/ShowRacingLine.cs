@@ -171,7 +171,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (timeline) timeline.value = currentTime;
 
-    if (Input.GetKeyDown(KeyCode.Space))
+    if (Input.GetKeyDown(KeyCode.Space) && !goingToCar)
     {
       ToggleFollowCar();
     }
@@ -250,6 +250,8 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     isDragging = true;
     dragStartPosition = eventData.position;
     followCar = false;
+    goingToCar = false;
+    lerpSpeed = initialLerpSpeed;
   }
 
   public void setZoom(float newZoom)
