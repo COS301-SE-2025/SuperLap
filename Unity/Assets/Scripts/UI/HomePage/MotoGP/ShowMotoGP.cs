@@ -189,13 +189,13 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
 
   public void DisplayPlayerLineData(CSVToBinConverter.LoadCSV.PlayerLine playerLine)
   {
-    float simplificationTolerance = 10f;
+    float simplificationTolerance = 3f;
 
     MotoGPDisplayData displayData = new MotoGPDisplayData
     {
       PlayerPath = ConvertToUnityVector2(playerLine.PlayerPath),
-      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.InnerBoundary), simplificationTolerance)),
-      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.OuterBoundary), simplificationTolerance)),
+      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.InnerBoundary), simplificationTolerance)),simplificationTolerance)),
+      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.OuterBoundary), simplificationTolerance)),simplificationTolerance)),
       Raceline = ConvertToUnityVector2(playerLine.Raceline)
     };
 

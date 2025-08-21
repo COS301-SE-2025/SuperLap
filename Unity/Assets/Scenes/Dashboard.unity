@@ -18281,7 +18281,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: -225331432, guid: be9e14f1ca687974897fa65fe8e8f15c, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -21512,7 +21512,7 @@ MonoBehaviour:
   zoomSpeed: 0.1
   minZoom: 0.5
   maxZoom: 100
-  panPadding: 1000
+  panPadding: 100
   currentZoom: 1
   panSpeed: 1
   enablePanZoom: 1

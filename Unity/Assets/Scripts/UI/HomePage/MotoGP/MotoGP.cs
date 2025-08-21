@@ -40,6 +40,7 @@ public class MotoGP : MonoBehaviour
     if (paths.Length > 0 && !string.IsNullOrEmpty(paths[0]))
     {
       filePath = paths[0];
+      controlPanel.SetActive(false);
       LoadCSV(filePath);
     }
   }
