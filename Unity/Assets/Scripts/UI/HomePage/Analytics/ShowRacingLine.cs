@@ -429,6 +429,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   }
 
 
+
   private void ClearExistingLines()
   {
     foreach (Transform child in trackContainer) Destroy(child.gameObject);
@@ -535,9 +536,9 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
         RacelineDisplayData trackData = new RacelineDisplayData
         {
-          InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(Data.InnerBoundary, simplificationTolerance)),
-          OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(Data.OuterBoundary, simplificationTolerance)),
-          Raceline = Data.Raceline
+          InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(Data.InnerBoundary), simplificationTolerance)),
+          OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(Data.OuterBoundary), simplificationTolerance)),
+          Raceline = EnsureLooped(Data.Raceline)
         };
         if (trackData != null)
         {
@@ -556,6 +557,19 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       }
     });
   }
+
+  private List<Vector2> EnsureLooped(List<Vector2> points)
+{
+    if (points == null || points.Count < 2)
+        return points;
+        
+    if (points[0] != points[points.Count - 1])
+    {
+      points.Add(points[0]);
+    }
+    return points;
+}
+
 
   private void SetupCarCursor()
   {
