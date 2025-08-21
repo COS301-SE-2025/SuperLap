@@ -35,6 +35,14 @@ public class APIManager : MonoBehaviour
   public string baseURL = "https://superlap-api.online";
 
   private static APIManager _instance;
+
+  private Dictionary<string, Track> trackCache = new Dictionary<string, Track>();
+  private List<Track> allTracksCache = null;
+  private Dictionary<string, Texture2D> trackImageCache = new Dictionary<string, Texture2D>();
+  private Dictionary<string, byte[]> trackBorderCache = new Dictionary<string, byte[]>();
+
+
+
   public static APIManager Instance
   {
     get
@@ -279,15 +287,43 @@ public class APIManager : MonoBehaviour
     }
   }
 
-  public void GetAllTracks(System.Action<bool, string, List<Track>> callback)
+  public void GetAllTracks(System.Action<bool, string, List<Track>> callback, bool forceRefresh = false)
   {
-    StartCoroutine(GetAllTracksCoroutine(callback));
+    if (!forceRefresh && allTracksCache != null)
+    {
+      callback?.Invoke(true, "Tracks loaded from cache", new List<Track>(allTracksCache));
+      return;
+    }
+
+    StartCoroutine(GetAllTracksCoroutine((success, message, tracks) =>
+    {
+      if (success)
+      {
+        allTracksCache = tracks;
+      }
+      callback?.Invoke(success, message, tracks);
+    }));
   }
 
-  public void GetTrackByName(string name, System.Action<bool, string, Track> callback)
+
+  public void GetTrackByName(string name, System.Action<bool, string, Track> callback, bool forceRefresh = false)
   {
-    StartCoroutine(GetTrackByNameCoroutine(name, callback));
+    if (!forceRefresh && trackCache.TryGetValue(name, out Track cachedTrack))
+    {
+      callback?.Invoke(true, "Track loaded from cache", cachedTrack);
+      return;
+    }
+
+    StartCoroutine(GetTrackByNameCoroutine(name, (success, message, track) =>
+    {
+      if (success && track != null)
+      {
+        trackCache[name] = track;
+      }
+      callback?.Invoke(success, message, track);
+    }));
   }
+
 
   private IEnumerator GetTrackByNameCoroutine(string name, System.Action<bool, string, Track> callback)
   {
@@ -315,10 +351,24 @@ public class APIManager : MonoBehaviour
     }
   }
 
-  public void GetTrackImage(string name, System.Action<bool, string, Texture2D> callback)
+  public void GetTrackImage(string name, System.Action<bool, string, Texture2D> callback, bool forceRefresh = false)
   {
-    StartCoroutine(GetTrackImageCoroutine(name, callback));
+    if (!forceRefresh && trackImageCache.TryGetValue(name, out Texture2D cachedImage))
+    {
+      callback?.Invoke(true, "Image loaded from cache", cachedImage);
+      return;
+    }
+
+    StartCoroutine(GetTrackImageCoroutine(name, (success, message, image) =>
+    {
+      if (success && image != null)
+      {
+        trackImageCache[name] = image;
+      }
+      callback?.Invoke(success, message, image);
+    }));
   }
+
 
   private IEnumerator GetTrackImageCoroutine(string name, System.Action<bool, string, Texture2D> callback)
   {
@@ -376,10 +426,30 @@ public class APIManager : MonoBehaviour
     }
   }
 
-  public void GetTrackBorder(string name, System.Action<bool, string, byte[]> callback)
+  public void GetTrackBorder(string name, System.Action<bool, string, byte[]> callback, bool forceRefresh = false)
   {
-    StartCoroutine(GetTrackBorderCoroutine(name, callback));
+    if (!forceRefresh && trackBorderCache.TryGetValue(name, out byte[] cachedBorder))
+    {
+      StartCoroutine(ReturnCachedBorderCoroutine(cachedBorder, callback));
+      return;
+    }
+
+    StartCoroutine(GetTrackBorderCoroutine(name, (success, message, border) =>
+    {
+      if (success && border != null)
+      {
+        trackBorderCache[name] = border;
+      }
+      callback?.Invoke(success, message, border);
+    }));
   }
+
+  private IEnumerator ReturnCachedBorderCoroutine(byte[] cachedBorder, System.Action<bool, string, byte[]> callback)
+  {
+    yield return new WaitForEndOfFrame();
+    callback?.Invoke(true, "Border loaded from cache", cachedBorder);
+  }
+
 
   private IEnumerator GetTrackBorderCoroutine(string name, System.Action<bool, string, byte[]> callback)
   {
@@ -452,4 +522,13 @@ public class APIManager : MonoBehaviour
   {
     return new Vector2[] { new Vector2(1, 0.5f), new Vector2(2, 1), new Vector2(3, 1.5f), new Vector2(4, 2.0f) };
   }
+
+  public void ClearCache()
+  {
+    trackCache.Clear();
+    allTracksCache = null;
+    trackImageCache.Clear();
+    trackBorderCache.Clear();
+  }
+
 }

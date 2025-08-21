@@ -56,7 +56,6 @@ public class GalleryGetInfo : MonoBehaviour
       return;
     }
     ClearAllPanels();
-    Debug.Log("Loading tracks from API...");
     apiManager.GetAllTracks(OnTracksLoaded);
   }
 
@@ -141,8 +140,6 @@ public class GalleryGetInfo : MonoBehaviour
 
   private void OnTrackSelected(APIManager.Track track)
   {
-    Debug.Log($"Track selected: {track.name}");
-
     HomePageNavigation navigation = FindAnyObjectByType<HomePageNavigation>();
     if (navigation != null)
     {

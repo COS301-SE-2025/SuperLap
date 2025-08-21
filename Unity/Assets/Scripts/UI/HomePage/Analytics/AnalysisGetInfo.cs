@@ -17,6 +17,7 @@ public class AnalysisGetInfo : MonoBehaviour
   private HomePageNavigation homePageNavigation;
 
   private APIManager apiManager;
+  private bool isLoading = false;
   private int trackIndex = 0;
   private string trackName;
 
@@ -32,7 +33,7 @@ public class AnalysisGetInfo : MonoBehaviour
     {
       apiManager = APIManager.Instance;
       homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
-      racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
+      racingLinePreview = GetComponentInChildren<ShowRacingLine>();
 
       if (racingLinePreview != null)
       {
@@ -73,11 +74,22 @@ public class AnalysisGetInfo : MonoBehaviour
     retryCount = 0;
     isWaitingForRetry = false;
     retryTimer = 0.0f;
+    isLoading = false;
+  }
+
+  public void OnEnable()
+  {
+    AttemptToLoadTracks();
   }
 
   public void OnDisable()
   {
     ResetValues();
+    
+    if (racingLinePreview != null)
+    {
+        racingLinePreview.gameObject.SetActive(false);
+    }
   }
 
   public void Start()
@@ -85,23 +97,31 @@ public class AnalysisGetInfo : MonoBehaviour
     ResetValues();
     AttemptToLoadTracks();
   }
-
   private void AttemptToLoadTracks()
   {
+    if (isLoading) return;
+    isLoading = true;
+
     try
     {
       if (apiManager != null)
       {
-        apiManager.GetAllTracks(OnTracksLoaded);
+        apiManager.GetAllTracks((success, message, tracks) =>
+        {
+          isLoading = false;
+          OnTracksLoaded(success, message, tracks);
+        });
       }
       else
       {
+        isLoading = false;
         Debug.Log("APIManager is null");
         HandleLoadFailure();
       }
     }
     catch (System.Exception e)
     {
+      isLoading = false;
       Debug.Log($"Error in AttemptToLoadTracks: {e.Message}");
       HandleLoadFailure();
     }
