@@ -28,7 +28,7 @@ namespace CSVToBinConverter
       if (headerLine == null)
         throw new Exception("CSV is empty");
       string[] headers = headerLine.Split('\t');
-      int lapIdxIndex = Array.IndexOf(headers, "lapIndex");
+      int lapIdxIndex = Array.IndexOf(headers, "lap_number");
       int xIdx = Array.IndexOf(headers, "world_position_X");
       int yIdx = Array.IndexOf(headers, "world_position_Y");
       int trackIndex = Array.IndexOf(headers, "trackId");
@@ -55,7 +55,7 @@ namespace CSVToBinConverter
         {
           if (trackName == "Losail")
           {
-            float angleDeg = 241f;
+            float angleDeg = -60f;
             float angleRad = angleDeg * (float)Math.PI / 180f;
             float cos = MathF.Cos(angleRad);
             float sin = MathF.Sin(angleRad);
@@ -66,7 +66,7 @@ namespace CSVToBinConverter
             rotatedX *= scaleFactor;
             rotatedY *= scaleFactor;
 
-            playerline.Add(new Vector2(-rotatedX, rotatedY));
+            playerline.Add(new Vector2(rotatedX, rotatedY));
           }
           else
           {

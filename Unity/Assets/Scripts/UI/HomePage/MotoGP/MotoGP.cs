@@ -97,7 +97,7 @@ public class MotoGP : MonoBehaviour
     if (lapIndices.Count > 0)
     {
         int lastLap = Mathf.Max(new List<int>(lapIndices).ToArray());
-        lapIndices.Remove(lastLap);
+        // lapIndices.Remove(lastLap);
     }
 
     dropdown.options.Clear();
