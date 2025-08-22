@@ -20,6 +20,7 @@ public class AnalysisGetInfo : MonoBehaviour
   private bool isLoading = false;
   private int trackIndex = 0;
   private string trackName;
+  private bool manualTrackRequested = false;
 
   private int retryCount = 0;
   private const int maxRetries = 5;
@@ -79,23 +80,25 @@ public class AnalysisGetInfo : MonoBehaviour
 
   public void OnEnable()
   {
-    AttemptToLoadTracks();
+    if (!manualTrackRequested)
+      AttemptToLoadTracks();
   }
 
   public void OnDisable()
   {
     ResetValues();
-    
+
     if (racingLinePreview != null)
     {
-        racingLinePreview.gameObject.SetActive(false);
+      racingLinePreview.gameObject.SetActive(false);
     }
   }
 
   public void Start()
   {
     ResetValues();
-    AttemptToLoadTracks();
+    if (!manualTrackRequested)
+      AttemptToLoadTracks();
   }
   private void AttemptToLoadTracks()
   {
@@ -259,6 +262,7 @@ public class AnalysisGetInfo : MonoBehaviour
 
   public void DisplayTrackByName(string trackName)
   {
+    manualTrackRequested = true;
     this.trackName = trackName;
     try
     {

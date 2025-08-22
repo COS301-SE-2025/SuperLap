@@ -58,7 +58,6 @@ public class HomePageNavigation : MonoBehaviour
         activePageRect.offsetMin = new Vector2(currentOffsetMin.x, currentBottom);
         activePageRect.offsetMax = new Vector2(currentOffsetMax.x, currentTop);
 
-        // Check if we're close enough to stop transitioning
         if (Mathf.Abs(currentTop - targetTopPosition) < 0.1f && Mathf.Abs(currentBottom - targetBottomPosition) < 0.1f)
         {
           activePageRect.offsetMin = new Vector2(currentOffsetMin.x, targetBottomPosition);

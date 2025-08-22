@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine.UI.Extensions;
 using LibTessDotNet;
 using System.IO;
+using System.Collections;
 
 [System.Serializable]
 public class RacelineDisplayData
@@ -125,9 +126,8 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public Color trailColor = new Color(1f, 1f, 0f, 0.8f);
 
   [Header("Camera Follow")]
-  private bool followCar = true;
+  private bool followCar = false;
   public float lerpSpeed = 5f;
-  private float initialLerpSpeed = 5f;
   private bool goingToCar = true;
 
   [Header("Time Control")]
@@ -185,6 +185,65 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     UpdateLineWidths();
   }
 
+  private IEnumerator WaitForTrackLoadAndSettle()
+  {
+    while (racelinePoints == null || racelinePoints.Length < 2)
+      yield return null;
+
+    yield return null;
+
+    ConstrainToViewport();
+    UpdateZoomContainer();
+    UpdateLineWidths();
+
+    yield return new WaitForSeconds(0.5f);
+    followCar = true;
+    goingToCar = true;
+  }
+
+  private void OnDisable()
+  {
+    StopAllCoroutines();
+
+    racelinePoints = null;
+    racelineSegmentLengths = null;
+    totalRacelineLength = 0f;
+    currentTrackData = null;
+    trailPositions.Clear();
+
+    if (carCursor != null)
+    {
+      Destroy(carCursor.gameObject);
+      carCursor = null;
+    }
+
+    if (trailLineRenderer != null)
+    {
+      Destroy(trailLineRenderer.gameObject);
+      trailLineRenderer = null;
+    }
+
+    foreach (var kvp in lineRenderers)
+    {
+      if (kvp.Value != null)
+        Destroy(kvp.Value.gameObject);
+    }
+    lineRenderers.Clear();
+
+    if (trackContainer != null)
+    {
+      foreach (Transform child in trackContainer)
+        Destroy(child.gameObject);
+    }
+
+    panOffset = Vector2.zero;
+    followCar = false;
+    goingToCar = false;
+    currentTime = 0;
+}
+
+
+
   private void HandleCameraFollow()
   {
     if (!followCar || carCursor == null) return;
@@ -193,21 +252,18 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     if (goingToCar)
     {
       panOffset = Vector2.Lerp(panOffset, targetPos, Time.deltaTime * lerpSpeed);
-      if (Vector2.Distance(panOffset, targetPos) < 0.1f)
+      if (Vector2.Distance(panOffset, targetPos) < 0.01f)
       {
         panOffset = targetPos;
         goingToCar = false;
       }
-      lerpSpeed++;
     }
     else
     {
       panOffset = targetPos;
-      lerpSpeed = initialLerpSpeed;
     }
     UpdateZoomContainer();
   }
-
 
   private float[] racelineSegmentLengths;
   private float totalRacelineLength;
@@ -251,7 +307,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     dragStartPosition = eventData.position;
     followCar = false;
     goingToCar = false;
-    lerpSpeed = initialLerpSpeed;
   }
 
   public void setZoom(float newZoom)
@@ -358,10 +413,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   {
     followCar = !followCar;
     goingToCar = followCar;
-    if (goingToCar)
-    {
-      initialLerpSpeed = lerpSpeed;
-    }
   }
 
   private void ConstrainToViewport()
@@ -371,7 +422,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     Vector2 scaledSize = trackContainer.rect.size * currentZoom;
     Vector2 viewportSize = viewportRect.rect.size;
 
-    // Calculate maximum offset with padding
     Vector2 maxOffset = Vector2.Max((scaledSize - viewportSize) * 0.5f + new Vector2(panPadding, panPadding), Vector2.zero);
 
     panOffset.x = Mathf.Clamp(panOffset.x, -maxOffset.x, maxOffset.x);
@@ -544,6 +594,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         {
           DisplayRacelineData(trackData);
           SetupCarCursor();
+          StartCoroutine(WaitForTrackLoadAndSettle());
         }
         else
         {
@@ -700,7 +751,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
     playPauseImage.sprite = SpriteFromTexture(playTexture);
   }
-
 
   private Sprite SpriteFromTexture(Texture2D texture)
   {
