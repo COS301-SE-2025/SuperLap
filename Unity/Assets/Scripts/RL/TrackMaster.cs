@@ -7,9 +7,6 @@ public class TrackMaster : MonoBehaviour
     [Header("Track Master Settings")]
     [SerializeField] private int meshResolution = 1000;
     [SerializeField] private int splitCount = 50;
-    [SerializeField] private float splitMeshScale = 25f;
-    [SerializeField] private Material splitMaterial;
-
 
     [Header("Checkpoint Settings")]
     [SerializeField] private GameObject checkpointPrefab;
