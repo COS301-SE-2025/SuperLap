@@ -78,3 +78,5 @@ Unity/Assets/Plugins/Windows/x86_64
 Backend/RacelineOptimizer/MotoGPTelemetry/lastSession.csv
 /Backend/RacelineOptimizer/bin
 /Backend/RacelineOptimizer/obj
+/Backend/MotoGPTelemetry/bin
+/Backend/MotoGPTelemetry/obj
