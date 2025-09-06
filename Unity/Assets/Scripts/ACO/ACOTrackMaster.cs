@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using UnityEditor;
 using UnityEngine;
 
 public class ACOTrackMaster : MonoBehaviour
@@ -11,11 +10,6 @@ public class ACOTrackMaster : MonoBehaviour
     [SerializeField] private float splitMeshScale = 25f;
     [SerializeField] private Material splitMaterial;
 
-
-    [Header("Checkpoint Settings")]
-    [SerializeField] private GameObject checkpointPrefab;
-    [SerializeField] private Material[] checkpointMaterials = new Material[3];
-
     [Header("Raceline Visualization")]
     [SerializeField] private bool showRaceline = true;
     [SerializeField] private Color racelineColor = Color.red;
@@ -23,10 +17,7 @@ public class ACOTrackMaster : MonoBehaviour
     [SerializeField] private float racelineHeightOffset = 0.1f;
 
     [Header("Agent Spawning")]
-    [SerializeField] private GameObject motorcycleAgentPrefab;
     [SerializeField] private float agentSpawnHeight = 1.0f;
-    [SerializeField] private int startingPositionIndex = 0; // Index along raceline for starting position
-    [SerializeField] private bool spawnAtRandomPosition = false;
 
     [Header("Player Mode")]
     [SerializeField] private Camera mainCamera;
@@ -43,6 +34,8 @@ public class ACOTrackMaster : MonoBehaviour
 
     private static GameObject spawnedAgent;
     private static LineRenderer racelineRenderer;
+    private static Dictionary<int, LineRenderer> agentTrajectoryRenderers = new Dictionary<int, LineRenderer>();
+    private static List<ACOAgent> trackedAgents = new List<ACOAgent>();
 
     // Event to notify when track is loaded
     public static System.Action OnTrackLoaded;
@@ -69,6 +62,7 @@ public class ACOTrackMaster : MonoBehaviour
 
     void Update()
     {
+        // Update agent trajectories in real-time       
         if (Input.GetKeyDown(KeyCode.P) && spawnedAgent != null)
         {
             // switch to player mode
@@ -296,66 +290,6 @@ public class ACOTrackMaster : MonoBehaviour
         racelineRenderer.sortingOrder = 1; // Render on top of track
     }
 
-    private static Vector3 GetStartingPosition()
-    {
-        int positionIndex;
-
-        if (instance.spawnAtRandomPosition)
-        {
-            positionIndex = Random.Range(0, currentRaceline.Count);
-        }
-        else
-        {
-            positionIndex = Mathf.Clamp(instance.startingPositionIndex, 0, currentRaceline.Count - 1);
-        }
-
-        System.Numerics.Vector2 racelinePoint = currentRaceline[positionIndex];
-        return new Vector3(racelinePoint.X, instance.agentSpawnHeight, racelinePoint.Y);
-    }
-
-    private static Vector3 GetStartingDirection()
-    {
-        if (currentRaceline.Count < 2)
-        {
-            return Vector3.forward;
-        }
-
-        // Get the starting index directly from our configuration
-        int startIndex;
-        if (instance.spawnAtRandomPosition)
-        {
-            startIndex = Random.Range(0, currentRaceline.Count);
-        }
-        else
-        {
-            startIndex = Mathf.Clamp(instance.startingPositionIndex, 0, currentRaceline.Count - 1);
-        }
-
-        // Look ahead several points for smoother direction calculation
-        int lookAheadDistance = Mathf.Max(1, currentRaceline.Count / 20); // ~5% of track length
-        int endIndex = (startIndex + lookAheadDistance) % currentRaceline.Count;
-
-        // Get two points for direction calculation
-        System.Numerics.Vector2 point1 = currentRaceline[startIndex];
-        System.Numerics.Vector2 point2 = currentRaceline[endIndex];
-
-        // Calculate direction vector
-        System.Numerics.Vector2 direction2D = point2 - point1;
-
-        // Handle case where points are too close (circular track wrap-around)
-        if (direction2D.Length() < 0.1f)
-        {
-            endIndex = (startIndex + 1) % currentRaceline.Count;
-            point2 = currentRaceline[endIndex];
-            direction2D = point2 - point1;
-        }
-
-        // Convert to 3D and normalize
-        Vector3 direction3D = new Vector3(direction2D.X, 0, direction2D.Y).normalized;
-
-        return direction3D != Vector3.zero ? direction3D : Vector3.forward;
-    }
-
     public static List<System.Numerics.Vector2> GetCurrentRaceline()
     {
         return currentRaceline;
@@ -476,5 +410,4 @@ public class ACOTrackMaster : MonoBehaviour
             return null;
         }
     }
-    
 }

@@ -61,7 +61,8 @@ public class ACOTrainer : MonoBehaviour
     [SerializeField] private int iterations = 100;
     
     [Header("Training State - Debug")]
-    [SerializeField] private int currentIteration = 0;
+    [SerializeField] private int currentIteration = 0; // Successful iterations only
+    [SerializeField] private int totalAttempts = 0; // Total agent spawns (including failures)
     [SerializeField] private int currentSessionIndex = 0;
     [SerializeField] private int activeAgents = 0;
     [SerializeField] private bool isTraining = false;
@@ -78,6 +79,7 @@ public class ACOTrainer : MonoBehaviour
     public int AgentCount => agentCount;
     public int Iterations => iterations;
     public int CurrentIteration => currentIteration;
+    public int TotalAttempts => totalAttempts;
     public int ActiveAgents => activeAgents;
     private Dictionary<int, ACOAgentComponent> agentComponents;
     private List<ACOAgent> agents;
@@ -177,6 +179,7 @@ public class ACOTrainer : MonoBehaviour
         
         currentSessionIndex = 0;
         currentIteration = 0;
+        totalAttempts = 0;
         activeAgents = 0;
         
         SetupCheckpointVisualization();
@@ -259,9 +262,9 @@ public class ACOTrainer : MonoBehaviour
         agentStartTimes[slotIndex] = Time.time;
         
         activeAgents++;
-        currentIteration++;
+        totalAttempts++;
         
-        Debug.Log($"Spawned agent {slotIndex} for iteration {currentIteration}/{iterations} " +
+        Debug.Log($"Spawned agent {slotIndex} (attempt {totalAttempts}, successful iterations: {currentIteration}/{iterations}) " +
                  $"at position {currentTrainingState.position} with speed {currentTrainingState.speed:F2} m/s " +
                  $"and turn angle {currentTrainingState.turnAngle:F2}° - targeting validate checkpoint {trainingSessions[currentSessionIndex].validateCheckpoint}");
     }
@@ -280,10 +283,8 @@ public class ACOTrainer : MonoBehaviour
         if (agentComponents.ContainsKey(agent.ID))
         {
             var component = agentComponents[agent.ID];
-            Debug.Log($"Agent ID: {agent.ID}, Component null: {component == null}, Dictionary contains key: {agentComponents.ContainsKey(agent.ID)}");
             if (component != null)
             {
-                Debug.Log($"GameObject null: {component.gameObject == null}, Transform null: {component.transform == null}");
                 component.transform.position = new Vector3(agent.Position.X, component.transform.position.y, agent.Position.Y);
                 
                 // Update rotation based on agent's forward direction
@@ -426,14 +427,23 @@ public class ACOTrainer : MonoBehaviour
             agents[agentIndex] = null;
         }
         
+        // Only count successful runs as iterations
+        if (wasSuccessful)
+        {
+            currentIteration++;
+            Debug.Log($"Recycled agent {agentIndex}: {reason} - SUCCESSFUL iteration {currentIteration}/{iterations}");
+        }
+        else
+        {
+            Debug.Log($"Recycled agent {agentIndex}: {reason} - FAILED attempt (successful iterations: {currentIteration}/{iterations})");
+        }
+        
         agentStates[agentIndex] = null;
         agentGoalStates[agentIndex] = null;
         agentCheckpointTargets[agentIndex] = -1;
         agentStartTimes[agentIndex] = 0f;
         availableAgentSlots.Enqueue(agentIndex);
         activeAgents--;
-        
-        Debug.Log($"Recycled agent {agentIndex}: {reason}");
         
         // Check if we should move to next session
         if (currentIteration >= iterations && activeAgents == 0)
@@ -471,6 +481,7 @@ public class ACOTrainer : MonoBehaviour
         // Move to next session
         currentSessionIndex++;
         currentIteration = 0;
+        totalAttempts = 0;
         
         if (currentSessionIndex >= trainingSessions.Count)
         {
@@ -487,13 +498,18 @@ public class ACOTrainer : MonoBehaviour
         isTraining = false;
         Debug.Log("Training completed for all sessions!");
         
-        // Output summary
+        // Output summary with efficiency metrics
+        int totalSuccessfulRuns = 0;
+        
         for (int i = 0; i < trainingSessions.Count; i++)
         {
             var session = trainingSessions[i];
+            totalSuccessfulRuns += (session.isComplete && session.bestState.isValid) ? iterations : 0;
             Debug.Log($"Session {i}: Start={session.startCheckpoint} -> Goal={session.goalCheckpoint} -> Validate={session.validateCheckpoint} " +
                      $"Best complete time: {session.bestTime:F2}s Valid: {session.bestState.isValid}");
         }
+        
+        Debug.Log($"Training Summary: {totalSuccessfulRuns} successful runs completed across all sessions");
     }
 
     bool IsAgentOffTrack(ACOAgent agent)
@@ -503,7 +519,11 @@ public class ACOTrainer : MonoBehaviour
 
     float CalculateBearing(System.Numerics.Vector2 forward)
     {
-        return (float)(Math.Atan2(forward.X, forward.Y) * 180.0 / Math.PI);
+        // This should be the inverse of ACOAgent.Forward calculation:
+        // ACOAgent: rad = (bearing - 90) * π/180; forward = (cos(rad), sin(rad))
+        // Inverse: bearing = atan2(forward.Y, forward.X) * 180/π + 90
+        float angle = (float)(Math.Atan2(forward.Y, forward.X) * 180.0 / Math.PI);
+        return angle + 90.0f;
     }
 
     void InitializeDistanceBasedCheckpoints()
@@ -820,6 +840,7 @@ public class ACOTrainer : MonoBehaviour
         
         activeAgents = 0;
         currentIteration = 0;
+        totalAttempts = 0;
         currentSessionIndex = 0;
     }
 

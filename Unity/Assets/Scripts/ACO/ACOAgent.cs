@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using UnityEngine.AI;
 public class ACOAgent
 {
     private float enginePower = 150000f;
@@ -59,11 +58,13 @@ public class ACOAgent
     private static int instanceCounter = 0;
     private int instanceId;
     public int ID => instanceId;
+    Random random = new Random();
+
     public Vector2 Forward
     {
         get
         {
-            float rad = (bearing-90.0f) * (float)Math.PI / 180f;
+            float rad = (bearing - 90.0f) * (float)Math.PI / 180f;
             return new Vector2((float)Math.Cos(rad), (float)Math.Sin(rad));
         }
     }
@@ -131,21 +132,26 @@ public class ACOAgent
 
     public (int, int) Decide()
     {
+        UnityEngine.Profiling.Profiler.BeginSample("ACOAgent.Decide");
         // calculate current forward vector from bearing
+
+        UnityEngine.Profiling.Profiler.BeginSample("ACOAgent.UpdateDrivingRecommendations");
         ACODrivingRecommendationEngine.UpdateDrivingRecommendations(enableRecommendations, position, 
                                                                Forward, currentSpeed, currentTurnAngle, 
                                                                throttleInput, theoreticalTopSpeed, recommendationConfig, 
                                                                physicsConfig, track, out recommendSpeedUp, 
                                                                out recommendSlowDown, out recommendTurnLeft, out recommendTurnRight);
+        UnityEngine.Profiling.Profiler.EndSample();
 
         List<(int, int)> options = new List<(int, int)>();
 
         if (recommendTurnLeft)
         {
             float offTrackRatio;
-            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(-1, position, Forward, 
-                                                   currentSpeed, currentTurnAngle, throttleInput, 
-                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+            UnityEngine.Profiling.Profiler.BeginSample("ACOAgent.CheckIfPathGoesOffTrack1");
+            if (ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(-1, position, Forward,
+                                                   currentSpeed, currentTurnAngle, throttleInput,
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold,
                                                    physicsConfig, out offTrackRatio, track))
             {
                 options.Add((-1, -1)); // Brake
@@ -155,14 +161,16 @@ public class ACOAgent
                 options.Add((0, -1)); // Turn left
                 options.Add((1, -1)); // Accelerate and turn left
             }
+            UnityEngine.Profiling.Profiler.EndSample();
         }
 
-        if(recommendTurnRight)
+        if (recommendTurnRight)
         {
             float offTrackRatio;
-            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(1, position, Forward, 
-                                                   currentSpeed, currentTurnAngle, throttleInput, 
-                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+            UnityEngine.Profiling.Profiler.BeginSample("ACOAgent.CheckIfPathGoesOffTrack2");
+            if (ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(1, position, Forward,
+                                                   currentSpeed, currentTurnAngle, throttleInput,
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold,
                                                    physicsConfig, out offTrackRatio, track))
             {
                 options.Add((-1, 1)); // Brake
@@ -172,14 +180,16 @@ public class ACOAgent
                 options.Add((0, 1)); // Turn right
                 options.Add((1, 1)); // Accelerate and turn right
             }
+            UnityEngine.Profiling.Profiler.EndSample();
         }
 
-        if(recommendSpeedUp)
+        if (recommendSpeedUp)
         {
             float offTrackRatio;
-            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(0, position, Forward, 
-                                                   currentSpeed, currentTurnAngle, throttleInput, 
-                                                   trajectoryLength, recommendationSteps, offTrackThreshold, 
+            UnityEngine.Profiling.Profiler.BeginSample("ACOAgent.CheckIfPathGoesOffTrack3");
+            if (ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(0, position, Forward,
+                                                   currentSpeed, currentTurnAngle, throttleInput,
+                                                   trajectoryLength, recommendationSteps, offTrackThreshold,
                                                    physicsConfig, out offTrackRatio, track))
             {
                 options.Add((-1, 0)); // Brake
@@ -189,6 +199,7 @@ public class ACOAgent
                 options.Add((1, 0)); // Accelerate
                 options.Add((0, 0)); // Idle
             }
+            UnityEngine.Profiling.Profiler.EndSample();
         }
 
         // Fallback: if no options were added, provide default actions
@@ -209,9 +220,10 @@ public class ACOAgent
         }
 
         // Randomly select one of the available options
-        Random r = new Random();
-        int randomIndex = r.Next(0, options.Count);
+        int randomIndex = random.Next(0, options.Count);
         (int, int) selectedAction = options[randomIndex];
+
+        UnityEngine.Profiling.Profiler.EndSample();
 
         return selectedAction;
     }
@@ -263,7 +275,10 @@ public class ACOAgent
     // Public methods for training system
     public bool IsOffTrack()
     {
-        return !track.PointInTrack(position);
+        UnityEngine.Profiling.Profiler.BeginSample("ACOAgent.IsOffTrack");
+        bool isOffTrack = !track.PointInTrack(position);
+        UnityEngine.Profiling.Profiler.EndSample();
+        return isOffTrack;
     }
 
     public float GetCurrentSpeed()
