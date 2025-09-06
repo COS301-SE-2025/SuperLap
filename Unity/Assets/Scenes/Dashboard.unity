@@ -1492,9 +1492,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 2012353662}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 311.66666, y: -185}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 613.2054, y: 357.1068}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &113658015
@@ -8880,6 +8880,61 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 614207907}
   m_CullTransparentMesh: 1
+--- !u!1 &618252563
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 618252565}
+  - component: {fileID: 618252564}
+  m_Layer: 0
+  m_Name: Trainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &618252564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618252563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a72440b9668661759b73acd789f1bed6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agentCount: 5
+  agentPrefab: {fileID: 5433541524235702189, guid: 0cd56998953a77f01b4eff2a8931376c, type: 3}
+  decisionInterval: 1
+  iterations: 100
+  currentIteration: 0
+  currentSessionIndex: 0
+  activeAgents: 0
+  isTraining: 0
+  checkpointTriggerDistance: 5
+  useDistanceBasedCheckpoints: 1
+  totalCheckpoints: 10
+--- !u!4 &618252565
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618252563}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1401.1665, y: 65.882355, z: -480.36035}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &640335330
 GameObject:
   m_ObjectHideFlags: 0
@@ -17719,6 +17774,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 559.9001}
   m_SizeDelta: {x: 0, y: -1119.8}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1302285870
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1302285871}
+  m_Layer: 0
+  m_Name: CheckpointManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1302285871
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1302285870}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1401.1665, y: 65.882355, z: -480.36035}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1306890312
 GameObject:
   m_ObjectHideFlags: 0
@@ -17985,8 +18071,8 @@ MonoBehaviour:
   instructionText: {fileID: 0}
   maskWidthSlider: {fileID: 0}
   maskWidthLabel: {fileID: 0}
-  particleCount: 100
-  maxIterations: 6000
+  particleCount: 50
+  maxIterations: 500
   maskWidth: 50
   centerlineColor: {r: 0, g: 1, b: 0.53333336, a: 0.49019608}
   startPositionColor: {r: 1, g: 0, b: 0, a: 1}
@@ -24844,6 +24930,69 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1870133216}
   m_CullTransparentMesh: 1
+--- !u!1 &1898709288
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1898709290}
+  - component: {fileID: 1898709289}
+  m_Layer: 0
+  m_Name: TrackMaster
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1898709289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898709288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee74c1f04d006a2119de2450c1a6eee7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  meshResolution: 1000
+  splitCount: 50
+  splitMeshScale: 25
+  splitMaterial: {fileID: 0}
+  checkpointPrefab: {fileID: 0}
+  checkpointMaterials:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  showRaceline: 1
+  racelineColor: {r: 1, g: 0, b: 0, a: 1}
+  racelineWidth: 0.5
+  racelineHeightOffset: 0.1
+  motorcycleAgentPrefab: {fileID: 5433541524235702189, guid: 0cd56998953a77f01b4eff2a8931376c, type: 3}
+  agentSpawnHeight: 1
+  startingPositionIndex: 0
+  spawnAtRandomPosition: 0
+  mainCamera: {fileID: 841067261}
+  screen: {fileID: 729960482}
+--- !u!4 &1898709290
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898709288}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1401.1665, y: 65.882355, z: -480.36035}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1911643671
 GameObject:
   m_ObjectHideFlags: 0
@@ -26303,3 +26452,6 @@ SceneRoots:
   - {fileID: 184376299}
   - {fileID: 729960489}
   - {fileID: 1443641091}
+  - {fileID: 1898709290}
+  - {fileID: 618252565}
+  - {fileID: 1302285871}

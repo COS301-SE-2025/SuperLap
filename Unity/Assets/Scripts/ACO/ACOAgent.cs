@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using UnityEngine.AI;
 public class ACOAgent
 {
     private float enginePower = 150000f;
@@ -17,16 +18,6 @@ public class ACOAgent
     private float minSteeringSpeed = 0.5f;
     private float fullSteeringSpeed = 5f;
     private float steeringIntensity = 0.5f;
-
-    private float maxLeanAngle = 45f;
-    private float optimalLeanSpeed = 15f;
-    private float leanSpeed = 5f;
-
-    private float minFOV = 60f;
-    private float maxFOV = 90f;
-    private float maxFOVSpeed = 50f;
-    private float accelerationFOVBoost = 2f;
-    private float fovAdjustSpeed = 3f;
 
     private bool enableRecommendations = true;
     private int recommendationSteps = 10;
@@ -45,15 +36,11 @@ public class ACOAgent
     private float currentSpeedKmh = 0f;
     private float currentAcceleration = 0f;
     private float currentTurnAngle = 0f;
-    private float currentLeanAngle = 0f;
-    private float currentFOV = 0f;
     private float theoreticalTopSpeed = 0f;
-    private float averageTrajectoryDeviation = 0f;
     private bool recommendSpeedUp = false;
     private bool recommendSlowDown = false;
     private bool recommendTurnLeft = false;
     private bool recommendTurnRight = false;
-    private bool isCurrentlyOffTrack = false;
     private float trajectoryLength = 5f;
 
     // Input values
@@ -68,15 +55,29 @@ public class ACOAgent
     private Vector2 position;
     private float bearing;
 
+    public Vector2 Position => position;
+    private static int instanceCounter = 0;
+    private int instanceId;
+    public int ID => instanceId;
+    public Vector2 Forward
+    {
+        get
+        {
+            float rad = bearing * (float)Math.PI / 180f;
+            return new Vector2((float)Math.Cos(rad), (float)Math.Sin(rad));
+        }
+    }
+
     public ACOAgent(PolygonTrack track, Vector2 pos, float bear)
     {
         position = pos;
         bearing = bear;
+        instanceId = instanceCounter++;
         InitializeConfigurations();
         InitializeComponents();
         theoreticalTopSpeed = MotorcyclePhysicsCalculator.CalculateTheoreticalTopSpeed(
             enginePower, dragCoefficient, frontalArea, rollingResistanceCoefficient, mass);
-        this.track = track
+        this.track = track;
     }
 
     private void InitializeConfigurations()
@@ -114,8 +115,6 @@ public class ACOAgent
             raycastStartHeight = this.raycastStartHeight,
             raycastDistance = this.raycastDistance,
             showTrackDetectionDebug = this.showTrackDetectionDebug,
-            onTrackRayColor = this.onTrackRayColor,
-            offTrackRayColor = this.offTrackRayColor
         };
     }
 
@@ -131,11 +130,13 @@ public class ACOAgent
     }
 
     public (int, int) Decide()
-    {       
-        DrivingRecommendationEngine.UpdateDrivingRecommendations(enableRecommendations, position, 
-                                                               bearing, currentSpeed, currentTurnAngle, 
+    {
+        // calculate current forward vector from bearing
+        Vector2 currentForward = new Vector2((float)Math.Cos(bearing), (float)Math.Sin(bearing));
+        ACODrivingRecommendationEngine.UpdateDrivingRecommendations(enableRecommendations, position, 
+                                                               currentForward, currentSpeed, currentTurnAngle, 
                                                                throttleInput, theoreticalTopSpeed, recommendationConfig, 
-                                                               physicsConfig, trackDetectionConfig, out recommendSpeedUp, 
+                                                               physicsConfig, track, out recommendSpeedUp, 
                                                                out recommendSlowDown, out recommendTurnLeft, out recommendTurnRight);
 
         List<(int, int)> options = new List<(int, int)>();
@@ -143,10 +144,10 @@ public class ACOAgent
         if (recommendTurnLeft)
         {
             float offTrackRatio;
-            if(TrackDetector.CheckIfPathGoesOffTrack(-1, position, bearing, 
+            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(-1, position, currentForward, 
                                                    currentSpeed, currentTurnAngle, throttleInput, 
                                                    trajectoryLength, recommendationSteps, offTrackThreshold, 
-                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
+                                                   physicsConfig, out offTrackRatio, track))
             {
                 options.Add((-1, -1)); // Brake
             }
@@ -160,10 +161,10 @@ public class ACOAgent
         if(recommendTurnRight)
         {
             float offTrackRatio;
-            if(TrackDetector.CheckIfPathGoesOffTrack(1, position, bearing, 
+            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(1, position, currentForward, 
                                                    currentSpeed, currentTurnAngle, throttleInput, 
                                                    trajectoryLength, recommendationSteps, offTrackThreshold, 
-                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
+                                                   physicsConfig, out offTrackRatio, track))
             {
                 options.Add((-1, 1)); // Brake
             }
@@ -177,10 +178,10 @@ public class ACOAgent
         if(recommendSpeedUp)
         {
             float offTrackRatio;
-            if(TrackDetector.CheckIfPathGoesOffTrack(0, position, bearing, 
+            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(0, position, currentForward, 
                                                    currentSpeed, currentTurnAngle, throttleInput, 
                                                    trajectoryLength, recommendationSteps, offTrackThreshold, 
-                                                   physicsConfig, trackDetectionConfig, out offTrackRatio))
+                                                   physicsConfig, out offTrackRatio, track))
             {
                 options.Add((-1, 0)); // Brake
             }
@@ -209,20 +210,18 @@ public class ACOAgent
         }
 
         // Randomly select one of the available options
-        int randomIndex = UnityEngine.Random.Range(0, options.Count);
+        Random r = new Random();
+        int randomIndex = r.Next(0, options.Count);
         (int, int) selectedAction = options[randomIndex];
 
         return selectedAction;
     }
 
-    public void SimulateStep()
+    public void Step()
     {
         float stepTime = 1f / 30f;
         UpdateMovement(stepTime);
         UpdateTurning(stepTime);
-
-        // Update current track status
-        isCurrentlyOffTrack = IsOffTrack();
     }
 
     private void UpdateMovement(float dt)

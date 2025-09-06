@@ -627,7 +627,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     // Generate output image
     // GenerateOutputImage();
 
-    // TrackMaster.LoadTrack(lastResults);
+    ACOTrackMaster.LoadTrack(lastResults);
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
