@@ -48,13 +48,13 @@ public class ACOAgent
     private float currentLeanAngle = 0f;
     private float currentFOV = 0f;
     private float theoreticalTopSpeed = 0f;
-    private float racelineDeviation = 0f;
     private float averageTrajectoryDeviation = 0f;
     private bool recommendSpeedUp = false;
     private bool recommendSlowDown = false;
     private bool recommendTurnLeft = false;
     private bool recommendTurnRight = false;
     private bool isCurrentlyOffTrack = false;
+    private float trajectoryLength = 5f;
 
     // Input values
     private float throttleInput = 0f;
@@ -131,11 +131,7 @@ public class ACOAgent
     }
 
     public (int, int) Decide()
-    {
-        RacelineAnalyzer.UpdateRacelineDeviation(position, showTrajectory, 
-                                               trajectoryPredictor.GetComponent<LineRenderer>(), 
-                                               out racelineDeviation, out averageTrajectoryDeviation);
-        
+    {       
         DrivingRecommendationEngine.UpdateDrivingRecommendations(enableRecommendations, position, 
                                                                bearing, currentSpeed, currentTurnAngle, 
                                                                throttleInput, theoreticalTopSpeed, recommendationConfig, 
