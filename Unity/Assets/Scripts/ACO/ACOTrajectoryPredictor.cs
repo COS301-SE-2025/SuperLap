@@ -154,19 +154,23 @@ public static class ACOTrajectoryPredictor
         float deltaTime = trajectoryLength / recommendationSteps;
         int offTrackPoints = 0;
         int totalCheckPoints = Math.Min(recommendationSteps, 8); // Check first 8 points for performance
-        
+
         // Simulate forward and check if any predicted positions are off track
         for (int step = 0; step < totalCheckPoints; step++)
         {
             // Simulate one step forward with current throttle and provided steering
-            SimulateOneStep(ref simPosition, ref simBearing, ref simSpeed, ref simTurnAngle, 
+            UnityEngine.Profiling.Profiler.BeginSample("ACOTrajectoryPredictor.SimulateOneStep");
+            SimulateOneStep(ref simPosition, ref simBearing, ref simSpeed, ref simTurnAngle,
                           deltaTime, throttleInput, steeringInput, physicsConfig);
-            
+            UnityEngine.Profiling.Profiler.EndSample();
+
             // Check if this position is on track
+            UnityEngine.Profiling.Profiler.BeginSample("ACOTrajectoryPredictor.PointInTrack");
             if (!track.PointInTrack(simPosition))
             {
                 offTrackPoints++;
             }
+            UnityEngine.Profiling.Profiler.EndSample();
         }
         
         // Consider path as "going off track" if more than the threshold of check points are off track

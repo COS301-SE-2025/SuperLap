@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class ACOTrackMaster : MonoBehaviour
@@ -78,32 +79,39 @@ public class ACOTrackMaster : MonoBehaviour
             }
         }
     }
+    
 
     public static void LoadTrack(TrackImageProcessor.ProcessingResults results)
     {
         // Store raceline for agent spawning
-        List<System.Numerics.Vector2> vector2s = new List<System.Numerics.Vector2>();
+        List < System.Numerics.Vector2 > vector2s = new List<System.Numerics.Vector2>();
         foreach (var vec in results.raceline)
         {
             vector2s.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }
         currentRaceline = vector2s;
 
+        Debug.Log($"Loaded track with {results.raceline.Count} raceline points, " +
+                  $"{results.innerBoundary.Count} outer boundary points, " +
+                  $"{results.outerBoundary.Count} inner boundary points.");
+        (List<Vector2> innerPoints, List<Vector2> outerPoints) = Processor3D.GetNewBoundaries(results, instance.meshResolution);
+        Debug.Log($"Resampled boundaries to {innerPoints.Count} inner points and {outerPoints.Count} outer points.");
+
+
         // Create PolygonTrack for boundary checks
         // NOTE: Fixed boundary swap - results.innerBoundary is actually the outer boundary
         List<System.Numerics.Vector2> inner = new List<System.Numerics.Vector2>();
         List<System.Numerics.Vector2> outer = new List<System.Numerics.Vector2>();
-        foreach (var vec in results.outerBoundary) // This is actually the inner boundary
+        foreach (var vec in outerPoints) // This is actually the inner boundary
         {
             inner.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }
-        foreach (var vec in results.innerBoundary) // This is actually the outer boundary
+        foreach (var vec in innerPoints) // This is actually the outer boundary
         {
             outer.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }
+        
         track = new PolygonTrack(outer.ToArray(), inner.ToArray());
-
-        (List<Vector2> innerPoints, List<Vector2> outerPoints) = Processor3D.GetNewBoundaries(results, instance.meshResolution);
 
         Mesh mesh = Processor3D.GenerateOutputMesh(innerPoints, outerPoints);
         MeshFilter meshFilter = instance.gameObject.AddComponent<MeshFilter>();

@@ -7654,7 +7654,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1025.0002, y: -50.000183}
+  m_AnchoredPosition: {x: -1025.0001, y: -50.000244}
   m_SizeDelta: {x: -2150, y: -200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &537828848
@@ -8912,8 +8912,9 @@ MonoBehaviour:
   agentCount: 50
   agentPrefab: {fileID: 5433541524235702189, guid: 0cd56998953a77f01b4eff2a8931376c, type: 3}
   decisionInterval: 5
-  iterations: 50
+  iterations: 100
   currentIteration: 0
+  totalAttempts: 0
   currentSessionIndex: 0
   activeAgents: 0
   isTraining: 0
@@ -17658,7 +17659,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 235, y: -50.000183}
+  m_AnchoredPosition: {x: 235, y: -50.000244}
   m_SizeDelta: {x: -570, y: -200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1282553560
@@ -24932,25 +24933,11 @@ MonoBehaviour:
   splitCount: 50
   splitMeshScale: 25
   splitMaterial: {fileID: 0}
-  checkpointPrefab: {fileID: 0}
-  checkpointMaterials:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   showRaceline: 1
   racelineColor: {r: 1, g: 0, b: 0, a: 1}
   racelineWidth: 0.5
   racelineHeightOffset: 0.1
-  showAgentTrajectories: 0
-  trajectoryColor: {r: 0, g: 1, b: 1, a: 1}
-  trajectoryWidth: 0.15
-  trajectoryHeightOffset: 0.05
-  maxVisibleTrajectories: 10
-  updateTrajectoriesRealtime: 1
-  motorcycleAgentPrefab: {fileID: 5433541524235702189, guid: 0cd56998953a77f01b4eff2a8931376c, type: 3}
   agentSpawnHeight: 1
-  startingPositionIndex: 0
-  spawnAtRandomPosition: 0
   mainCamera: {fileID: 841067261}
   screen: {fileID: 729960482}
   loadTestTrack: 1

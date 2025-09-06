@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Numerics;
+using UnityEngine.Profiling;
 public static class ACODrivingRecommendationEngine
 {
     public static void UpdateDrivingRecommendations(bool enableRecommendations, Vector2 currentPosition, Vector2 currentForward, 
@@ -43,16 +44,22 @@ public static class ACODrivingRecommendationEngine
                                                                MotorcyclePhysicsConfig physicsConfig, PolygonTrack track)
     {
         // Get baseline score (continue straight)
+        Profiler.BeginSample("ACODrivingRecommendationEngine.SimulateRecommendationScenario1");
         float baselineScore = SimulateRecommendationScenario(0f, 0f, raceline, currentPosition, currentForward, 
                                                            currentSpeed, currentTurnAngle, config, physicsConfig);
+        Profiler.EndSample();
         
         // First, determine the optimal steering direction
+        Profiler.BeginSample("ACODrivingRecommendationEngine.SimulateRecommendationScenario2");
         float turnLeftScore = SimulateRecommendationScenario(0f, -config.testInputStrength, raceline, 
                                                            currentPosition, currentForward, currentSpeed, 
                                                            currentTurnAngle, config, physicsConfig);
+        Profiler.EndSample();
+        Profiler.BeginSample("ACODrivingRecommendationEngine.SimulateRecommendationScenario3");
         float turnRightScore = SimulateRecommendationScenario(0f, config.testInputStrength, raceline, 
                                                             currentPosition, currentForward, currentSpeed, 
                                                             currentTurnAngle, config, physicsConfig);
+        Profiler.EndSample();
 
         // Calculate steering improvements
         float turnLeftImprovement = baselineScore - turnLeftScore;
