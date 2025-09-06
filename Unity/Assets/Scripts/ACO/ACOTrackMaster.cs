@@ -79,13 +79,104 @@ public class ACOTrackMaster : MonoBehaviour
             }
         }
     }
-    
+
+    public static List<Vector2> SimplifyLine(List<Vector2> points, float tolerance)
+    {
+        if (points == null || points.Count <= 2)
+        {
+            return points;
+        }
+
+        // Use Douglas-Peucker algorithm for line simplification
+        return DouglasPeucker(points, tolerance);
+    }
+
+    private static List<Vector2> DouglasPeucker(List<Vector2> points, float tolerance)
+    {
+        if (points.Count <= 2)
+        {
+            return new List<Vector2>(points);
+        }
+
+        // Find the point with the maximum distance from the line between first and last points
+        float maxDistance = 0;
+        int maxIndex = 0;
+        
+        Vector2 lineStart = points[0];
+        Vector2 lineEnd = points[points.Count - 1];
+        
+        for (int i = 1; i < points.Count - 1; i++)
+        {
+            float distance = PerpendicularDistance(points[i], lineStart, lineEnd);
+            if (distance > maxDistance)
+            {
+                maxDistance = distance;
+                maxIndex = i;
+            }
+        }
+
+        // If max distance is greater than tolerance, recursively simplify
+        if (maxDistance > tolerance)
+        {
+            // Recursively simplify the two segments
+            List<Vector2> firstHalf = new List<Vector2>();
+            for (int i = 0; i <= maxIndex; i++)
+            {
+                firstHalf.Add(points[i]);
+            }
+            
+            List<Vector2> secondHalf = new List<Vector2>();
+            for (int i = maxIndex; i < points.Count; i++)
+            {
+                secondHalf.Add(points[i]);
+            }
+
+            List<Vector2> result1 = DouglasPeucker(firstHalf, tolerance);
+            List<Vector2> result2 = DouglasPeucker(secondHalf, tolerance);
+
+            // Combine results, avoiding duplicate point at the connection
+            List<Vector2> result = new List<Vector2>(result1);
+            for (int i = 1; i < result2.Count; i++) // Skip first point to avoid duplicate
+            {
+                result.Add(result2[i]);
+            }
+            
+            return result;
+        }
+        else
+        {
+            // If no point is far enough, simplify to just start and end points
+            return new List<Vector2> { points[0], points[points.Count - 1] };
+        }
+    }
+
+    private static float PerpendicularDistance(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
+    {
+        Vector2 lineVector = lineEnd - lineStart;
+        Vector2 pointVector = point - lineStart;
+        
+        // Handle degenerate case where line has zero length
+        if (lineVector.sqrMagnitude < 0.0001f)
+        {
+            return Vector2.Distance(point, lineStart);
+        }
+        
+        // Calculate perpendicular distance using cross product
+        float crossProduct = Mathf.Abs(lineVector.x * pointVector.y - lineVector.y * pointVector.x);
+        float lineLength = lineVector.magnitude;
+        
+        return crossProduct / lineLength;
+    }
 
     public static void LoadTrack(TrackImageProcessor.ProcessingResults results)
     {
         // Store raceline for agent spawning
-        List < System.Numerics.Vector2 > vector2s = new List<System.Numerics.Vector2>();
-        foreach (var vec in results.raceline)
+        List<Vector2> rl = results.raceline;
+        Debug.Log($"Original raceline has {rl.Count} points.");
+        List<Vector2> simplifiedRaceline = SimplifyLine(rl, 1.0f);
+        Debug.Log($"Simplified raceline has {simplifiedRaceline.Count} points.");
+        List<System.Numerics.Vector2> vector2s = new List<System.Numerics.Vector2>();
+        foreach (var vec in simplifiedRaceline)
         {
             vector2s.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }
@@ -110,7 +201,7 @@ public class ACOTrackMaster : MonoBehaviour
         {
             outer.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }
-        
+
         track = new PolygonTrack(outer.ToArray(), inner.ToArray());
 
         Mesh mesh = Processor3D.GenerateOutputMesh(innerPoints, outerPoints);
