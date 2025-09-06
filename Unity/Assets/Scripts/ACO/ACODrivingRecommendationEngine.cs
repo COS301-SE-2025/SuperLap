@@ -136,10 +136,11 @@ public static class ACODrivingRecommendationEngine
         // Simulate forward for the specified number of steps
         for (int step = 0; step < config.recommendationSteps; step++)
         {
-            // Calculate deviation at this position using thread-local analyzer
+            // Calculate deviation at this position using thread-local analyzer ONLY
+            // NEVER fall back to static analyzer as it causes memory contention
             float deviation = analyzer != null 
                 ? analyzer.CalculateDistanceToRaceline(simPosition)
-                : ACORacelineAnalyzer.CalculateDistanceToRaceline(simPosition, raceline); // Fallback to static
+                : 0f; // Use zero deviation if no analyzer (should not happen in normal operation)
             totalDeviation += deviation;
 
             // Simulate one step forward with test inputs

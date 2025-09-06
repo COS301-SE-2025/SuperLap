@@ -62,10 +62,7 @@ public class ACOAgent
     private static int globalInstanceCounter = 0;
     private int instanceId;
     public int ID => instanceId;
-    Random random = new Random();
-
-    private Vector2 lastOffTrackPosition = Vector2.Zero;
-    private bool wasOffTrackLastCheck = false;
+    Random random;
 
     public Vector2 Forward
     {
@@ -76,20 +73,45 @@ public class ACOAgent
         }
     }
 
-    public ACOAgent(PolygonTrack track, Vector2 pos, float bear, List<Vector2> raceline = null, ThreadLocalRacelineAnalyzer analyzer = null)
+    public ACOAgent(PolygonTrack track, Vector2 pos, float bear, List<Vector2> raceline = null, ThreadLocalRacelineAnalyzer analyzer = null, int agentId = -1)
     {
         position = pos;
         bearing = bear;
         
-        // Use thread-safe atomic increment to avoid memory contention
-        instanceId = System.Threading.Interlocked.Increment(ref globalInstanceCounter);
+        // Use provided agentId to avoid atomic contention, fallback to interlocked only if not provided
+        if (agentId >= 0)
+        {
+            instanceId = agentId;
+        }
+        else
+        {
+            // Fallback for backward compatibility (but this should be avoided in multithreaded scenarios)
+            instanceId = System.Threading.Interlocked.Increment(ref globalInstanceCounter);
+        }
         
         InitializeConfigurations();
         InitializeComponents();
         theoreticalTopSpeed = MotorcyclePhysicsCalculator.CalculateTheoreticalTopSpeed(
             enginePower, dragCoefficient, frontalArea, rollingResistanceCoefficient, mass);
         this.track = track;
-        this.threadLocalRaceline = raceline; // Use provided raceline copy, or null to fall back to shared
+        // Create deep copy of raceline to ensure thread isolation
+        if (raceline != null)
+        {
+            this.threadLocalRaceline = new List<Vector2>();
+            foreach (var point in raceline)
+            {
+                this.threadLocalRaceline.Add(new Vector2(point.X, point.Y));
+            }
+        }
+        else
+        {
+            this.threadLocalRaceline = null; // Fall back to shared raceline if needed
+        }
+        
+        // Initialize Random with a unique seed to prevent thread contention
+        // Use agent ID and current high-resolution timestamp to ensure uniqueness
+        int uniqueSeed = instanceId * 31 + (int)(System.DateTime.UtcNow.Ticks & 0x7FFFFFFF);
+        random = new Random(uniqueSeed);
         
         // Use provided analyzer, or create new one if raceline is provided
         if (analyzer != null)
@@ -300,14 +322,9 @@ public class ACOAgent
     // Public methods for training system
     public bool IsOffTrack()
     {
-        if(position == lastOffTrackPosition && lastOffTrackPosition != Vector2.Zero)
-        {
-            return wasOffTrackLastCheck;
-        }
-        bool isOffTrack = !track.PointInTrack(position);
-        lastOffTrackPosition = position;
-        wasOffTrackLastCheck = isOffTrack;
-        return isOffTrack;
+        // Remove caching entirely - in multi-threaded scenarios with many agents,
+        // cache hits are rare and the overhead of checking exceeds the benefits
+        return !track.PointInTrack(position);
     }
 
     public float GetCurrentSpeed()

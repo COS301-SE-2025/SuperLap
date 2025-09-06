@@ -161,7 +161,12 @@ public class ThreadLocalRacelineAnalyzer
     {
         if (raceline == null || raceline.Count == 0) return;
 
-        cachedRaceline = raceline;
+        // Create deep copy to ensure thread isolation
+        cachedRaceline = new List<Vector2>();
+        foreach (var point in raceline)
+        {
+            cachedRaceline.Add(new Vector2(point.X, point.Y));
+        }
 
         // Calculate bounds for quadtree
         float minX = float.MaxValue, minY = float.MaxValue;

@@ -21,9 +21,16 @@ public class PolygonTrack
 
     public bool PointInTrack(Vector2 point)
     {
+        // Early exit optimization: check outer boundary first since it's typically larger
+        // If not in outer, we can immediately return false without checking inner
         bool inOuter = outer.PointInPolygon(point);
+        if (!inOuter)
+        {
+            return false; // Early exit - not in track
+        }
+        
+        // Only check inner if we're in outer
         bool inInner = inner.PointInPolygon(point);
-
-        return inOuter && !inInner;
+        return !inInner; // In track if in outer but not in inner
     }
 }

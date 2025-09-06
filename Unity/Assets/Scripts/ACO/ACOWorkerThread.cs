@@ -70,12 +70,23 @@ public class ACOWorkerThread
     {
         agentBuffer = buffer;
         eventQueue = events;
-        track = trackData;
-        threadLocalRaceline = racelineData;
+        
+        // Create thread-local copy of track to avoid memory contention
+        track = new PolygonTrack(trackData);
+        
+        // Create deep copy of raceline with proper data type conversion to avoid shared references
+        threadLocalRaceline = new List<System.Numerics.Vector2>();
+        if (racelineData != null)
+        {
+            foreach (var point in racelineData)
+            {
+                threadLocalRaceline.Add(new System.Numerics.Vector2(point.X, point.Y));
+            }
+        }
         
         // Initialize thread-local raceline analyzer to avoid shared memory contention
         threadLocalRacelineAnalyzer = new ThreadLocalRacelineAnalyzer();
-        threadLocalRacelineAnalyzer.InitializeWithRaceline(racelineData);
+        threadLocalRacelineAnalyzer.InitializeWithRaceline(threadLocalRaceline);
         
         decisionInterval = decisionInt;
         threadId = workerId;
@@ -204,19 +215,19 @@ public class ACOWorkerThread
         // Calculate bearing from forward vector
         float bearing = CalculateBearing(initialTrainingState.forward);
         
-        // Create new ACOAgent with thread-local track and raceline copies
-        ACOAgent agent = new ACOAgent(track, initialTrainingState.position, bearing, threadLocalRaceline, threadLocalRacelineAnalyzer);
+        // Create new ACOAgent with thread-local track and raceline copies, using provided agentId
+        ACOAgent agent = new ACOAgent(track, initialTrainingState.position, bearing, threadLocalRaceline, threadLocalRacelineAnalyzer, agentId);
         agent.SetInitialState(initialTrainingState.speed, initialTrainingState.turnAngle);
         
-                // Add to collections
+        // Add to collections
         agents.Add(agent);
         agentStates.Add(new ACOAgentState(initialTrainingState.position, initialTrainingState.forward, 
                                          initialTrainingState.speed, initialTrainingState.turnAngle));
-        agentStartTimes.Add(DateTime.UtcNow.Millisecond);
+        agentStartTimes.Add(System.Environment.TickCount); // Use TickCount instead of DateTime for better threading performance
         agentCheckpointTargets.Add(currentSession.validateCheckpoint);
         agentActive.Add(true);
         
-        UnityEngine.Debug.Log($"Worker thread spawned agent {agentId}");
+        // UnityEngine.Debug.Log($"Worker thread spawned agent {agentId}"); // DISABLED: Debug.Log causes thread contention
     }
     
     private void ThreadMain()
@@ -372,7 +383,7 @@ public class ACOWorkerThread
                         EventType = AgentEventType.CheckpointTriggered,
                         AgentId = agentId,
                         CheckpointId = currentSession.goalCheckpoint,
-                        CompletionTime = DateTime.UtcNow.Millisecond - agentStartTimes[agentIndex]
+                        CompletionTime = System.Environment.TickCount - agentStartTimes[agentIndex]
                     };
                     
                     double eventCreationTime = stopwatch.Elapsed.TotalMilliseconds;
@@ -402,7 +413,7 @@ public class ACOWorkerThread
                 if (distanceToValidate <= checkpointTriggerDistance)
                 {
                     // Agent completed the run
-                    float totalTime = DateTime.UtcNow.Millisecond - agentStartTimes[agentIndex];
+                    float totalTime = System.Environment.TickCount - agentStartTimes[agentIndex];
                     var state = agentStates[agentIndex];
                     state.timeToGoal = totalTime;
                     state.isValid = true;

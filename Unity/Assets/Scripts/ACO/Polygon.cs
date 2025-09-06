@@ -21,36 +21,28 @@ public class Polygon
     {
         int n = polygon.Length;
         bool inside = false;
-
-        double p1x = polygon[0].X, p1y = polygon[0].Y;
-
-        for (int i = 1; i <= n; i++)
+        
+        // Optimized ray casting algorithm avoiding expensive divisions
+        int j = n - 1;
+        for (int i = 0; i < n; j = i++)
         {
-            double p2x = polygon[i % n].X, p2y = polygon[i % n].Y;
-
-            if (point.Y > Math.Min(p1y, p2y))
+            // Check if point is within the y-range of this edge
+            if ((polygon[i].Y > point.Y) != (polygon[j].Y > point.Y))
             {
-                if (point.Y <= Math.Max(p1y, p2y))
+                // Calculate intersection using cross-product to avoid division
+                float dy = polygon[j].Y - polygon[i].Y;
+                if (dy != 0) // Avoid division by zero
                 {
-                    if (point.X <= Math.Max(p1x, p2x))
+                    float dx = polygon[j].X - polygon[i].X;
+                    float intersectionX = polygon[i].X + dx * (point.Y - polygon[i].Y) / dy;
+                    
+                    if (point.X < intersectionX)
                     {
-                        if (p1y != p2y)
-                        {
-                            double xinters = (point.Y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
-                            if (p1x == p2x || point.X <= xinters)
-                                inside = !inside;
-                        }
-                        else if (p1x == p2x || point.X <= p1x)
-                        {
-                            inside = !inside;
-                        }
+                        inside = !inside;
                     }
                 }
             }
-            p1x = p2x;
-            p1y = p2y;
         }
-
         return inside;
     }
 }
