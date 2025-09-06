@@ -3,10 +3,11 @@ using System.Numerics;
 using UnityEngine.Profiling;
 public static class ACODrivingRecommendationEngine
 {
-    public static void UpdateDrivingRecommendations(bool enableRecommendations, Vector2 currentPosition, Vector2 currentForward, 
+    public static void UpdateDrivingRecommendationsWithAnalyzer(bool enableRecommendations, Vector2 currentPosition, Vector2 currentForward, 
                                                    float currentSpeed, float currentTurnAngle, float throttleInput, 
                                                    float theoreticalTopSpeed, RecommendationConfig config, 
-                                                   MotorcyclePhysicsConfig physicsConfig, PolygonTrack track,
+                                                   MotorcyclePhysicsConfig physicsConfig, PolygonTrack track, List<Vector2> optimalRaceline,
+                                                   ThreadLocalRacelineAnalyzer analyzer,
                                                    out bool recommendSpeedUp, out bool recommendSlowDown, 
                                                    out bool recommendTurnLeft, out bool recommendTurnRight)
     {
@@ -17,7 +18,6 @@ public static class ACODrivingRecommendationEngine
             return;
         }
         
-        List<Vector2> optimalRaceline = ACORacelineAnalyzer.GetOptimalRaceline();
         if (optimalRaceline == null || optimalRaceline.Count == 0)
         {
             SetAllRecommendationIndicators(false, out recommendSpeedUp, out recommendSlowDown, 
@@ -26,9 +26,9 @@ public static class ACODrivingRecommendationEngine
         }
 
         // Calculate recommendations for each input type
-        RecommendationAnalysis analysis = AnalyzeRecommendations(optimalRaceline, currentPosition, currentForward, 
+        RecommendationAnalysis analysis = AnalyzeRecommendationsWithAnalyzer(optimalRaceline, currentPosition, currentForward, 
                                                                currentSpeed, currentTurnAngle, throttleInput, 
-                                                               theoreticalTopSpeed, config, physicsConfig, track);
+                                                               theoreticalTopSpeed, config, physicsConfig, track, analyzer);
 
         // Update recommendation states
         recommendSpeedUp = analysis.shouldSpeedUp;
@@ -37,23 +37,24 @@ public static class ACODrivingRecommendationEngine
         recommendTurnRight = analysis.shouldTurnRight;
     }
     
-    private static RecommendationAnalysis AnalyzeRecommendations(List<Vector2> raceline, Vector2 currentPosition, 
+    private static RecommendationAnalysis AnalyzeRecommendationsWithAnalyzer(List<Vector2> raceline, Vector2 currentPosition, 
                                                                Vector2 currentForward, float currentSpeed, 
                                                                float currentTurnAngle, float throttleInput, 
                                                                float theoreticalTopSpeed, RecommendationConfig config, 
-                                                               MotorcyclePhysicsConfig physicsConfig, PolygonTrack track)
+                                                               MotorcyclePhysicsConfig physicsConfig, PolygonTrack track,
+                                                               ThreadLocalRacelineAnalyzer analyzer)
     {
         // Get baseline score (continue straight)
-        float baselineScore = SimulateRecommendationScenario(0f, 0f, raceline, currentPosition, currentForward, 
-                                                           currentSpeed, currentTurnAngle, config, physicsConfig);
+        float baselineScore = SimulateRecommendationScenarioWithAnalyzer(0f, 0f, raceline, currentPosition, currentForward, 
+                                                           currentSpeed, currentTurnAngle, config, physicsConfig, analyzer);
         
         // First, determine the optimal steering direction
-        float turnLeftScore = SimulateRecommendationScenario(0f, -config.testInputStrength, raceline, 
+        float turnLeftScore = SimulateRecommendationScenarioWithAnalyzer(0f, -config.testInputStrength, raceline, 
                                                            currentPosition, currentForward, currentSpeed, 
-                                                           currentTurnAngle, config, physicsConfig);
-        float turnRightScore = SimulateRecommendationScenario(0f, config.testInputStrength, raceline, 
+                                                           currentTurnAngle, config, physicsConfig, analyzer);
+        float turnRightScore = SimulateRecommendationScenarioWithAnalyzer(0f, config.testInputStrength, raceline, 
                                                             currentPosition, currentForward, currentSpeed, 
-                                                            currentTurnAngle, config, physicsConfig);
+                                                            currentTurnAngle, config, physicsConfig, analyzer);
 
         // Calculate steering improvements
         float turnLeftImprovement = baselineScore - turnLeftScore;
@@ -117,10 +118,11 @@ public static class ACODrivingRecommendationEngine
         recommendTurnRight = active;
     }
     
-    private static float SimulateRecommendationScenario(float testThrottle, float testSteering, List<Vector2> raceline, 
+    // Version that uses thread-local analyzer instead of static shared one
+    private static float SimulateRecommendationScenarioWithAnalyzer(float testThrottle, float testSteering, List<Vector2> raceline, 
                                                       Vector2 currentPosition, Vector2 currentForward, float currentSpeed, 
                                                       float currentTurnAngle, RecommendationConfig config, 
-                                                      MotorcyclePhysicsConfig physicsConfig)
+                                                      MotorcyclePhysicsConfig physicsConfig, ThreadLocalRacelineAnalyzer analyzer)
     {
         // Simulation state - start with current state
         Vector2 simPosition = currentPosition;
@@ -134,8 +136,10 @@ public static class ACODrivingRecommendationEngine
         // Simulate forward for the specified number of steps
         for (int step = 0; step < config.recommendationSteps; step++)
         {
-            // Calculate deviation at this position
-            float deviation = ACORacelineAnalyzer.CalculateDistanceToRaceline(simPosition, raceline);
+            // Calculate deviation at this position using thread-local analyzer
+            float deviation = analyzer != null 
+                ? analyzer.CalculateDistanceToRaceline(simPosition)
+                : ACORacelineAnalyzer.CalculateDistanceToRaceline(simPosition, raceline); // Fallback to static
             totalDeviation += deviation;
 
             // Simulate one step forward with test inputs

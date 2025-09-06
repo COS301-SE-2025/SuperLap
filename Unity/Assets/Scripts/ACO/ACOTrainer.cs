@@ -272,7 +272,7 @@ public class ACOTrainer : MonoBehaviour
         float bearing = CalculateBearing(currentTrainingState.forward);
         
         // Create new ACOAgent instance
-        ACOAgent agent = new ACOAgent(ACOTrackMaster.GetPolygonTrack(), currentTrainingState.position, bearing);
+        ACOAgent agent = new ACOAgent(ACOTrackMaster.CreatePolygonTrackCopy(), currentTrainingState.position, bearing, ACOTrackMaster.CreateRacelineCopy());
         agents[slotIndex] = agent;
         
         // Get and link the component
@@ -559,14 +559,20 @@ public class ACOTrainer : MonoBehaviour
         agentEventQueue = new ConcurrentQueue<AgentEvent>();
         workerThreads = new List<ACOWorkerThread>();
         
-        // Create worker threads with their own buffers
+        // Create worker threads with their own buffers and track copies
         for (int i = 0; i < threadCount; i++)
         {
             var buffer = new WorkerThreadBuffer(agentsPerThread);
+            
+            // Create unique track and raceline copies for this thread to eliminate memory contention
+            var threadTrack = ACOTrackMaster.CreatePolygonTrackCopy();
+            var threadRaceline = ACOTrackMaster.CreateRacelineCopy();
+            
             var worker = new ACOWorkerThread(
                 buffer,
                 agentEventQueue,
-                ACOTrackMaster.GetPolygonTrack(),
+                threadTrack,  // Use thread-specific track copy
+                threadRaceline, // Use thread-specific raceline copy
                 decisionInterval,
                 i  // Pass worker ID for logging
             );

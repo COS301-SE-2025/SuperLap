@@ -41,8 +41,10 @@ public class ACOWorkerThread
     private int currentStep;
     private int decisionInterval;
     
-    // Shared data (read-only)
+    // Shared data (read-only) - Thread-local copies to avoid memory contention
     private PolygonTrack track;
+    private List<System.Numerics.Vector2> threadLocalRaceline;
+    private ThreadLocalRacelineAnalyzer threadLocalRacelineAnalyzer;
     private ACOAgentState initialTrainingState;
     private ACOTrainingSession currentSession;
     private float checkpointTriggerDistance;
@@ -62,12 +64,19 @@ public class ACOWorkerThread
         WorkerThreadBuffer buffer,
         ConcurrentQueue<AgentEvent> events,
         PolygonTrack trackData,
+        List<System.Numerics.Vector2> racelineData,
         int decisionInt,
         int workerId = 0)
     {
         agentBuffer = buffer;
         eventQueue = events;
         track = trackData;
+        threadLocalRaceline = racelineData;
+        
+        // Initialize thread-local raceline analyzer to avoid shared memory contention
+        threadLocalRacelineAnalyzer = new ThreadLocalRacelineAnalyzer();
+        threadLocalRacelineAnalyzer.InitializeWithRaceline(racelineData);
+        
         decisionInterval = decisionInt;
         threadId = workerId;
         
@@ -195,8 +204,8 @@ public class ACOWorkerThread
         // Calculate bearing from forward vector
         float bearing = CalculateBearing(initialTrainingState.forward);
         
-        // Create new ACOAgent
-        ACOAgent agent = new ACOAgent(track, initialTrainingState.position, bearing);
+        // Create new ACOAgent with thread-local track and raceline copies
+        ACOAgent agent = new ACOAgent(track, initialTrainingState.position, bearing, threadLocalRaceline, threadLocalRacelineAnalyzer);
         agent.SetInitialState(initialTrainingState.speed, initialTrainingState.turnAngle);
         
                 // Add to collections
@@ -274,32 +283,57 @@ public class ACOWorkerThread
         
         if (agent == null || state == null) return;
         
-        // Update agent
+        // Profile agent step operation
+        stopwatch.Restart();
         agent.Step();
+        double stepTime = stopwatch.Elapsed.TotalMilliseconds;
+            LogPerformanceEvent("Agent_Step", stepTime, $"Agent {agent.ID} step operation");
         
-        // Record inputs on decision intervals
+        // Profile decision making
         if ((currentStep + agentIndex) % decisionInterval == 0)
         {
+            stopwatch.Restart();
             var action = agent.Decide();
+            double decideTime = stopwatch.Elapsed.TotalMilliseconds;
+            
+            stopwatch.Restart();
             agent.SetInput(action.Item1, action.Item2);
+            double setInputTime = stopwatch.Elapsed.TotalMilliseconds;
+            
             state.inputSequence.Add(action);
+            
+                LogPerformanceEvent("Agent_Decide", decideTime, $"Agent {agent.ID} decision making");
+            
+                LogPerformanceEvent("Agent_SetInput", setInputTime, $"Agent {agent.ID} input setting");
         }
         
-        // Check if agent went off track
-        if (agent.IsOffTrack())
+        // Profile off-track checking
+        stopwatch.Restart();
+        bool isOffTrack = agent.IsOffTrack();
+        double offTrackTime = stopwatch.Elapsed.TotalMilliseconds;
+            LogPerformanceEvent("Agent_OffTrackCheck", offTrackTime, $"Agent {agent.ID} off-track check");
+        
+        if (isOffTrack)
         {
             RecycleAgent(agentIndex, false, "Went off track");
             return;
         }
         
-        // Check distance-based checkpoints
+        // Profile checkpoint checking
+        stopwatch.Restart();
         CheckDistanceBasedCheckpoints(agentIndex);
+        double checkpointTime = stopwatch.Elapsed.TotalMilliseconds;
+            LogPerformanceEvent("Agent_CheckpointCheck", checkpointTime, $"Agent {agent.ID} checkpoint checking");
         
-        // Update agent state
+        // Profile state updates
+        stopwatch.Restart();
         state.position = agent.Position;
         state.forward = agent.Forward;
         state.speed = agent.GetCurrentSpeed();
         state.turnAngle = agent.GetCurrentTurnAngle();
+        double stateUpdateTime = stopwatch.Elapsed.TotalMilliseconds;
+
+            LogPerformanceEvent("Agent_StateUpdate", stateUpdateTime, $"Agent {agent.ID} state update");
         
         // Note: We'll batch write all states to buffer in WriteAgentStatesToBuffer()
     }
@@ -308,8 +342,12 @@ public class ACOWorkerThread
     {
         if (checkpointPositions == null || agents[agentIndex] == null) return;
         
+        stopwatch.Restart();
+        
         int agentId = agents[agentIndex].ID;
         UnityEngine.Vector3 agentPosition = new UnityEngine.Vector3(agents[agentIndex].Position.X, 0, agents[agentIndex].Position.Y);
+        
+        double setupTime = stopwatch.Elapsed.TotalMilliseconds;
         
         // Simple checkpoint checking - check goal and validate checkpoints
         if (currentSession != null)
@@ -317,8 +355,12 @@ public class ACOWorkerThread
             // Check goal checkpoint
             if (currentSession.goalCheckpoint < checkpointPositions.Count)
             {
+                stopwatch.Restart();
                 UnityEngine.Vector3 goalPos = checkpointPositions[currentSession.goalCheckpoint];
                 float distanceToGoal = UnityEngine.Vector3.Distance(agentPosition, goalPos);
+                double goalDistanceCalcTime = stopwatch.Elapsed.TotalMilliseconds;
+                
+                    LogPerformanceEvent("Checkpoint_GoalDistance", goalDistanceCalcTime, $"Agent {agentId} goal distance calculation");
                 
                 if (distanceToGoal <= checkpointTriggerDistance)
                 {
@@ -332,18 +374,30 @@ public class ACOWorkerThread
                         CheckpointId = currentSession.goalCheckpoint,
                         CompletionTime = DateTime.UtcNow.Millisecond - agentStartTimes[agentIndex]
                     };
-                    eventQueue.Enqueue(goalEvent);
                     
+                    double eventCreationTime = stopwatch.Elapsed.TotalMilliseconds;
+                    
+                    stopwatch.Restart();
+                    eventQueue.Enqueue(goalEvent);
                     double enqueueTime = stopwatch.Elapsed.TotalMilliseconds;
+                    
                     LogPerformanceEvent("EventQueue_Enqueue", enqueueTime, $"Goal checkpoint event for agent {agentId}");
+                    
+
+                    LogPerformanceEvent("Event_Creation", eventCreationTime, $"Goal event creation for agent {agentId}");
                 }
             }
             
             // Check validate checkpoint
             if (currentSession.validateCheckpoint < checkpointPositions.Count)
             {
+                stopwatch.Restart();
                 UnityEngine.Vector3 validatePos = checkpointPositions[currentSession.validateCheckpoint];
                 float distanceToValidate = UnityEngine.Vector3.Distance(agentPosition, validatePos);
+                double validateDistanceCalcTime = stopwatch.Elapsed.TotalMilliseconds;
+                
+
+                    LogPerformanceEvent("Checkpoint_ValidateDistance", validateDistanceCalcTime, $"Agent {agentId} validate distance calculation");
                 
                 if (distanceToValidate <= checkpointTriggerDistance)
                 {
@@ -365,15 +419,29 @@ public class ACOWorkerThread
                         IsValid = true
                     };
                     
+                    double eventCreationTime = stopwatch.Elapsed.TotalMilliseconds;
+                    
+                    stopwatch.Restart();
                     eventQueue.Enqueue(completeEvent);
-                    
                     double enqueueTime = stopwatch.Elapsed.TotalMilliseconds;
-                    LogPerformanceEvent("EventQueue_Enqueue", enqueueTime, $"Completion event for agent {agentId}, time: {totalTime:F2}s");
                     
+                    LogPerformanceEvent("EventQueue_Enqueue", enqueueTime, $"Completion event for agent {agentId}, time: {totalTime:F2}s");
+
+                    LogPerformanceEvent("Event_Creation", eventCreationTime, $"Completion event creation for agent {agentId}");
+
+                    stopwatch.Restart();
                     RecycleAgent(agentIndex, true, $"Completed in {totalTime:F2}s");
+                    double recycleTime = stopwatch.Elapsed.TotalMilliseconds;
+                    
+                    if (recycleTime > 1.0)
+                    {
+                        LogPerformanceEvent("Agent_Recycle", recycleTime, $"Recycling completed agent {agentId}");
+                    }
                 }
             }
         }
+        
+            LogPerformanceEvent("Checkpoint_Setup", setupTime, $"Agent {agentId} checkpoint setup");
     }
     
     private void RecycleAgent(int agentIndex, bool wasSuccessful, string reason)

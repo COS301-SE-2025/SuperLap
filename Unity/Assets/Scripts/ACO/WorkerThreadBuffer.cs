@@ -20,16 +20,18 @@ public class WorkerThreadBuffer
     private volatile bool dataReady = false;
     private volatile bool bufferSwapped = false;
     
-    // Performance tracking
-    private static long totalCommits = 0;
-    private static double totalCommitTime = 0;
-    private static double maxCommitTime = 0;
+    // Instance-specific performance tracking (no shared memory contention)
+    private long instanceCommits = 0;
+    private double instanceCommitTime = 0;
+    private double instanceMaxCommitTime = 0;
     
     public bool DataReady => dataReady;
     public int Capacity { get; private set; }
-    public static long TotalCommits => totalCommits;
-    public static double AverageCommitTime => totalCommits > 0 ? totalCommitTime / totalCommits : 0;
-    public static double MaxCommitTime => maxCommitTime;
+    
+    // Instance-specific performance properties
+    public long InstanceCommits => instanceCommits;
+    public double InstanceAverageCommitTime => instanceCommits > 0 ? instanceCommitTime / instanceCommits : 0;
+    public double InstanceMaxCommitTime => instanceMaxCommitTime;
     
     public WorkerThreadBuffer(int maxAgents)
     {
@@ -64,16 +66,14 @@ public class WorkerThreadBuffer
         sw.Stop();
         double commitTime = sw.Elapsed.TotalMilliseconds;
         
-        // Update statistics (thread-safe atomic operations)
-        System.Threading.Interlocked.Increment(ref totalCommits);
+        // Update instance-specific statistics (no shared memory contention)
+        instanceCommits++;
+        instanceCommitTime += commitTime;
         
-        // Update total time (may not be perfectly accurate due to race conditions, but good enough for profiling)
-        totalCommitTime += commitTime;
-        
-        // Update max time (simple check, may miss some due to race conditions but still useful)
-        if (commitTime > maxCommitTime)
+        // Update max time
+        if (commitTime > instanceMaxCommitTime)
         {
-            maxCommitTime = commitTime;
+            instanceMaxCommitTime = commitTime;
         }
         
         // Log very slow commits to Unity console
@@ -129,18 +129,18 @@ public class WorkerThreadBuffer
             bufferSwapped = false;
         }
         
-        // Reset statistics
-        totalCommits = 0;
-        totalCommitTime = 0;
-        maxCommitTime = 0;
+        // Reset instance statistics
+        instanceCommits = 0;
+        instanceCommitTime = 0;
+        instanceMaxCommitTime = 0;
     }
     
     /// <summary>
-    /// Get performance statistics for debugging
+    /// Get performance statistics for debugging - now returns instance stats
     /// </summary>
-    public static string GetPerformanceStats()
+    public string GetPerformanceStats()
     {
-        return $"Buffer Stats - Total Commits: {totalCommits}, Avg Time: {AverageCommitTime:F3}ms, Max Time: {maxCommitTime:F3}ms";
+        return $"Buffer Stats - Instance Commits: {instanceCommits}, Avg Time: {InstanceAverageCommitTime:F3}ms, Max Time: {instanceMaxCommitTime:F3}ms";
     }
 }
 

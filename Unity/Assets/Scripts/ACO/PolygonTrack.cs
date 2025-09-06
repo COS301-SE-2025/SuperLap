@@ -11,6 +11,13 @@ public class PolygonTrack
         outer = new Polygon(outerBounds);
         inner = new Polygon(innerBounds);
     }
+    
+    // Copy constructor for thread-safe copies
+    public PolygonTrack(PolygonTrack other)
+    {
+        outer = new Polygon(other.outer);
+        inner = new Polygon(other.inner);
+    }
 
     public bool PointInTrack(Vector2 point)
     {

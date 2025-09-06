@@ -53,9 +53,13 @@ public class ACOAgent
     private PolygonTrack track;
     private Vector2 position;
     private float bearing;
+    
+    // Thread-local raceline copy to avoid memory contention
+    private List<Vector2> threadLocalRaceline;
+    private ThreadLocalRacelineAnalyzer threadLocalAnalyzer;
 
     public Vector2 Position => position;
-    private static int instanceCounter = 0;
+    private static int globalInstanceCounter = 0;
     private int instanceId;
     public int ID => instanceId;
     Random random = new Random();
@@ -72,16 +76,31 @@ public class ACOAgent
         }
     }
 
-    public ACOAgent(PolygonTrack track, Vector2 pos, float bear)
+    public ACOAgent(PolygonTrack track, Vector2 pos, float bear, List<Vector2> raceline = null, ThreadLocalRacelineAnalyzer analyzer = null)
     {
         position = pos;
         bearing = bear;
-        instanceId = instanceCounter++;
+        
+        // Use thread-safe atomic increment to avoid memory contention
+        instanceId = System.Threading.Interlocked.Increment(ref globalInstanceCounter);
+        
         InitializeConfigurations();
         InitializeComponents();
         theoreticalTopSpeed = MotorcyclePhysicsCalculator.CalculateTheoreticalTopSpeed(
             enginePower, dragCoefficient, frontalArea, rollingResistanceCoefficient, mass);
         this.track = track;
+        this.threadLocalRaceline = raceline; // Use provided raceline copy, or null to fall back to shared
+        
+        // Use provided analyzer, or create new one if raceline is provided
+        if (analyzer != null)
+        {
+            threadLocalAnalyzer = analyzer;
+        }
+        else if (raceline != null)
+        {
+            threadLocalAnalyzer = new ThreadLocalRacelineAnalyzer();
+            threadLocalAnalyzer.InitializeWithRaceline(raceline);
+        }
     }
 
     private void InitializeConfigurations()
@@ -135,12 +154,27 @@ public class ACOAgent
 
     public (int, int) Decide()
     {
-        // calculate current forward vector from bearing
-        ACODrivingRecommendationEngine.UpdateDrivingRecommendations(enableRecommendations, position, 
-                                                               Forward, currentSpeed, currentTurnAngle, 
-                                                               throttleInput, theoreticalTopSpeed, recommendationConfig, 
-                                                               physicsConfig, track, out recommendSpeedUp, 
-                                                               out recommendSlowDown, out recommendTurnLeft, out recommendTurnRight);
+        // Use thread-local raceline - should NEVER be null to avoid shared memory access
+        List<Vector2> raceline = threadLocalRaceline;
+        if (raceline == null)
+        {
+            throw new Exception("Critical Error: threadLocalRaceline is null - this causes memory contention!");
+        }
+        
+        // Use thread-local analyzer when available to avoid shared memory contention
+        if (threadLocalAnalyzer != null)
+        {
+            ACODrivingRecommendationEngine.UpdateDrivingRecommendationsWithAnalyzer(enableRecommendations, position, 
+                                                                   Forward, currentSpeed, currentTurnAngle, 
+                                                                   throttleInput, theoreticalTopSpeed, recommendationConfig, 
+                                                                   physicsConfig, track, raceline, threadLocalAnalyzer,
+                                                                   out recommendSpeedUp, out recommendSlowDown, 
+                                                                   out recommendTurnLeft, out recommendTurnRight);
+        }
+        else
+        {
+            throw new Exception("Thread-local analyzer is not initialized.");
+        }
 
         List<(int, int)> options = new List<(int, int)>();
 

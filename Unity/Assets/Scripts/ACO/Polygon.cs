@@ -4,10 +4,19 @@ using System.Numerics;
 public class Polygon
 {
     private Vector2[] polygon;
+    
     public Polygon(Vector2[] points)
     {
         polygon = points;
     }
+    
+    // Copy constructor for thread-safe copies
+    public Polygon(Polygon other)
+    {
+        polygon = new Vector2[other.polygon.Length];
+        System.Array.Copy(other.polygon, polygon, other.polygon.Length);
+    }
+    
     public bool PointInPolygon(Vector2 point)
     {
         int n = polygon.Length;

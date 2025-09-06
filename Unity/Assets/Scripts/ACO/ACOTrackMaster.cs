@@ -360,6 +360,20 @@ public class ACOTrackMaster : MonoBehaviour
     {
         return track;
     }
+    
+    // Create a thread-safe copy of the track for worker threads
+    public static PolygonTrack CreatePolygonTrackCopy()
+    {
+        if (track == null) return null;
+        return new PolygonTrack(track);
+    }
+    
+    // Create a thread-safe copy of the raceline for worker threads
+    public static List<System.Numerics.Vector2> CreateRacelineCopy()
+    {
+        if (currentRaceline == null) return null;
+        return new List<System.Numerics.Vector2>(currentRaceline);
+    }
 
     private static void SaveTrackDataToFile(TrackImageProcessor.ProcessingResults results)
     {
