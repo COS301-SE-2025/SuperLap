@@ -60,6 +60,9 @@ public class ACOAgent
     public int ID => instanceId;
     Random random = new Random();
 
+    private Vector2 lastOffTrackPosition = Vector2.Zero;
+    private bool wasOffTrackLastCheck = false;
+
     public Vector2 Forward
     {
         get
@@ -263,7 +266,13 @@ public class ACOAgent
     // Public methods for training system
     public bool IsOffTrack()
     {
+        if(position == lastOffTrackPosition && lastOffTrackPosition != Vector2.Zero)
+        {
+            return wasOffTrackLastCheck;
+        }
         bool isOffTrack = !track.PointInTrack(position);
+        lastOffTrackPosition = position;
+        wasOffTrackLastCheck = isOffTrack;
         return isOffTrack;
     }
 

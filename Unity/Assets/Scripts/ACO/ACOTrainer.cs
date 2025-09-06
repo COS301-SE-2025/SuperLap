@@ -567,7 +567,8 @@ public class ACOTrainer : MonoBehaviour
                 buffer,
                 agentEventQueue,
                 ACOTrackMaster.GetPolygonTrack(),
-                decisionInterval
+                decisionInterval,
+                i  // Pass worker ID for logging
             );
             workerThreads.Add(worker);
             worker.StartThread();

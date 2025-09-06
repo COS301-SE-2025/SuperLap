@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Diagnostics;
 // using UnityEngine;
 using Vector2 = System.Numerics.Vector2;
 
@@ -19,8 +20,16 @@ public class WorkerThreadBuffer
     private volatile bool dataReady = false;
     private volatile bool bufferSwapped = false;
     
+    // Performance tracking
+    private static long totalCommits = 0;
+    private static double totalCommitTime = 0;
+    private static double maxCommitTime = 0;
+    
     public bool DataReady => dataReady;
     public int Capacity { get; private set; }
+    public static long TotalCommits => totalCommits;
+    public static double AverageCommitTime => totalCommits > 0 ? totalCommitTime / totalCommits : 0;
+    public static double MaxCommitTime => maxCommitTime;
     
     public WorkerThreadBuffer(int maxAgents)
     {
@@ -42,12 +51,35 @@ public class WorkerThreadBuffer
     /// </summary>
     public void CommitData()
     {
+        Stopwatch sw = Stopwatch.StartNew();
+        
         lock (bufferSwapLock)
         {
             // Swap buffers - write becomes read, read becomes write
             (writeBuffer, readBuffer) = (readBuffer, writeBuffer);
             dataReady = true;
             bufferSwapped = true;
+        }
+        
+        sw.Stop();
+        double commitTime = sw.Elapsed.TotalMilliseconds;
+        
+        // Update statistics (thread-safe atomic operations)
+        System.Threading.Interlocked.Increment(ref totalCommits);
+        
+        // Update total time (may not be perfectly accurate due to race conditions, but good enough for profiling)
+        totalCommitTime += commitTime;
+        
+        // Update max time (simple check, may miss some due to race conditions but still useful)
+        if (commitTime > maxCommitTime)
+        {
+            maxCommitTime = commitTime;
+        }
+        
+        // Log very slow commits to Unity console
+        if (commitTime > 10.0)
+        {
+            UnityEngine.Debug.LogWarning($"Very slow buffer commit detected: {commitTime:F3}ms");
         }
     }
     
@@ -56,15 +88,32 @@ public class WorkerThreadBuffer
     /// </summary>
     public AgentStateArray GetReadBuffer()
     {
+        Stopwatch sw = Stopwatch.StartNew();
+        
+        AgentStateArray result;
         lock (bufferSwapLock)
         {
             if (dataReady)
             {
                 dataReady = false; // Mark as consumed
-                return readBuffer;
+                result = readBuffer;
             }
-            return null; // No new data
+            else
+            {
+                result = null; // No new data
+            }
         }
+        
+        sw.Stop();
+        double readTime = sw.Elapsed.TotalMilliseconds;
+        
+        // Log slow reads (these should be very fast since main thread has priority)
+        if (readTime > 5.0)
+        {
+            UnityEngine.Debug.LogWarning($"Slow buffer read detected: {readTime:F3}ms");
+        }
+        
+        return result;
     }
     
     /// <summary>
@@ -79,6 +128,19 @@ public class WorkerThreadBuffer
             dataReady = false;
             bufferSwapped = false;
         }
+        
+        // Reset statistics
+        totalCommits = 0;
+        totalCommitTime = 0;
+        maxCommitTime = 0;
+    }
+    
+    /// <summary>
+    /// Get performance statistics for debugging
+    /// </summary>
+    public static string GetPerformanceStats()
+    {
+        return $"Buffer Stats - Total Commits: {totalCommits}, Avg Time: {AverageCommitTime:F3}ms, Max Time: {maxCommitTime:F3}ms";
     }
 }
 

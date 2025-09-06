@@ -8914,7 +8914,7 @@ MonoBehaviour:
   decisionInterval: 5
   iterations: 100
   enableMultithreading: 1
-  threadCount: 1
+  threadCount: 3
   agentsPerThread: 100
   currentIteration: 0
   totalAttempts: 0

@@ -4,6 +4,8 @@ using System.Collections.Concurrent;
 using System.Numerics;
 using UnityEngine;
 using System;
+using System.IO;
+using System.Diagnostics;
 
 public enum AgentEventType
 {
@@ -19,7 +21,8 @@ public class AgentEvent
     public int CheckpointId { get; set; }
     public string Reason { get; set; }
     public float CompletionTime { get; set; }
-    public ThreadSafeAgentState FinalState { get; set; }
+    public List<(int, int)> InputSequence { get; set; }
+    public bool IsValid { get; set; }
 }
 
 public class ACOWorkerThread
@@ -49,16 +52,24 @@ public class ACOWorkerThread
     private WorkerThreadBuffer agentBuffer;
     private ConcurrentQueue<AgentEvent> eventQueue;
     
+    // Performance profiling
+    private StreamWriter performanceLog;
+    private string logFilePath;
+    private Stopwatch stopwatch;
+    private int threadId;
+    
     public ACOWorkerThread(
         WorkerThreadBuffer buffer,
         ConcurrentQueue<AgentEvent> events,
         PolygonTrack trackData,
-        int decisionInt)
+        int decisionInt,
+        int workerId = 0)
     {
         agentBuffer = buffer;
         eventQueue = events;
         track = trackData;
         decisionInterval = decisionInt;
+        threadId = workerId;
         
         agents = new List<ACOAgent>();
         agentStates = new List<ACOAgentState>();
@@ -68,6 +79,10 @@ public class ACOWorkerThread
         
         pauseEvent = new ManualResetEventSlim(true);
         currentStep = 0;
+        stopwatch = new Stopwatch();
+        
+        // Create performance log file
+        InitializePerformanceLogging();
     }
     
     public void StartThread()
@@ -88,6 +103,68 @@ public class ACOWorkerThread
         if (workerThread != null && workerThread.IsAlive)
         {
             workerThread.Join(1000); // Wait 1 second for graceful shutdown
+        }
+        
+        // Close performance log
+        CleanupPerformanceLogging();
+    }
+    
+    private void InitializePerformanceLogging()
+    {
+        try
+        {
+            string logDirectory = Path.Combine("/home/richter/ACOPerformanceLogs");
+            Directory.CreateDirectory(logDirectory);
+            
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            logFilePath = Path.Combine(logDirectory, $"WorkerThread_{threadId}_{timestamp}.log");
+            
+            performanceLog = new StreamWriter(logFilePath, false);
+            performanceLog.WriteLine($"Performance Log for Worker Thread {threadId}");
+            performanceLog.WriteLine($"Started at: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+            performanceLog.WriteLine("Timestamp(ms),Event,Duration(ms),Details");
+            performanceLog.Flush();
+            
+            UnityEngine.Debug.Log($"Worker thread {threadId} performance logging initialized: {logFilePath}");
+        }
+        catch (Exception e)
+        {
+            UnityEngine.Debug.LogError($"Failed to initialize performance logging for thread {threadId}: {e.Message}");
+        }
+    }
+    
+    private void CleanupPerformanceLogging()
+    {
+        try
+        {
+            if (performanceLog != null)
+            {
+                performanceLog.WriteLine($"Log ended at: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+                performanceLog.Close();
+                performanceLog.Dispose();
+                performanceLog = null;
+            }
+        }
+        catch (Exception e)
+        {
+            UnityEngine.Debug.LogError($"Error closing performance log for thread {threadId}: {e.Message}");
+        }
+    }
+    
+    private void LogPerformanceEvent(string eventName, double durationMs, string details = "")
+    {
+        try
+        {
+            if (performanceLog != null)
+            {
+                long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                performanceLog.WriteLine($"{timestamp},{eventName},{durationMs:F3},{details}");
+                performanceLog.Flush();
+            }
+        }
+        catch (Exception)
+        {
+            // Don't log errors to avoid infinite recursion
         }
     }
     
@@ -130,19 +207,31 @@ public class ACOWorkerThread
         agentCheckpointTargets.Add(currentSession.validateCheckpoint);
         agentActive.Add(true);
         
-        Debug.Log($"Worker thread spawned agent {agentId}");
+        UnityEngine.Debug.Log($"Worker thread spawned agent {agentId}");
     }
     
     private void ThreadMain()
     {
         try
         {
+            LogPerformanceEvent("ThreadMain_Start", 0, $"Thread {threadId} starting main loop");
+            
             while (!shouldStop)
             {
+                stopwatch.Restart();
+                
                 // Wait if paused
                 pauseEvent.Wait();
                 
                 if (shouldStop) break;
+                
+                double pauseWaitTime = stopwatch.Elapsed.TotalMilliseconds;
+                if (pauseWaitTime > 1.0) // Only log if we actually waited
+                {
+                    LogPerformanceEvent("PauseWait", pauseWaitTime, "Waiting for pause event");
+                }
+                
+                stopwatch.Restart();
                 
                 // Update all active agents
                 for (int i = agents.Count - 1; i >= 0; i--)
@@ -153,17 +242,26 @@ public class ACOWorkerThread
                     }
                 }
                 
+                double agentUpdateTime = stopwatch.Elapsed.TotalMilliseconds;
+                LogPerformanceEvent("AgentUpdate", agentUpdateTime, $"Updated {agents.Count} agents");
+                
                 // Write all agent states to buffer
+                stopwatch.Restart();
                 WriteAgentStatesToBuffer();
+                double bufferWriteTime = stopwatch.Elapsed.TotalMilliseconds;
+                LogPerformanceEvent("BufferWrite", bufferWriteTime, $"Wrote {agents.Count} agent states");
                 
                 currentStep++;
                 
                 // Simple frame rate limiting (30 FPS)
                 Thread.Sleep(33);
             }
+            
+            LogPerformanceEvent("ThreadMain_End", 0, $"Thread {threadId} ending main loop");
         }
         catch (System.Exception e)
         {
+            LogPerformanceEvent("ThreadMain_Error", 0, $"Worker thread error: {e.Message}");
             throw new Exception($"Worker thread error: {e.Message}");
         }
         
@@ -225,6 +323,8 @@ public class ACOWorkerThread
                 if (distanceToGoal <= checkpointTriggerDistance)
                 {
                     // Agent reached goal checkpoint
+                    stopwatch.Restart();
+                    
                     var goalEvent = new AgentEvent
                     {
                         EventType = AgentEventType.CheckpointTriggered,
@@ -233,6 +333,9 @@ public class ACOWorkerThread
                         CompletionTime = DateTime.UtcNow.Millisecond - agentStartTimes[agentIndex]
                     };
                     eventQueue.Enqueue(goalEvent);
+                    
+                    double enqueueTime = stopwatch.Elapsed.TotalMilliseconds;
+                    LogPerformanceEvent("EventQueue_Enqueue", enqueueTime, $"Goal checkpoint event for agent {agentId}");
                 }
             }
             
@@ -250,17 +353,23 @@ public class ACOWorkerThread
                     state.timeToGoal = totalTime;
                     state.isValid = true;
                     
+                    stopwatch.Restart();
+                    
                     var completeEvent = new AgentEvent
                     {
                         EventType = AgentEventType.AgentCompleted,
                         AgentId = agentId,
                         CheckpointId = currentSession.validateCheckpoint,
                         CompletionTime = totalTime,
-                        FinalState = new ThreadSafeAgentState(agentId)
+                        InputSequence = new List<(int, int)>(state.inputSequence),
+                        IsValid = true
                     };
-                    completeEvent.FinalState.UpdateTrainingData(state.inputSequence, totalTime, true);
                     
                     eventQueue.Enqueue(completeEvent);
+                    
+                    double enqueueTime = stopwatch.Elapsed.TotalMilliseconds;
+                    LogPerformanceEvent("EventQueue_Enqueue", enqueueTime, $"Completion event for agent {agentId}, time: {totalTime:F2}s");
+                    
                     RecycleAgent(agentIndex, true, $"Completed in {totalTime:F2}s");
                 }
             }
@@ -278,6 +387,8 @@ public class ACOWorkerThread
         // Send failure event if not successful
         if (!wasSuccessful)
         {
+            stopwatch.Restart();
+            
             var failEvent = new AgentEvent
             {
                 EventType = AgentEventType.AgentFailed,
@@ -285,6 +396,9 @@ public class ACOWorkerThread
                 Reason = reason
             };
             eventQueue.Enqueue(failEvent);
+            
+            double enqueueTime = stopwatch.Elapsed.TotalMilliseconds;
+            LogPerformanceEvent("EventQueue_Enqueue", enqueueTime, $"Failure event for agent {agentId}: {reason}");
         }
         
         // Remove from collections
@@ -320,7 +434,16 @@ public class ACOWorkerThread
     /// </summary>
     private void WriteAgentStatesToBuffer()
     {
+        stopwatch.Restart();
         var writeBuffer = agentBuffer.GetWriteBuffer();
+        double getWriteBufferTime = stopwatch.Elapsed.TotalMilliseconds;
+        
+        if (getWriteBufferTime > 1.0) // Only log if it took significant time
+        {
+            LogPerformanceEvent("GetWriteBuffer", getWriteBufferTime, "Time to get write buffer");
+        }
+        
+        stopwatch.Restart();
         
         // Write all agent states to the buffer
         for (int i = 0; i < agents.Count; i++)
@@ -346,8 +469,22 @@ public class ACOWorkerThread
             }
         }
         
-        // Set the active count and commit the buffer
+        // Set the active count
         writeBuffer.SetActiveCount(agents.Count);
+        
+        double writeTime = stopwatch.Elapsed.TotalMilliseconds;
+        LogPerformanceEvent("WriteAgentStates", writeTime, $"Wrote {agents.Count} agent states to buffer");
+        
+        // This is the critical section - buffer commit with lock
+        stopwatch.Restart();
         agentBuffer.CommitData();
+        double commitTime = stopwatch.Elapsed.TotalMilliseconds;
+        
+        LogPerformanceEvent("BufferCommit", commitTime, $"Committed buffer with {agents.Count} agents");
+        
+        if (commitTime > 5.0) // Log slower commits as warnings
+        {
+            LogPerformanceEvent("BufferCommit_SLOW", commitTime, $"SLOW buffer commit detected!");
+        }
     }
 }
