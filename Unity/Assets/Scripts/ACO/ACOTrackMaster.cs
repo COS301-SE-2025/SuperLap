@@ -193,11 +193,17 @@ public class ACOTrackMaster : MonoBehaviour
         // NOTE: Fixed boundary swap - results.innerBoundary is actually the outer boundary
         List<System.Numerics.Vector2> inner = new List<System.Numerics.Vector2>();
         List<System.Numerics.Vector2> outer = new List<System.Numerics.Vector2>();
-        foreach (var vec in outerPoints) // This is actually the inner boundary
+
+        List<Vector2> temp = results.innerBoundary;
+        List<Vector2> temp2 = results.outerBoundary;
+        List<Vector2> simpleInner = SimplifyLine(temp, 2.0f);
+        List<Vector2> simpleOuter = SimplifyLine(temp2, 2.0f);
+        Debug.Log($"Simplified inner boundary to {simpleInner.Count} points and outer boundary to {simpleOuter.Count} points.");
+        foreach (var vec in simpleOuter) // This is actually the inner boundary
         {
             inner.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }
-        foreach (var vec in innerPoints) // This is actually the outer boundary
+        foreach (var vec in simpleInner) // This is actually the outer boundary
         {
             outer.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }
@@ -284,50 +290,6 @@ public class ACOTrackMaster : MonoBehaviour
         Vector3 direction3D = new Vector3(direction2D.X, 0, direction2D.Y).normalized;
         return direction3D != Vector3.zero ? direction3D : Vector3.forward;
     }
-
-    // private static void CreateCheckpoints(TrackImageProcessor.ProcessingResults racelineResult)
-    // {
-    //     if (instance.checkpointPrefab == null)
-    //     {
-    //         Debug.LogWarning("Checkpoint prefab not assigned in TrackMaster!");
-    //         return;
-    //     }
-
-    //     List<Vector2> raceline = racelineResult.raceline;
-
-    //     // Create checkpoints at split points
-    //     int checkpointId = 0;
-    //     for (int i = 0; i < raceline.Count; i += instance.meshResolution / instance.splitCount)
-    //     {
-    //         Vector2 point = raceline[i];
-    //         GameObject checkpointObj = Instantiate(instance.checkpointPrefab);
-    //         checkpointObj.transform.position = new Vector3(point.x, instance.agentSpawnHeight, point.y);
-    //         checkpointObj.transform.SetParent(instance.transform);
-    //         checkpointObj.name = $"Checkpoint_{checkpointId}";
-
-    //         // Configure the checkpoint component
-    //         Checkpoint checkpoint = checkpointObj.GetComponent<Checkpoint>();
-    //         if (checkpoint != null)
-    //         {
-    //             checkpoint.SetCheckpointId(checkpointId);
-    //         }
-    //         else
-    //         {
-    //             // Add checkpoint component if it doesn't exist
-    //             checkpoint = checkpointObj.AddComponent<Checkpoint>();
-    //             checkpoint.SetCheckpointId(checkpointId);
-    //         }
-
-    //         checkpointId++;
-    //     }
-
-    //     // Configure the checkpoint manager materials
-    //     CheckpointManager manager = FindAnyObjectByType<CheckpointManager>();
-    //     if (manager != null && instance.checkpointMaterials != null && instance.checkpointMaterials.Length > 0)
-    //     {
-    //         manager.SetCheckpointMaterials(instance.checkpointMaterials);
-    //     }
-    // }
 
     private static void CreateRacelineVisualization(List<Vector2> raceline)
     {
