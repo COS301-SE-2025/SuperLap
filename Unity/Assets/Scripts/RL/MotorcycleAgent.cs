@@ -311,9 +311,7 @@ public class MotorcycleAgent : MonoBehaviour
         visualEffects.UpdateMotorcycleLeaning(motorcycleModel, currentSpeed, currentTurnAngle, 
                                             maxLeanAngle, optimalLeanSpeed, leanSpeed, 
                                             minSteeringSpeed, turnRate, Time.fixedDeltaTime, ref currentLeanAngle);
-        // visualEffects.UpdateCameraFOV(dynamicCamera, currentSpeed, currentAcceleration, 
-        //                             minFOV, maxFOV, maxFOVSpeed, accelerationFOVBoost, 
-        //                             fovAdjustSpeed, Time.fixedDeltaTime, ref currentFOV);
+
         trajectoryPredictor.UpdateTrajectoryVisualization(showTrajectory, trajectoryColor, trajectoryWidth, 
                                                          trajectoryPoints, trajectoryLength, transform.position, 
                                                          transform.forward, currentSpeed, currentTurnAngle, 
