@@ -8909,10 +8909,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a72440b9668661759b73acd789f1bed6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  agentCount: 50
+  agentCount: 1000
   agentPrefab: {fileID: 5433541524235702189, guid: 0cd56998953a77f01b4eff2a8931376c, type: 3}
   decisionInterval: 5
   iterations: 100
+  enableMultithreading: 1
+  threadCount: 1
+  agentsPerThread: 100
   currentIteration: 0
   totalAttempts: 0
   currentSessionIndex: 0

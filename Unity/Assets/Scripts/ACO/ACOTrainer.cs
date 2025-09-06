@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using System.Collections.Concurrent;
+using System.Threading;
 
 [System.Serializable]
 public class ACOAgentState
@@ -60,6 +62,11 @@ public class ACOTrainer : MonoBehaviour
     [SerializeField] private int decisionInterval = 1;
     [SerializeField] private int iterations = 100;
     
+    [Header("Threading Configuration")]
+    [SerializeField] private bool enableMultithreading = true;
+    [SerializeField] private int threadCount = 2;
+    [SerializeField] private int agentsPerThread = 2;
+    
     [Header("Training State - Debug")]
     [SerializeField] private int currentIteration = 0; // Successful iterations only
     [SerializeField] private int totalAttempts = 0; // Total agent spawns (including failures)
@@ -90,6 +97,11 @@ public class ACOTrainer : MonoBehaviour
     private Queue<int> availableAgentSlots;
     private int currentStep = 0;
     
+    // Threading infrastructure
+    private List<ACOWorkerThread> workerThreads;
+    private ConcurrentQueue<AgentEvent> agentEventQueue;
+    private int nextAgentId = 0;
+    
     // New distance-based checkpoint system
     [Header("Distance-Based Checkpoint System")]
     [SerializeField] private float checkpointTriggerDistance = 5f; // Distance threshold to trigger checkpoint
@@ -97,7 +109,7 @@ public class ACOTrainer : MonoBehaviour
     [SerializeField] private int totalCheckpoints = 10; // Number of checkpoints to create
     
     // Checkpoint tracking data
-    private List<Vector3> checkpointPositions; // Positions of checkpoints on raceline
+    private List<System.Numerics.Vector3> checkpointPositions; // Positions of checkpoints on raceline
     private List<float> checkpointDistances; // Distance along raceline for each checkpoint
     private Dictionary<int, int> agentCurrentCheckpoints; // Current target checkpoint for each agent
     private Dictionary<int, float> agentCheckpointProgress; // Progress toward next checkpoint for each agent
@@ -145,6 +157,12 @@ public class ACOTrainer : MonoBehaviour
         agentStartTimes = new List<float>();
         availableAgentSlots = new Queue<int>();
         agentComponents = new Dictionary<int, ACOAgentComponent>();
+        
+        // Initialize threading infrastructure
+        if (enableMultithreading)
+        {
+            InitializeThreading();
+        }
         
         // Initialize distance-based checkpoint tracking
         if (useDistanceBasedCheckpoints)
@@ -204,18 +222,35 @@ public class ACOTrainer : MonoBehaviour
     {
         if (!isTraining) return;
         
-        // Spawn new agents if slots are available and iterations remain
-        if (currentIteration < iterations && availableAgentSlots.Count > 0)
+        if (enableMultithreading)
         {
-            SpawnNewAgent();
-        }
-        
-        // Update existing agents
-        for (int i = 0; i < agents.Count; i++)
-        {
-            if (agents[i] != null)
+            // Process events from worker threads
+            ProcessAgentEvents();
+            
+            // Update visual representations
+            UpdateAgentVisuals();
+            
+            // Spawn new agents in worker threads if needed
+            if (currentIteration < iterations)
             {
-                UpdateAgent(i);
+                SpawnAgentsInThreads();
+            }
+        }
+        else
+        {
+            // Original single-threaded logic
+            if (currentIteration < iterations && availableAgentSlots.Count > 0)
+            {
+                SpawnNewAgent();
+            }
+            
+            // Update existing agents
+            for (int i = 0; i < agents.Count; i++)
+            {
+                if (agents[i] != null)
+                {
+                    UpdateAgent(i);
+                }
             }
         }
         
@@ -249,9 +284,7 @@ public class ACOTrainer : MonoBehaviour
             Debug.LogWarning("ACOAgentComponent was missing from agentPrefab, added it automatically.");
         }
         agentComponents[agent.ID] = agentComponent;
-        
-        Debug.Log($"Created agent with ID {agent.ID}, component null: {agentComponent == null}, stored in dictionary: {agentComponents.ContainsKey(agent.ID)}");
-        
+                
         // Set the agent's initial speed and turn angle to match the training state
         agent.SetInitialState(currentTrainingState.speed, currentTrainingState.turnAngle);
 
@@ -263,10 +296,6 @@ public class ACOTrainer : MonoBehaviour
         
         activeAgents++;
         totalAttempts++;
-        
-        Debug.Log($"Spawned agent {slotIndex} (attempt {totalAttempts}, successful iterations: {currentIteration}/{iterations}) " +
-                 $"at position {currentTrainingState.position} with speed {currentTrainingState.speed:F2} m/s " +
-                 $"and turn angle {currentTrainingState.turnAngle:F2}° - targeting validate checkpoint {trainingSessions[currentSessionIndex].validateCheckpoint}");
     }
 
     void UpdateAgent(int agentIndex)
@@ -361,7 +390,8 @@ public class ACOTrainer : MonoBehaviour
             agentGoalStates[agentIndex].inputSequence = new List<(int, int)>(agentStates[agentIndex].inputSequence);
             
             float timeToGoal = Time.time - agentStartTimes[agentIndex];
-            Debug.Log($"Agent {agentIndex} reached goal checkpoint in {timeToGoal:F2}s at speed {agentGoalStates[agentIndex].speed:F2} m/s, continuing to validate");
+            //TODO
+            // Debug.Log($"Agent {agentIndex} reached goal checkpoint in {timeToGoal:F2}s at speed {agentGoalStates[agentIndex].speed:F2} m/s, continuing to validate");
         }
         else if (checkpointId == session.validateCheckpoint)
         {
@@ -370,12 +400,12 @@ public class ACOTrainer : MonoBehaviour
             var state = agentStates[agentIndex];
             state.timeToGoal = totalTime;
             state.isValid = true;
-            
+
             // Check if this is the best complete time so far
             if (totalTime < session.bestTime)
             {
                 session.bestTime = totalTime;
-                
+
                 // Use the goal state (if captured) for the next session's starting point
                 if (agentGoalStates[agentIndex] != null)
                 {
@@ -393,11 +423,12 @@ public class ACOTrainer : MonoBehaviour
                     session.bestState = new ACOAgentState(state.position, state.forward, state.speed, state.turnAngle);
                     session.bestState.inputSequence = new List<(int, int)>(state.inputSequence);
                 }
-                
+
                 session.bestState.timeToGoal = totalTime;
                 session.bestState.isValid = true;
-                
-                Debug.Log($"NEW BEST COMPLETE TIME for session {currentSessionIndex}: {totalTime:F2}s");
+
+                // TODO
+                // Debug.Log($"NEW BEST COMPLETE TIME for session {currentSessionIndex}: {totalTime:F2}s");
             }
             
             RecycleAgent(agentIndex, true, $"Completed full run in {totalTime:F2}s");
@@ -431,11 +462,13 @@ public class ACOTrainer : MonoBehaviour
         if (wasSuccessful)
         {
             currentIteration++;
-            Debug.Log($"Recycled agent {agentIndex}: {reason} - SUCCESSFUL iteration {currentIteration}/{iterations}");
+            // TODO
+            // Debug.Log($"Recycled agent {agentIndex}: {reason} - SUCCESSFUL iteration {currentIteration}/{iterations}");
         }
         else
         {
-            Debug.Log($"Recycled agent {agentIndex}: {reason} - FAILED attempt (successful iterations: {currentIteration}/{iterations})");
+            // TODO
+            // Debug.Log($"Recycled agent {agentIndex}: {reason} - FAILED attempt (successful iterations: {currentIteration}/{iterations})");
         }
         
         agentStates[agentIndex] = null;
@@ -510,6 +543,256 @@ public class ACOTrainer : MonoBehaviour
         }
         
         Debug.Log($"Training Summary: {totalSuccessfulRuns} successful runs completed across all sessions");
+        
+        // Stop all worker threads
+        if (enableMultithreading && workerThreads != null)
+        {
+            foreach (var worker in workerThreads)
+            {
+                worker.StopThread();
+            }
+        }
+    }
+    
+    void InitializeThreading()
+    {
+        agentEventQueue = new ConcurrentQueue<AgentEvent>();
+        workerThreads = new List<ACOWorkerThread>();
+        
+        // Create worker threads with their own buffers
+        for (int i = 0; i < threadCount; i++)
+        {
+            var buffer = new WorkerThreadBuffer(agentsPerThread);
+            var worker = new ACOWorkerThread(
+                buffer,
+                agentEventQueue,
+                ACOTrackMaster.GetPolygonTrack(),
+                decisionInterval
+            );
+            workerThreads.Add(worker);
+            worker.StartThread();
+        }
+        
+        Debug.Log($"Initialized {threadCount} worker threads for multithreaded training");
+    }
+    
+    void ProcessAgentEvents()
+    {
+        while (agentEventQueue.TryDequeue(out AgentEvent agentEvent))
+        {
+            switch (agentEvent.EventType)
+            {
+                case AgentEventType.CheckpointTriggered:
+                    HandleCheckpointTriggered(agentEvent.AgentId, agentEvent.CheckpointId);
+                    break;
+                    
+                case AgentEventType.AgentCompleted:
+                    HandleAgentCompleted(agentEvent);
+                    break;
+                    
+                case AgentEventType.AgentFailed:
+                    HandleAgentFailed(agentEvent.AgentId, agentEvent.Reason);
+                    break;
+            }
+        }
+    }
+    
+    void UpdateAgentVisuals()
+    {
+        if (workerThreads == null) return;
+        
+        // Read from each worker thread's buffer
+        foreach (var worker in workerThreads)
+        {
+            var buffer = worker.GetBuffer();
+            if (buffer == null) continue;
+            
+            var readBuffer = buffer.GetReadBuffer();
+            if (readBuffer == null) continue; // No new data
+            
+            // Update visuals for all agents in this buffer
+            for (int i = 0; i < readBuffer.ActiveCount; i++)
+            {
+                if (readBuffer.GetAgentState(i, out int agentId, out var position, out var forward,
+                                           out float speed, out float turnAngle, out bool active, out bool offTrack))
+                {
+                    if (!active) continue;
+                    
+                    // Update the visual component
+                    if (agentComponents.ContainsKey(agentId))
+                    {
+                        var component = agentComponents[agentId];
+                        if (component != null)
+                        {
+                            component.transform.position = new Vector3(position.X, component.transform.position.y, position.Y);
+                            
+                            Vector3 forward3D = new Vector3(forward.X, 0, forward.Y);
+                            if (forward3D.magnitude > 0.001f)
+                            {
+                                component.transform.rotation = Quaternion.LookRotation(forward3D);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    void SpawnAgentsInThreads()
+    {
+        // Calculate how many total agents we should have running
+        int totalActiveAgents = 0;
+        if (workerThreads != null)
+        {
+            foreach (var worker in workerThreads)
+            {
+                totalActiveAgents += worker.GetActiveAgentCount();
+            }
+        }
+        
+        // Spawn new agents if we need more
+        int desiredAgents;
+        if (enableMultithreading)
+        {
+            // In multithreading mode, use thread configuration
+            desiredAgents = threadCount * agentsPerThread;
+        }
+        else
+        {
+            // In single-threaded mode, use agentCount
+            desiredAgents = agentCount;
+        }
+        if (totalActiveAgents < desiredAgents)
+        {
+            int agentsToSpawn = Mathf.Min(desiredAgents - totalActiveAgents, enableMultithreading ? 50 : 1); // Spawn up to 50 agents per frame in multithreading mode
+            int agentsSpawned = 0;
+            
+            while (agentsSpawned < agentsToSpawn)
+            {
+                bool spawned = false;
+                foreach (var worker in workerThreads)
+                {
+                    if (worker.GetActiveAgentCount() < agentsPerThread)
+                    {
+                        SpawnAgentInWorker(worker);
+                        totalAttempts++;
+                        activeAgents++;
+                        agentsSpawned++;
+                        spawned = true;
+                        
+                        if (agentsSpawned >= agentsToSpawn) break;
+                    }
+                }
+                
+                // If no workers have space, break to avoid infinite loop
+                if (!spawned) break;
+            }
+        }
+    }
+    
+    void SpawnAgentInWorker(ACOWorkerThread worker)
+    {
+        // Convert checkpointPositions to Unity Vector3 for worker thread
+        List<Vector3> unityCheckpoints = new List<Vector3>();
+        if (checkpointPositions != null)
+        {
+            foreach (var pos in checkpointPositions)
+            {
+                unityCheckpoints.Add(new Vector3(pos.X, pos.Y, pos.Z));
+            }
+        }
+        
+        // Update worker with current training data
+        worker.SetTrainingData(currentTrainingState, trainingSessions[currentSessionIndex], unityCheckpoints, checkpointTriggerDistance);
+        
+        // Spawn agent with unique ID
+        int agentId = nextAgentId++;
+        worker.SpawnAgent(agentId);
+        
+        // Create visual representation
+        GameObject obj = Instantiate(agentPrefab);
+        obj.transform.position = new Vector3(currentTrainingState.position.X, 0, currentTrainingState.position.Y);
+        obj.transform.rotation = Quaternion.LookRotation(new Vector3(currentTrainingState.forward.X, 0, currentTrainingState.forward.Y));
+        
+        ACOAgentComponent agentComponent = obj.GetComponent<ACOAgentComponent>();
+        if (agentComponent == null)
+        {
+            agentComponent = obj.AddComponent<ACOAgentComponent>();
+        }
+        agentComponents[agentId] = agentComponent;
+        
+        // Debug.Log($"Spawned agent {agentId} in worker thread (attempt {totalAttempts}, iteration {currentIteration}/{iterations})");
+    }
+    
+    void HandleCheckpointTriggered(int agentId, int checkpointId)
+    {
+        var session = trainingSessions[currentSessionIndex];
+
+        if (checkpointId == session.goalCheckpoint)
+        {
+            // TODO
+            // Debug.Log($"Agent {agentId} reached goal checkpoint");
+            // Goal checkpoint logic handled in worker thread
+        }
+    }
+    
+    void HandleAgentCompleted(AgentEvent completionEvent)
+    {
+        currentIteration++;
+        activeAgents--;
+        
+        var session = trainingSessions[currentSessionIndex];
+        
+        // Check if this is the best time
+        if (completionEvent.CompletionTime < session.bestTime)
+        {
+            session.bestTime = completionEvent.CompletionTime;
+            
+            // Update best state (simplified for threading)
+            session.bestState = new ACOAgentState(
+                new System.Numerics.Vector2(0, 0), // Will be updated properly later
+                new System.Numerics.Vector2(1, 0),
+                0f, 0f
+            );
+            session.bestState.timeToGoal = completionEvent.CompletionTime;
+            session.bestState.isValid = true;
+            
+            // TODO
+            // Debug.Log($"NEW BEST TIME for session {currentSessionIndex}: {completionEvent.CompletionTime:F2}s");
+        }
+        
+        // Clean up visual component
+        if (agentComponents.ContainsKey(completionEvent.AgentId))
+        {
+            Destroy(agentComponents[completionEvent.AgentId].gameObject);
+            agentComponents.Remove(completionEvent.AgentId);
+        }
+        
+        // Remove from shared states (handled by worker thread buffer cleanup)
+        
+        Debug.Log($"Agent {completionEvent.AgentId} completed in {completionEvent.CompletionTime:F2}s - iteration {currentIteration}/{iterations}");
+        
+        // Check if session is complete
+        if (currentIteration >= iterations && activeAgents == 0)
+        {
+            CompleteCurrentSession();
+        }
+    }
+    
+    void HandleAgentFailed(int agentId, string reason)
+    {
+        activeAgents--;
+        
+        // Clean up visual component
+        if (agentComponents.ContainsKey(agentId))
+        {
+            Destroy(agentComponents[agentId].gameObject);
+            agentComponents.Remove(agentId);
+        }
+        
+        // Remove from shared states (handled by worker thread buffer cleanup)
+        
+        Debug.Log($"Agent {agentId} failed: {reason}");
     }
 
     bool IsAgentOffTrack(ACOAgent agent)
@@ -528,7 +811,7 @@ public class ACOTrainer : MonoBehaviour
 
     void InitializeDistanceBasedCheckpoints()
     {
-        checkpointPositions = new List<Vector3>();
+        checkpointPositions = new List<System.Numerics.Vector3>();
         checkpointDistances = new List<float>();
         
         // Get raceline data from ACOTrackMaster
@@ -557,7 +840,7 @@ public class ACOTrainer : MonoBehaviour
         
         float currentDistance = 0f;
         int racelineIndex = 0;
-        Vector3 lastRacelinePoint = new Vector3(raceline[0].X, 0, raceline[0].Y);
+        System.Numerics.Vector3 lastRacelinePoint = new System.Numerics.Vector3(raceline[0].X, 0, raceline[0].Y);
         
         for (int checkpointIndex = 0; checkpointIndex < totalCheckpoints; checkpointIndex++)
         {
@@ -567,8 +850,8 @@ public class ACOTrainer : MonoBehaviour
             while (currentDistance < targetDistance && racelineIndex < raceline.Count - 1)
             {
                 racelineIndex++;
-                Vector3 nextPoint = new Vector3(raceline[racelineIndex].X, 0, raceline[racelineIndex].Y);
-                currentDistance += Vector3.Distance(lastRacelinePoint, nextPoint);
+                System.Numerics.Vector3 nextPoint = new System.Numerics.Vector3(raceline[racelineIndex].X, 0, raceline[racelineIndex].Y);
+                currentDistance += System.Numerics.Vector3.Distance(lastRacelinePoint, nextPoint);
                 lastRacelinePoint = nextPoint;
             }
             
@@ -619,7 +902,7 @@ public class ACOTrainer : MonoBehaviour
         if (!useDistanceBasedCheckpoints || agents[agentIndex] == null) return;
         
         int agentId = agents[agentIndex].ID;
-        Vector3 agentPosition = new Vector3(agents[agentIndex].Position.X, 0, agents[agentIndex].Position.Y);
+        System.Numerics.Vector3 agentPosition = new System.Numerics.Vector3(agents[agentIndex].Position.X, 0, agents[agentIndex].Position.Y);
         
         // Initialize agent checkpoint tracking if needed
         if (!agentCurrentCheckpoints.ContainsKey(agentId))
@@ -634,8 +917,8 @@ public class ACOTrainer : MonoBehaviour
         // Check if agent is close enough to current target checkpoint
         if (currentTargetCheckpoint < checkpointPositions.Count)
         {
-            Vector3 checkpointPos = checkpointPositions[currentTargetCheckpoint];
-            float distanceToCheckpoint = Vector3.Distance(agentPosition, checkpointPos);
+            System.Numerics.Vector3 checkpointPos = checkpointPositions[currentTargetCheckpoint];
+            float distanceToCheckpoint = System.Numerics.Vector3.Distance(agentPosition, checkpointPos);
             
             // Update progress tracking
             agentCheckpointProgress[agentId] = distanceToCheckpoint;
@@ -648,9 +931,6 @@ public class ACOTrainer : MonoBehaviour
                 
                 // Move to next checkpoint
                 agentCurrentCheckpoints[agentId] = (currentTargetCheckpoint + 1) % checkpointPositions.Count;
-                
-                Debug.Log($"Agent {agentIndex} triggered distance-based checkpoint {currentTargetCheckpoint} " +
-                         $"at distance {distanceToCheckpoint:F2}. Next target: {agentCurrentCheckpoints[agentId]}");
             }
             else if (distanceToCheckpoint > checkpointTriggerDistance * 2f)
             {
@@ -679,7 +959,7 @@ public class ACOTrainer : MonoBehaviour
             agentGoalStates[agentIndex].inputSequence = new List<(int, int)>(agentStates[agentIndex].inputSequence);
             
             float timeToGoal = Time.time - agentStartTimes[agentIndex];
-            Debug.Log($"Agent {agentIndex} reached goal checkpoint in {timeToGoal:F2}s at speed {agentGoalStates[agentIndex].speed:F2} m/s, continuing to validate");
+            // Debug.Log($"Agent {agentIndex} reached goal checkpoint in {timeToGoal:F2}s at speed {agentGoalStates[agentIndex].speed:F2} m/s, continuing to validate");
         }
         else if (checkpointId == session.validateCheckpoint)
         {
@@ -768,10 +1048,43 @@ public class ACOTrainer : MonoBehaviour
         Debug.Log("Training reset via UI");
     }
     
+    // Threading configuration methods
+    public void SetThreadCount(int count)
+    {
+        if (!isTraining && count > 0)
+        {
+            threadCount = Mathf.Clamp(count, 1, 8);
+            Debug.Log($"Thread count set to: {threadCount}");
+        }
+    }
+    
+    public void SetAgentsPerThread(int count)
+    {
+        if (!isTraining && count > 0)
+        {
+            agentsPerThread = Mathf.Clamp(count, 1, 10);
+            Debug.Log($"Agents per thread set to: {agentsPerThread}");
+        }
+    }
+    
+    public void ToggleMultithreading()
+    {
+        if (!isTraining)
+        {
+            enableMultithreading = !enableMultithreading;
+            Debug.Log($"Multithreading: {(enableMultithreading ? "Enabled" : "Disabled")}");
+        }
+    }
+    
+    // Public accessors for threading
+    public bool EnableMultithreading => enableMultithreading;
+    public int ThreadCount => threadCount;
+    public int AgentsPerThread => agentsPerThread;
+    
     // Distance-based checkpoint system accessors
     public bool UseDistanceBasedCheckpoints => useDistanceBasedCheckpoints;
     public float CheckpointTriggerDistance => checkpointTriggerDistance;
-    public List<Vector3> CheckpointPositions => checkpointPositions;
+    public List<System.Numerics.Vector3> CheckpointPositions => checkpointPositions;
     public Dictionary<int, int> AgentCurrentCheckpoints => agentCurrentCheckpoints;
     public Dictionary<int, float> AgentCheckpointProgress => agentCheckpointProgress;
     
@@ -838,6 +1151,26 @@ public class ACOTrainer : MonoBehaviour
             agentCheckpointTriggered?.Clear();
         }
         
+        // Clear threading infrastructure
+        if (enableMultithreading)
+        {
+            // Stop all worker threads
+            if (workerThreads != null)
+            {
+                foreach (var worker in workerThreads)
+                {
+                    worker.StopThread();
+                }
+                workerThreads.Clear();
+            }
+            
+            // Clear concurrent collections (buffers are cleared by individual worker threads)
+            if (agentEventQueue != null)
+            {
+                while (agentEventQueue.TryDequeue(out _)) { }
+            }
+        }
+        
         activeAgents = 0;
         currentIteration = 0;
         totalAttempts = 0;
@@ -899,7 +1232,8 @@ public class ACOTrainer : MonoBehaviour
         // Draw checkpoint positions
         for (int i = 0; i < checkpointPositions.Count; i++)
         {
-            Vector3 pos = checkpointPositions[i];
+            System.Numerics.Vector3 posTemp = checkpointPositions[i];
+            Vector3 pos = new Vector3(posTemp.X, 0, posTemp.Z);
             
             // Color-code checkpoints based on current session
             if (currentSessionIndex < trainingSessions.Count)
@@ -940,7 +1274,7 @@ public class ACOTrainer : MonoBehaviour
                     
                     if (targetCheckpoint < checkpointPositions.Count)
                     {
-                        Vector3 checkpointPos = checkpointPositions[targetCheckpoint];
+                        Vector3 checkpointPos = new Vector3(checkpointPositions[targetCheckpoint].X, 0, checkpointPositions[targetCheckpoint].Z);
                         
                         // Draw line from agent to target checkpoint
                         Gizmos.color = Color.cyan;
