@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -31,6 +32,10 @@ public class ACOTrackMaster : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private GameObject screen;
 
+    [Header("Track Loading")]
+    [SerializeField] private bool loadTestTrack = false;
+    [SerializeField] private string trackDataFileName = "saved_track_data.txt";
+
 
     public static ACOTrackMaster instance;
     private static List<System.Numerics.Vector2> currentRaceline;
@@ -45,6 +50,21 @@ public class ACOTrackMaster : MonoBehaviour
     void Start()
     {
         instance = this;
+        
+        // Check if we should load a test track from saved data
+        if (loadTestTrack)
+        {
+            var savedTrackData = LoadTrackDataFromFile();
+            if (savedTrackData != null)
+            {
+                Debug.Log("Loading track from saved data...");
+                LoadTrack(savedTrackData);
+            }
+            else
+            {
+                Debug.LogWarning("loadTestTrack is enabled but no saved track data found or failed to load.");
+            }
+        }
     }
 
     void Update()
@@ -107,6 +127,9 @@ public class ACOTrackMaster : MonoBehaviour
 
         // Initialize the RacelineAnalyzer with the raceline data for optimized queries
         RacelineAnalyzer.Initialize(results.raceline);
+
+        // Save track data to file for future loading
+        SaveTrackDataToFile(results);
 
         // Spawn the motorcycle agent on the raceline
         //SpawnMotorcycleAgent();
@@ -341,6 +364,117 @@ public class ACOTrackMaster : MonoBehaviour
     public static PolygonTrack GetPolygonTrack()
     {
         return track;
+    }
+
+    private static void SaveTrackDataToFile(TrackImageProcessor.ProcessingResults results)
+    {
+        string filePath = Path.Combine(Application.persistentDataPath, instance.trackDataFileName);
+        
+        try
+        {
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                // Write raceline data
+                writer.WriteLine("RACELINE");
+                writer.WriteLine(results.raceline.Count);
+                foreach (var point in results.raceline)
+                {
+                    writer.WriteLine($"{point.x},{point.y}");
+                }
+
+                // Write inner boundary data (note: results.outerBoundary is actually inner due to swap)
+                writer.WriteLine("INNER_BOUNDARY");
+                writer.WriteLine(results.outerBoundary.Count);
+                foreach (var point in results.outerBoundary)
+                {
+                    writer.WriteLine($"{point.x},{point.y}");
+                }
+
+                // Write outer boundary data (note: results.innerBoundary is actually outer due to swap)
+                writer.WriteLine("OUTER_BOUNDARY");
+                writer.WriteLine(results.innerBoundary.Count);
+                foreach (var point in results.innerBoundary)
+                {
+                    writer.WriteLine($"{point.x},{point.y}");
+                }
+            }
+            
+            Debug.Log($"Track data saved to: {filePath}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to save track data: {e.Message}");
+        }
+    }
+
+    private static TrackImageProcessor.ProcessingResults LoadTrackDataFromFile()
+    {
+        string filePath = Path.Combine(Application.persistentDataPath, instance.trackDataFileName);
+        
+        if (!File.Exists(filePath))
+        {
+            Debug.LogWarning($"Track data file not found: {filePath}");
+            return null;
+        }
+
+        try
+        {
+            using (StreamReader reader = new StreamReader(filePath))
+            {
+                var results = new TrackImageProcessor.ProcessingResults();
+                results.raceline = new List<Vector2>();
+                results.innerBoundary = new List<Vector2>();
+                results.outerBoundary = new List<Vector2>();
+
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line == "RACELINE")
+                    {
+                        int count = int.Parse(reader.ReadLine());
+                        for (int i = 0; i < count; i++)
+                        {
+                            string[] coords = reader.ReadLine().Split(',');
+                            float x = float.Parse(coords[0]);
+                            float y = float.Parse(coords[1]);
+                            results.raceline.Add(new Vector2(x, y));
+                        }
+                    }
+                    else if (line == "INNER_BOUNDARY")
+                    {
+                        int count = int.Parse(reader.ReadLine());
+                        for (int i = 0; i < count; i++)
+                        {
+                            string[] coords = reader.ReadLine().Split(',');
+                            float x = float.Parse(coords[0]);
+                            float y = float.Parse(coords[1]);
+                            // Note: saving to outerBoundary because of the swap in LoadTrack
+                            results.outerBoundary.Add(new Vector2(x, y));
+                        }
+                    }
+                    else if (line == "OUTER_BOUNDARY")
+                    {
+                        int count = int.Parse(reader.ReadLine());
+                        for (int i = 0; i < count; i++)
+                        {
+                            string[] coords = reader.ReadLine().Split(',');
+                            float x = float.Parse(coords[0]);
+                            float y = float.Parse(coords[1]);
+                            // Note: saving to innerBoundary because of the swap in LoadTrack
+                            results.innerBoundary.Add(new Vector2(x, y));
+                        }
+                    }
+                }
+                
+                Debug.Log($"Track data loaded from: {filePath}");
+                return results;
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to load track data: {e.Message}");
+            return null;
+        }
     }
     
 }

@@ -24978,6 +24978,8 @@ MonoBehaviour:
   spawnAtRandomPosition: 0
   mainCamera: {fileID: 841067261}
   screen: {fileID: 729960482}
+  loadTestTrack: 1
+  trackDataFileName: saved_track_data.txt
 --- !u!4 &1898709290
 Transform:
   m_ObjectHideFlags: 0
