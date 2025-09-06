@@ -76,13 +76,14 @@ public class ACOTrackMaster : MonoBehaviour
         currentRaceline = vector2s;
 
         // Create PolygonTrack for boundary checks
+        // NOTE: Fixed boundary swap - results.innerBoundary is actually the outer boundary
         List<System.Numerics.Vector2> inner = new List<System.Numerics.Vector2>();
         List<System.Numerics.Vector2> outer = new List<System.Numerics.Vector2>();
-        foreach (var vec in results.innerBoundary)
+        foreach (var vec in results.outerBoundary) // This is actually the inner boundary
         {
             inner.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }
-        foreach (var vec in results.outerBoundary)
+        foreach (var vec in results.innerBoundary) // This is actually the outer boundary
         {
             outer.Add(new System.Numerics.Vector2(vec.x, vec.y));
         }

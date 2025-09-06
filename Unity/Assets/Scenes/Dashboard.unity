@@ -8909,9 +8909,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a72440b9668661759b73acd789f1bed6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  agentCount: 5
+  agentCount: 1
   agentPrefab: {fileID: 5433541524235702189, guid: 0cd56998953a77f01b4eff2a8931376c, type: 3}
-  decisionInterval: 1
+  decisionInterval: 5
   iterations: 100
   currentIteration: 0
   currentSessionIndex: 0
@@ -24987,7 +24987,7 @@ Transform:
   m_GameObject: {fileID: 1898709288}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1401.1665, y: 65.882355, z: -480.36035}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

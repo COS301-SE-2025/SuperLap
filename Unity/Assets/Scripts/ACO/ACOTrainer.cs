@@ -929,6 +929,21 @@ public class ACOTrainer : MonoBehaviour
                         Gizmos.color = Color.blue;
                         Gizmos.DrawWireSphere(agentPos, 0.5f);
                     }
+                    
+                    // DEBUG: Draw Forward vector for each agent
+                    System.Numerics.Vector2 forward = agents[i].Forward;
+                    Vector3 forwardVector3D = new Vector3(forward.X, 0, forward.Y);
+                    Vector3 forwardEnd = agentPos + forwardVector3D * 3f; // Scale by 3 for visibility
+                    
+                    // Draw forward direction as red arrow
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawLine(agentPos, forwardEnd);
+                    
+                    // Draw arrowhead
+                    Vector3 arrowHead1 = forwardEnd - forwardVector3D.normalized * 0.5f + Vector3.Cross(forwardVector3D, Vector3.up).normalized * 0.3f;
+                    Vector3 arrowHead2 = forwardEnd - forwardVector3D.normalized * 0.5f - Vector3.Cross(forwardVector3D, Vector3.up).normalized * 0.3f;
+                    Gizmos.DrawLine(forwardEnd, arrowHead1);
+                    Gizmos.DrawLine(forwardEnd, arrowHead2);
                 }
             }
         }

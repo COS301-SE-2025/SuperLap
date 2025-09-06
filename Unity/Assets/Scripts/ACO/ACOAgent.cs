@@ -63,7 +63,7 @@ public class ACOAgent
     {
         get
         {
-            float rad = bearing * (float)Math.PI / 180f;
+            float rad = (bearing-90.0f) * (float)Math.PI / 180f;
             return new Vector2((float)Math.Cos(rad), (float)Math.Sin(rad));
         }
     }
@@ -132,9 +132,8 @@ public class ACOAgent
     public (int, int) Decide()
     {
         // calculate current forward vector from bearing
-        Vector2 currentForward = new Vector2((float)Math.Cos(bearing), (float)Math.Sin(bearing));
         ACODrivingRecommendationEngine.UpdateDrivingRecommendations(enableRecommendations, position, 
-                                                               currentForward, currentSpeed, currentTurnAngle, 
+                                                               Forward, currentSpeed, currentTurnAngle, 
                                                                throttleInput, theoreticalTopSpeed, recommendationConfig, 
                                                                physicsConfig, track, out recommendSpeedUp, 
                                                                out recommendSlowDown, out recommendTurnLeft, out recommendTurnRight);
@@ -144,7 +143,7 @@ public class ACOAgent
         if (recommendTurnLeft)
         {
             float offTrackRatio;
-            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(-1, position, currentForward, 
+            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(-1, position, Forward, 
                                                    currentSpeed, currentTurnAngle, throttleInput, 
                                                    trajectoryLength, recommendationSteps, offTrackThreshold, 
                                                    physicsConfig, out offTrackRatio, track))
@@ -161,7 +160,7 @@ public class ACOAgent
         if(recommendTurnRight)
         {
             float offTrackRatio;
-            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(1, position, currentForward, 
+            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(1, position, Forward, 
                                                    currentSpeed, currentTurnAngle, throttleInput, 
                                                    trajectoryLength, recommendationSteps, offTrackThreshold, 
                                                    physicsConfig, out offTrackRatio, track))
@@ -178,7 +177,7 @@ public class ACOAgent
         if(recommendSpeedUp)
         {
             float offTrackRatio;
-            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(0, position, currentForward, 
+            if(ACOTrajectoryPredictor.CheckIfPathGoesOffTrack(0, position, Forward, 
                                                    currentSpeed, currentTurnAngle, throttleInput, 
                                                    trajectoryLength, recommendationSteps, offTrackThreshold, 
                                                    physicsConfig, out offTrackRatio, track))
@@ -246,9 +245,7 @@ public class ACOAgent
 
         // calculate new position from bearing and current position
         float distance = currentSpeed * dt;
-        float bearingRadians = bearing * (float)Math.PI / 180f;
-        position.X += distance * (float)Math.Sin(bearingRadians);
-        position.Y += distance * (float)Math.Cos(bearingRadians);
+        position += Forward * distance;
     }
 
     private void UpdateTurning(float dt)
