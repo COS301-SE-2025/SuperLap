@@ -7078,7 +7078,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 23428813}
         m_TargetAssemblyTypeName: MotoGP, MainAssembly
-        m_MethodName: OpenImageDialog
+        m_MethodName: RecordMotoGP
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -21512,8 +21512,8 @@ MonoBehaviour:
   zoomSpeed: 0.1
   minZoom: 0.5
   maxZoom: 100
-  panPadding: 100
-  currentZoom: 1
+  panPadding: 1000
+  currentZoom: 5
   panSpeed: 1
   enablePanZoom: 1
   carCursorPrefab: {fileID: 780130757}

@@ -187,6 +187,18 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     }
   }
 
+  private List<Vector2> EnsureLooped(List<Vector2> points)
+  {
+    if (points == null || points.Count < 2)
+      return points;
+
+    if (points[0] != points[points.Count - 1])
+    {
+      points.Add(points[0]);
+    }
+    return points;
+  }
+
   public void DisplayPlayerLineData(CSVToBinConverter.LoadCSV.PlayerLine playerLine)
   {
     float simplificationTolerance = 3f;
@@ -194,9 +206,9 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     MotoGPDisplayData displayData = new MotoGPDisplayData
     {
       PlayerPath = ConvertToUnityVector2(playerLine.PlayerPath),
-      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.InnerBoundary), simplificationTolerance)),simplificationTolerance)),
-      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(ConvertToUnityVector2(playerLine.OuterBoundary), simplificationTolerance)),simplificationTolerance)),
-      Raceline = ConvertToUnityVector2(playerLine.Raceline)
+      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(ConvertToUnityVector2(playerLine.InnerBoundary)), simplificationTolerance)),simplificationTolerance)),
+      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(ConvertToUnityVector2(playerLine.OuterBoundary)), simplificationTolerance)),simplificationTolerance)),
+      Raceline = EnsureLooped(ConvertToUnityVector2(playerLine.Raceline))
     };
 
     DisplayRacelineData(displayData);

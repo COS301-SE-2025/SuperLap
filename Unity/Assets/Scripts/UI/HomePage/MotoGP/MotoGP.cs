@@ -16,10 +16,14 @@ public class MotoGP : MonoBehaviour
   [SerializeField] private GameObject processButton;
   [SerializeField] private GameObject controlPanel;
 
+  bool isRecording = false;
+  private MotoGPTelemetry.TelemetryRecorder recorder;
+
 
   List<int> lapIndexList = new List<int>();
   void Start()
   {
+    recorder = new MotoGPTelemetry.TelemetryRecorder();
     dropdown.options.Clear();
     dropdown.gameObject.SetActive(false);
     DropDownText.SetActive(false);
@@ -43,6 +47,44 @@ public class MotoGP : MonoBehaviour
       controlPanel.SetActive(false);
       LoadCSV(filePath);
     }
+  }
+
+  public void RecordMotoGP()
+  {
+    if (!isRecording)
+    {
+      recorder = new MotoGPTelemetry.TelemetryRecorder();
+      recorder.Start();
+      isRecording = true;
+      return;
+    }
+    isRecording = false;
+    List<MotoGPTelemetry.RecordedData> recordedData = recorder.Stop();
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadUDP.Convert(recordedData);
+
+    if (playerline == null)
+    {
+      Debug.Log("Didnt record nothing");
+      return;
+    }
+
+    Debug.Log("Raceline Count: " + playerline.Raceline.Count);
+    if (playerline == null)
+    {
+      Debug.LogError("PlayerLine data could not be generated.");
+      return;
+    }
+
+    ShowMotoGP showMotoGP = previewImage.GetComponent<ShowMotoGP>();
+    if (showMotoGP != null)
+    {
+      showMotoGP.DisplayPlayerLineData(playerline);
+    }
+    else
+    {
+      Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
+    }
+    controlPanel.SetActive(true);
   }
 
   public void LoadCSV(string filePath)
@@ -96,15 +138,15 @@ public class MotoGP : MonoBehaviour
 
     if (lapIndices.Count > 0)
     {
-        int lastLap = Mathf.Max(new List<int>(lapIndices).ToArray());
-        // lapIndices.Remove(lastLap);
+      int lastLap = Mathf.Max(new List<int>(lapIndices).ToArray());
+      // lapIndices.Remove(lastLap);
     }
 
     dropdown.options.Clear();
     foreach (int lapIndex in lapIndices)
     {
-        dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
-        lapIndexList.Add(lapIndex);
+      dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
+      lapIndexList.Add(lapIndex);
     }
 
     dropdown.value = 0;
