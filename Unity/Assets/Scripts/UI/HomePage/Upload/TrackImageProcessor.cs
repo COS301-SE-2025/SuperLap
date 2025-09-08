@@ -17,9 +17,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   [SerializeField] private Button traceButton;
   [SerializeField] private Button resetTraceButton;
   [SerializeField] private Button processButton;
-  [SerializeField] private Text instructionText;
   [SerializeField] private Slider maskWidthSlider;
-  [SerializeField] private Text maskWidthLabel;
+  [SerializeField] private TextMeshProUGUI maskWidthLabel;
 
 
 
@@ -108,65 +107,85 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (traceButton != null)
     {
       traceButton.onClick.AddListener(ToggleTracingMode);
-      //traceButton.interactable = false;
+      traceButton.gameObject.SetActive(false);
     }
     //Reset button
     if (resetTraceButton != null)
     {
       resetTraceButton.onClick.AddListener(ResetCenterline);
-      //resetTraceButton.interactable = false;
+      resetTraceButton.gameObject.SetActive(false);
     }
     //Process button
     if (processButton != null)
     {
       processButton.onClick.AddListener(ProcessTrackImage);
-      //processButton.interactable = false;
+      processButton.gameObject.SetActive(false);
     }
     //Setup mask width slider
     if (maskWidthSlider != null)
     {
       maskWidthSlider.value = maskWidth;
       maskWidthSlider.onValueChanged.AddListener(OnMaskWidthChanged);
+      maskWidthSlider.gameObject.SetActive(false);
     }
 
-    UpdateInstructions();
-    UpdateMaskWidthLabel();
-  }
-
-  private void UpdateMaskWidthLabel()
-  {
     if (maskWidthLabel != null)
     {
-      maskWidthLabel.text = $"Mask Width: {maskWidth}px";
+      maskWidthLabel.gameObject.SetActive(false);
     }
   }
+
+  private void OnEnable()
+  {
+    ResetPage();
+    SetupUI();
+    SetTracingMode(false);
+  }
+
+
+  private void ResetPage()
+  {
+    // Clear data
+    selectedImagePath = null;
+    lastResults = null;
+    startPosition = null;
+    raceDirection = 0f;
+    centerlinePoints.Clear();
+
+    // Destroy textures
+    if (loadedTexture != null) Destroy(loadedTexture);
+    if (centerlineOverlay != null) Destroy(centerlineOverlay);
+    if (outputTexture != null) Destroy(outputTexture);
+
+    loadedTexture = null;
+    centerlineOverlay = null;
+    outputTexture = null;
+
+    // Reset UI visibility
+    if (previewImage != null)
+    {
+      previewImage.sprite = null;
+      previewImage.gameObject.SetActive(false);
+    }
+    if (traceButton != null) traceButton.gameObject.SetActive(false);
+    if (resetTraceButton != null) resetTraceButton.gameObject.SetActive(false);
+    if (processButton != null) processButton.gameObject.SetActive(false);
+    if (maskWidthSlider != null) maskWidthSlider.gameObject.SetActive(false);
+    if (maskWidthLabel != null) maskWidthLabel.gameObject.SetActive(false);
+    if (outputImage != null) outputImage.gameObject.SetActive(false);
+
+    // Reset slider value
+    if (maskWidthSlider != null) maskWidthSlider.value = maskWidth;
+
+    Debug.Log("TrackImageProcessor reset to default state.");
+  }
+
 
   public void OnMaskWidthChanged(float value)
   {
     maskWidth = Mathf.RoundToInt(value);
     centerlineThickness = maskWidth;
-    UpdateMaskWidthLabel();
-  }
-
-  private void UpdateInstructions()
-  {
-    if (instructionText == null) return;
-    if (loadedTexture == null)
-    {
-      instructionText.text = "Upload a track image to begin";
-    }
-    else if (isTracingMode)
-    {
-      instructionText.text = "Click and drag to trace the centerline. First point = start/finish line.";
-    }
-    else if (centerlinePoints.Count > 100)
-    {
-      instructionText.text = $"Centerline traced with {centerlinePoints.Count} points. Ready to process!";
-    }
-    else
-    {
-      instructionText.text = "Click 'Trace Centerline' to begin tracing the track centerline";
-    }
+    ResetCenterline();
   }
 
   private void ToggleTracingMode()
@@ -182,7 +201,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       traceButton.GetComponentInChildren<TextMeshProUGUI>().text = isTracingMode ? "Stop Tracing" : "Trace Centerline";
     }
-    UpdateInstructions();
   }
 
   public void OnPointerDown(PointerEventData eventData)
@@ -204,7 +222,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       UpdateCenterlineOverlay();
     }
   }
-  
+
 
   public void OnDrag(PointerEventData eventData)
   {
@@ -247,6 +265,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       }
 
       CalculateRaceDirection();
+      if (processButton != null)
+      {
+        processButton.gameObject.SetActive(true);
+      }
       Debug.Log($"Centerline completed with {centerlinePoints.Count} points");
       Debug.Log($"Race direction: {raceDirection:F1} degrees ({GetCompassDirection(raceDirection)})");
     }
@@ -297,11 +319,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
 
     if (centerlinePoints.Count >= 2)
-      {
-        Vector2 start = centerlinePoints[centerlinePoints.Count - 2];
-        Vector2 end = centerlinePoints[centerlinePoints.Count - 1];
-        DrawLineOnTexture(centerlineOverlay, start, end, centerlineColor);
-      }
+    {
+      Vector2 start = centerlinePoints[centerlinePoints.Count - 2];
+      Vector2 end = centerlinePoints[centerlinePoints.Count - 1];
+      DrawLineOnTexture(centerlineOverlay, start, end, centerlineColor);
+    }
 
     if (startPosition.HasValue)
     {
@@ -344,6 +366,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     int y2 = Mathf.RoundToInt(end.y);
 
     int thickness = centerlineThickness;
+    int radius = centerlineThickness / 2;
     int halfThickness = thickness / 2;
     int textureWidth = texture.width;
     int textureHeight = texture.height;
@@ -363,14 +386,17 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         for (int offsetY = -halfThickness; offsetY <= halfThickness; offsetY++)
         {
-          int pixelX = x + offsetX;
-          int pixelY = y + offsetY;
-
-          if (pixelX >= 0 && pixelX < textureWidth && pixelY >= 0 && pixelY < textureHeight)
+          if (offsetX * offsetX + offsetY * offsetY <= radius * radius)
           {
-            Color originalPixel = loadedTexture.GetPixel(pixelX, pixelY);
-            Color blended = Color.Lerp(originalPixel, color, 0.5f);
-            texture.SetPixel(pixelX, pixelY, blended);
+            int pixelX = x + offsetX;
+            int pixelY = y + offsetY;
+
+            if (pixelX >= 0 && pixelX < textureWidth && pixelY >= 0 && pixelY < textureHeight)
+            {
+              Color originalPixel = loadedTexture.GetPixel(pixelX, pixelY);
+              Color blended = Color.Lerp(originalPixel, color, 0.5f);
+              texture.SetPixel(pixelX, pixelY, blended);
+            }
           }
         }
       }
@@ -438,7 +464,22 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
       if (traceButton != null)
       {
-        //traceButton.interactable = true;
+        traceButton.gameObject.SetActive(true);
+      }
+
+      if (resetTraceButton != null)
+      {
+        resetTraceButton.gameObject.SetActive(true);
+      }
+
+      if (maskWidthSlider != null)
+      {
+        maskWidthSlider.gameObject.SetActive(true);
+      }
+
+      if (maskWidthLabel != null)
+      {
+        maskWidthLabel.gameObject.SetActive(true);
       }
 
       string fileName = Path.GetFileName(imagePath);
@@ -447,7 +488,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
       //Reset any existing centerline
       ResetCenterline();
-      UpdateInstructions();
     }
     else
     {
@@ -480,8 +520,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       //processButton.interactable = false;
     }
-
-    UpdateInstructions();
     Debug.Log("Centerline reset");
   }
 
@@ -585,11 +623,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     yield return null; // Allow UI to update
 
-    // Convert System.Numerics.Vector2 to UnityEngine.Vector2
-    List<Vector2> innerBoundary = ConvertToUnityVectors(racelineResult.InnerBoundary);
-    List<Vector2> outerBoundary = ConvertToUnityVectors(racelineResult.OuterBoundary);
-    List<Vector2> raceline = ConvertToUnityVectors(racelineResult.Raceline);
-
     if (racelineResult == null)
     {
       string errorMsg = "Raceline optimization failed - no result returned";
@@ -605,6 +638,12 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
+
+    // Convert System.Numerics.Vector2 to UnityEngine.Vector2
+
+    List<Vector2> innerBoundary = ConvertToUnityVectors(racelineResult.InnerBoundary);
+    List<Vector2> outerBoundary = ConvertToUnityVectors(racelineResult.OuterBoundary);
+    List<Vector2> raceline = ConvertToUnityVectors(racelineResult.Raceline);
 
     float processingTime = Time.realtimeSinceStartup - startTime;
 
