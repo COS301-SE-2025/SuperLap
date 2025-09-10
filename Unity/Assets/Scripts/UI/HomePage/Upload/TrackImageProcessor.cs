@@ -629,14 +629,18 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       yield break;
     }
 
+    // Align boundaries with user-traced centerline start and direction
+    List<Vector2> alignedInner = AlignBoundaryWithUserInput(boundaries.innerBoundary);
+    List<Vector2> alignedOuter = AlignBoundaryWithUserInput(boundaries.outerBoundary);
+
     // Rest of your existing processing code...
     Debug.Log($"Image processing successful. Running PSO optimization...");
     OnProcessingStarted?.Invoke("Optimizing raceline...");
 
     // Run PSO optimization
     PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
-        boundaries.innerBoundary,
-        boundaries.outerBoundary,
+        alignedInner,
+        alignedOuter,
         particleCount,
         maxIterations
     );
@@ -692,6 +696,18 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     NavigateToRacingLineWithProcessedData();
 
     OnProcessingComplete?.Invoke(lastResults);
+  }
+
+  private List<Vector2> AlignBoundaryWithUserInput(List<Vector2> boundary)
+  {
+    if (boundary == null || boundary.Count == 0 || centerlinePoints.Count < 2)
+    {
+      Debug.LogWarning("Cannot align boundary - missing data");
+      return boundary;
+    }
+    // Find the closest point on the boundary to the user-defined start position
+    Vector2 userStart = startPosition ?? centerlinePoints[0];
+    int closestIndex = FindClosestPointIndex(boundary, userStart);
   }
 
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
