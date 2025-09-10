@@ -708,6 +708,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     // Find the closest point on the boundary to the user-defined start position
     Vector2 userStart = startPosition ?? centerlinePoints[0];
     int closestIndex = FindClosestPointIndex(boundary, userStart);
+
+    // Reorder the boundary to start from this point
+    List<Vector2> reorderedBoundary = ReorderBoundary(boundary, closestIndex);
+
+    // Check and correct direction
+    List<Vector2> directionCorrectedBoundary = EnsureBoundaryDirection(reorderedBoundary);
+
+    Debug.Log($"Boundary aligned with user input. Start index: {closestIndex}");
+
+    return directionCorrectedBoundary;
   }
 
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
