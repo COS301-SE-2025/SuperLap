@@ -265,6 +265,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       }
 
       CalculateRaceDirection();
+      SaveCenterline();
       if (processButton != null)
       {
         processButton.gameObject.SetActive(true);
@@ -274,6 +275,25 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
 
     SetTracingMode(false);
+  }
+
+  private void SaveCenterline()
+  {
+    // Save centerline points and start position in json file
+    if (centerlinePoints.Count < 5)
+    {
+      Debug.LogWarning("Not enough centerline points to save");
+      return;
+    }
+    string centerlineJson = JsonUtility.ToJson(new CenterlineData
+    {
+      startPosition = startPosition.HasValue ? new SerializableVector2(startPosition.Value) : null,
+      raceDirection = raceDirection,
+      points = centerlinePoints.Select(p => new SerializableVector2(p)).ToArray(),
+    });
+    string savePath = Path.Combine(Application.persistentDataPath, "centerline.json");
+    File.WriteAllText(savePath, centerlineJson);
+    Debug.Log($"Centerline points saved to: {savePath}");
   }
 
   private void CalculateRaceDirection()
