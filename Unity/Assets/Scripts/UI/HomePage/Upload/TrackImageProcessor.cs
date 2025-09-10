@@ -751,6 +751,44 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     return reordered;
   }
 
+  private List<Vector2> EnsureBoundaryDirection(List<Vector2> boundary)
+  {
+    if (boundary.Count < 3 || centerlinePoints.Count < 2)
+    {
+      return boundary;
+    }
+
+    // Calculate boundary direction using first three points
+    Vector2 bStart = boundary[0];
+    Vector2 bMid = boundary[1];
+    Vector2 bEnd = boundary[2];
+
+    Vector2 bDir1 = (bMid - bStart).normalized;
+    Vector2 bDir2 = (bEnd - bMid).normalized;
+    Vector2 boundaryDirection = ((bDir1 + bDir2) * 0.5f).normalized;
+
+    // Calculate user-defined centerline direction
+    Vector2 cStart = centerlinePoints[0];
+    Vector2 cEnd = centerlinePoints[Mathf.Min(10, centerlinePoints.Count - 1)];
+    Vector2 centerlineDirection = (cEnd - cStart).normalized;
+
+    // Calculate angle between directions
+    float angle = Vector2.SignedAngle(boundaryDirection, centerlineDirection);
+
+    // If angle is greater than 90 degrees, reverse the boundary
+    if (Mathf.Abs(angle) > 90f)
+    {
+      boundary.Reverse();
+      Debug.Log("Boundary direction reversed to match user-defined direction");
+    }
+    else
+    {
+      Debug.Log("Boundary direction matches user-defined direction");
+    }
+
+    return boundary;
+  }
+
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
   {
     // Create a new texture for the result
