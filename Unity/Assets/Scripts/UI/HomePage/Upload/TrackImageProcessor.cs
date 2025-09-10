@@ -720,6 +720,24 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     return directionCorrectedBoundary;
   }
 
+  private int FindClosestPointIndex(List<Vector2> points, Vector2 target)
+  {
+    int closestIndex = 0;
+    float closestDistSqr = float.MaxValue;
+
+    for (int i = 0; i < points.Count; i++)
+    {
+      float distSqr = (points[i] - target).sqrMagnitude;
+      if (distSqr < closestDistSqr)
+      {
+        closestDistSqr = distSqr;
+        closestIndex = i;
+      }
+    }
+
+    return closestIndex;
+  }
+
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
   {
     // Create a new texture for the result
