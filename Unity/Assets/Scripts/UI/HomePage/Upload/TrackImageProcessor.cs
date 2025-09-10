@@ -738,6 +738,19 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     return closestIndex;
   }
 
+  private List<Vector2> ReorderBoundary(List<Vector2> boundary, int startIndex)
+  {
+    List<Vector2> reordered = new List<Vector2>();
+
+    for (int i = 0; i < boundary.Count; i++)
+    {
+      int index = (startIndex + i) % boundary.Count;
+      reordered.Add(boundary[index]);
+    }
+
+    return reordered;
+  }
+
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
   {
     // Create a new texture for the result
