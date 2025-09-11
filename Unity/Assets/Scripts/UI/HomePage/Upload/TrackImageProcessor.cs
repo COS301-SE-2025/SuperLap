@@ -106,26 +106,22 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     //Trace button
     if (traceButton != null)
     {
-      traceButton.onClick.AddListener(ToggleTracingMode);
       traceButton.gameObject.SetActive(false);
     }
     //Reset button
     if (resetTraceButton != null)
     {
-      resetTraceButton.onClick.AddListener(ResetCenterline);
       resetTraceButton.gameObject.SetActive(false);
     }
     //Process button
     if (processButton != null)
     {
-      processButton.onClick.AddListener(ProcessTrackImage);
       processButton.gameObject.SetActive(false);
     }
     //Setup mask width slider
     if (maskWidthSlider != null)
     {
       maskWidthSlider.value = maskWidth;
-      maskWidthSlider.onValueChanged.AddListener(OnMaskWidthChanged);
       maskWidthSlider.gameObject.SetActive(false);
     }
 
@@ -188,7 +184,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     ResetCenterline();
   }
 
-  private void ToggleTracingMode()
+  public void ToggleTracingMode()
   {
     SetTracingMode(!isTracingMode);
     ResetCenterline();
@@ -497,7 +493,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     yield return null;
   }
 
-  private void ResetCenterline()
+  public void ResetCenterline()
   {
     centerlinePoints.Clear();
     startPosition = null;
@@ -518,7 +514,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
     if (processButton != null)
     {
-      //processButton.interactable = false;
+      processButton.gameObject.SetActive(false);
     }
     Debug.Log("Centerline reset");
   }
