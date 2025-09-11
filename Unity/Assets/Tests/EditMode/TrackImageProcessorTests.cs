@@ -10,6 +10,36 @@ using TMPro;
 
 namespace TrackImageProcessorTests
 {
+    // Helper class to access private methods and fields via reflection
+    public static class TestExtensions
+    {
+        public static T CallPrivateMethod<T>(this object obj, string methodName, params object[] parameters)
+        {
+            var method = obj.GetType().GetMethod(methodName,
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            if (method == null)
+            {
+                throw new ArgumentException($"Method {methodName} not found");
+            }
+
+            return (T)method.Invoke(obj, parameters);
+        }
+
+        public static void CallPrivateMethod(this object obj, string methodName, params object[] parameters)
+        {
+            var method = obj.GetType().GetMethod(methodName,
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            if (method == null)
+            {
+                throw new ArgumentException($"Method {methodName} not found");
+            }
+
+            method.Invoke(obj, parameters);
+        }
+    }
+
     [TestFixture]
     public class TrackImageProcessorEditModeTests
     {
