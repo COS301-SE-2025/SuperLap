@@ -514,7 +514,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
     if (processButton != null)
     {
-      //processButton.interactable = false;
+      processButton.gameObject.SetActive(false);
     }
     Debug.Log("Centerline reset");
   }
