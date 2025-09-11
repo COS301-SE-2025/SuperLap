@@ -290,17 +290,17 @@ public class ImageProcessing
     /// </summary>
     /// <param name="imagePaths">Array of image file paths</param>
     /// <returns>Array of TrackBoundaries results</returns>
-    public static TrackBoundaries[] ProcessMultipleImages(string[] imagePaths)
-    {
-        TrackBoundaries[] results = new TrackBoundaries[imagePaths.Length];
+    // public static TrackBoundaries[] ProcessMultipleImages(string[] imagePaths)
+    // {
+    //     TrackBoundaries[] results = new TrackBoundaries[imagePaths.Length];
 
-        for (int i = 0; i < imagePaths.Length; i++)
-        {
-            results[i] = ProcessImage(imagePaths[i]);
-        }
+    //     for (int i = 0; i < imagePaths.Length; i++)
+    //     {
+    //         results[i] = ProcessImage(imagePaths[i]);
+    //     }
 
-        return results;
-    }
+    //     return results;
+    // }
 
     /// <summary>
     /// Check if the TrackProcessor executable is available

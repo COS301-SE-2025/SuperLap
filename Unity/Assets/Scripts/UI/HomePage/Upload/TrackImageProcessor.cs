@@ -116,7 +116,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     //Process button
     if (processButton != null)
     {
-      processButton.gameObject.SetActive(false);
+      processButton.onClick.AddListener(ProcessTrackImage);
+      processButton.gameObject.SetActive(true);
     }
     //Setup mask width slider
     if (maskWidthSlider != null)
@@ -521,6 +522,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   public void ProcessTrackImage()
   {
+    
+    Debug.Log("Poes");
     if (string.IsNullOrEmpty(selectedImagePath))
     {
       Debug.LogError("No image selected for processing");
@@ -574,7 +577,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     Destroy(maskedImage);
 
     // Process the MASKED image to get boundaries
-    ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
+    // ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
+    ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(selectedImagePath);
+    
 
     Debug.Log(tempFilePath);
     //Delete the temporary file after processing
