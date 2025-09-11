@@ -261,11 +261,20 @@ public class HomePageNavigation : MonoBehaviour
 
     if (analysisPage != null)
     {
-      AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
-      if (analysisComponent != null)
-      {
-        analysisComponent.DisplayTrackByName(trackName);
-      }
+      // Wait for the analysis page to be fully activated
+      StartCoroutine(InitializeAnalysisWithTrackDelayed(trackName));
+    }
+  }
+
+  private IEnumerator InitializeAnalysisWithTrackDelayed(string trackName)
+  {
+    // Wait for the next frame to ensure the analysis page is fully active
+    yield return null;
+
+    AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>(true);
+    if (analysisComponent != null)
+    {
+      analysisComponent.DisplayTrackByName(trackName);
     }
   }
 

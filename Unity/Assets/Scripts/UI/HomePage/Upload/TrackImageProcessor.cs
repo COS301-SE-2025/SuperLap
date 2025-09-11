@@ -670,6 +670,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     OnProcessingComplete?.Invoke(lastResults);
   }
 
+
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
   {
     // Create a new texture for the result
@@ -844,22 +845,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       return;
     }
 
-    // Navigate to racing line page
     homePageNavigation.NavigateToRacingLine();
-
     // Get the racing line component and send the data
     if (homePageNavigation.racingLinePage != null)
     {
-      ShowRacingLine racingLineComponent = homePageNavigation.racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      ShowRacingLine racingLineComponent = homePageNavigation.racingLinePage.GetComponentInChildren<ShowRacingLine>(true);
       if (racingLineComponent != null)
       {
-        // Generate a track name from the selected image
-        string trackName = GenerateTrackNameFromImage();
-
         // Send the processed data to the racing line display
         racingLineComponent.DisplayRacelineData(racelineData);
-
-        Debug.Log($"Successfully sent processed track data to racing line page. Track: {trackName}");
+        Debug.Log($"Successfully sent processed track data to racing line page");
       }
       else
       {
