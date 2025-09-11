@@ -433,6 +433,117 @@ namespace TrackImageProcessorTests
             Assert.AreEqual(0, result);
         }
 
+        [Test]
+        public void ReorderBoundaryFromIndex_ReordersCorrectly()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 1),
+                new Vector2(2, 2),
+                new Vector2(3, 3)
+            };
+            
+            int startIndex = 2;
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("ReorderBoundaryFromIndex", boundary, startIndex);
+            
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(boundary.Count, result.Count);
+            Assert.AreEqual(boundary[2], result[0]);
+            Assert.AreEqual(boundary[3], result[1]);
+            Assert.AreEqual(boundary[0], result[2]);
+            Assert.AreEqual(boundary[1], result[3]);
+        }
+
+        [Test]
+        public void ReorderBoundaryFromIndex_WithZeroIndex_ReturnsOriginal()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 1),
+                new Vector2(2, 2)
+            };
+            
+            int startIndex = 0;
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("ReorderBoundaryFromIndex", boundary, startIndex);
+            
+            // Assert
+            CollectionAssert.AreEqual(boundary, result);
+        }
+
+        [Test]
+        public void CorrectBoundaryDirection_WithMatchingDirection_ReturnsOriginal()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 1), // Direction: (1,1)
+                new Vector2(2, 2)
+            };
+            
+            var centerlinePoints = new List<Vector2>
+            {
+                new Vector2(5, 5),
+                new Vector2(6, 6), // Direction: (1,1) - same as boundary
+                new Vector2(7, 7)
+            };
+            
+            // Set centerline points through reflection
+            var processorType = typeof(TrackImageProcessor);
+            var centerlinePointsField = processorType.GetField("centerlinePoints", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            centerlinePointsField?.SetValue(processor, centerlinePoints);
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("CorrectBoundaryDirection", boundary);
+            
+            // Assert - should not reverse since directions match
+            CollectionAssert.AreEqual(boundary, result);
+        }
+
+        [Test]
+        public void CorrectBoundaryDirection_WithOppositeDirection_ReversesBoundary()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 1), // Direction: (1,1)
+                new Vector2(2, 2)
+            };
+            
+            var centerlinePoints = new List<Vector2>
+            {
+                new Vector2(5, 5),
+                new Vector2(4, 4), // Direction: (-1,-1) - opposite to boundary
+                new Vector2(3, 3)
+            };
+            
+            // Set centerline points through reflection
+            var processorType = typeof(TrackImageProcessor);
+            var centerlinePointsField = processorType.GetField("centerlinePoints", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            centerlinePointsField?.SetValue(processor, centerlinePoints);
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("CorrectBoundaryDirection", boundary);
+            
+            // Assert - should reverse since directions are opposite
+            Assert.IsNotNull(result);
+            Assert.AreEqual(boundary.Count, result.Count);
+            CollectionAssert.AreEqual(boundary.AsEnumerable().Reverse(), result);
+        }
+
+        #endregion
         #region Helper Methods for Tests
 
         private Texture2D CreateTestTexture(int width, int height)
