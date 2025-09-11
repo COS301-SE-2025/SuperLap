@@ -533,16 +533,15 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
     if (showRaceLine) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
 
-    
-    SetupCarCursor();
-    SetupRacelineSegments();
-
     panOffset = Vector2.zero;
     UpdateZoomContainer();
     UpdateLineWidths();
 
     isRacing = true;
     currentTime = 0f;
+
+    SetupCarCursor();
+    SetupRacelineSegments();
   }
 
 
@@ -652,7 +651,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         if (trackData != null)
         {
           DisplayRacelineData(trackData);
-          SetupCarCursor();
           StartCoroutine(WaitForTrackLoadAndSettle());
         }
         else

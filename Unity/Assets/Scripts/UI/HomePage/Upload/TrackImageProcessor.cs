@@ -444,11 +444,17 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       Destroy(loadedTexture);
     }
 
-    loadedTexture = new Texture2D(2, 2);
-    bool imageLoaded = loadedTexture.LoadImage(imageData);
+    Texture2D tempTexture = new Texture2D(2, 2);
+    bool imageLoaded = tempTexture.LoadImage(imageData);
 
     if (imageLoaded && previewImage != null)
     {
+      int targetWidth = 1024;
+      int targetHeight = 589;
+      loadedTexture = ScaleTexture(tempTexture, targetWidth, targetHeight);
+
+      Destroy(tempTexture);
+
       Sprite imageSprite = Sprite.Create(
           loadedTexture,
           new Rect(0, 0, loadedTexture.width, loadedTexture.height),
@@ -456,6 +462,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       );
 
       previewImage.sprite = imageSprite;
+      previewImage.preserveAspect = true;
       previewImage.gameObject.SetActive(true);
 
       if (traceButton != null)
@@ -491,6 +498,22 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
 
     yield return null;
+  }
+
+  private Texture2D ScaleTexture(Texture2D source, int targetWidth, int targetHeight)
+  {
+    RenderTexture rt = RenderTexture.GetTemporary(targetWidth, targetHeight);
+    RenderTexture.active = rt;
+    Graphics.Blit(source, rt);
+
+    Texture2D result = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
+    result.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
+    result.Apply();
+
+    RenderTexture.active = null;
+    RenderTexture.ReleaseTemporary(rt);
+
+    return result;
   }
 
   public void ResetCenterline()
