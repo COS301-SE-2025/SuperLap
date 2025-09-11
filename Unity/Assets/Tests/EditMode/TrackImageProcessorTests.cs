@@ -398,6 +398,40 @@ namespace TrackImageProcessorTests
             Assert.AreEqual(boundary[1], result[3]); // Then index 1
         }
 
+        [Test]
+        public void FindClosestPointIndex_ReturnsCorrectIndex()
+        {
+            // Arrange
+            var points = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(10, 10),
+                new Vector2(20, 20),
+                new Vector2(30, 30)
+            };
+            
+            var target = new Vector2(25, 25); // Closest to index 3
+            
+            // Act
+            var result = processor.CallPrivateMethod<int>("FindClosestPointIndex", points, target);
+            
+            // Assert
+            Assert.AreEqual(3, result);
+        }
+
+        [Test]
+        public void FindClosestPointIndex_WithEmptyList_ReturnsZero()
+        {
+            // Arrange
+            var emptyPoints = new List<Vector2>();
+            var target = new Vector2(10, 10);
+            
+            // Act
+            var result = processor.CallPrivateMethod<int>("FindClosestPointIndex", emptyPoints, target);
+            
+            // Assert
+            Assert.AreEqual(0, result);
+        }
 
         #region Helper Methods for Tests
 
