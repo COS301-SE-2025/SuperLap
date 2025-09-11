@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 772c40b3c83b9e84b9d54c2338fa5484
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowProgressBar.cs
+  uploadId: 658581

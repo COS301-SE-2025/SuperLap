@@ -6,9 +6,10 @@
 </p>
 
 <p align="center">
-    <!-- GitHub Actions Build --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions"> <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2025/SuperLap/build.yml?branch=main&label=Build&logo=github" alt="Build Status"> </a>
-    <!-- Code Coverage (Codecov) --> <a href="https://codecov.io/gh/COS301-SE-2025/SuperLap"> <img src="https://codecov.io/gh/COS301-SE-2025/SuperLap/branch/main/graph/badge.svg" alt="Code Coverage"> </a>
-    <!-- Requirements (shields.io custom) --> <img src="https://img.shields.io/badge/requirements-met-brightgreen" alt="Requirements Status">
+    <!-- GitHub Actions Build --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions"> <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2025/SuperLap/backend-api-tests.yml?branch=dev&label=Backend%20Tests&logo=github" alt="Backend Tests Status"></a>
+    <!-- C# Lint --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions"> <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2025/SuperLap/csharp-lint.yml?branch=dev&label=C%23%20Lint&logo=csharp" alt="C# Lint Status"></a>
+    <!-- Unity Tests --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions"> <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2025/SuperLap/unity-tests.yml?branch=dev&label=Unity%20Tests&logo=unity" alt="Unity Tests Status"></a>
+    <!-- Unity Test Coverage --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions/workflows/unity-tests.yml"> <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/u04576617/3c314bcd73196bc5dd08c19ffd92a532/raw/unity-coverage.json" alt="Unity Test Coverage"></a>    <!-- Requirements (shields.io custom) --> <img src="https://img.shields.io/badge/requirements-met-brightgreen" alt="Requirements Status">
     <!-- GitHub Issues --> <a href="https://github.com/COS301-SE-2025/SuperLap/issues"> <img src="https://img.shields.io/github/issues/COS301-SE-2025/SuperLap?label=issues" alt="GitHub Issues"> </a>
     <!-- Uptime Robot (customize as needed) -->
     <a href="https://stats.uptimerobot.com/XD5OBuBYwQ/800785604">
@@ -58,7 +59,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 🔹 [Demo 2 Video](https://www.youtube.com/watch?v=1qIO83R0MSg)  
 🔹 [Demo 2 Presentation](https://www.canva.com/design/DAGrRB9FtQU/wg4VrVYik9MhCpSTy4eLzA/edit?utm_content=DAGrRB9FtQU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
-🔹 [Demo 3 Video](https://www.youtube.com/watch?v=dQw4w9WgXcQ)  
+🔹 [Demo 3 Video](https://youtu.be/MwTzlo7a2MI)  
 🔹 [Demo 3 Presentation](https://www.canva.com/design/DAGwWVct_5E/t6GvNHMUKxhPdGHImorjKg/edit?utm_content=DAGwWVct_5E&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 <!--🔹 [Demo 4 Video](lk)  
@@ -103,4 +104,5 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 <p align="center">
     <img src="docs/images/Wireframe.png" alt="Wireframe"/>
 </p>
+
 

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b859aa04ffe1dd642b41958157b4d855
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Image/ImageExpandQuickAuto.controller
+  uploadId: 658581

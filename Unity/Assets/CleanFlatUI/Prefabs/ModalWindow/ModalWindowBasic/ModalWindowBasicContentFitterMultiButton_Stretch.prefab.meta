@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6f7c64cddd8562145ae161d91c62408c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ModalWindow/ModalWindowBasic/ModalWindowBasicContentFitterMultiButton_Stretch.prefab
+  uploadId: 658581

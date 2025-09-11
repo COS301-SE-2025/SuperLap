@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 48ee709ca01ea9040983908041ccf203
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabViewExpandOn.anim
+  uploadId: 658581

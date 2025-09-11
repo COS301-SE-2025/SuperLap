@@ -12,38 +12,72 @@ public class AnalysisGetInfo : MonoBehaviour
   public TMP_Text trackDescriptionText;
   public TMP_Text trackCityText;
   public TMP_Text trackCountryText;
-
-  [Header("Track Data")]
-  public GameObject trackDataPanel;
-
-  [Header("Racing Line Preview")]
-  public Image trackPreviewImage;
   private ShowRacingLine racingLinePreview;
-
   private HomePageNavigation homePageNavigation;
 
   private APIManager apiManager;
   private int trackIndex = 0;
 
+  private string trackName;
+
   public void Awake()
   {
-    apiManager = APIManager.Instance;
-    homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
-    racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
+    try
+    {
+      apiManager = APIManager.Instance;
+      homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
+      racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
+
+      if (racingLinePreview != null)
+      {
+        racingLinePreview.gameObject.SetActive(false);
+      }
+    }
+    catch (System.Exception e)
+    {
+      Debug.Log($"Failed to initialize components: {e.Message}");
+      SetDefaultValues();
+    }
   }
 
   public void Start()
   {
-    apiManager.GetAllTracks(OnTracksLoaded);
+    try
+    {
+      if (apiManager != null)
+      {
+        apiManager.GetAllTracks(OnTracksLoaded);
+      }
+      else
+      {
+        Debug.Log("APIManager is null");
+        SetDefaultValues();
+      }
+
+    }
+    catch (System.Exception e)
+    {
+      Debug.Log($"Error in Start: {e.Message}");
+      SetDefaultValues();
+    }
   }
 
+  private void SetDefaultValues()
+  {
+    if (trackNameText != null) trackNameText.text = "Default Track";
+    if (trackTypeText != null) trackTypeText.text = "Default Type";
+    if (trackCityText != null) trackCityText.text = "Default City";
+    if (trackCountryText != null) trackCountryText.text = "Default Country";
+    if (trackDescriptionText != null) trackDescriptionText.text = "Default track description";
+    if (trackLocationText != null) trackLocationText.text = "Lat: 0.000000, Lon: 0.000000";
+  }
 
 
   private void OnTracksLoaded(bool success, string message, List<APIManager.Track> tracks)
   {
     if (!success)
     {
-      Debug.LogError($"Failed to load tracks: {message}");
+      Debug.Log($"Failed to load tracks: {message}");
       DisplayErrorMessage("Failed to load track data");
       return;
     }
@@ -55,7 +89,6 @@ public class AnalysisGetInfo : MonoBehaviour
       return;
     }
 
-    Debug.Log($"Successfully loaded {tracks.Count} tracks");
     if (trackIndex < tracks.Count)
     {
       DisplayTrackInfo(tracks[trackIndex]);
@@ -82,7 +115,6 @@ public class AnalysisGetInfo : MonoBehaviour
 
     if (trackDescriptionText != null)
       trackDescriptionText.text = track.description ?? "No description available";
-
 
     if (trackLocationText != null)
     {
@@ -112,28 +144,73 @@ public class AnalysisGetInfo : MonoBehaviour
       }
     }
 
+    trackName = track.name;
+
+    if (racingLinePreview != null)
+    {
+        racingLinePreview.gameObject.SetActive(true);
+        racingLinePreview.InitializeWithTrack(trackName);
+    }
+    else
+    {
+        Debug.LogWarning("Racing line preview component not assigned");
+    }
+
     LoadRacingLinePreview();
   }
 
   public void DisplayTrackByIndex(int index)
   {
-    trackIndex = index;
-    apiManager.GetAllTracks(OnTracksLoaded);
-  }
-  public void DisplayTrackByName(string trackName)
-  {
-    apiManager.GetTrackByName(trackName, (success, message, track) =>
+    try
     {
-      if (success && track != null)
+      if (apiManager != null)
       {
-        DisplayTrackInfo(track);
+        trackIndex = index;
+        apiManager.GetAllTracks(OnTracksLoaded);
       }
       else
       {
-        Debug.LogError($"Failed to load track '{trackName}': {message}");
-        DisplayErrorMessage($"Track '{trackName}' not found");
+        Debug.Log("APIManager is null in DisplayTrackByIndex");
+        SetDefaultValues();
       }
-    });
+    }
+    catch (System.Exception e)
+    {
+      Debug.Log($"Error in DisplayTrackByIndex: {e.Message}");
+      SetDefaultValues();
+    }
+  }
+  public void DisplayTrackByName(string trackName)
+  {
+    this.trackName = trackName;
+    try
+    {
+      if (apiManager != null)
+      {
+        apiManager.GetTrackByName(trackName, (success, message, track) =>
+        {
+          if (success && track != null)
+          {
+            DisplayTrackInfo(track);
+          }
+          else
+          {
+            Debug.Log($"Failed to load track '{trackName}': {message}");
+            SetDefaultValues();
+          }
+        });
+      }
+      else
+      {
+        Debug.Log("APIManager is null in DisplayTrackByName");
+        SetDefaultValues();
+      }
+    }
+    catch (System.Exception e)
+    {
+      Debug.Log($"Error in DisplayTrackByName: {e.Message}");
+      SetDefaultValues();
+    }
   }
   public void DisplaySpecificTrack(APIManager.Track track)
   {
@@ -143,7 +220,7 @@ public class AnalysisGetInfo : MonoBehaviour
     }
     else
     {
-      Debug.LogError("Track object is null");
+      Debug.Log("Track object is null");
       DisplayErrorMessage("Invalid track data");
     }
   }
@@ -162,30 +239,40 @@ public class AnalysisGetInfo : MonoBehaviour
 
   public void RefreshTrackInfo()
   {
-    apiManager.GetAllTracks(OnTracksLoaded);
+    try
+    {
+      if (apiManager != null)
+      {
+        apiManager.GetAllTracks(OnTracksLoaded);
+      }
+      else
+      {
+        Debug.Log("APIManager is null in RefreshTrackInfo");
+        SetDefaultValues();
+      }
+    }
+    catch (System.Exception e)
+    {
+      Debug.Log($"Error in RefreshTrackInfo: {e.Message}");
+      SetDefaultValues();
+    }
   }
 
   public string GetCurrentTrackName()
   {
-    if (trackNameText != null && !string.IsNullOrEmpty(trackNameText.text))
-    {
-      return trackNameText.text;
-    }
-
-    return "Unknown Track";
+    return trackName;
   }
 
   public void OpenRacingLineForCurrentTrack()
   {
     if (homePageNavigation != null)
     {
-      string trackName = "test1";
+      string trackName = GetCurrentTrackName();
       homePageNavigation.NavigateToRacingLineWithTrack(trackName);
-      Debug.Log($"Opening racing line for test track: {trackName}");
     }
     else
     {
-      Debug.LogError("HomePageNavigation reference not set in AnalysisGetInfo");
+      Debug.Log("HomePageNavigation reference not set in AnalysisGetInfo");
     }
   }
 
@@ -193,13 +280,12 @@ public class AnalysisGetInfo : MonoBehaviour
   {
     if (homePageNavigation != null)
     {
-      string trackName = "test1";
+      string trackName = GetCurrentTrackName();
       homePageNavigation.NavigateToRacingLineWithTrack(trackName);
-      Debug.Log($"Opening racing line for test track: {trackName}");
     }
     else
     {
-      Debug.LogError("HomePageNavigation component not found in scene");
+      Debug.Log("HomePageNavigation component not found in scene");
     }
   }
 
@@ -207,15 +293,14 @@ public class AnalysisGetInfo : MonoBehaviour
   {
     if (racingLinePreview != null)
     {
-      string trackName = "test1";
       racingLinePreview.InitializeWithTrack(trackName);
-      Debug.Log($"Loading racing line preview for: {trackName}");
     }
     else
     {
       Debug.LogWarning("Racing line preview component not assigned");
     }
   }
+
 
   public void RefreshRacingLinePreview()
   {

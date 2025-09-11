@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: c30d45ae25b58bc4182326932edac0ca
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/ProgressBar/ProgressBarGridLinearAutoEditor.cs
+  uploadId: 658581

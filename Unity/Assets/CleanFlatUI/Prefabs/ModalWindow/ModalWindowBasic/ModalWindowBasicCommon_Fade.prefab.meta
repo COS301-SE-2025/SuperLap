@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cd3f8afa1d964d241a85da11c8d17726
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ModalWindow/ModalWindowBasic/ModalWindowBasicCommon_Fade.prefab
+  uploadId: 658581

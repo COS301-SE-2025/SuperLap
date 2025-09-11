@@ -75,3 +75,11 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # End of https://www.toptal.com/developers/gitignore/api/unity
+CodeCoverage/Report/*.svg
+CodeCoverage/Report/*.html
+CodeCoverage/Report/*.htm
+CodeCoverage/Report/*.js
+CodeCoverage/Report/*.css
+CodeCoverage/Report/*.md
+CodeCoverage/Report/*.xml
+CodeCoverage/Unity-opencov

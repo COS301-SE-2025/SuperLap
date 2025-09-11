@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8389c789b164a364cb5a4160500cd28a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Dropdown/DropdownRoundMenu/DropdownRoundMenu_Simple.prefab
+  uploadId: 658581

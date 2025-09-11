@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a93b1e44f741d11488c898548cce4877
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Image/ImageMoveScaleSlight.controller
+  uploadId: 658581

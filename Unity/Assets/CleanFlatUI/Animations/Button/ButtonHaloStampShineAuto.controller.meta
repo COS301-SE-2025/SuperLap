@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1831a6e0942f35c4e835722c6ab78b1f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonHaloStampShineAuto.controller
+  uploadId: 658581

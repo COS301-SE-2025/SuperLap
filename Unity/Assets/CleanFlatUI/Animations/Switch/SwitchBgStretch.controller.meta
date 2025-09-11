@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1ec95e0d254377345ba117961e17d84a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Switch/SwitchBgStretch.controller
+  uploadId: 658581

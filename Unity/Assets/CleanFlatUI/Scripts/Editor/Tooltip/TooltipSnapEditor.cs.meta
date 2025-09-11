@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1eaf8d4e1839ac648bb2dc28193e1ff1
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/Tooltip/TooltipSnapEditor.cs
+  uploadId: 658581

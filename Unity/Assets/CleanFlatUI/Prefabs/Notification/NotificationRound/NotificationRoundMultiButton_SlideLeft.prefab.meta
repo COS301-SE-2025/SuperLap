@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4395d6bf354cf7840b1165dcb55a5a6e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationRound/NotificationRoundMultiButton_SlideLeft.prefab
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3d1e53b24c671054fb39a4ac82ba7451
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Slider/SliderBubbleRangeBasic/SliderBubbleRangeBasic_BubbleFlip.prefab
+  uploadId: 658581

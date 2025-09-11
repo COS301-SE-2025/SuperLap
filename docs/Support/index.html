@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SuperLap - Help & Documentation</title>
+    <link rel="stylesheet" href="css/SupportStyles.css" />
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <img src="../css/images/name.png" alt="Logo" class="logo" />
+        </div>
+        <div class="nav-center">
+            <ul class="nav-links">
+                <li><a href="../">Home</a></li>
+                <li><a href="../#about">About</a></li>
+                <li><a href="../#faq">FAQ</a></li>
+                <li><a href="../#contact">Contact</a></li>
+                <li><a class="active">Help</a></li>
+            </ul>
+        </div>
+        <button class="download-btn pixel-corners" onclick="download()" title="Not available yet">
+            <div class="button-content">
+                <div class="svg-container">
+                    <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24">
+                        <path
+                            d="M19.479 10.092c-.212-3.951-3.473-7.092-7.479-7.092-4.005 0-7.267 3.141-7.479 7.092-2.57.463-4.521 2.706-4.521 5.408 0 3.037 2.463 5.5 5.5 5.5h13c3.037 0 5.5-2.463 5.5-5.5 0-2.702-1.951-4.945-4.521-5.408zm-7.479 6.908l-4-4h3v-4h2v4h3l-4 4z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="text-container">
+                    <div class="text">Download</div>
+                </div>
+            </div>
+        </button>
+    </nav>
+
+    <main class="help-page">
+        <!-- Header Section -->
+        <section class="help-header">
+            <div class="help-intro">
+                <h1>SuperLap Help & Documentation</h1>
+                <p>Everything you need to know to get started with SuperLap and optimize your racing lines.</p>
+            </div>
+        </section>
+
+        <!-- Table of Contents -->
+        <section class="table-of-contents">
+            <div class="toc-container">
+                <h2>Quick Navigation</h2>
+                <div class="toc-grid">
+                    <a href="#login-register" class="toc-item">
+                        <div class="toc-icon">🔑</div>
+                        <div class="toc-content">
+                            <h3>Login & Registration</h3>
+                            <p>Getting started with your account</p>
+                        </div>
+                    </a>
+                    <a href="#racing-line" class="toc-item">
+                        <div class="toc-icon">🏁</div>
+                        <div class="toc-content">
+                            <h3>Racing Line Optimization</h3>
+                            <p>Upload tracks and get optimal lines</p>
+                        </div>
+                    </a>
+                    <a href="#gallery-analytics" class="toc-item">
+                        <div class="toc-icon">📊</div>
+                        <div class="toc-content">
+                            <h3>Gallery & Analytics</h3>
+                            <p>View and analyze your tracks</p>
+                        </div>
+                    </a>
+                    <a href="#game-integration" class="toc-item">
+                        <div class="toc-icon">🎮</div>
+                        <div class="toc-content">
+                            <h3>MotoGP Integration</h3>
+                            <p>Connect with MotoGP18 and SRT</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Content Sections -->
+        <div class="help-content">
+            <!-- Login & Registration Section -->
+            <section id="login-register" class="help-section">
+                <div class="section-header">
+                    <h2>How to Login/Register</h2>
+                    <div class="section-divider"></div>
+                </div>
+                <div class="content-container">
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Launch SuperLap</h3>
+                            <p>When you launch SuperLap, you are greeted with the start page:</p>
+                            <div class="image-container">
+                                <img src="images/Start.png" alt="Start Page" />
+                                <div class="image-caption">SuperLap Start Page</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Access Login</h3>
+                            <p>If you wish to login, click on the login page. You can login with your existing username and password, or if you don't have an account, you can click the register button:</p>
+                            <div class="image-container">
+                                <img src="images/Login.png" alt="Login Page" />
+                                <div class="image-caption">Login Page Interface</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-container">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Register New Account</h3>
+                            <p>On the register page, enter your details as prompted and click register to complete registration:</p>
+                            <div class="image-container">
+                                <img src="images/Register.png" alt="Register Page" />
+                                <div class="image-caption">Registration Form</div>
+                            </div>
+                            <div class="tip-box">
+                                <strong>Tip:</strong> After registration, you can go to the login page and login using the credentials you just set up.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Racing Line Section -->
+            <section id="racing-line" class="help-section">
+                <div class="section-header">
+                    <h2>Getting an Optimal Racing Line</h2>
+                    <div class="section-divider"></div>
+                </div>
+                <div class="content-container">
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Upload Track Image</h3>
+                            <p>On the dashboard tab you will see an upload image button. Click on it:</p>
+                            <div class="image-container">
+                                <img src="images/Dashboard.png" alt="Dashboard" />
+                                <div class="image-caption">Dashboard with Upload Button</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Select Track File</h3>
+                            <p>Click the upload image button and select a track image from your disk in the file menu that pops up:</p>
+                            <div class="image-container">
+                                <img src="images/Upload_Image.png" alt="Upload Image" />
+                                <div class="image-caption">File Upload Interface</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-container">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Draw Centerline</h3>
+                            <p>After uploading, click on "trace centerline" to draw a rough centerline on the track. This ensures the image processor detects the track correctly:</p>
+                            <div class="image-container">
+                                <img src="images/DrawCenterline.png" alt="Draw Centerline" />
+                                <div class="image-caption">Drawing the Track Centerline</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-container">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Process the Track</h3>
+                            <p>When you're happy with the centerline, click on the "process image" button:</p>
+                            <div class="image-container">
+                                <img src="images/CenterLine.png" alt="Centerline Drawn" />
+                                <div class="image-caption">Completed Centerline Ready for Processing</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-container">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>View Results</h3>
+                            <p>After processing finishes, you'll see the optimal racing line displayed on your track:</p>
+                            <div class="image-container">
+                                <img src="images/Raceline.png" alt="Raceline" />
+                                <div class="image-caption">Generated Optimal Racing Line</div>
+                            </div>
+                            <div class="feature-list">
+                                <h4>Available Options:</h4>
+                                <ul>
+                                    <li><strong>Cursor Size:</strong> Adjust the size of the racing cursor</li>
+                                    <li><strong>Animation Speed:</strong> Control how fast the cursor moves</li>
+                                    <li><strong>Trail Length:</strong> Modify the length of the cursor trail</li>
+                                    <li><strong>Animation Toggle:</strong> Turn animation on/off to see the full raceline</li>
+                                </ul>
+                            </div>
+                            <div class="image-container">
+                                <img src="images/Animation.png" alt="No Animation" />
+                                <div class="image-caption">Animation Controls</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gallery & Analytics Section -->
+            <section id="gallery-analytics" class="help-section">
+                <div class="section-header">
+                    <h2>Gallery and Analytics</h2>
+                    <div class="section-divider"></div>
+                </div>
+                <div class="content-container">
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Browse Track Gallery</h3>
+                            <p>In the Gallery tab, you will see a grid of already uploaded and processed tracks:</p>
+                            <div class="image-container">
+                                <img src="images/Gallery.png" alt="Gallery" />
+                                <div class="image-caption">Track Gallery Overview</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Access Track Analytics</h3>
+                            <p>Click on any track to be taken to the analytics page for that specific track:</p>
+                            <div class="image-container">
+                                <img src="images/Analytics.png" alt="Analytics" />
+                                <div class="image-caption">Detailed Track Analytics</div>
+                            </div>
+                            <div class="tip-box">
+                                <strong>Note:</strong> In the Analytics page, you can click on the optimized raceline to go to the detailed view you saw when processing your own racetrack.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Game Integration Section -->
+            <section id="game-integration" class="help-section">
+                <div class="section-header">
+                    <h2>MotoGP Game Integration</h2>
+                    <div class="section-divider"></div>
+                </div>
+                
+                <!-- Installation Subsection -->
+                <div class="subsection">
+                    <h3 class="subsection-title">Installation Requirements</h3>
+                    <div class="requirements-grid">
+                        <div class="requirement-item">
+                            <div class="req-icon">🏍️</div>
+                            <div class="req-content">
+                                <h4>MotoGP18</h4>
+                                <p>Buy and download from Steam</p>
+                                <a href="https://store.steampowered.com/app/775900/MotoGP18/" target="_blank" class="req-link">Steam Store Page</a>
+                            </div>
+                        </div>
+                        <div class="requirement-item">
+                            <div class="req-icon">📊</div>
+                            <div class="req-content">
+                                <h4>Sim Racing Telemetry (SRT)</h4>
+                                <p>Download from Steam</p>
+                                <a href="https://store.steampowered.com/app/845210/Sim_Racing_Telemetry/" target="_blank" class="req-link">Steam Store Page</a>
+                            </div>
+                        </div>
+                        <div class="requirement-item">
+                            <div class="req-icon">🔌</div>
+                            <div class="req-content">
+                                <h4>MotoGP18 DLC for SRT</h4>
+                                <p>Required DLC from Steam</p>
+                                <a href="https://store.steampowered.com/app/885660/Sim_Racing_Telemetry__MotoGP_18/?curator_clanid=32708130" target="_blank" class="req-link">DLC Store Page</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recording Laps Subsection -->
+                <div class="subsection">
+                    <h3 class="subsection-title">Recording Laps in MotoGP</h3>
+                    <div class="content-container">
+                        <div class="step-container">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h3>Launch Games</h3>
+                                <p>Launch MotoGP18, navigate to any race you wish to do and enter the race. Then launch SRT.</p>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h3>Select MotoGP18 in SRT</h3>
+                                <p>Click on the MotoGP18 tile (indicated by the arrow):</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/1.png" alt="SRT Home Page" />
+                                    <div class="image-caption">SRT Home Page - Select MotoGP18</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h3>Start Recording Session</h3>
+                                <p>Click on the "Record new Session" button:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/2.png" alt="SRT Record Page" />
+                                    <div class="image-caption">Record New Session Button</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h3>Begin Recording</h3>
+                                <p>Click on the Start button:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/3.png" alt="SRT Record Page" />
+                                    <div class="image-caption">Start Recording Button</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <h3>Race and Monitor</h3>
+                                <p>Go back to MotoGP and start your race. While racing, you will see SRT recording your lap data:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/5.png" alt="SRT Recording" />
+                                    <div class="image-caption">Live Recording in Progress</div>
+                                </div>
+                                <div class="tip-box">
+                                    <strong>Important:</strong> Once you are done with the race, click the stop button in SRT to end the recording session.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSV Export Subsection -->
+                <div class="subsection">
+                    <h3 class="subsection-title">Exporting Race Data to CSV</h3>
+                    <div class="content-container">
+                        <div class="step-container">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h3>Select Session</h3>
+                                <p>Click on the session you would like to export:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/6.png" alt="SRT Session Page" />
+                                    <div class="image-caption">Session Selection</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h3>Access Share Options</h3>
+                                <p>Click on the share button on the top right of the screen:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/7.png" alt="SRT Session Page" />
+                                    <div class="image-caption">Share Button Location</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h3>Export to CSV</h3>
+                                <p>Click on the export to CSV option and save the file to your disk:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/8.png" alt="SRT CSV Export" />
+                                    <div class="image-caption">CSV Export Option</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Import to SuperLap Subsection -->
+                <div class="subsection">
+                    <h3 class="subsection-title">Importing CSV Data to SuperLap</h3>
+                    <div class="content-container">
+                        <div class="step-container">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h3>Navigate to MotoGP Tab</h3>
+                                <p>Launch SuperLap, login, and navigate to the MotoGP tab:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/9.png" alt="SuperLap Home Page" />
+                                    <div class="image-caption">SuperLap MotoGP Tab</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h3>Upload CSV File</h3>
+                                <p>Click on the upload CSV option and select the CSV file you saved:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/10.png" alt="CSV Upload" />
+                                    <div class="image-caption">CSV File Upload</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h3>Select Lap and Process</h3>
+                                <p>Select the lap number you would like to analyze, then click the Process button:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/11.png" alt="Lap Selection" />
+                                    <div class="image-caption">Lap Selection and Processing</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-container">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h3>Analyze Results</h3>
+                                <p>View the comparison between your racing line and the optimal line:</p>
+                                <div class="image-container">
+                                    <img src="images/GIReadMeImages/12.png" alt="Line Comparison" />
+                                    <div class="image-caption">Racing Line Comparison Analysis</div>
+                                </div>
+                                <div class="feature-list">
+                                    <h4>Analysis Features:</h4>
+                                    <ul>
+                                        <li><strong>Line Thickness Sliders:</strong> Adjust thickness of borders, player line, and optimal racing line</li>
+                                        <li><strong>Zoom Function:</strong> Use mouse scroll wheel to zoom in on specific track sections</li>
+                                        <li><strong>Pan Navigation:</strong> Drag with mouse to move around the track view</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="back-to-top" onclick="scrollToTop()">
+        <svg class="svgIcon" viewBox="0 0 384 512">
+            <path
+                d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 141.2V448c0 17.7 14.3 32 32 32s32-14.3 32-32V141.2L329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z">
+            </path>
+        </svg>
+    </button>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 EPI-USE and The Quintessential Team</p>
+    </footer>
+
+    <script src="js/help-script.js"></script>
+</body>
+
+</html>

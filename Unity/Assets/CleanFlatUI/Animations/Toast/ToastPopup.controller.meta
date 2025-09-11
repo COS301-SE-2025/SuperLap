@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2ce0aac3726d762479187b0af806516e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toast/ToastPopup.controller
+  uploadId: 658581

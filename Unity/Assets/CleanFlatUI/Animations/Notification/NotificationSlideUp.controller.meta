@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c9bc8767760e6bc48999dff774fbd50e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Notification/NotificationSlideUp.controller
+  uploadId: 658581

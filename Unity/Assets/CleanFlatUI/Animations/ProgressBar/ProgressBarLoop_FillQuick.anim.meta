@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 08e28361b287f764bb8f80469bcc77cb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ProgressBar/ProgressBarLoop_FillQuick.anim
+  uploadId: 658581

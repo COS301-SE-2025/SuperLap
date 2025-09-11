@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6880089593db9d0449a19532d6f94dd0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toggle/TogglePopupText.controller
+  uploadId: 658581

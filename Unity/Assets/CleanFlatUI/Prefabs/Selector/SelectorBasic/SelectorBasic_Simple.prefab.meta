@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0013d3724ffd32d429f0ed97f41d74b7
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Selector/SelectorBasic/SelectorBasic_Simple.prefab
+  uploadId: 658581

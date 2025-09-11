@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d3d69a3464348014e9c4e599987d29a7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toast/ToastFill.controller
+  uploadId: 658581

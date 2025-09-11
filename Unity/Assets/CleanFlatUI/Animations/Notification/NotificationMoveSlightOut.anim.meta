@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e79b16f388dec0341ac631f5fd7b63cb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Notification/NotificationMoveSlightOut.anim
+  uploadId: 658581

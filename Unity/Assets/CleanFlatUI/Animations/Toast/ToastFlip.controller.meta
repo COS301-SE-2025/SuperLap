@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bcecc04aea0fc7248ab0cc3bd8e45dc9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toast/ToastFlip.controller
+  uploadId: 658581

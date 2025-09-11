@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 84ff0dea73110ca4884f5af0f28f4f79
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/PopupMenu/PopupMenuLeftClickEditor.cs
+  uploadId: 658581

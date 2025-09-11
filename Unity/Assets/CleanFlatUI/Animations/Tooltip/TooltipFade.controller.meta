@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a7334c96d324f0e419e6e49215cac261
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Tooltip/TooltipFade.controller
+  uploadId: 658581

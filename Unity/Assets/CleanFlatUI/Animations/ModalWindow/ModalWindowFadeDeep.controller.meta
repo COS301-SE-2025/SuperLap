@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e842834cbab3a7740815eb927505cdef
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ModalWindow/ModalWindowFadeDeep.controller
+  uploadId: 658581
