@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 using UnityEngine.UI;
 using UnityEditor;
 using TMPro;
+using System.Linq;
 
 namespace TrackImageProcessorTests
 {
@@ -20,7 +21,7 @@ namespace TrackImageProcessorTests
 
             if (method == null)
             {
-                throw new ArgumentException($"Method {methodName} not found");
+                throw new System.ArgumentException($"Method {methodName} not found");
             }
 
             return (T)method.Invoke(obj, parameters);
@@ -33,7 +34,7 @@ namespace TrackImageProcessorTests
 
             if (method == null)
             {
-                throw new ArgumentException($"Method {methodName} not found");
+                throw new System.ArgumentException($"Method {methodName} not found");
             }
 
             method.Invoke(obj, parameters);

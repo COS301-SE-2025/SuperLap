@@ -265,7 +265,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       }
 
       CalculateRaceDirection();
-      SaveCenterline();
       if (processButton != null)
       {
         processButton.gameObject.SetActive(true);
