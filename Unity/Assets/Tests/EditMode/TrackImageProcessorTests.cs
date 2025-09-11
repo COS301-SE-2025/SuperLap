@@ -316,6 +316,89 @@ namespace TrackImageProcessorTests
         }
 
         #endregion
+
+        #region Boundary Alignment Tests
+
+        [Test]
+        public void AlignBoundaryWithUserInput_WithNullBoundary_ReturnsOriginal()
+        {
+            // Arrange
+            List<Vector2> nullBoundary = null;
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("AlignBoundaryWithUserInput", nullBoundary);
+            
+            // Assert
+            Assert.IsNull(result);
+        }
+
+        [Test]
+        public void AlignBoundaryWithUserInput_WithEmptyBoundary_ReturnsOriginal()
+        {
+            // Arrange
+            var emptyBoundary = new List<Vector2>();
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("AlignBoundaryWithUserInput", emptyBoundary);
+            
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [Test]
+        public void AlignBoundaryWithUserInput_WithoutStartPosition_ReturnsOriginal()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(10, 10),
+                new Vector2(20, 20),
+                new Vector2(30, 30)
+            };
+            
+            // startPosition is null by default
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("AlignBoundaryWithUserInput", boundary);
+            
+            // Assert
+            Assert.IsNotNull(result);
+            CollectionAssert.AreEqual(boundary, result);
+        }
+
+        public void AlignBoundaryWithUserInput_WithStartPosition_ReordersBoundary()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(10, 10),
+                new Vector2(20, 20),
+                new Vector2(30, 30),
+                new Vector2(40, 40)
+            };
+            
+            var startPosition = new Vector2(35, 35); // Closest to index 2 (30,30)
+            
+            // Set start position through reflection
+            var processorType = typeof(TrackImageProcessor);
+            var startPositionField = processorType.GetField("startPosition", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            startPositionField?.SetValue(processor, startPosition);
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("AlignBoundaryWithUserInput", boundary);
+            
+            // Assert - should start from closest point
+            Assert.IsNotNull(result);
+            Assert.AreEqual(boundary.Count, result.Count);
+            Assert.AreEqual(boundary[2], result[0]); // Should start at index 2
+            Assert.AreEqual(boundary[3], result[1]); // Then index 3
+            Assert.AreEqual(boundary[0], result[2]); // Then index 0
+            Assert.AreEqual(boundary[1], result[3]); // Then index 1
+        }
+
+
         #region Helper Methods for Tests
 
         private Texture2D CreateTestTexture(int width, int height)
