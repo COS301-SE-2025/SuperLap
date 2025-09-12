@@ -13,12 +13,14 @@ CSV_INPUT_DIR = "CSVInput"
 BIN_DIR = "bin"
 OUTPUT_DIR = "Output"
 
+
 def save_json_auto(values, track_name):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     save_path = os.path.join(OUTPUT_DIR, f"{track_name}.json")
     with open(save_path, "w") as f:
         json.dump(values, f, indent=4)
     print(f"Transform values saved to {save_path}")
+
 
 def list_csv_files():
     csv_files = [f for f in os.listdir(CSV_INPUT_DIR) if f.endswith(".csv")]
@@ -30,6 +32,7 @@ def list_csv_files():
         print(f" {i}. {f}")
     choice = int(input("Select a CSV file: ")) - 1
     return os.path.join(CSV_INPUT_DIR, csv_files[choice])
+
 
 def load_bin(track_name):
     bin_path = os.path.join(BIN_DIR, f"{track_name}.bin")
@@ -52,6 +55,7 @@ def load_bin(track_name):
             pass
     return outer, inner, raceline, playerline
 
+
 def parse_csv(csv_path):
     with open(csv_path, "r") as f:
         header = f.readline().strip().split("\t")
@@ -73,11 +77,16 @@ def parse_csv(csv_path):
 
     return np.array(xs), np.array(ys), track_name
 
-def apply_transform(points, tx=0, ty=0, scale=1.0, rotation_deg=0, reflect_x=False, reflect_y=False):
+
+def apply_transform(points, tx=0, ty=0, scale=1.0, rotation_deg=0,
+                    reflect_x=False, reflect_y=False, shear_x=0.0, shear_y=0.0):
     angle = np.radians(rotation_deg)
     rot_matrix = np.array([[np.cos(angle), -np.sin(angle)],
                            [np.sin(angle),  np.cos(angle)]])
-    transformed = (points @ rot_matrix.T) * scale
+    shear_matrix = np.array([[1, shear_x],
+                             [shear_y, 1]])
+    transform_matrix = rot_matrix @ shear_matrix
+    transformed = (points @ transform_matrix.T) * scale
     if reflect_x:
         transformed[:, 0] *= -1
     if reflect_y:
@@ -86,27 +95,35 @@ def apply_transform(points, tx=0, ty=0, scale=1.0, rotation_deg=0, reflect_x=Fal
     transformed[:, 1] += ty
     return transformed
 
+
 def interactive_align(csv_points, outer, inner, track_name):
     root = tk.Tk()
     root.title(f"Track Alignment Tool - {track_name}")
 
+    # Parameters
     tx = tk.DoubleVar(value=0)
     ty = tk.DoubleVar(value=0)
     scale = tk.DoubleVar(value=1.0)
     rotation = tk.DoubleVar(value=0)
+    shear_x = tk.DoubleVar(value=0.0)
+    shear_y = tk.DoubleVar(value=0.0)
     reflect_x = tk.BooleanVar(value=False)
     reflect_y = tk.BooleanVar(value=False)
+    show_boundaries = tk.BooleanVar(value=True)
 
-    fig, ax = plt.subplots(figsize=(6,6))
+    # Plot setup
+    fig, ax = plt.subplots(figsize=(6, 6))
     ax.set_aspect("equal")
-    ax.plot(outer[:, 0], outer[:, 1], "r-", label="Outer")
-    ax.plot(inner[:, 0], inner[:, 1], "b-", label="Inner")
+
+    outer_line, = ax.plot(outer[:, 0], outer[:, 1], "r-", label="Outer")
+    inner_line, = ax.plot(inner[:, 0], inner[:, 1], "b-", label="Inner")
     player_line, = ax.plot([], [], "g-", label="Playerline")
     ax.legend()
 
     canvas = FigureCanvasTkAgg(fig, master=root)
     canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+    # --- Transform update ---
     def update(*args):
         transformed = apply_transform(
             csv_points.copy(),
@@ -114,11 +131,16 @@ def interactive_align(csv_points, outer, inner, track_name):
             scale.get(),
             rotation.get(),
             reflect_x.get(),
-            reflect_y.get()
+            reflect_y.get(),
+            shear_x.get(),
+            shear_y.get()
         )
         player_line.set_data(transformed[:, 0], transformed[:, 1])
+        outer_line.set_visible(show_boundaries.get())
+        inner_line.set_visible(show_boundaries.get())
         canvas.draw_idle()
 
+    # --- Tkinter control panel ---
     panel = ttk.Frame(root)
     panel.pack(side=tk.RIGHT, fill=tk.Y, padx=5, pady=5)
 
@@ -129,28 +151,67 @@ def interactive_align(csv_points, outer, inner, track_name):
         spin = ttk.Spinbox(frame, textvariable=var, from_=from_, to=to_, increment=step, width=8)
         spin.pack(side="left", fill="x", expand=True)
 
-    add_spinbox("Tx", tx, -2000, 2000, 1)
-    add_spinbox("Ty", ty, -2000, 2000, 1)
+    add_spinbox("Tx", tx, -10000, 10000, 1)
+    add_spinbox("Ty", ty, -10000, 10000, 1)
     add_spinbox("Scale", scale, 0.01, 100, 0.01)
-    add_spinbox("Rot", rotation, -360, 360, 1)
+    add_spinbox("Rot", rotation, -360, 360, 0.1)
+    add_spinbox("ShearX", shear_x, -5, 5, 0.01)
+    add_spinbox("ShearY", shear_y, -5, 5, 0.01)
 
     ttk.Checkbutton(panel, text="Reflect X", variable=reflect_x).pack(anchor="w", pady=2)
     ttk.Checkbutton(panel, text="Reflect Y", variable=reflect_y).pack(anchor="w", pady=2)
+    ttk.Checkbutton(panel, text="Show Boundaries", variable=show_boundaries).pack(anchor="w", pady=2)
 
     ttk.Button(panel, text="Save JSON", command=lambda: save_json_auto({
         "tx": tx.get(),
         "ty": ty.get(),
         "scale": scale.get(),
         "rotation": rotation.get(),
+        "shear_x": shear_x.get(),
+        "shear_y": shear_y.get(),
         "reflect_x": reflect_x.get(),
         "reflect_y": reflect_y.get()
     }, track_name)).pack(fill="x", pady=10)
 
-    for var in (tx, ty, scale, rotation, reflect_x, reflect_y):
+    # --- Mouse dragging support ---
+    selected_idx = [None]
+
+    def on_press(event):
+        if event.inaxes != ax:
+            return
+        if player_line.get_xdata().size == 0:
+            return
+        x, y = event.xdata, event.ydata
+        pts = np.column_stack((player_line.get_xdata(), player_line.get_ydata()))
+        dists = np.hypot(pts[:, 0] - x, pts[:, 1] - y)
+        idx = np.argmin(dists)
+        if dists[idx] < 20:  # tolerance
+            selected_idx[0] = idx
+
+    def on_motion(event):
+        if selected_idx[0] is None or event.inaxes != ax:
+            return
+        x, y = event.xdata, event.ydata
+        xs, ys = list(player_line.get_xdata()), list(player_line.get_ydata())
+        xs[selected_idx[0]] = x
+        ys[selected_idx[0]] = y
+        player_line.set_data(xs, ys)
+        canvas.draw_idle()
+
+    def on_release(event):
+        selected_idx[0] = None
+
+    canvas.mpl_connect("button_press_event", on_press)
+    canvas.mpl_connect("motion_notify_event", on_motion)
+    canvas.mpl_connect("button_release_event", on_release)
+
+    # Bind update
+    for var in (tx, ty, scale, rotation, reflect_x, reflect_y, shear_x, shear_y, show_boundaries):
         var.trace_add("write", update)
 
     update()
     root.mainloop()
+
 
 def main():
     csv_path = list_csv_files()
@@ -165,6 +226,7 @@ def main():
     print("Adjust transforms using the Tkinter panel. Use 'Save JSON' to export values.\n")
 
     interactive_align(csv_points, outer, inner, track_name)
+
 
 if __name__ == "__main__":
     main()
