@@ -81,7 +81,7 @@ public class AnalysisGetInfo : MonoBehaviour
   public void OnEnable()
   {
     // Reset the manual flag when enabling normally
-    if (!manualTrackRequested)
+    if (!manualTrackRequested && isActiveAndEnabled)
     {
       StartCoroutine(DelayedAttemptToLoadTracks());
     }
@@ -96,6 +96,7 @@ public class AnalysisGetInfo : MonoBehaviour
 
   public void OnDisable()
   {
+    StopAllCoroutines();
     ResetValues();
     manualTrackRequested = false;
     if (racingLinePreview != null)
@@ -235,7 +236,10 @@ public class AnalysisGetInfo : MonoBehaviour
     }
 
     trackName = track.name;
-    StartCoroutine(DelayedRacingLineInitialization());
+    if (isActiveAndEnabled)
+    {
+        StartCoroutine(DelayedRacingLineInitialization());
+    }
   }
 
   private IEnumerator DelayedRacingLineInitialization()

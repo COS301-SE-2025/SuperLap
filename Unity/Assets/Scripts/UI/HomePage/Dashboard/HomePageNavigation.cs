@@ -26,10 +26,10 @@ public class HomePageNavigation : MonoBehaviour
   private int activePageIndex = 0;
 
   [Header("Animation")]
-  public float transitionSpeed = 5f;
+  public float transitionDuration = 0.3f;
   private float targetTopPosition;
   private float targetBottomPosition;
-  private bool isTransitioning = false;
+  private Coroutine sidebarCoroutine = null;
   private Coroutine tooltipCoroutine = null;
 
   void Awake()
@@ -41,34 +41,10 @@ public class HomePageNavigation : MonoBehaviour
     hideSupportPopups();
   }
 
-  void Update()
-  {
-    if (isTransitioning && activePage != null)
-    {
-      RectTransform activePageRect = activePage.GetComponent<RectTransform>();
-      if (activePageRect != null)
-      {
-        Vector2 currentOffsetMin = activePageRect.offsetMin;
-        Vector2 currentOffsetMax = activePageRect.offsetMax;
-
-        float currentTop = Mathf.Lerp(currentOffsetMax.y, targetTopPosition, transitionSpeed * Time.deltaTime);
-        float currentBottom = Mathf.Lerp(currentOffsetMin.y, targetBottomPosition, transitionSpeed * Time.deltaTime);
-
-        activePageRect.offsetMin = new Vector2(currentOffsetMin.x, currentBottom);
-        activePageRect.offsetMax = new Vector2(currentOffsetMax.x, currentTop);
-
-        if (Mathf.Abs(currentTop - targetTopPosition) < 0.1f && Mathf.Abs(currentBottom - targetBottomPosition) < 0.1f)
-        {
-          activePageRect.offsetMin = new Vector2(currentOffsetMin.x, targetBottomPosition);
-          activePageRect.offsetMax = new Vector2(currentOffsetMax.x, targetTopPosition);
-          isTransitioning = false;
-        }
-      }
-    }
-  }
-
   public void NavigateToDashboard()
   {
+    activePageIndex = 0;
+    UpdateActivePagePosition();
     dashboardPage.SetActive(true);
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
@@ -78,8 +54,6 @@ public class HomePageNavigation : MonoBehaviour
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
     AISettingsPage.SetActive(false);
-    activePageIndex = 0;
-    UpdateActivePagePosition();
   }
 
   public void GoToScene(string sceneName)
@@ -102,6 +76,8 @@ public class HomePageNavigation : MonoBehaviour
 
   public void NavigateToGallery()
   {
+    activePageIndex = 1;
+    UpdateActivePagePosition();
     dashboardPage.SetActive(false);
     uploadPage.SetActive(false);
     galleryPage.SetActive(true);
@@ -111,12 +87,12 @@ public class HomePageNavigation : MonoBehaviour
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
     AISettingsPage.SetActive(false);
-    activePageIndex = 1;
-    UpdateActivePagePosition();
   }
 
   public void NavigateToAnalysis()
   {
+    activePageIndex = 2;
+    UpdateActivePagePosition();
     dashboardPage.SetActive(false);
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
@@ -126,12 +102,11 @@ public class HomePageNavigation : MonoBehaviour
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
     AISettingsPage.SetActive(false);
-    activePageIndex = 2;
-    UpdateActivePagePosition();
   }
 
   public void NavigateToTeam()
   {
+    UpdateActivePagePosition();
     dashboardPage.SetActive(false);
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
@@ -141,11 +116,12 @@ public class HomePageNavigation : MonoBehaviour
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
     AISettingsPage.SetActive(false);
-    UpdateActivePagePosition();
   }
 
   public void NavigateToSupport()
   {
+    activePageIndex = 3;
+    UpdateActivePagePosition();
     dashboardPage.SetActive(false);
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
@@ -155,12 +131,11 @@ public class HomePageNavigation : MonoBehaviour
     supportPage.SetActive(true);
     motoGPPage.SetActive(false);
     AISettingsPage.SetActive(false);
-    activePageIndex = 3;
-    UpdateActivePagePosition();
   }
 
   public void NavigateToRacingLine()
   {
+    UpdateActivePagePosition();
     dashboardPage.SetActive(false);
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
@@ -170,11 +145,12 @@ public class HomePageNavigation : MonoBehaviour
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
     AISettingsPage.SetActive(false);
-    UpdateActivePagePosition();
   }
 
   public void NavigateToMotoGP()
   {
+    activePageIndex = 4;
+    UpdateActivePagePosition();
     dashboardPage.SetActive(false);
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
@@ -184,12 +160,13 @@ public class HomePageNavigation : MonoBehaviour
     supportPage.SetActive(false);
     motoGPPage.SetActive(true);
     AISettingsPage.SetActive(false);
-    activePageIndex = 4;
-    UpdateActivePagePosition();
   }
 
-    public void NavigateToAISettingsPage()
+  public void NavigateToAISettingsPage()
   {
+    activePageIndex = 5;
+    UpdateActivePagePosition();
+
     dashboardPage.SetActive(false);
     uploadPage.SetActive(false);
     galleryPage.SetActive(false);
@@ -199,8 +176,6 @@ public class HomePageNavigation : MonoBehaviour
     supportPage.SetActive(false);
     motoGPPage.SetActive(false);
     AISettingsPage.SetActive(true);
-    activePageIndex = 5;
-    UpdateActivePagePosition();
   }
 
   public void NavigateToRacingLineWithTrack(string trackName)
@@ -283,14 +258,12 @@ public class HomePageNavigation : MonoBehaviour
 
     if (analysisPage != null)
     {
-      // Wait for the analysis page to be fully activated
       StartCoroutine(InitializeAnalysisWithTrackDelayed(trackName));
     }
   }
 
   private IEnumerator InitializeAnalysisWithTrackDelayed(string trackName)
   {
-    // Wait for the next frame to ensure the analysis page is fully active
     yield return null;
 
     AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>(true);
@@ -343,9 +316,37 @@ public class HomePageNavigation : MonoBehaviour
         targetTopPosition = -(activePageIndex * (pageButtonHeight + pageButtonGap));
         targetBottomPosition = targetTopPosition - pageButtonHeight;
 
-        isTransitioning = true;
+        if (sidebarCoroutine != null)
+          StopCoroutine(sidebarCoroutine);
+
+        sidebarCoroutine = StartCoroutine(MoveActivePage(activePageRect, targetTopPosition, targetBottomPosition));
       }
     }
+  }
+
+  private IEnumerator MoveActivePage(RectTransform rect, float targetTop, float targetBottom)
+  {
+    float elapsed = 0f;
+
+    Vector2 startMin = rect.offsetMin;
+    Vector2 startMax = rect.offsetMax;
+
+    Vector2 endMin = new Vector2(startMin.x, targetBottom);
+    Vector2 endMax = new Vector2(startMax.x, targetTop);
+
+    while (elapsed < transitionDuration)
+    {
+      elapsed += Time.deltaTime;
+      float t = Mathf.Clamp01(elapsed / transitionDuration);
+
+      rect.offsetMin = Vector2.Lerp(startMin, endMin, t);
+      rect.offsetMax = Vector2.Lerp(startMax, endMax, t);
+
+      yield return null;
+    }
+
+    rect.offsetMin = endMin;
+    rect.offsetMax = endMax;
   }
 
   private void hideSupportPopups()
@@ -365,7 +366,6 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-
   public void ShowSupportPopups()
   {
     if (tooltipCoroutine != null)
@@ -376,7 +376,6 @@ public class HomePageNavigation : MonoBehaviour
     tooltipCoroutine = StartCoroutine(ShowTooltipsForActivePage());
   }
 
-
   private IEnumerator ShowTooltipsForActivePage()
   {
     if (tooltips == null || tooltips.Length == 0)
@@ -384,19 +383,13 @@ public class HomePageNavigation : MonoBehaviour
 
     (int start, int end) = GetTooltipRangeForPage();
 
-
-
     if (start == -1 || end == -1) yield break;
-
     if (start > tooltips.Length || end > tooltips.Length) yield break;
 
     hideSupportPopups();
     for (int i = start; i <= end; i++)
     {
-      if (tooltips[i] == null)
-      {
-        continue;
-      }
+      if (tooltips[i] == null) continue;
       tooltips[i].ShowTooltip();
       yield return new WaitForSeconds(3f);
       tooltips[i].HideTooltip();
@@ -414,5 +407,4 @@ public class HomePageNavigation : MonoBehaviour
 
     return (-1, -1);
   }
-
 }

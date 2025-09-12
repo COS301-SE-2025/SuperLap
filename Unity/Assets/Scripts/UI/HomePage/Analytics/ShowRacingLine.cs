@@ -193,6 +193,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       pendingTrackData = null;
     }
   }
+  
   void Update()
   {
     if (!isRacing || racelinePoints == null || racelinePoints.Length < 2) return;
