@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="docs/images/temp.png" alt="Logo" width="100"/>
+    <img src="docs/images/bike.png" alt="Logo" width="100"/>
 </p>
 <p align="center">
     <img src="docs/images/banner1.png" alt="Banner"/>
@@ -105,4 +105,6 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
     <img src="docs/images/Wireframe.png" alt="Wireframe"/>
 </p>
 
-
+<p align="center">
+    <img src="docs/images/logo.png" alt="Logo" width="300"/>
+</p>
