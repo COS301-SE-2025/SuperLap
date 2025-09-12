@@ -449,9 +449,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     if (imageLoaded && previewImage != null)
     {
-      int targetWidth = 1024;
-      int targetHeight = 589;
-      loadedTexture = ScaleTexture(tempTexture, targetWidth, targetHeight);
+      loadedTexture = ScaleTexture(tempTexture, outputImageWidth, outputImageHeight);
 
       Destroy(tempTexture);
 

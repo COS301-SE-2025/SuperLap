@@ -20156,7 +20156,7 @@ MonoBehaviour:
   minPointDistance: 5
   outputImage: {fileID: 0}
   outputImageWidth: 1024
-  outputImageHeight: 1024
+  outputImageHeight: 589
   innerBoundaryColor: {r: 1, g: 0, b: 0, a: 1}
   outerBoundaryColor: {r: 0, g: 0, b: 1, a: 1}
   racelineColor: {r: 0, g: 1, b: 0, a: 1}
@@ -21052,6 +21052,8 @@ MonoBehaviour:
   currentTime: 0
   timeSpeed: 0.5
   isRacing: 1
+  minTrackScale: 0.2
+  maxTrackScale: 2
 --- !u!1 &1345279357
 GameObject:
   m_ObjectHideFlags: 0
@@ -24543,6 +24545,8 @@ MonoBehaviour:
   currentTime: 0
   timeSpeed: 1
   isRacing: 1
+  minTrackScale: 0.2
+  maxTrackScale: 2
 --- !u!114 &1594639264
 MonoBehaviour:
   m_ObjectHideFlags: 0

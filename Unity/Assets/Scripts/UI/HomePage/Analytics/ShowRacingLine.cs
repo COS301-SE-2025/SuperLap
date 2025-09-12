@@ -574,11 +574,21 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return (min, max, max - min);
   }
 
+  [SerializeField] private float minTrackScale = 0.2f;
+  [SerializeField] private float maxTrackScale = 2.0f;
+
   private float CalculateScale(Vector2 size)
   {
     float margin = 50f;
-    return Mathf.Min((trackContainer.rect.width - 2 * margin) / size.x, (trackContainer.rect.height - 2 * margin) / size.y);
+    float scale = Mathf.Min(
+        (trackContainer.rect.width - 2 * margin) / size.x,
+        (trackContainer.rect.height - 2 * margin) / size.y
+    );
+
+    // Clamp to avoid extreme zooming
+    return Mathf.Clamp(scale, minTrackScale, maxTrackScale);
   }
+
 
   private Vector2 CalculateOffset(Vector2 size, float scale)
   {
