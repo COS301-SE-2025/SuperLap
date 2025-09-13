@@ -116,8 +116,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     //Process button
     if (processButton != null)
     {
-      processButton.onClick.AddListener(ProcessTrackImage);
-      processButton.gameObject.SetActive(true);
+      processButton.gameObject.SetActive(false);
     }
     //Setup mask width slider
     if (maskWidthSlider != null)
@@ -445,11 +444,15 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       Destroy(loadedTexture);
     }
 
-    loadedTexture = new Texture2D(2, 2);
-    bool imageLoaded = loadedTexture.LoadImage(imageData);
+    Texture2D tempTexture = new Texture2D(2, 2);
+    bool imageLoaded = tempTexture.LoadImage(imageData);
 
     if (imageLoaded && previewImage != null)
     {
+      loadedTexture = ScaleTexture(tempTexture, outputImageWidth, outputImageHeight);
+
+      Destroy(tempTexture);
+
       Sprite imageSprite = Sprite.Create(
           loadedTexture,
           new Rect(0, 0, loadedTexture.width, loadedTexture.height),
@@ -457,6 +460,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       );
 
       previewImage.sprite = imageSprite;
+      previewImage.preserveAspect = true;
       previewImage.gameObject.SetActive(true);
 
       if (traceButton != null)
@@ -494,6 +498,22 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     yield return null;
   }
 
+  private Texture2D ScaleTexture(Texture2D source, int targetWidth, int targetHeight)
+  {
+    RenderTexture rt = RenderTexture.GetTemporary(targetWidth, targetHeight);
+    RenderTexture.active = rt;
+    Graphics.Blit(source, rt);
+
+    Texture2D result = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
+    result.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
+    result.Apply();
+
+    RenderTexture.active = null;
+    RenderTexture.ReleaseTemporary(rt);
+
+    return result;
+  }
+
   public void ResetCenterline()
   {
     centerlinePoints.Clear();
@@ -522,8 +542,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   public void ProcessTrackImage()
   {
-    
-    Debug.Log("Poes");
     if (string.IsNullOrEmpty(selectedImagePath))
     {
       Debug.LogError("No image selected for processing");
@@ -577,9 +595,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     Destroy(maskedImage);
 
     // Process the MASKED image to get boundaries
-    // ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
-    ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(selectedImagePath);
-    
+    ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
 
     Debug.Log(tempFilePath);
     //Delete the temporary file after processing
@@ -674,6 +690,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     OnProcessingComplete?.Invoke(lastResults);
   }
+
 
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
   {
@@ -849,22 +866,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       return;
     }
 
-    // Navigate to racing line page
     homePageNavigation.NavigateToRacingLine();
-
     // Get the racing line component and send the data
     if (homePageNavigation.racingLinePage != null)
     {
-      ShowRacingLine racingLineComponent = homePageNavigation.racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      ShowRacingLine racingLineComponent = homePageNavigation.racingLinePage.GetComponentInChildren<ShowRacingLine>(true);
       if (racingLineComponent != null)
       {
-        // Generate a track name from the selected image
-        string trackName = GenerateTrackNameFromImage();
-
         // Send the processed data to the racing line display
         racingLineComponent.DisplayRacelineData(racelineData);
-
-        Debug.Log($"Successfully sent processed track data to racing line page. Track: {trackName}");
+        Debug.Log($"Successfully sent processed track data to racing line page");
       }
       else
       {

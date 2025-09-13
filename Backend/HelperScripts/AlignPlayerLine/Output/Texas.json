@@ -1,8 +1,10 @@
 {
-    "tx": 4062.0,
-    "ty": -590.0,
-    "scale": 5.09,
+    "tx": 4059.0,
+    "ty": -458.0,
+    "scale": 4.98,
     "rotation": 188.0,
+    "shear_x": 0.0,
+    "shear_y": 0.0,
     "reflect_x": false,
     "reflect_y": false
 }

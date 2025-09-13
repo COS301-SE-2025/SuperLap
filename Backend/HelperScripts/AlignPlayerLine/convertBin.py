@@ -1,18 +1,61 @@
 import os
 import struct
 import json
+import numpy as np
+import geopandas as gpd
+from shapely.geometry import Polygon, LineString
 
 BIN_DIR = "bin"
 CSV_INPUT_DIR = "CSVInput"
-OUTPUT_DIR = "BinToLabelStudio"
+QGIS_DIR = "QGIS_Editing"
+OUTPUT_DIR = "Output"
 
-# Placeholder canvas image (can be replaced with an actual track image)
 CANVAS_IMAGE = "https://dummyimage.com/1920x1080/ffffff/000000.png"
 CANVAS_WIDTH = 1920
 CANVAS_HEIGHT = 1080
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(QGIS_DIR, exist_ok=True)
 
+def get_json_path(track_name):
+    return os.path.join(OUTPUT_DIR, f"{track_name}.json")
+
+
+def load_transform(track_name):
+    """Load transform settings from ./Output/{track_name}.json"""
+    path = get_json_path(track_name)
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            try:
+                data = json.load(f)
+                print(f"Loaded transform values from {path}")
+                return data
+            except Exception as e:
+                print(f"Failed to load {path}: {e}")
+    return {}
+
+
+def apply_transform(points, tx=0, ty=0, scale=1.0, rotation_deg=0,
+                    reflect_x=False, reflect_y=False, shear_x=0.0, shear_y=0.0):
+    if not points:
+        return []
+
+    arr = np.array(points, dtype=float)
+    angle = np.radians(rotation_deg)
+
+    rot_matrix = np.array([[np.cos(angle), -np.sin(angle)],
+                           [np.sin(angle),  np.cos(angle)]])
+    shear_matrix = np.array([[1, shear_x],
+                             [shear_y, 1]])
+    transform_matrix = rot_matrix @ shear_matrix
+
+    transformed = (arr @ transform_matrix.T) * scale
+    if reflect_x:
+        transformed[:, 0] *= -1
+    if reflect_y:
+        transformed[:, 1] *= -1
+    transformed[:, 0] += tx
+    transformed[:, 1] += ty
+    return transformed.tolist()
 
 def list_bin_files():
     bin_files = [f for f in os.listdir(BIN_DIR) if f.endswith(".bin")]
@@ -35,7 +78,6 @@ def load_bin_boundaries(bin_path):
     with open(bin_path, "rb") as f:
         outer = read_points(f)
         inner = read_points(f)
-        # Skip raceline and optional playerline
         for _ in range(2):
             try:
                 _ = read_points(f)
@@ -70,67 +112,86 @@ def load_playerline_csv(track_name):
             ys.append(float(fields[y_idx]))
     return [list(p) for p in zip(xs, ys)]
 
+from shapely.geometry import Polygon, LineString
 
-def normalize_points(points, width=CANVAS_WIDTH, height=CANVAS_HEIGHT):
-    """Normalize coordinates to 0–100% relative to canvas size."""
-    if not points:
-        return []
-    xs, ys = zip(*points)
-    min_x, max_x = min(xs), max(xs)
-    min_y, max_y = min(ys), max(ys)
+from shapely.geometry import Polygon, LineString
 
-    scale_x = max_x - min_x if max_x - min_x != 0 else 1
-    scale_y = max_y - min_y if max_y - min_y != 0 else 1
+def save_qgis_files(outer, inner, playerline, track_name):
+    """Save boundaries and playerline as GeoJSON for QGIS editing"""
+    features = []
 
-    normalized = []
-    for x, y in points:
-        nx = (x - min_x) / scale_x * 100
-        ny = (y - min_y) / scale_y * 100
-        normalized.append([nx, ny])
-    return normalized
+    if outer and inner:
+        track_poly = Polygon(shell=outer, holes=[inner])
+        features.append({
+            "type": "Feature",
+            "properties": {"type": "track_area", "name": track_name},
+            "geometry": track_poly.__geo_interface__
+        })
+    else:
+        if outer:
+            track_poly = Polygon(shell=outer)
+            features.append({
+                "type": "Feature",
+                "properties": {"type": "outer_boundary", "name": track_name},
+                "geometry": track_poly.__geo_interface__
+            })
+        if inner:
+            track_poly = Polygon(shell=inner)
+            features.append({
+                "type": "Feature",
+                "properties": {"type": "inner_boundary", "name": track_name},
+                "geometry": track_poly.__geo_interface__
+            })
 
-
-def save_labelstudio_json(outer, inner, playerline, track_name):
-    def make_ls_polygon(points, label_name, closed=True):
-        return {
-            "id": label_name,
-            "type": "polygon",
-            "label": label_name,
-            "points": points,
-            "closed": closed
-        }
-
-    # Normalize points to 0–100%
-    outer = normalize_points(outer)
-    inner = normalize_points(inner)
-    playerline = normalize_points(playerline)
-
-    polygons = []
-    if outer:
-        polygons.append(make_ls_polygon(outer, "Outer Boundary", closed=True))
-    if inner:
-        polygons.append(make_ls_polygon(inner, "Inner Boundary", closed=True))
     if playerline:
-        polygons.append(make_ls_polygon(playerline, "Playerline", closed=False))
+        player_line = LineString(playerline)
+        features.append({
+            "type": "Feature",
+            "properties": {
+                "type": "playerline",
+                "name": track_name,
+                "editable": False
+            },
+            "geometry": player_line.__geo_interface__
+        })
 
-    # Correct Label Studio structure
-    data = {
-        "data": {
-            "canvas": CANVAS_IMAGE  # must exist
-        },
-        "annotations": [
-            {
-                "result": polygons
-            }
-        ]
-    }
+    geojson = {"type": "FeatureCollection", "features": features}
 
-    output_path = os.path.join(OUTPUT_DIR, f"{track_name}_labelstudio.json")
+    track_dir = os.path.join(QGIS_DIR, track_name)
+    os.makedirs(track_dir, exist_ok=True)
+    output_path = os.path.join(track_dir, f"{track_name}_for_qgis.geojson")
+
     with open(output_path, "w") as f:
-        json.dump(data, f, indent=4)
-    print(f"Label Studio JSON saved to {output_path}")
+        json.dump(geojson, f, indent=4)
+    print(f"QGIS GeoJSON saved to {output_path}")
+    save_qgis_project(track_name)
 
-
+def save_qgis_project(track_name):
+    """Create a minimal QGIS .qgs project file (XML-based)"""
+    project_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<qgis projectname="{track_name}" version="3.28">
+  <projectlayers>
+    <maplayer type="vector" geometry="Polygon" name="Track Boundaries">
+      <datasource>{track_name}_for_qgis.geojson</datasource>
+      <provider>ogr</provider>
+    </maplayer>
+  </projectlayers>
+  <properties>
+    <snapping>
+      <enabled>true</enabled>
+      <mode>vertex</mode>
+      <tolerance>10</tolerance>
+      <units>pixels</units>
+    </snapping>
+  </properties>
+</qgis>
+"""
+    track_dir = os.path.join(QGIS_DIR, track_name)
+    os.makedirs(track_dir, exist_ok=True)
+    project_path = os.path.join(track_dir, f"{track_name}_project.qgs")
+    with open(project_path, "w", encoding="utf-8") as f:
+        f.write(project_xml)
+    print(f"QGIS project file saved to {project_path}")
 
 def main():
     bin_result = list_bin_files()
@@ -140,11 +201,25 @@ def main():
 
     outer, inner, playerline_from_bin = load_bin_boundaries(bin_path)
 
-    # Automatically load CSV playerline if it exists
     playerline_csv = load_playerline_csv(track_name)
     playerline = playerline_csv if playerline_csv else playerline_from_bin
 
-    save_labelstudio_json(outer, inner, playerline, track_name)
+    tf = load_transform(track_name)
+    if tf and playerline:
+        playerline = apply_transform(
+            playerline,
+            tx=tf.get("tx", 0),
+            ty=tf.get("ty", 0),
+            scale=tf.get("scale", 1.0),
+            rotation_deg=tf.get("rotation", 0),
+            reflect_x=tf.get("reflect_x", False),
+            reflect_y=tf.get("reflect_y", False),
+            shear_x=tf.get("shear_x", 0.0),
+            shear_y=tf.get("shear_y", 0.0),
+        )
+        print(f"Applied transform to playerline for {track_name}")
+
+    save_qgis_files(outer, inner, playerline, track_name)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
-
+using System.Collections;
 public class AnalysisGetInfo : MonoBehaviour
 {
   [Header("Track Info Display")]
@@ -80,14 +80,25 @@ public class AnalysisGetInfo : MonoBehaviour
 
   public void OnEnable()
   {
-    if (!manualTrackRequested)
-      AttemptToLoadTracks();
+    // Reset the manual flag when enabling normally
+    if (!manualTrackRequested && isActiveAndEnabled)
+    {
+      StartCoroutine(DelayedAttemptToLoadTracks());
+    }
+  }
+
+  private IEnumerator DelayedAttemptToLoadTracks()
+  {
+    // Wait for end of frame to ensure everything is properly set up
+    yield return new WaitForEndOfFrame();
+    AttemptToLoadTracks();
   }
 
   public void OnDisable()
   {
+    StopAllCoroutines();
     ResetValues();
-
+    manualTrackRequested = false;
     if (racingLinePreview != null)
     {
       racingLinePreview.gameObject.SetActive(false);
@@ -225,16 +236,16 @@ public class AnalysisGetInfo : MonoBehaviour
     }
 
     trackName = track.name;
-    if (racingLinePreview != null)
+    if (isActiveAndEnabled)
     {
-      racingLinePreview.gameObject.SetActive(true);
-      racingLinePreview.InitializeWithTrack(trackName);
+        StartCoroutine(DelayedRacingLineInitialization());
     }
-    else
-    {
-      Debug.LogWarning("Racing line preview component not assigned");
-    }
+  }
 
+  private IEnumerator DelayedRacingLineInitialization()
+  {
+    // Wait for end of frame to ensure UI is properly set up
+    yield return new WaitForEndOfFrame();
     LoadRacingLinePreview();
   }
 
@@ -383,13 +394,22 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private void LoadRacingLinePreview()
   {
+    if (string.IsNullOrEmpty(trackName))
+    {
+      Debug.LogWarning("Track name is empty, cannot load racing line preview");
+      return;
+    }
+
     if (racingLineButton != null)
     {
       racingLineButton.interactable = true;
     }
     if (racingLinePreview != null)
     {
-      racingLinePreview.gameObject.SetActive(true);
+      if (!racingLinePreview.gameObject.activeSelf)
+      {
+        racingLinePreview.gameObject.SetActive(true);
+      }
       racingLinePreview.InitializeWithTrack(trackName);
     }
     else
