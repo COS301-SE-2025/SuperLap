@@ -14,12 +14,29 @@ BIN_DIR = "bin"
 OUTPUT_DIR = "Output"
 
 
+def get_json_path(track_name):
+    return os.path.join(OUTPUT_DIR, f"{track_name}.json")
+
+
 def save_json_auto(values, track_name):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    save_path = os.path.join(OUTPUT_DIR, f"{track_name}.json")
+    save_path = get_json_path(track_name)
     with open(save_path, "w") as f:
         json.dump(values, f, indent=4)
     print(f"Transform values saved to {save_path}")
+
+
+def load_json_auto(track_name):
+    path = get_json_path(track_name)
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            try:
+                data = json.load(f)
+                print(f"Loaded transform values from {path}")
+                return data
+            except Exception as e:
+                print(f"Failed to load {path}: {e}")
+    return None
 
 
 def list_csv_files():
@@ -100,18 +117,18 @@ def interactive_align(csv_points, outer, inner, track_name):
     root = tk.Tk()
     root.title(f"Track Alignment Tool - {track_name}")
 
-    # Parameters
-    tx = tk.DoubleVar(value=0)
-    ty = tk.DoubleVar(value=0)
-    scale = tk.DoubleVar(value=1.0)
-    rotation = tk.DoubleVar(value=0)
-    shear_x = tk.DoubleVar(value=0.0)
-    shear_y = tk.DoubleVar(value=0.0)
-    reflect_x = tk.BooleanVar(value=False)
-    reflect_y = tk.BooleanVar(value=False)
+    defaults = load_json_auto(track_name) or {}
+
+    tx = tk.DoubleVar(value=defaults.get("tx", 0))
+    ty = tk.DoubleVar(value=defaults.get("ty", 0))
+    scale = tk.DoubleVar(value=defaults.get("scale", 1.0))
+    rotation = tk.DoubleVar(value=defaults.get("rotation", 0))
+    shear_x = tk.DoubleVar(value=defaults.get("shear_x", 0.0))
+    shear_y = tk.DoubleVar(value=defaults.get("shear_y", 0.0))
+    reflect_x = tk.BooleanVar(value=defaults.get("reflect_x", False))
+    reflect_y = tk.BooleanVar(value=defaults.get("reflect_y", False))
     show_boundaries = tk.BooleanVar(value=True)
 
-    # Plot setup
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.set_aspect("equal")
 
@@ -123,7 +140,6 @@ def interactive_align(csv_points, outer, inner, track_name):
     canvas = FigureCanvasTkAgg(fig, master=root)
     canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    # --- Transform update ---
     def update(*args):
         transformed = apply_transform(
             csv_points.copy(),
@@ -140,7 +156,6 @@ def interactive_align(csv_points, outer, inner, track_name):
         inner_line.set_visible(show_boundaries.get())
         canvas.draw_idle()
 
-    # --- Tkinter control panel ---
     panel = ttk.Frame(root)
     panel.pack(side=tk.RIGHT, fill=tk.Y, padx=5, pady=5)
 
@@ -162,18 +177,20 @@ def interactive_align(csv_points, outer, inner, track_name):
     ttk.Checkbutton(panel, text="Reflect Y", variable=reflect_y).pack(anchor="w", pady=2)
     ttk.Checkbutton(panel, text="Show Boundaries", variable=show_boundaries).pack(anchor="w", pady=2)
 
-    ttk.Button(panel, text="Save JSON", command=lambda: save_json_auto({
-        "tx": tx.get(),
-        "ty": ty.get(),
-        "scale": scale.get(),
-        "rotation": rotation.get(),
-        "shear_x": shear_x.get(),
-        "shear_y": shear_y.get(),
-        "reflect_x": reflect_x.get(),
-        "reflect_y": reflect_y.get()
-    }, track_name)).pack(fill="x", pady=10)
+    def save_current():
+        save_json_auto({
+            "tx": tx.get(),
+            "ty": ty.get(),
+            "scale": scale.get(),
+            "rotation": rotation.get(),
+            "shear_x": shear_x.get(),
+            "shear_y": shear_y.get(),
+            "reflect_x": reflect_x.get(),
+            "reflect_y": reflect_y.get()
+        }, track_name)
 
-    # --- Mouse dragging support ---
+    ttk.Button(panel, text="Save JSON", command=save_current).pack(fill="x", pady=10)
+
     selected_idx = [None]
 
     def on_press(event):
@@ -185,7 +202,7 @@ def interactive_align(csv_points, outer, inner, track_name):
         pts = np.column_stack((player_line.get_xdata(), player_line.get_ydata()))
         dists = np.hypot(pts[:, 0] - x, pts[:, 1] - y)
         idx = np.argmin(dists)
-        if dists[idx] < 20:  # tolerance
+        if dists[idx] < 20:
             selected_idx[0] = idx
 
     def on_motion(event):
@@ -205,12 +222,21 @@ def interactive_align(csv_points, outer, inner, track_name):
     canvas.mpl_connect("motion_notify_event", on_motion)
     canvas.mpl_connect("button_release_event", on_release)
 
-    # Bind update
     for var in (tx, ty, scale, rotation, reflect_x, reflect_y, shear_x, shear_y, show_boundaries):
         var.trace_add("write", update)
 
+    def on_close():
+        print("Closing window, exiting cleanly...")
+        root.quit()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
+
     update()
     root.mainloop()
+    root.quit()
+    root.destroy()
+
 
 
 def main():
