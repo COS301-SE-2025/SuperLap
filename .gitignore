@@ -69,3 +69,5 @@ Backend/ImageProcessing/todo
 Backend/ImageProcessing/old.txt
 Backend/ImageProcessing/CNNoutput
 Backend/ImageProcessing/TEST/data
+
+*.png
