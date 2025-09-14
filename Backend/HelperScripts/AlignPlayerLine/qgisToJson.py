@@ -1,180 +1,172 @@
 import os
 import json
-import glob
-from shapely.geometry import shape
+from shapely.geometry import shape, Polygon
 
 QGIS_DIR = "QGIS_Editing"
-OUTPUT_JSON_DIR = "Output_JSONs"
+OUTPUT_DIR = "Output_JSONs"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-os.makedirs(OUTPUT_JSON_DIR, exist_ok=True)
+TARGET_WIDTH = 2560
+TARGET_HEIGHT = 1440
+PADDING = 20
 
+def normalize_and_scale_coordinates(all_points):
+    """
+    Normalize coordinates to handle negative values and scale to fit 1440p resolution.
+    Returns scaled points and the bounds used for scaling.
+    """
+    if not all_points:
+        return [], 0, 0
+    
+    xs = [pt[0] for pt in all_points]
+    ys = [pt[1] for pt in all_points]
+    
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    
+    range_x = max_x - min_x
+    range_y = max_y - min_y
+    
+    if range_x == 0:
+        range_x = 1
+    if range_y == 0:
+        range_y = 1
+    
+    available_width = TARGET_WIDTH - (2 * PADDING)
+    available_height = TARGET_HEIGHT - (2 * PADDING)
+    
+    scale_x = available_width / range_x
+    scale_y = available_height / range_y
+    
+    scale = min(scale_x, scale_y)
+    
+    scaled_width = range_x * scale
+    scaled_height = range_y * scale
+    
+    offset_x = (TARGET_WIDTH - scaled_width) / 2
+    offset_y = (TARGET_HEIGHT - scaled_height) / 2
+    
+    scaled_points = []
+    for x, y in all_points:
+        norm_x = x - min_x
+        norm_y = y - min_y
+        
+        scaled_x = norm_x * scale + offset_x
+        scaled_y = norm_y * scale + offset_y
+        
+        scaled_points.append([scaled_x, scaled_y])
+    
+    return scaled_points, TARGET_WIDTH, TARGET_HEIGHT
 
-def process_geojson_file(geojson_path, track_name):
-    """Process a single GeoJSON file and convert to drawing JSON format"""
+def geojson_to_labelstudio(track_name, geojson_path):
+    with open(geojson_path, "r", encoding="utf-8") as f:
+        gj = json.load(f)
+
+    boxes = []
+    all_original_points = []
     
-    with open(geojson_path, 'r', encoding='utf-8') as f:
-        geojson_data = json.load(f)
-    
-    print(f"  Raw features in {track_name}: {len(geojson_data.get('features', []))}")
-    
-    output_data = {
-        "width": 0,
-        "height": 0,
-        "boxes": []
-    }
-    
-    all_boundary_points = []
-    
-    for feature in geojson_data.get('features', []):
-        geometry = shape(feature['geometry'])
-        properties = feature.get('properties', {})
-        feature_type = properties.get('type', '').lower()
+    for feat in gj.get("features", []):
+        geom = shape(feat["geometry"])
         
-        print(f"    Feature type: {feature_type}, Geometry: {geometry.geom_type}")
-        
-        if 'playerline' in feature_type:
-            print(f"    -> Skipping playerline")
-            continue
-        
-        if geometry.geom_type == 'Polygon':
+        if isinstance(geom, Polygon):
+            outer = list(map(list, geom.exterior.coords))
+            all_original_points.extend(outer)
             
-            if feature_type == 'track_area':
-                print(f"    -> Processing track_area polygon")
-                
-                outer_coords = list(geometry.exterior.coords)[:-1]
-                outer_points = [[float(x), float(y)] for x, y in outer_coords]
-                print(f"      Outer boundary: {len(outer_points)} points")
-                
-                if outer_points:
-                    output_data["boxes"].append({
-                        "points": outer_points,
-                        "label": "outer_boundary"
-                    })
-                    all_boundary_points.extend(outer_points)
-                
-                for i, interior in enumerate(geometry.interiors):
-                    inner_coords = list(interior.coords)[:-1]
-                    inner_points = [[float(x), float(y)] for x, y in inner_coords]
-                    print(f"      Inner boundary {i+1}: {len(inner_points)} points")
-                    
-                    if inner_points:
-                        output_data["boxes"].append({
-                            "points": inner_points,
-                            "label": "hole"
-                        })
-            
-            elif 'outer' in feature_type:
-                coords = list(geometry.exterior.coords)[:-1]
-                points = [[float(x), float(y)] for x, y in coords]
-                print(f"    -> Outer boundary: {len(points)} points")
-                
-                output_data["boxes"].append({
-                    "points": points,
-                    "label": "outer_boundary"
-                })
-                all_boundary_points.extend(points)
-                
-            elif 'inner' in feature_type:
-                coords = list(geometry.exterior.coords)[:-1]
-                points = [[float(x), float(y)] for x, y in coords]
-                print(f"    -> Inner boundary: {len(points)} points")
-                
-                output_data["boxes"].append({
-                    "points": points,
-                    "label": "inner_boundary"
-                })
-                all_boundary_points.extend(points)
-            
-            else:
-                print(f"    -> Unknown polygon type: {feature_type}")
-                
-        else:
-            print(f"    -> Skipping {geometry.geom_type} geometry")
+            for hole in geom.interiors:
+                inner = list(map(list, hole.coords))
+                all_original_points.extend(inner)
     
-    print(f"  Total boundary points collected: {len(all_boundary_points)}")
-    print(f"  Total boxes created: {len(output_data['boxes'])}")
-    
-    if all_boundary_points:
-        xs = [p[0] for p in all_boundary_points]
-        ys = [p[1] for p in all_boundary_points]
-        
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        
-        padding = 50
-        output_data["width"] = int(max_x - min_x) + padding * 2
-        output_data["height"] = int(max_y - min_y) + padding * 2
-        
-        print(f"  Canvas size: {output_data['width']}x{output_data['height']}")
-    else:
-        print(f"  Warning: No boundary points found!")
-    
-    return output_data
-
-
-def find_geojson_files():
-    """Find all GeoJSON files in the QGIS_Editing directory structure"""
-    geojson_files = []
-    
-    pattern = os.path.join(QGIS_DIR, "*", "*.geojson")
-    found_files = glob.glob(pattern)
-    
-    for file_path in found_files:
-        dir_path = os.path.dirname(file_path)
-        track_name = os.path.basename(dir_path)
-        geojson_files.append((file_path, track_name))
-    
-    direct_pattern = os.path.join(QGIS_DIR, "*.geojson")
-    direct_files = glob.glob(direct_pattern)
-    
-    for file_path in direct_files:
-        filename = os.path.basename(file_path)
-        track_name = os.path.splitext(filename)[0]
-        if track_name.endswith('_for_qgis'):
-            track_name = track_name[:-9]
-        geojson_files.append((file_path, track_name))
-    
-    return geojson_files
-
-
-def main():
-    """Main function to process all GeoJSON files"""
-    
-    print(f"Looking for GeoJSON files in {QGIS_DIR}...")
-    
-    geojson_files = find_geojson_files()
-    
-    if not geojson_files:
-        print(f"No GeoJSON files found in {QGIS_DIR}")
+    if not all_original_points:
+        print(f"No polygon coordinates found in {geojson_path}")
         return
     
-    print(f"Found {len(geojson_files)} GeoJSON files to process:")
-    for file_path, track_name in geojson_files:
-        print(f"  - {file_path} -> {track_name}")
+    scaled_points, width, height = normalize_and_scale_coordinates(all_original_points)
     
-    print("\nProcessing files...")
+    point_map = {}
+    for orig, scaled in zip(all_original_points, scaled_points):
+        key = (orig[0], orig[1])
+        point_map[key] = scaled
     
-    for geojson_path, track_name in geojson_files:
-        try:
-            print(f"\nProcessing {track_name}...")
-            
-            output_data = process_geojson_file(geojson_path, track_name)
-            
-            output_filename = f"{track_name}.json"
-            output_path = os.path.join(OUTPUT_JSON_DIR, output_filename)
-            
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(output_data, f, indent=2)
-            
-            print(f"✓ Saved {output_path}")
-            
-        except Exception as e:
-            print(f"✗ Error processing {track_name}: {e}")
-            import traceback
-            traceback.print_exc()
+    features_sorted = []
+    for feat in gj.get("features", []):
+        geom = shape(feat["geometry"])
+        props = feat.get("properties", {})
+        label = props.get("type", "unknown").lower()
+        
+        if isinstance(geom, Polygon):
+            priority = 0 if any(keyword in label for keyword in ["outer", "outside"]) else 1
+            features_sorted.append((priority, feat))
     
-    print(f"\nConversion complete! Check {OUTPUT_JSON_DIR}/ for output files")
+    features_sorted.sort(key=lambda x: x[0])
+    
+    for priority, feat in features_sorted:
+        geom = shape(feat["geometry"])
+        props = feat.get("properties", {})
+        label = props.get("type", "unknown").lower()
 
+        if isinstance(geom, Polygon):
+            outer_coords = list(map(list, geom.exterior.coords))
+            outer_scaled = [point_map[(pt[0], pt[1])] for pt in outer_coords]
+            
+            if "outer" in label or "outside" in label:
+                final_label = "outer"
+            elif "inner" in label or "inside" in label:
+                final_label = "inner"
+            else:
+                final_label = "outer" if len(boxes) == 0 else "inner"
+            
+            boxes.append({
+                "label": final_label,
+                "points": outer_scaled
+            })
+            
+            for hole in geom.interiors:
+                inner_coords = list(map(list, hole.coords))
+                inner_scaled = [point_map[(pt[0], pt[1])] for pt in inner_coords]
+                
+                boxes.append({
+                    "label": "inner",
+                    "points": inner_scaled
+                })
+    data = {
+        "width": int(width),
+        "height": int(height),
+        "boxes": boxes
+    }
+
+    out_path = os.path.join(OUTPUT_DIR, f"{track_name}.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+    
+    print(f"Saved {out_path} - Scaled to {width}x{height} with {len(boxes)} polygons")
+    print(f"  Outer polygons: {sum(1 for b in boxes if 'outer' in b['label'])}")
+    print(f"  Inner polygons: {sum(1 for b in boxes if 'inner' in b['label'])}")
+
+def main():
+    processed = 0
+    skipped = 0
+    
+    for track_name in os.listdir(QGIS_DIR):
+        track_dir = os.path.join(QGIS_DIR, track_name)
+        if not os.path.isdir(track_dir):
+            continue
+
+        geojson_path = os.path.join(track_dir, f"{track_name}_for_qgis.geojson")
+        if not os.path.exists(geojson_path):
+            print(f"Skipping {track_name}, no geojson found")
+            skipped += 1
+            continue
+
+        try:
+            geojson_to_labelstudio(track_name, geojson_path)
+            processed += 1
+        except Exception as e:
+            print(f"Error processing {track_name}: {str(e)}")
+            skipped += 1
+    
+    print(f"\nProcessing complete:")
+    print(f"  Successfully processed: {processed}")
+    print(f"  Skipped/Failed: {skipped}")
 
 if __name__ == "__main__":
     main()
