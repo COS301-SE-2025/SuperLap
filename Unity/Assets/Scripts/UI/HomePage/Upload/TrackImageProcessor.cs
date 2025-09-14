@@ -329,6 +329,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     centerlineOverlay.Apply();
 
     Sprite overlaySprite = Sprite.Create(centerlineOverlay, new Rect(0, 0, centerlineOverlay.width, centerlineOverlay.height), new Vector2(0.5f, 0.5f));
+    if (previewImage.sprite != null) previewImage.sprite = null;
     previewImage.sprite = overlaySprite;
   }
 
@@ -458,7 +459,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           new Rect(0, 0, loadedTexture.width, loadedTexture.height),
           new Vector2(0.5f, 0.5f)
       );
-
+      if (previewImage.sprite != null) previewImage.sprite = null;
       previewImage.sprite = imageSprite;
       previewImage.preserveAspect = true;
       previewImage.gameObject.SetActive(true);
@@ -531,6 +532,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (loadedTexture != null && previewImage != null)
     {
       Sprite imageSprite = Sprite.Create(loadedTexture, new Rect(0, 0, loadedTexture.width, loadedTexture.height), new Vector2(0.5f, 0.5f));
+      if (previewImage.sprite != null) previewImage.sprite = null;
       previewImage.sprite = imageSprite;
     }
     if (processButton != null)
@@ -1039,6 +1041,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           new Rect(0, 0, outputImageWidth, outputImageHeight),
           new Vector2(0.5f, 0.5f)
       );
+      if (outputImage.sprite != null) outputImage.sprite = null;
 
       outputImage.sprite = outputSprite;
       outputImage.gameObject.SetActive(true);
