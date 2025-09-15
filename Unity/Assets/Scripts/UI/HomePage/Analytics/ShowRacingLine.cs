@@ -216,7 +216,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (timeline) timeline.value = currentTime;
 
-    if (Input.GetKeyDown(KeyCode.Space) && !goingToCar)
+    if (Input.GetKeyDown(KeyCode.Space))
     {
       ToggleFollowCar();
     }
