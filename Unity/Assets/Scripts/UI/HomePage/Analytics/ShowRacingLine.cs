@@ -7,6 +7,7 @@ using UnityEngine.UI.Extensions;
 using LibTessDotNet;
 using System.IO;
 using System.Collections;
+using System;
 
 [System.Serializable]
 public class RacelineDisplayData
@@ -193,7 +194,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       pendingTrackData = null;
     }
   }
-  
+
   void Update()
   {
     if (!isRacing || racelinePoints == null || racelinePoints.Length < 2) return;
@@ -529,7 +530,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
 
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
-
+    
     if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
     if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
     if (showRaceLine) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
@@ -649,12 +650,14 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     LoadTrackData(trackName);
   }
 
-  private void LoadTrackData(string trackName)
+  private async void LoadTrackData(string trackName)
   {
     currentTrackData = null;
 
-    APIManager.Instance.GetTrackBorder(trackName, (success, message, bytes) =>
+    try
     {
+      var (success, message, bytes) = await APIManager.Instance.GetTrackBorderAsync(trackName);
+
       if (success && bytes != null)
       {
         RacelineDisplayData trackData = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
@@ -672,10 +675,14 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       else
       {
         Debug.LogError($"Failed to load track borders: {message}");
-
       }
-    });
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError($"Exception while loading track border: {ex.Message}");
+    }
   }
+
 
   private List<Vector2> EnsureLooped(List<Vector2> points)
   {

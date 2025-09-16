@@ -47,7 +47,7 @@ public class GalleryGetInfo : MonoBehaviour
   }
 
 
-  public void LoadAllTracks()
+  public async void LoadAllTracks()
   {
     if (apiManager == null)
     {
@@ -55,11 +55,15 @@ public class GalleryGetInfo : MonoBehaviour
       backupPanel.SetActive(true);
       return;
     }
+
     ClearAllPanels();
-    apiManager.GetAllTracks(OnTracksLoaded);
+
+    var (success, message, tracks) = await apiManager.GetAllTracksAsync();
+    OnTracksLoaded(success, message, tracks);
   }
 
-  private void OnTracksLoaded(bool success, string message, List<APIManager.Track> tracks)
+
+  private void OnTracksLoaded(bool success, string message, List<Track> tracks)
   {
     if (!success)
     {
@@ -83,20 +87,24 @@ public class GalleryGetInfo : MonoBehaviour
     }
   }
 
-  private void CreateTrackPanel(APIManager.Track track)
+
+  private void CreateTrackPanel(Track track)
   {
     if (defaultPanel == null)
     {
       Debug.Log("Default panel is not assigned!");
       return;
     }
+
     GameObject newPanel = Instantiate(defaultPanel);
     Transform targetParent = GetNextColumnParent();
     newPanel.transform.SetParent(targetParent, false);
     newPanel.SetActive(true);
+
     ConfigureTrackPanel(newPanel, track);
     instantiatedPanels.Add(newPanel);
   }
+
 
   private Transform GetNextColumnParent()
   {
@@ -108,7 +116,7 @@ public class GalleryGetInfo : MonoBehaviour
     return selectedColumn;
   }
 
-  private void ConfigureTrackPanel(GameObject panel, APIManager.Track track)
+  private void ConfigureTrackPanel(GameObject panel, Track track)
   {
     Transform contentPanel = panel.transform.Find("Content");
     if (contentPanel == null)
@@ -138,7 +146,7 @@ public class GalleryGetInfo : MonoBehaviour
     panel.name = $"Track_{track.name}";
   }
 
-  private void OnTrackSelected(APIManager.Track track)
+  private void OnTrackSelected(Track track)
   {
     HomePageNavigation navigation = FindAnyObjectByType<HomePageNavigation>();
     if (navigation != null)
@@ -151,21 +159,21 @@ public class GalleryGetInfo : MonoBehaviour
     }
   }
 
-  private void LoadTrackImage(string trackName, Image targetImage)
+  private async void LoadTrackImage(string trackName, Image targetImage)
   {
-    apiManager.GetTrackImage(trackName, (success, message, texture) =>
+    var (success, message, texture) = await apiManager.GetTrackImageAsync(trackName);
+
+    if (success && texture != null)
     {
-      if (success && texture != null)
-      {
-        Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f);
-        targetImage.sprite = sprite;
-      }
-      else
-      {
-        Debug.LogWarning($"Failed to load image for track {trackName}: {message}");
-      }
-    });
+      Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f);
+      targetImage.sprite = sprite;
+    }
+    else
+    {
+      Debug.LogWarning($"Failed to load image for track {trackName}: {message}");
+    }
   }
+
 
   private void ClearAllPanels()
   {

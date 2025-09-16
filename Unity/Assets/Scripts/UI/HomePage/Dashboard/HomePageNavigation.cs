@@ -192,7 +192,7 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-  public void NavigateToRacingLineWithTrack(APIManager.Track track)
+  public void NavigateToRacingLineWithTrack(Track track)
   {
     NavigateToRacingLine();
 
@@ -288,7 +288,7 @@ public class HomePageNavigation : MonoBehaviour
     activePageIndex = 2;
   }
 
-  public void NavigateToAnalysisWithTrack(APIManager.Track track)
+  public void NavigateToAnalysisWithTrack(Track track)
   {
     NavigateToAnalysis();
 
