@@ -141,4 +141,56 @@ module.exports = function (db) {
             }
         }
     });
+
+    // Create racing data with base64 string (alternative to file upload)
+    router.post('/racing-data', async (req, res) => {
+        try {
+            const {
+                trackName,
+                userName,
+                sessionType,
+                lapTime,
+                vehicleUsed,
+                gameVersion,
+                description,
+                fileName,
+                csvData // Expecting base64 encoded string
+            } = req.body;
+
+            if (!csvData) {
+                return res.status(400).json({ message: "CSV data (base64) is required" });
+            }
+
+            // Create unique ID
+            const recordId = `${userName || 'anonymous'}_${trackName || 'unknown'}_${Date.now()}`;
+
+            const newRacingData = {
+                _id: recordId,
+                trackName: trackName || 'Unknown',
+                userName: userName || 'Anonymous',
+                sessionType: sessionType || 'Practice',
+                lapTime: lapTime || null,
+                vehicleUsed: vehicleUsed || 'Unknown',
+                gameVersion: gameVersion || 'MotoGP18',
+                description: description || '',
+                fileName: fileName || 'racing_data.csv',
+                fileSize: Buffer.from(csvData, 'base64').length,
+                csvData: csvData,
+                dateUploaded: new Date().toISOString(),
+                uploadedBy: userName || 'Anonymous'
+            };
+
+            await db.collection("racingData").insertOne(newRacingData);
+
+            // Return response without the large base64 data
+            const { csvData: _, ...responseData } = newRacingData;
+            res.status(201).json({ 
+                message: "Racing data created successfully",
+                data: responseData
+            });
+        } catch (error) {
+            console.error("Racing data creation error:", error);
+            res.status(500).json({ message: "Error creating racing data" });
+        }
+    });
 }
