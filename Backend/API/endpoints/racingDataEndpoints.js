@@ -53,5 +53,18 @@ module.exports = function (db) {
         }
     });
 
-    
+    // Fetch racing data by track name
+    router.get('/racing-data/track/:trackName', async (req, res) => {
+        try {
+            const trackName = req.params.trackName;
+            const racingData = await db.collection("racingData").find(
+                { trackName: trackName },
+                { projection: { csvData: 0 } } // Exclude base64 data from list view
+            ).toArray();
+            res.json(racingData);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Failed to fetch racing data for track" });
+        }
+    });
 }
