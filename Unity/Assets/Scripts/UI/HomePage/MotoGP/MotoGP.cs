@@ -5,7 +5,7 @@ using RainbowArt.CleanFlatUI;
 using System.IO;
 using System.Collections.Generic;
 using System;
-
+using TMPro;
 public class MotoGP : MonoBehaviour
 {
 
@@ -15,20 +15,33 @@ public class MotoGP : MonoBehaviour
   [SerializeField] private GameObject DropDownText;
   [SerializeField] private GameObject processButton;
   [SerializeField] private GameObject controlPanel;
-
+  [SerializeField] private TextMeshProUGUI recordButtonText;
   bool isRecording = false;
   private MotoGPTelemetry.TelemetryRecorder recorder;
-
-
   List<int> lapIndexList = new List<int>();
   void Start()
   {
     recorder = new MotoGPTelemetry.TelemetryRecorder();
-    dropdown.options.Clear();
-    dropdown.gameObject.SetActive(false);
-    DropDownText.SetActive(false);
-    processButton.SetActive(false);
-    controlPanel.SetActive(false);
+    if (dropdown != null)
+    {
+      dropdown.options.Clear();
+      dropdown.gameObject.SetActive(false);
+    }
+
+    if (DropDownText != null)
+    {
+      DropDownText.SetActive(false);
+    }
+
+    if (processButton != null)
+    {
+      processButton.SetActive(false);
+    }
+
+    if (controlPanel != null)
+    {
+      controlPanel.SetActive(false);
+    }
   }
   private ExtensionFilter[] extensionFilters = new ExtensionFilter[]
   {
@@ -51,14 +64,44 @@ public class MotoGP : MonoBehaviour
 
   public void RecordMotoGP()
   {
+    if (processButton != null)
+    {
+      processButton.SetActive(false);
+    }
+
+    if (dropdown != null)
+    {
+      dropdown.options.Clear();
+      dropdown.gameObject.SetActive(false);
+    }
+
+    if (DropDownText != null)
+    {
+      DropDownText.SetActive(false);
+    }
+
     if (!isRecording)
     {
+      if (recordButtonText != null)
+      {
+        recordButtonText.text = "Recording game";
+      }
+      if (recorder != null && isRecording)
+      {
+          recorder.Stop();
+      }
       recorder = new MotoGPTelemetry.TelemetryRecorder();
       recorder.Start();
       isRecording = true;
       return;
     }
     isRecording = false;
+
+    if (recordButtonText != null)
+    {
+      recordButtonText.text = "Record game";
+    }
+
     List<MotoGPTelemetry.RecordedData> recordedData = recorder.Stop();
     CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadUDP.Convert(recordedData);
 
@@ -142,6 +185,10 @@ public class MotoGP : MonoBehaviour
       // lapIndices.Remove(lastLap);
     }
 
+    if (dropdown == null)
+    {
+      return;
+    }
     dropdown.options.Clear();
     foreach (int lapIndex in lapIndices)
     {
@@ -152,8 +199,15 @@ public class MotoGP : MonoBehaviour
     dropdown.value = 0;
     dropdown.gameObject.SetActive(true);
     dropdown.RefreshShownValue();
-    processButton.SetActive(true);
-    DropDownText.SetActive(true);
+
+    if (processButton != null)
+    {
+      processButton.SetActive(true);
+    }
+    if (DropDownText != null)
+    {
+      DropDownText.SetActive(true);
+    }
   }
 
   public void ProcessRacingLine()
@@ -177,7 +231,9 @@ public class MotoGP : MonoBehaviour
     {
       Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
     }
-    controlPanel.SetActive(true);
-
+    if (controlPanel != null)
+    {
+      controlPanel.SetActive(true);
+    }
   }
 }

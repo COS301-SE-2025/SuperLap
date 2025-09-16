@@ -148,7 +148,52 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   private bool firstFollowExecuted = false;
   private float followDelayTimer = 0f;
   private const float followDelay = 0.5f; // 500ms
+  private bool isInitialized = false;
+  private RacelineDisplayData pendingTrackData = null;
 
+  void OnEnable()
+  {
+    if (!isInitialized)
+    {
+      StartCoroutine(InitializeComponent());
+    }
+    else if (pendingTrackData != null)
+    {
+      // If we have pending data, display it now that we're enabled
+      StartCoroutine(DisplayPendingDataWithDelay());
+    }
+  }
+
+  private IEnumerator InitializeComponent()
+  {
+    if (!zoomContainer && trackContainer) zoomContainer = trackContainer.parent as RectTransform;
+    if (!viewportRect) viewportRect = GetComponentInParent<Canvas>().GetComponent<RectTransform>();
+    initialPosition = zoomContainer.anchoredPosition;
+    UpdateLineWidths();
+
+    isInitialized = true;
+
+    // If we have pending data, display it now
+    if (pendingTrackData != null)
+    {
+      yield return DisplayPendingDataWithDelay();
+    }
+
+    yield return null;
+  }
+
+  private IEnumerator DisplayPendingDataWithDelay()
+  {
+    // Wait for end of frame to ensure everything is properly set up
+    yield return new WaitForEndOfFrame();
+
+    if (pendingTrackData != null)
+    {
+      DisplayRacelineData(pendingTrackData);
+      pendingTrackData = null;
+    }
+  }
+  
   void Update()
   {
     if (!isRacing || racelinePoints == null || racelinePoints.Length < 2) return;
@@ -171,7 +216,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (timeline) timeline.value = currentTime;
 
-    if (Input.GetKeyDown(KeyCode.Space) && !goingToCar)
+    if (Input.GetKeyDown(KeyCode.Space))
     {
       ToggleFollowCar();
     }
@@ -240,7 +285,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     followCar = false;
     goingToCar = false;
     currentTime = 0;
-}
+  }
 
 
 
@@ -458,7 +503,23 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
   public void DisplayRacelineData(RacelineDisplayData trackData)
   {
+    if (!isInitialized)
+    {
+      // Store the data and display it once initialized
+      pendingTrackData = trackData;
+      return;
+    }
+
     if (!trackContainer || trackData == null) return;
+
+    float simplificationTolerance = 5f;
+
+    trackData = new RacelineDisplayData
+    {
+      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(trackData.InnerBoundary), simplificationTolerance)),
+      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(trackData.OuterBoundary), simplificationTolerance)),
+      Raceline = EnsureLooped(trackData.Raceline)
+    };
 
     ClearExistingLines();
     currentTrackData = trackData;
@@ -476,6 +537,12 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     panOffset = Vector2.zero;
     UpdateZoomContainer();
     UpdateLineWidths();
+
+    isRacing = true;
+    currentTime = 0f;
+
+    SetupCarCursor();
+    SetupRacelineSegments();
   }
 
 
@@ -508,11 +575,21 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return (min, max, max - min);
   }
 
+  [SerializeField] private float minTrackScale = 0.2f;
+  [SerializeField] private float maxTrackScale = 2.0f;
+
   private float CalculateScale(Vector2 size)
   {
     float margin = 50f;
-    return Mathf.Min((trackContainer.rect.width - 2 * margin) / size.x, (trackContainer.rect.height - 2 * margin) / size.y);
+    float scale = Mathf.Min(
+        (trackContainer.rect.width - 2 * margin) / size.x,
+        (trackContainer.rect.height - 2 * margin) / size.y
+    );
+
+    // Clamp to avoid extreme zooming
+    return Mathf.Clamp(scale, minTrackScale, maxTrackScale);
   }
+
 
   private Vector2 CalculateOffset(Vector2 size, float scale)
   {
@@ -580,20 +657,11 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     {
       if (success && bytes != null)
       {
-        RacelineDisplayData Data = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
+        RacelineDisplayData trackData = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
 
-        float simplificationTolerance = 10f;
-
-        RacelineDisplayData trackData = new RacelineDisplayData
-        {
-          InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(Data.InnerBoundary), simplificationTolerance)),
-          OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(Data.OuterBoundary), simplificationTolerance)),
-          Raceline = EnsureLooped(Data.Raceline)
-        };
         if (trackData != null)
         {
           DisplayRacelineData(trackData);
-          SetupCarCursor();
           StartCoroutine(WaitForTrackLoadAndSettle());
         }
         else
@@ -610,16 +678,16 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   }
 
   private List<Vector2> EnsureLooped(List<Vector2> points)
-{
+  {
     if (points == null || points.Count < 2)
-        return points;
-        
+      return points;
+
     if (points[0] != points[points.Count - 1])
     {
       points.Add(points[0]);
     }
     return points;
-}
+  }
 
 
   private void SetupCarCursor()

@@ -106,26 +106,22 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     //Trace button
     if (traceButton != null)
     {
-      traceButton.onClick.AddListener(ToggleTracingMode);
       traceButton.gameObject.SetActive(false);
     }
     //Reset button
     if (resetTraceButton != null)
     {
-      resetTraceButton.onClick.AddListener(ResetCenterline);
       resetTraceButton.gameObject.SetActive(false);
     }
     //Process button
     if (processButton != null)
     {
-      processButton.onClick.AddListener(ProcessTrackImage);
       processButton.gameObject.SetActive(false);
     }
     //Setup mask width slider
     if (maskWidthSlider != null)
     {
       maskWidthSlider.value = maskWidth;
-      maskWidthSlider.onValueChanged.AddListener(OnMaskWidthChanged);
       maskWidthSlider.gameObject.SetActive(false);
     }
 
@@ -188,7 +184,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     ResetCenterline();
   }
 
-  private void ToggleTracingMode()
+  public void ToggleTracingMode()
   {
     SetTracingMode(!isTracingMode);
     ResetCenterline();
@@ -333,6 +329,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     centerlineOverlay.Apply();
 
     Sprite overlaySprite = Sprite.Create(centerlineOverlay, new Rect(0, 0, centerlineOverlay.width, centerlineOverlay.height), new Vector2(0.5f, 0.5f));
+    if (previewImage.sprite != null) previewImage.sprite = null;
     previewImage.sprite = overlaySprite;
   }
 
@@ -448,18 +445,23 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       Destroy(loadedTexture);
     }
 
-    loadedTexture = new Texture2D(2, 2);
-    bool imageLoaded = loadedTexture.LoadImage(imageData);
+    Texture2D tempTexture = new Texture2D(2, 2);
+    bool imageLoaded = tempTexture.LoadImage(imageData);
 
     if (imageLoaded && previewImage != null)
     {
+      loadedTexture = ScaleTexture(tempTexture, outputImageWidth, outputImageHeight);
+
+      Destroy(tempTexture);
+
       Sprite imageSprite = Sprite.Create(
           loadedTexture,
           new Rect(0, 0, loadedTexture.width, loadedTexture.height),
           new Vector2(0.5f, 0.5f)
       );
-
+      if (previewImage.sprite != null) previewImage.sprite = null;
       previewImage.sprite = imageSprite;
+      previewImage.preserveAspect = true;
       previewImage.gameObject.SetActive(true);
 
       if (traceButton != null)
@@ -497,7 +499,23 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     yield return null;
   }
 
-  private void ResetCenterline()
+  private Texture2D ScaleTexture(Texture2D source, int targetWidth, int targetHeight)
+  {
+    RenderTexture rt = RenderTexture.GetTemporary(targetWidth, targetHeight);
+    RenderTexture.active = rt;
+    Graphics.Blit(source, rt);
+
+    Texture2D result = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
+    result.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
+    result.Apply();
+
+    RenderTexture.active = null;
+    RenderTexture.ReleaseTemporary(rt);
+
+    return result;
+  }
+
+  public void ResetCenterline()
   {
     centerlinePoints.Clear();
     startPosition = null;
@@ -514,11 +532,12 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (loadedTexture != null && previewImage != null)
     {
       Sprite imageSprite = Sprite.Create(loadedTexture, new Rect(0, 0, loadedTexture.width, loadedTexture.height), new Vector2(0.5f, 0.5f));
+      if (previewImage.sprite != null) previewImage.sprite = null;
       previewImage.sprite = imageSprite;
     }
     if (processButton != null)
     {
-      //processButton.interactable = false;
+      processButton.gameObject.SetActive(false);
     }
     Debug.Log("Centerline reset");
   }
@@ -943,22 +962,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       return;
     }
 
-    // Navigate to racing line page
     homePageNavigation.NavigateToRacingLine();
-
     // Get the racing line component and send the data
     if (homePageNavigation.racingLinePage != null)
     {
-      ShowRacingLine racingLineComponent = homePageNavigation.racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      ShowRacingLine racingLineComponent = homePageNavigation.racingLinePage.GetComponentInChildren<ShowRacingLine>(true);
       if (racingLineComponent != null)
       {
-        // Generate a track name from the selected image
-        string trackName = GenerateTrackNameFromImage();
-
         // Send the processed data to the racing line display
         racingLineComponent.DisplayRacelineData(racelineData);
-
-        Debug.Log($"Successfully sent processed track data to racing line page. Track: {trackName}");
+        Debug.Log($"Successfully sent processed track data to racing line page");
       }
       else
       {
@@ -1122,6 +1135,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           new Rect(0, 0, outputImageWidth, outputImageHeight),
           new Vector2(0.5f, 0.5f)
       );
+      if (outputImage.sprite != null) outputImage.sprite = null;
 
       outputImage.sprite = outputSprite;
       outputImage.gameObject.SetActive(true);
