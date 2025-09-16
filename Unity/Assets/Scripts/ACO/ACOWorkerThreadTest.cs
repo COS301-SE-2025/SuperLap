@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 public class ACOWorkerThreadTest : MonoBehaviour
 {
-    ACOWorkerThread2 wt;
+    List<ACOWorkerThread2> workers;
 
     public void Update()
     {
@@ -74,21 +75,51 @@ public class ACOWorkerThreadTest : MonoBehaviour
         PolygonTrack threadTrack = ACOTrackMaster.GetPolygonTrack();
         List<System.Numerics.Vector2> threadRl = ACOTrackMaster.GetCurrentRaceline();
 
-        var cps = InitializeDistanceBasedCheckpoints();
-        
-        wt = new ACOWorkerThread2(threadTrack, 0, 5, threadRl, 100, 50.0f);
+        var checkPoints = InitializeDistanceBasedCheckpoints();
+
+        workers = new();
+
+        // only 1 thread for now
+        for (int i = 0; i < 1; i++)
+        {
+            System.Numerics.Vector2[] outer = threadTrack.GetOuterData;
+            System.Numerics.Vector2[] inner = threadTrack.GetInnerData;
+
+            System.Numerics.Vector2[] newOuter = new System.Numerics.Vector2[outer.Length];
+            System.Numerics.Vector2[] newInner = new System.Numerics.Vector2[inner.Length];
+
+            for (int j = 0; j < outer.Length; j++)
+            {
+                newOuter[j] = new System.Numerics.Vector2(outer[j].X, outer[j].Y);
+            }
+
+            for (int j = 0; j < inner.Length; j++)
+            {
+                newInner[j] = new System.Numerics.Vector2(inner[j].X, inner[j].Y);
+            }
+
+            PolygonTrack newTrack = new(newOuter, newInner);
+
+            List<System.Numerics.Vector2> newRl = new();
+            threadRl.ForEach((point) => newRl.Add(new System.Numerics.Vector2(point.X, point.Y)));
+
+            workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, 1000, 50.0f));
+        }
 
         Vector3 startPos = ACOTrackMaster.GetTrainingSpawnPosition(0, threadRl);
         Vector3 startDir = ACOTrackMaster.GetTrainingSpawnDirection(0, threadRl);
 
-        System.Numerics.Vector2 pos = new System.Numerics.Vector2(startPos.x, startPos.z);
-        float bear = CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z));
-        wt.SetStartState(pos, bear);
-        wt.SetCheckPoints(cps[0], cps[1], cps[2]);
-        Debug.Log($"System Initialized with start pos {pos} and bearing {bear}");
-        Debug.Log($"CP0: {cps[0]}");
-        Debug.Log($"CP0: {cps[1]}");
-        Debug.Log($"CP0: {cps[2]}");
+        workers.ForEach((wt) =>
+        {
+            System.Numerics.Vector2 pos = new System.Numerics.Vector2(startPos.x, startPos.z);
+            float bear = CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z));
+
+            wt.SetStartState(pos, bear);
+
+            List<System.Numerics.Vector2> cps = new();
+            checkPoints.ForEach((point) => cps.Add(new(point.X, point.Y)));
+            wt.SetCheckPoints(cps[0], cps[1], cps[2]);
+        });
     }
 
     float CalculateBearing(System.Numerics.Vector2 forward)
@@ -99,24 +130,30 @@ public class ACOWorkerThreadTest : MonoBehaviour
 
     private void StartSystem()
     {
-        if (wt == null)
+        workers.ForEach((wt) =>
         {
-            Debug.LogWarning("Cannot start a system that is not initialized.");
-            return;
-        }
+            if (wt == null)
+            {
+                Debug.LogWarning("Cannot start a system that is not initialized.");
+                return;
+            }
 
-        wt.StartThread();
+            wt.StartThread();
+        });
     }
-    
+
     private void StopSystem()
     {
-        if (wt == null)
+        workers.ForEach((wt) =>
         {
-            Debug.LogWarning("Cannot stop a system that is not initialized.");
-            return;
-        }
+            if (wt == null)
+            {
+                Debug.LogWarning("Cannot stop a system that is not initialized.");
+                return;
+            }
 
-        wt.StopThread();
+            wt.StopThread();
+        });
     }
 
     private void CleanSystem()

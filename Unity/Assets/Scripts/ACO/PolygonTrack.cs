@@ -6,6 +6,13 @@ public class PolygonTrack
     Polygon outer;
     Polygon inner;
 
+    public Polygon GetOuter => outer;
+    public Polygon GetInner => inner;
+
+
+    public Vector2[] GetOuterData => outer.Data;
+    public Vector2[] GetInnerData => inner.Data;
+
     public PolygonTrack(Vector2[] outerBounds, Vector2[] innerBounds)
     {
         outer = new Polygon(outerBounds);

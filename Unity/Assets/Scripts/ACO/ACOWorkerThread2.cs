@@ -106,18 +106,12 @@ public class ACOWorkerThread2
         float cpd
     )
     {
-        //deep copy polygontrack
-        track = new PolygonTrack(pt);
+        track = pt;
 
         workerId = id;
         decisionInterval = decisionInt;
 
-        // deep copy raceline
-        raceline = new List<Vector2>();
-        rl.ForEach((item) =>
-        {
-            raceline.Add(new Vector2(item.X, item.Y));
-        });
+        raceline = rl;
 
         // create raceline
         racelineAnalyzer = new ThreadLocalRacelineAnalyzer();

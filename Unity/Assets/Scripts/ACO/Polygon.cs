@@ -4,6 +4,7 @@ using System.Numerics;
 public class Polygon
 {
     private Vector2[] polygon;
+    public Vector2[] Data => polygon;
     
     public Polygon(Vector2[] points)
     {
@@ -14,7 +15,7 @@ public class Polygon
     public Polygon(Polygon other)
     {
         polygon = new Vector2[other.polygon.Length];
-        System.Array.Copy(other.polygon, polygon, other.polygon.Length);
+        Array.Copy(other.polygon, polygon, other.polygon.Length);
     }
     
     public bool PointInPolygon(Vector2 point)
