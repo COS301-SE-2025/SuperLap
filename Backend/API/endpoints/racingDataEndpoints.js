@@ -23,4 +23,18 @@ module.exports = function (db) {
 
     // RACING DATA ROUTES
 
+    // Fetch all racing data records
+    router.get('/racing-data', async (req, res) => {
+        try {
+        const racingData = await db.collection("racingData").find({}, {
+            projection: { csvData: 0 } // Exclude the large base64 data from list view
+        }).toArray();
+        res.json(racingData);
+        } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch racing data" });
+        }
+    });
+
+    
 }
