@@ -79,7 +79,7 @@ module.exports = function (db) {
             res.json(racingData);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: "Failed to fetch racing data for player" });
+            res.status(500).json({ message: "Failed to fetch racing data for user" });
         }
     });
 
@@ -220,7 +220,7 @@ module.exports = function (db) {
     router.put('/racing-data/:id', async (req, res) => {
         try {
             const dataId = req.params.id;
-            const allowedUpdates = ['trackName', 'playerName', 'sessionType', 'lapTime', 'vehicleUsed', 'description'];
+            const allowedUpdates = ['trackName', 'userName', 'sessionType', 'lapTime', 'vehicleUsed', 'description'];
             const updateData = {};
 
             // Only allow specific fields to be updated
@@ -268,4 +268,46 @@ module.exports = function (db) {
             res.status(500).json({ message: "Failed to delete racing data" });
         }
     });
+
+    // Get racing data statistics
+    router.get('/racing-data/stats/summary', async (req, res) => {
+        try {
+            const pipeline = [
+                {
+                $group: {
+                    _id: null,
+                    totalRecords: { $sum: 1 },
+                    uniqueTracks: { $addToSet: "$trackName" },
+                    uniqueUsers: { $addToSet: "$userName" },
+                    avgFileSize: { $avg: "$fileSize" },
+                    totalDataSize: { $sum: "$fileSize" }
+                }
+                },
+                {
+                $project: {
+                    _id: 0,
+                    totalRecords: 1,
+                    uniqueTracksCount: { $size: "$uniqueTracks" },
+                    uniqueUsersCount: { $size: "$uniqueUsers" },
+                    avgFileSizeKB: { $round: [{ $divide: ["$avgFileSize", 1024] }, 2] },
+                    totalDataSizeMB: { $round: [{ $divide: ["$totalDataSize", 1048576] }, 2] }
+                }
+                }
+            ];
+
+            const stats = await db.collection("racingData").aggregate(pipeline).toArray();
+            res.json(stats[0] || {
+                totalRecords: 0,
+                uniqueTracksCount: 0,
+                uniqueUsersCount: 0,
+                avgFileSizeKB: 0,
+                totalDataSizeMB: 0
+            });
+        } catch (error) {
+            console.error("Stats error:", error);
+            res.status(500).json({ message: "Failed to fetch racing data statistics" });
+        }
+    });
+
+    return router;
 }
