@@ -193,4 +193,26 @@ module.exports = function (db) {
             res.status(500).json({ message: "Error creating racing data" });
         }
     });
+
+    // Download CSV data (decode base64 and return as CSV)
+    router.get('/racing-data/:id/download', async (req, res) => {
+        try {
+            const dataId = req.params.id;
+            const racingData = await db.collection("racingData").findOne({ _id: dataId });
+
+            if (!racingData) {
+                return res.status(404).json({ message: "Racing data not found" });
+            }
+
+            // Decode base64 to CSV
+            const csvBuffer = Buffer.from(racingData.csvData, 'base64');
+            
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', `attachment; filename="${racingData.fileName}"`);
+            res.send(csvBuffer);
+        } catch (error) {
+            console.error("Download error:", error);
+            res.status(500).json({ message: "Failed to download racing data" });
+        }
+    });
 }
