@@ -251,4 +251,21 @@ module.exports = function (db) {
             res.status(500).json({ message: 'Failed to update racing data' });
         }
     });
+
+    // Delete racing data
+    router.delete('/racing-data/:id', async (req, res) => {
+        try {
+            const dataId = req.params.id;
+            const result = await db.collection("racingData").deleteOne({ _id: dataId });
+
+            if (result.deletedCount === 0) {
+                return res.status(404).json({ message: "Racing data not found" });
+            }
+
+            res.json({ message: "Racing data deleted successfully" });
+        } catch (error) {
+            console.error("Delete error:", error);
+            res.status(500).json({ message: "Failed to delete racing data" });
+        }
+    });
 }
