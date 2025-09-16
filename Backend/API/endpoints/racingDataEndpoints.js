@@ -82,4 +82,63 @@ module.exports = function (db) {
             res.status(500).json({ message: "Failed to fetch racing data for player" });
         }
     });
+
+    // Upload racing data (CSV file)
+    router.post('/racing-data/upload', upload.single('csvFile'), async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ message: "No CSV file uploaded" });
+            }
+
+            const {
+                trackName,
+                userName,
+                sessionType,
+                lapTime,
+                vehicleUsed,
+                gameVersion,
+                description
+            } = req.body;
+
+            // Convert CSV file to base64
+            const csvBase64 = req.file.buffer.toString('base64');
+
+            // Create unique ID based on timestamp and user
+            const recordId = `${userName}_${trackName}_${Date.now()}`;
+
+            const newRacingData = {
+                _id: recordId,
+                trackName: trackName || 'Unknown',
+                userName: userName || 'Anonymous',
+                sessionType: sessionType || 'Practice', // Practice, Qualifying, Race
+                lapTime: lapTime || null,
+                vehicleUsed: vehicleUsed || 'Unknown',
+                gameVersion: gameVersion || 'MotoGP18',
+                description: description || '',
+                fileName: req.file.originalname,
+                fileSize: req.file.size,
+                csvData: csvBase64,
+                dateUploaded: new Date().toISOString(),
+                uploadedBy: userName || 'System'
+            };
+
+            await db.collection("racingData").insertOne(newRacingData);
+
+            // Return response without the large base64 data
+            const { csvData, ...responseData } = newRacingData;
+            res.status(201).json({ 
+                message: "Racing data uploaded successfully",
+                data: responseData
+            });
+        } catch (error) {
+            console.error("Racing data upload error:", error);
+            if (error.code === 'LIMIT_FILE_SIZE') {
+                res.status(400).json({ message: "File too large. Maximum size is 50MB." });
+            } else if (error.message === 'Only CSV files are allowed') {
+                res.status(400).json({ message: "Only CSV files are allowed" });
+            } else {
+                res.status(500).json({ message: "Error uploading racing data" });
+            }
+        }
+    });
 }
