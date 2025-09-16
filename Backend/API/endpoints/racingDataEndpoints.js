@@ -215,4 +215,40 @@ module.exports = function (db) {
             res.status(500).json({ message: "Failed to download racing data" });
         }
     });
+
+    // Update racing data metadata (not the CSV data itself)
+    router.put('/racing-data/:id', async (req, res) => {
+        try {
+            const dataId = req.params.id;
+            const allowedUpdates = ['trackName', 'playerName', 'sessionType', 'lapTime', 'vehicleUsed', 'description'];
+            const updateData = {};
+
+            // Only allow specific fields to be updated
+            Object.keys(req.body).forEach(key => {
+                if (allowedUpdates.includes(key)) {
+                    updateData[key] = req.body[key];
+                }
+            });
+
+            if (Object.keys(updateData).length === 0) {
+                return res.status(400).json({ message: "No valid fields to update" });
+            }
+
+            updateData.lastModified = new Date().toISOString();
+
+            const result = await db.collection('racingData').updateOne(
+                { _id: dataId }, 
+                { $set: updateData }
+            );
+
+            if (result.modifiedCount === 0) {
+                return res.status(404).json({ message: 'Racing data not found or no changes made' });
+            }
+
+            res.json({ message: 'Racing data updated successfully' });
+        } catch (error) {
+            console.error('Update error:', error);
+            res.status(500).json({ message: 'Failed to update racing data' });
+        }
+    });
 }
