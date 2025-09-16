@@ -67,4 +67,19 @@ module.exports = function (db) {
             res.status(500).json({ message: "Failed to fetch racing data for track" });
         }
     });
+
+    // Fetch racing data by user
+    router.get('/racing-data/user/:userName', async (req, res) => {
+        try {
+            const userName = req.params.userName;
+            const racingData = await db.collection("racingData").find(
+                { userName: userName },
+                { projection: { csvData: 0 } } // Exclude base64 data from list view
+            ).toArray();
+            res.json(racingData);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Failed to fetch racing data for player" });
+        }
+    });
 }
