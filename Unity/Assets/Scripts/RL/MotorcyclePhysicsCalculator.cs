@@ -9,13 +9,9 @@ public static class MotorcyclePhysicsCalculator
                                                    float rollingResistanceCoefficient, float mass)
     {
         float dragTerm = 0.5f * AIR_DENSITY * dragCoefficient * frontalArea;
-        float rollingTerm = rollingResistanceCoefficient * mass * GRAVITY;
         
         float theoreticalTopSpeed = Mathf.Pow(enginePower / dragTerm, 1f/3f);
-        
-        Debug.Log($"Theoretical Top Speed: {theoreticalTopSpeed * 3.6f:F1} km/h");
-        Debug.Log($"Cd x A = {dragCoefficient * frontalArea:F3}");
-        
+                
         return theoreticalTopSpeed;
     }
 

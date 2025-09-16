@@ -1,11 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 
-[System.Serializable]
+[Serializable]
 public class ACOAgentState
 {
     public System.Numerics.Vector2 position;
