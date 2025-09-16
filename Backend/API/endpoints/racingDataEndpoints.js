@@ -26,13 +26,30 @@ module.exports = function (db) {
     // Fetch all racing data records
     router.get('/racing-data', async (req, res) => {
         try {
-        const racingData = await db.collection("racingData").find({}, {
-            projection: { csvData: 0 } // Exclude the large base64 data from list view
-        }).toArray();
-        res.json(racingData);
+            const racingData = await db.collection("racingData").find({}, {
+                projection: { csvData: 0 } // Exclude the large base64 data from list view
+            }).toArray();
+            res.json(racingData);
         } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Failed to fetch racing data" });
+            console.error(error);
+            res.status(500).json({ message: "Failed to fetch racing data" });
+        }
+    });
+
+    // Fetch racing data by ID
+    router.get('/racing-data/:id', async (req, res) => {
+        try {
+            const dataId = req.params.id;
+            const racingData = await db.collection("racingData").findOne({ _id: dataId });
+            
+            if (!racingData) {
+                return res.status(404).json({ message: "Racing data not found" });
+            }
+            
+            res.json(racingData);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Failed to fetch racing data" });
         }
     });
 
