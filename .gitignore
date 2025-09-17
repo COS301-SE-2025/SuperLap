@@ -71,3 +71,4 @@ Backend/ImageProcessing/CNNoutput
 Backend/ImageProcessing/TEST/data
 
 *.png
+*.Zone.Identifier
