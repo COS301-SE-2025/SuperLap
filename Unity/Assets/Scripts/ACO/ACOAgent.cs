@@ -49,7 +49,6 @@ public class ACOAgent
     // Physics configuration
     private MotorcyclePhysicsConfig physicsConfig;
     private RecommendationConfig recommendationConfig;
-    private TrackDetectionConfig trackDetectionConfig;
     private PolygonTrack track;
     private Vector2 position;
     private float bearing;
@@ -153,13 +152,6 @@ public class ACOAgent
             offTrackThreshold = this.offTrackThreshold,
             maxSpeedRatio = this.maxSpeedRatio,
             trajectoryLength = this.trajectoryLength
-        };
-
-        trackDetectionConfig = new TrackDetectionConfig
-        {
-            raycastStartHeight = this.raycastStartHeight,
-            raycastDistance = this.raycastDistance,
-            showTrackDetectionDebug = this.showTrackDetectionDebug,
         };
     }
 
