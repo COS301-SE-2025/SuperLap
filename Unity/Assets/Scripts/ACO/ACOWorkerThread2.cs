@@ -23,13 +23,22 @@ public class AgentContainer
     private Vector2[] checkPoints;
     private float checkpointDistance;
     private bool passedTarget = false;
+    private Vector2 targetPassPos;
+    private float targetPassSpeed;
+    private float targetPassBear;
 
-    public AgentContainer(PolygonTrack track, Vector2 pos, float bear, List<Vector2> rl, ThreadLocalRacelineAnalyzer al, Vector2[] cps, float cpd)
+    public Vector2 TargetPassPosition => targetPassPos;
+    public float TargetPassSpeed => targetPassSpeed;
+    public float TargetPassBear => targetPassBear;
+    public float TargetPassTurnAngle => agent.GetCurrentTurnAngle();
+
+    public AgentContainer(PolygonTrack track, Vector2 pos, float bear, float ss, float ta, List<Vector2> rl, ThreadLocalRacelineAnalyzer al, Vector2[] cps, float cpd)
     {
         agent = new ACOAgent(track, pos, bear, rl, al);
         inputs = new List<(int, int)>();
         checkPoints = cps;
         checkpointDistance = cpd;
+        agent.SetInitialState(ss, ta);        
     }
 
     public void Step(bool decide = false)
@@ -53,6 +62,9 @@ public class AgentContainer
         if (!passedTarget && InTargetRange())
         {
             passedTarget = true;
+            targetPassSpeed = agent.GetCurrentSpeed();
+            targetPassPos = Position;
+            targetPassBear = agent.GetCurrentBearing();
         }
         if(passedTarget && InValidateRange())
         {
@@ -91,11 +103,14 @@ public class ACOWorkerThread2
     private static readonly Vector2 NULL_VEC = Vector2.One * Int32.MaxValue;
     private Vector2 startPos = NULL_VEC;
     private float startBear = float.NaN;
+    private float startSpeed = float.NaN;
+    private float turnAngle = float.NaN;
     private ThreadLocalRacelineAnalyzer racelineAnalyzer;
     private List<Vector2> raceline;
     private Vector2[] checkPoints;
     private float checkpointDistance;
-
+    private AgentContainer bestAgent;
+    public AgentContainer BestAgent => bestAgent;
 
     public ACOWorkerThread2(
         PolygonTrack pt,
@@ -164,10 +179,12 @@ public class ACOWorkerThread2
         }
     }
 
-    public void SetStartState(Vector2 position, float bearing)
+    public void SetStartState(Vector2 position, float bearing, float ss, float ta)
     {
         startPos = position;
         startBear = bearing;
+        startSpeed = ss;
+        turnAngle = ta;
     }
 
     public void SetCheckPoints(Vector2 start, Vector2 goal, Vector2 validate)
@@ -179,11 +196,18 @@ public class ACOWorkerThread2
     {
         startPos = NULL_VEC;
         startBear = float.NaN;
+        startSpeed = float.NaN;
+        turnAngle = float.NaN;
     }
 
     public void ResetCheckPoints()
     {
         checkPoints = new Vector2[0];
+    }
+
+    public void Join()
+    {
+        workerThread.Join(1000);
     }
 
     public void ThreadMain()
@@ -218,7 +242,7 @@ public class ACOWorkerThread2
 
         for (int i = 0; i < agentCount; i++)
         {
-            containers.Add(new AgentContainer(track, startPos, startBear, raceline, racelineAnalyzer, checkPoints, checkpointDistance));
+            containers.Add(new AgentContainer(track, startPos, startBear, startSpeed, turnAngle, raceline, racelineAnalyzer, checkPoints, checkpointDistance));
         }
 
         int iteration = 0;
@@ -248,9 +272,11 @@ public class ACOWorkerThread2
         if (best != null)
         {
             Debug.Log($"Best: {best.TotalSteps}: {best.IsDone} and {best.IsValid}");
+            bestAgent = best;
         } else
         {
             Debug.Log($"Could not find a best solution.");
+            bestAgent = null;
         }
     }
 }

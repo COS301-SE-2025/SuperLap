@@ -337,6 +337,11 @@ public class ACOAgent
         return currentTurnAngle;
     }
 
+    public float GetCurrentBearing()
+    {
+        return bearing;
+    }
+
     public void SetInitialState(float speed, float turnAngle)
     {
         currentSpeed = speed;

@@ -1,17 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 
 public class ACOWorkerThreadTest : MonoBehaviour
 {
     List<ACOWorkerThread2> workers;
+    private bool running = false;
+    private int c = 0;
+    [SerializeField] private int checkpointCount = 50;
 
     public void Update()
     {
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            InitializeSystem();
+            if (running) return;
+            InitializeSystem(c);
+            running = true;
         }
         else if (Input.GetKeyDown(KeyCode.W))
         {
@@ -20,6 +26,37 @@ public class ACOWorkerThreadTest : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.E))
         {
             StopSystem();
+        }
+        else if (Input.GetKeyDown(KeyCode.R))
+        {
+            Debug.Log("Checking for best solutions...");
+            workers.ForEach((wt) =>
+            {
+                AgentContainer best = wt.BestAgent;
+
+                if (best != null)
+                {
+                    Debug.Log("Found a best solution!");
+                }
+            });
+        }
+        if(running)
+        {
+            bool allDone = workers.Count((w) => w.IsRunning) == 0;
+
+            if(allDone)
+            {
+                Debug.Log("All completed!");
+                running = false;
+                c++;
+
+                if(c < checkpointCount-2)
+                {
+                    InitializeSystem(c);
+                    running = true;
+                    Debug.Log($"Starting  with split no. {c}");
+                }
+            }
         }
     }
     
@@ -42,7 +79,7 @@ public class ACOWorkerThreadTest : MonoBehaviour
         }
         
         // Distribute checkpoints evenly along the raceline
-        int totalCheckpoints = 50;
+        int totalCheckpoints = checkpointCount;
         float distancePerCheckpoint = totalRacelineDistance / totalCheckpoints;
         
         float currentDistance = 0f;
@@ -64,62 +101,69 @@ public class ACOWorkerThreadTest : MonoBehaviour
 
             checkpointPositions.Add(lastRacelinePoint);
 
-            Debug.Log($"Distance-based checkpoint {checkpointIndex} placed at distance {targetDistance:F2} at position {lastRacelinePoint}");
+            // Debug.Log($"Distance-based checkpoint {checkpointIndex} placed at distance {targetDistance:F2} at position {lastRacelinePoint}");
         }
 
         return checkpointPositions;
     }
 
-    private void InitializeSystem()
+    private void InitializeSystem(int c)
     {
         PolygonTrack threadTrack = ACOTrackMaster.GetPolygonTrack();
         List<System.Numerics.Vector2> threadRl = ACOTrackMaster.GetCurrentRaceline();
 
         var checkPoints = InitializeDistanceBasedCheckpoints();
 
-        workers = new();
-
-        // only 1 thread for now
-        for (int i = 0; i < 1; i++)
-        {
-            System.Numerics.Vector2[] outer = threadTrack.GetOuterData;
-            System.Numerics.Vector2[] inner = threadTrack.GetInnerData;
-
-            System.Numerics.Vector2[] newOuter = new System.Numerics.Vector2[outer.Length];
-            System.Numerics.Vector2[] newInner = new System.Numerics.Vector2[inner.Length];
-
-            for (int j = 0; j < outer.Length; j++)
-            {
-                newOuter[j] = new System.Numerics.Vector2(outer[j].X, outer[j].Y);
-            }
-
-            for (int j = 0; j < inner.Length; j++)
-            {
-                newInner[j] = new System.Numerics.Vector2(inner[j].X, inner[j].Y);
-            }
-
-            PolygonTrack newTrack = new(newOuter, newInner);
-
-            List<System.Numerics.Vector2> newRl = new();
-            threadRl.ForEach((point) => newRl.Add(new System.Numerics.Vector2(point.X, point.Y)));
-
-            workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, 1000, 50.0f));
-        }
-
         Vector3 startPos = ACOTrackMaster.GetTrainingSpawnPosition(0, threadRl);
         Vector3 startDir = ACOTrackMaster.GetTrainingSpawnDirection(0, threadRl);
 
-        workers.ForEach((wt) =>
+        List<AgentContainer> bestAgents = new();
+
+        // for (int c = 0; c < checkPoints.Count - 2; c++)
         {
-            System.Numerics.Vector2 pos = new System.Numerics.Vector2(startPos.x, startPos.z);
-            float bear = CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z));
+            workers = new();
 
-            wt.SetStartState(pos, bear);
+            // only 1 thread for now
+            for (int i = 0; i < 1; i++)
+            {
+                System.Numerics.Vector2[] outer = threadTrack.GetOuterData;
+                System.Numerics.Vector2[] inner = threadTrack.GetInnerData;
 
-            List<System.Numerics.Vector2> cps = new();
-            checkPoints.ForEach((point) => cps.Add(new(point.X, point.Y)));
-            wt.SetCheckPoints(cps[0], cps[1], cps[2]);
-        });
+                System.Numerics.Vector2[] newOuter = new System.Numerics.Vector2[outer.Length];
+                System.Numerics.Vector2[] newInner = new System.Numerics.Vector2[inner.Length];
+
+                for (int j = 0; j < outer.Length; j++)
+                {
+                    newOuter[j] = new System.Numerics.Vector2(outer[j].X, outer[j].Y);
+                }
+
+                for (int j = 0; j < inner.Length; j++)
+                {
+                    newInner[j] = new System.Numerics.Vector2(inner[j].X, inner[j].Y);
+                }
+
+                PolygonTrack newTrack = new(newOuter, newInner);
+
+                List<System.Numerics.Vector2> newRl = new();
+                threadRl.ForEach((point) => newRl.Add(new System.Numerics.Vector2(point.X, point.Y)));
+
+                workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, 100, 50.0f));
+            }
+
+            workers.ForEach((wt) =>
+            {
+                System.Numerics.Vector2 pos = c > 0 ? bestAgents.Last().TargetPassPosition : new System.Numerics.Vector2(startPos.x, startPos.z);
+                float bear = c > 0 ? bestAgents.Last().TargetPassBear : CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z));
+
+                wt.SetStartState(pos, bear, c > 0 ? bestAgents.Last().TargetPassSpeed : 0, c > 0 ? bestAgents.Last().TargetPassTurnAngle : 0);
+
+                List<System.Numerics.Vector2> cps = new();
+                checkPoints.ForEach((point) => cps.Add(new(point.X, point.Y)));
+                wt.SetCheckPoints(cps[c], cps[c + 1], cps[c + 2]);
+
+                wt.StartThread();
+            });
+        }
     }
 
     float CalculateBearing(System.Numerics.Vector2 forward)
