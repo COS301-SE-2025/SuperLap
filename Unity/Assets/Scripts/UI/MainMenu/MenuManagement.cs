@@ -196,7 +196,11 @@ public class MenuManagement : MonoBehaviour
     Debug.Log("Game exited");
   }
 
-  public async Task Login()
+  public void OnLoginButtonPressed()
+  {
+      _ = Login(); // Fire-and-forget
+  }
+  private async Task Login()
   {
     TMP_InputField[] inputFields = LoginCanvas.GetComponentsInChildren<TMP_InputField>();
 
@@ -256,7 +260,12 @@ public class MenuManagement : MonoBehaviour
     }
   }
 
-  public async Task RegisterUser()
+  public void OnRegisterButtonPressed()
+{
+    _ = RegisterUser(); // Fire-and-forget
+}
+
+  private async Task RegisterUser()
   {
     TMP_InputField[] inputFields = RegisterCanvas.GetComponentsInChildren<TMP_InputField>();
 
