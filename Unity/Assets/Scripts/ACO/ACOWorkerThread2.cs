@@ -270,10 +270,6 @@ public class ACOWorkerThread2
         if(valids.Count == 0)
         {
             Debug.LogWarning($"Worker {workerId} could not obtain a solution!");
-            containers.ForEach((ct) =>
-            {
-                Debug.Log($"\tAgent State: Done={ct.IsDone} Valid={ct.IsValid}");
-            });
             bestAgent = null;
             return;
         }

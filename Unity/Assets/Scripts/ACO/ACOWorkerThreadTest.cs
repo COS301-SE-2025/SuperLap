@@ -12,7 +12,8 @@ public class ACOWorkerThreadTest : MonoBehaviour
     private int c = 0;
     [SerializeField] private int checkpointCount = 10;
     List<AgentContainer> bestAgents = new();
-    float waitTimer = 0.1f;
+    float waitTimer = 0.05f;
+    int retryCounter = 5;
 
     public void Update()
     {
@@ -56,7 +57,7 @@ public class ACOWorkerThreadTest : MonoBehaviour
                 }
 
                 running = false;
-                waitTimer = 0.1f;
+                waitTimer = 0.05f;
                 c++;
 
                 if (c < checkpointCount - 2)
@@ -72,12 +73,24 @@ public class ACOWorkerThreadTest : MonoBehaviour
 
                     if (temp.Count == 0)
                     {
+                        if (retryCounter <= 0)
+                        {
+                            Debug.LogWarning($"Could not find solution for split no. {c}. Falling back one step.");
+                            c -= 2;
+                            InitializeSystem(c);
+                            running = true;
+                            retryCounter = 5;
+                            bestAgents.Remove(bestAgents.Last());
+                            return;
+                        }
                         c--;
                         InitializeSystem(c);
                         running = true;
-                        Debug.Log($"Could not find solution for split no. {c}. Retrying.");
+                        Debug.LogWarning($"Could not find solution for split no. {c}. Retrying.");
+                        retryCounter--;
                         return;
                     }
+                    retryCounter = 5;
 
                     AgentContainer ba = temp.OrderBy((ac) => ac.TotalSteps).First();
 
@@ -85,6 +98,11 @@ public class ACOWorkerThreadTest : MonoBehaviour
                     InitializeSystem(c);
                     running = true;
                     Debug.Log($"Starting  with split no. {c}");
+                }
+                else
+                {
+                    Debug.Log("Training completed!");
+                    c = 0;
                 }
             }
         }
@@ -175,7 +193,7 @@ public class ACOWorkerThreadTest : MonoBehaviour
                 List<System.Numerics.Vector2> newRl = new();
                 threadRl.ForEach((point) => newRl.Add(new System.Numerics.Vector2(point.X, point.Y)));
 
-                workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, 10, 50.0f));
+                workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, 100, 40.0f));
             }
 
             workers.ForEach((wt) =>
