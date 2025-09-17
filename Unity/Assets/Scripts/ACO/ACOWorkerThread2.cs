@@ -31,6 +31,7 @@ public class AgentContainer
     public float TargetPassSpeed => targetPassSpeed;
     public float TargetPassBear => targetPassBear;
     public float TargetPassTurnAngle => agent.GetCurrentTurnAngle();
+    public List<(int, int)> Inputs => inputs;
 
     public AgentContainer(PolygonTrack track, Vector2 pos, float bear, float ss, float ta, List<Vector2> rl, ThreadLocalRacelineAnalyzer al, Vector2[] cps, float cpd)
     {

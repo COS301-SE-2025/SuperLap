@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
@@ -103,6 +104,19 @@ public class ACOWorkerThreadTest : MonoBehaviour
                 {
                     Debug.Log("Training completed!");
                     c = 0;
+
+                    string filePath = Path.Combine(Application.persistentDataPath, "bestAgent.txt");
+                    using (StreamWriter writer = new StreamWriter(filePath))
+                    {
+                        bestAgents.ForEach((agent) =>
+                        {
+                            agent.Inputs.ForEach((input) =>
+                            {
+                                writer.WriteLine($"{input.Item1}:{input.Item2}");
+                            });
+                        });
+                    }
+
                 }
             }
         }
