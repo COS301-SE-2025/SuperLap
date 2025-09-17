@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
@@ -9,7 +10,9 @@ public class ACOWorkerThreadTest : MonoBehaviour
     List<ACOWorkerThread2> workers;
     private bool running = false;
     private int c = 0;
-    [SerializeField] private int checkpointCount = 50;
+    [SerializeField] private int checkpointCount = 10;
+    List<AgentContainer> bestAgents = new();
+    float waitTimer = 0.1f;
 
     public void Update()
     {
@@ -40,18 +43,45 @@ public class ACOWorkerThreadTest : MonoBehaviour
                 }
             });
         }
-        if(running)
+        if (running)
         {
             bool allDone = workers.Count((w) => w.IsRunning) == 0;
 
-            if(allDone)
+            if (allDone)
             {
-                Debug.Log("All completed!");
+                if(waitTimer>0.0f)
+                {
+                    waitTimer -= Time.deltaTime;
+                    return;
+                }
+
                 running = false;
+                waitTimer = 0.1f;
                 c++;
 
-                if(c < checkpointCount-2)
+                if (c < checkpointCount - 2)
                 {
+                    List<AgentContainer> temp = new();
+                    workers.ForEach((w) =>
+                    {
+                        if (w.BestAgent != null)
+                        {
+                            temp.Add(w.BestAgent);
+                        }
+                    });
+
+                    if (temp.Count == 0)
+                    {
+                        c--;
+                        InitializeSystem(c);
+                        running = true;
+                        Debug.Log($"Could not find solution for split no. {c}. Retrying.");
+                        return;
+                    }
+
+                    AgentContainer ba = temp.OrderBy((ac) => ac.TotalSteps).First();
+
+                    bestAgents.Add(ba);
                     InitializeSystem(c);
                     running = true;
                     Debug.Log($"Starting  with split no. {c}");
@@ -117,8 +147,6 @@ public class ACOWorkerThreadTest : MonoBehaviour
         Vector3 startPos = ACOTrackMaster.GetTrainingSpawnPosition(0, threadRl);
         Vector3 startDir = ACOTrackMaster.GetTrainingSpawnDirection(0, threadRl);
 
-        List<AgentContainer> bestAgents = new();
-
         // for (int c = 0; c < checkPoints.Count - 2; c++)
         {
             workers = new();
@@ -147,7 +175,7 @@ public class ACOWorkerThreadTest : MonoBehaviour
                 List<System.Numerics.Vector2> newRl = new();
                 threadRl.ForEach((point) => newRl.Add(new System.Numerics.Vector2(point.X, point.Y)));
 
-                workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, 100, 50.0f));
+                workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, 10, 50.0f));
             }
 
             workers.ForEach((wt) =>

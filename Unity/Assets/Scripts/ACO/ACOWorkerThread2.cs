@@ -265,13 +265,26 @@ public class ACOWorkerThread2
 
             iteration++;
         }
-        AgentContainer best = containers.FindAll((ct) => ct.IsDone && ct.IsValid).OrderBy((ct1) => ct1.TotalSteps).First();
+        List<AgentContainer> valids = containers.FindAll((ct) => ct.IsDone && ct.IsValid);
 
-        Debug.Log($"Worker thread {workerId} exited after doing {iteration} iterations.");
+        if(valids.Count == 0)
+        {
+            Debug.LogWarning($"Worker {workerId} could not obtain a solution!");
+            containers.ForEach((ct) =>
+            {
+                Debug.Log($"\tAgent State: Done={ct.IsDone} Valid={ct.IsValid}");
+            });
+            bestAgent = null;
+            return;
+        }
+
+        AgentContainer best = valids.OrderBy((ct1) => ct1.TotalSteps).First();
+
+        // Debug.Log($"Worker thread {workerId} exited after doing {iteration} iterations.");
 
         if (best != null)
         {
-            Debug.Log($"Best: {best.TotalSteps}: {best.IsDone} and {best.IsValid}");
+            // Debug.Log($"Best: {best.TotalSteps}: {best.IsDone} and {best.IsValid}");
             bestAgent = best;
         } else
         {
