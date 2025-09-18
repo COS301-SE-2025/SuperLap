@@ -9,6 +9,7 @@ using RacelineOptimizer;
 using System;
 using UnityEngine.EventSystems;
 using TMPro;
+using System.Threading.Tasks;
 
 public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
@@ -60,6 +61,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private float raceDirection = 0f;
   private Texture2D centerlineOverlay;
   private RectTransform previewImageRect;
+
+  // Processing state
+  private bool isProcessing = false;
 
   // Results data
 
@@ -147,6 +151,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     startPosition = null;
     raceDirection = 0f;
     centerlinePoints.Clear();
+    isProcessing = false;
 
     // Destroy textures
     if (loadedTexture != null) Destroy(loadedTexture);
@@ -544,27 +549,39 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   public void ProcessTrackImage()
   {
+    if (isProcessing)
+    {
+      Debug.LogWarning("Processing already in progress");
+      return;
+    }
+
     if (string.IsNullOrEmpty(selectedImagePath))
     {
       Debug.LogError("No image selected for processing");
       return;
     }
 
-    // if (centerlinePoints.Count < 100)
-    // {
-    //   Debug.LogError("Need to trace centerline before processing");
-    //   return;
-    // }
-
     StartCoroutine(ProcessTrackImageCoroutine());
   }
 
   private IEnumerator ProcessTrackImageCoroutine()
   {
+    if (isProcessing) yield break;
+    
+    isProcessing = true;
     float startTime = Time.realtimeSinceStartup;
+
+    // SHOW LOADING SCREEN HERE
+    // Example: LoadingScreenManager.Instance.ShowLoadingScreen("Processing track image...");
 
     Debug.Log("Starting track image processing...");
     OnProcessingStarted?.Invoke("Processing track image...");
+
+    // Disable process button during processing
+    if (processButton != null)
+    {
+      processButton.interactable = false;
+    }
 
     // Create mask from centerline
     Texture2D centerlineMask = CreateMaskFromCenterline();
@@ -580,6 +597,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
@@ -596,19 +623,12 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     Destroy(centerlineMask);
     Destroy(maskedImage);
 
-    // Process the MASKED image to get boundaries
+    yield return null; // Allow UI to update
+
+    // Process the MASKED image to get boundaries (this should be fast)
     ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
 
     Debug.Log(tempFilePath);
-    //Delete the temporary file after processing
-    // try
-    // {
-    //   File.Delete(tempFilePath);
-    // }
-    // catch (System.Exception e)
-    // {
-    //   Debug.LogWarning($"Could not delete temporary file: {e.Message}");
-    // }
 
     yield return null; // Allow UI to update
 
@@ -624,6 +644,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
@@ -632,19 +662,29 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     List<Vector2> alignedInner = AlignBoundaryWithUserInput(boundaries.innerBoundary);
     List<Vector2> alignedOuter = AlignBoundaryWithUserInput(boundaries.outerBoundary);
 
-    // Rest of your existing processing code...
+    yield return null; // Allow UI to update
+
     Debug.Log($"Image processing successful. Running PSO optimization...");
     OnProcessingStarted?.Invoke("Optimizing raceline...");
 
-    // Run PSO optimization
-    PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
-        alignedInner,
-        alignedOuter,
-        particleCount,
-        maxIterations
-    );
+    // Run PSO optimization in a separate task to keep UI responsive
+    Task<PSOInterface.RacelineResult> psoTask = Task.Run(() =>
+    {
+      return PSOIntegrator.RunPSO(
+          alignedInner,
+          alignedOuter,
+          particleCount,
+          maxIterations
+      );
+    });
 
-    yield return null; // Allow UI to update
+    // Wait for PSO to complete while keeping UI responsive
+    while (!psoTask.IsCompleted)
+    {
+      yield return null; // Keep UI responsive
+    }
+
+    PSOInterface.RacelineResult racelineResult = psoTask.Result;
 
     if (racelineResult == null)
     {
@@ -658,12 +698,21 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
 
     // Convert System.Numerics.Vector2 to UnityEngine.Vector2
-
     List<Vector2> innerBoundary = ConvertToUnityVectors(racelineResult.InnerBoundary);
     List<Vector2> outerBoundary = ConvertToUnityVectors(racelineResult.OuterBoundary);
     List<Vector2> raceline = ConvertToUnityVectors(racelineResult.Raceline);
@@ -686,10 +735,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     Debug.Log($"Track processing completed successfully in {processingTime:F2} seconds.");
 
-    // Generate output image
-    // GenerateOutputImage();
+    // Re-enable button
+    if (processButton != null)
+    {
+      processButton.interactable = true;
+    }
 
-    // TrackMaster.LoadTrack(lastResults);
+    // HIDE LOADING SCREEN HERE
+    // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+    isProcessing = false;
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
@@ -827,12 +882,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   private Texture2D CreateMaskFromCenterline()
   {
-    // if (centerlinePoints.Count < 100 || loadedTexture == null)
-    // {
-    //   Debug.LogError("Need at least 100 centerline points and a loaded texture to create mask");
-    //   return null;
-    // }
-
     if (loadedTexture == null)
     {
       Debug.LogError("Need at least 100 centerline points and a loaded texture to create mask");
@@ -1049,6 +1098,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     return raceDirection;
   }
 
+  public bool IsProcessing()
+  {
+    return isProcessing;
+  }
+
   // Public method to manually navigate to racing line with current results
   public void ViewRacingLine()
   {
@@ -1231,12 +1285,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   public Texture2D GetCenterlineMask()
   {
-    // if (centerlinePoints.Count < 100)
-    // {
-    //   return null;
-    // }
     return CreateMaskFromCenterline();
   }
+  
   private void OnDestroy()
   {
     if (loadedTexture != null)
