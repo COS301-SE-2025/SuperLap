@@ -74,7 +74,7 @@ public class ACOWorkerThreadTest : MonoBehaviour
             waitTimer = 0.05f;
 
             // Check if we've completed all splits
-            if (c >= checkpointCount - 2)
+            if (c >= checkpointCount)
             {
                 Debug.Log("Training completed!");
                 SaveBestAgentToFile();
@@ -278,8 +278,8 @@ public class ACOWorkerThreadTest : MonoBehaviour
             Debug.LogError($"Invalid split index: {currentSplit}. Cannot be negative.");
             return;
         }
-        
-        if (currentSplit + 2 >= checkPoints.Count)
+
+        if (currentSplit >= checkPoints.Count)
         {
             Debug.LogError($"Invalid split index: {currentSplit}. Not enough checkpoints remaining (need {currentSplit + 2}, have {checkPoints.Count}).");
             return;
@@ -356,10 +356,9 @@ public class ACOWorkerThreadTest : MonoBehaviour
 
             List<System.Numerics.Vector2> cps = new();
             checkPoints.ForEach((point) => cps.Add(new(point.X, point.Y)));
-            
-            // Safe checkpoint setting with bounds check (already validated above)
-            wt.SetCheckPoints(cps[currentSplit], cps[currentSplit + 1], cps[currentSplit + 2]);
 
+            // Safe checkpoint setting with bounds check (already validated above)
+            wt.SetCheckPoints(cps[currentSplit], cps[(currentSplit + 1) % checkPoints.Count], cps[(currentSplit + 2) % checkPoints.Count]);
             wt.StartThread();
         });
     }

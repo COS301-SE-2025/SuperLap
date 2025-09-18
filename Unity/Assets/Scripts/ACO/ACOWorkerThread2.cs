@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Threading;
-using JetBrains.Annotations;
 using UnityEngine;
 using Vector2 = System.Numerics.Vector2;
 
@@ -297,11 +295,8 @@ public class ACOWorkerThread2
 
         AgentContainer best = valids.OrderBy((ct1) => ct1.TotalSteps).First();
 
-        // Debug.Log($"Worker thread {workerId} exited after doing {iteration} iterations.");
-
         if (best != null)
         {
-            // Debug.Log($"Best: {best.TotalSteps}: {best.IsDone} and {best.IsValid}");
             bestAgent = best;
         } else
         {
