@@ -151,7 +151,7 @@ public class GalleryGetInfo : MonoBehaviour
     HomePageNavigation navigation = FindAnyObjectByType<HomePageNavigation>();
     if (navigation != null)
     {
-      navigation.NavigateToAnalysisWithTrack(track.name);
+      navigation.NavigateToRacingLineWithTrack(track.name);
     }
     else
     {
