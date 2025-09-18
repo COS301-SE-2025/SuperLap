@@ -53,89 +53,94 @@ public class ACOWorkerThreadTest : MonoBehaviour
         
         if (running)
         {
-            bool allDone = workers.Count((w) => w.IsRunning) == 0;
 
-            if (allDone)
+            HandleTraining();
+        }
+    }
+
+    private void HandleTraining()
+    {
+        bool allDone = workers.Count((w) => w.IsRunning) == 0;
+
+        if (allDone)
+        {
+            if(waitTimer > 0.0f)
             {
-                if(waitTimer > 0.0f)
+                waitTimer -= Time.deltaTime;
+                return;
+            }
+
+            running = false;
+            waitTimer = 0.05f;
+
+            // Check if we've completed all splits
+            if (c >= checkpointCount - 2)
+            {
+                Debug.Log("Training completed!");
+                SaveBestAgentToFile();
+                c = 0;
+                return;
+            }
+
+            // Collect solutions from current split
+            List<AgentContainer> currentSolutions = new();
+            workers.ForEach((w) =>
+            {
+                if (w.BestAgent != null)
                 {
-                    waitTimer -= Time.deltaTime;
+                    currentSolutions.Add(w.BestAgent);
+                }
+            });
+
+            if (currentSolutions.Count == 0)
+            {
+                // No solution found for current split
+                if (retryCounter > 0)
+                {
+                    // Retry current split
+                    Debug.LogWarning($"Could not find solution for split {c}. Retrying. Attempts remaining: {retryCounter}");
+                    retryCounter--;
+                    InitializeSystem(c);
+                    running = true;
                     return;
                 }
-
-                running = false;
-                waitTimer = 0.05f;
-
-                // Check if we've completed all splits
-                if (c >= checkpointCount - 2)
+                else
                 {
-                    Debug.Log("Training completed!");
-                    SaveBestAgentToFile();
-                    c = 0;
-                    return;
-                }
-
-                // Collect solutions from current split
-                List<AgentContainer> currentSolutions = new();
-                workers.ForEach((w) =>
-                {
-                    if (w.BestAgent != null)
+                    // Backtrack if possible
+                    if (c > 0 && bestAgents.Count > 0)
                     {
-                        currentSolutions.Add(w.BestAgent);
-                    }
-                });
-
-                if (currentSolutions.Count == 0)
-                {
-                    // No solution found for current split
-                    if (retryCounter > 0)
-                    {
-                        // Retry current split
-                        Debug.LogWarning($"Could not find solution for split {c}. Retrying. Attempts remaining: {retryCounter}");
-                        retryCounter--;
+                        Debug.LogWarning($"Could not find solution for split {c} after all retries. Backing up to split {c - 1}.");
+                        
+                        // Remove the last successful agent (corresponds to split c-1)
+                        bestAgents.RemoveAt(bestAgents.Count - 1);
+                        c--;
+                        retryCounter = 5;
+                        
                         InitializeSystem(c);
                         running = true;
                         return;
                     }
                     else
                     {
-                        // Backtrack if possible
-                        if (c > 0 && bestAgents.Count > 0)
-                        {
-                            Debug.LogWarning($"Could not find solution for split {c} after all retries. Backing up to split {c - 1}.");
-                            
-                            // Remove the last successful agent (corresponds to split c-1)
-                            bestAgents.RemoveAt(bestAgents.Count - 1);
-                            c--;
-                            retryCounter = 5;
-                            
-                            InitializeSystem(c);
-                            running = true;
-                            return;
-                        }
-                        else
-                        {
-                            // Cannot backtrack further - training failed
-                            Debug.LogError("Training failed: Could not find solution for initial split and cannot backtrack further.");
-                            c = 0;
-                            bestAgents.Clear();
-                            return;
-                        }
+                        // Cannot backtrack further - training failed
+                        Debug.LogError("Training failed: Could not find solution for initial split and cannot backtrack further.");
+                        c = 0;
+                        bestAgents.Clear();
+                        return;
                     }
                 }
-                else
-                {
-                    // Solution found - select best and move to next split
-                    AgentContainer bestAgent = currentSolutions.OrderBy((ac) => ac.TotalSteps).First();
-                    bestAgents.Add(bestAgent);
-                    
-                    retryCounter = 5; // Reset retry counter
-                    c++;
-                    
-                    Debug.Log($"Split {c - 1} completed successfully. Moving to split {c}");
-                    InitializeSystem(c);
-                    running = true;
-                }
+            }
+            else
+            {
+                AgentContainer bestAgent = currentSolutions.OrderBy((ac) => ac.TotalSteps).First();
+                bestAgents.Add(bestAgent);
+                
+                retryCounter = 5; // Reset retry counter
+                c++;
+                
+                Debug.Log($"Split {c - 1} completed successfully. Moving to split {c}");
+                InitializeSystem(c);
+                running = true;
             }
         }
     }
@@ -157,9 +162,9 @@ public class ACOWorkerThreadTest : MonoBehaviour
             // Write all inputs from all segments
             bestAgents.ForEach((agent) =>
             {
-                agent.Inputs.ForEach((input) =>
+                agent.ReplayStates.ForEach((state) =>
                 {
-                    writer.WriteLine($"{input.Item1}:{input.Item2}");
+                    writer.WriteLine(state.ToString());
                 });
             });
         }

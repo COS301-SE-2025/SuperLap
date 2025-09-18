@@ -32,14 +32,24 @@ public class AgentContainer
     public float TargetPassBear => targetPassBear;
     public float TargetPassTurnAngle => agent.GetCurrentTurnAngle();
     public List<(int, int)> Inputs => inputs;
+    List<ReplayState> replayStates;
+    public List<ReplayState> ReplayStates => replayStates;
 
     public AgentContainer(PolygonTrack track, Vector2 pos, float bear, float ss, float ta, List<Vector2> rl, ThreadLocalRacelineAnalyzer al, Vector2[] cps, float cpd)
     {
         agent = new ACOAgent(track, pos, bear, rl, al);
-        inputs = new List<(int, int)>();
+        inputs = new();
         checkPoints = cps;
         checkpointDistance = cpd;
-        agent.SetInitialState(ss, ta);        
+        agent.SetInitialState(ss, ta);
+        replayStates = new()
+        {
+            new ReplayState
+            {
+                position = agent.Position,
+                bear = agent.GetCurrentBearing()
+            }
+        };
     }
 
     public void Step(bool decide = false)
@@ -58,6 +68,12 @@ public class AgentContainer
         inputs.Add((lastThrottle, lastTurn));
         agent.Step();
 
+        replayStates.Add(new ReplayState
+        {
+            position = agent.Position,
+            bear = agent.GetCurrentBearing()
+        });
+
         isValid = !agent.IsOffTrack();
 
         if (!passedTarget && InTargetRange())
@@ -67,6 +83,7 @@ public class AgentContainer
             targetPassPos = Position;
             targetPassBear = agent.GetCurrentBearing();
         }
+
         if(passedTarget && InValidateRange())
         {
             isDone = true;
