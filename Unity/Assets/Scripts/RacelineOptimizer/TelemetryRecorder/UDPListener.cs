@@ -104,9 +104,8 @@ namespace MotoGPTelemetry
       }
       return ret;
     }
-
-    public float getFastestLapTime()
-    {
+    public int getFastestLapIndex()
+    { 
       Dictionary<int, float> lapTimes = new Dictionary<int, float>();
       for (int i = 0; i < PlayerPath.Count; i++)
       {
@@ -123,15 +122,34 @@ namespace MotoGPTelemetry
         }
       }
 
-      float fastest = float.MaxValue;
-      foreach (var time in lapTimes.Values)
+      int fastestLap = -1;
+      float fastestTime = float.MaxValue;
+      foreach (var kvp in lapTimes)
       {
-        if (time > 0 && time < fastest)
+        if (kvp.Value > 0 && kvp.Value < fastestTime)
         {
-          fastest = time;
+          fastestTime = kvp.Value;
+          fastestLap = kvp.Key;
         }
       }
-      return fastest == float.MaxValue ? 0f : fastest;
+      return fastestLap;
+    }
+
+    public float getFastestLapTime()
+    {
+      int fastestLap = getFastestLapIndex();
+      if (fastestLap == -1)
+        return 0f;
+
+      float fastestTime = float.MaxValue;
+      for (int i = 0; i < PlayerPath.Count; i++)
+      {
+        if (PlayerPath[i].CurrentLap == fastestLap)
+        {
+          fastestTime = Math.Min(fastestTime, PlayerPath[i].LastLapTime);
+        }
+      }
+      return fastestTime == float.MaxValue ? 0f : fastestTime;
     }
 
     public float getAverageSpeed(int lapIndex)
