@@ -118,7 +118,7 @@ namespace MotoGPTelemetry
 
         public void SaveToCSV()
         {
-            string csvPath = "lastSession.csv";
+            string csvPath = $"./Recordings/{PlayerPath[1].TrackId}.csv";
             using (var writer = new StreamWriter(csvPath, false, new UTF8Encoding(false)))
             {
                 writer.WriteLine("trackId\tlap_number\tworld_position_X\tworld_position_Y");
