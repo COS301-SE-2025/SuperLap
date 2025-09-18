@@ -37,6 +37,22 @@ namespace MotoGPTelemetry
       this.port = port;
       PlayerPath = new List<RecordedData>();
     }
+    
+    ~TelemetryRecorder()
+    {
+      Dispose();
+    }
+
+    public void Dispose()
+    {
+      cts?.Cancel();
+      udp?.Close();
+      udp?.Dispose();
+      udp = null;
+      listenerTask = null;
+      cts = null;
+    }
+
 
     public void Start()
     {
@@ -52,13 +68,41 @@ namespace MotoGPTelemetry
 
     public List<RecordedData> Stop()
     {
-      if (cts != null)
+        if (cts != null)
+        {
+            cts.Cancel();
+
+            try
+            {
+                udp?.Close();
+                udp?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Error while closing UDP client: {ex}");
+            }
+
+            udp = null;
+            listenerTask = null;
+            cts = null;
+
+            Debug.Log("Telemetry recording stopped.");
+        }
+        return PlayerPath;
+    }
+
+
+    public List<int> getLaps()
+    {
+      List<int> ret = new List<int>();
+      for (int i = 0; i < PlayerPath.Count; i++)
       {
-        cts.Cancel();
-        udp?.Close();
-        Debug.Log("Telemetry recording stopped.");
+        if (i == 0 || PlayerPath[i].CurrentLap != PlayerPath[i - 1].CurrentLap)
+        {
+          ret.Add(PlayerPath[i].CurrentLap);
+        }
       }
-      return PlayerPath;
+      return ret;
     }
 
 
@@ -77,17 +121,24 @@ namespace MotoGPTelemetry
             float frontKmh = packet.WheelSpeedF;
             float rearKmh = packet.WheelSpeedR;
             float speedKmh = (frontKmh + rearKmh) / 2f;
-            Debug.Log($"Last Lap Time: {packet.LastLapTime}, Lap: {packet.CurrentLap}, Speed: {speedKmh}, X: {packet.CoordinatesX}, Y: {packet.CoordinatesY}");
-            RecordedData record = new RecordedData
+            if (packet.CurrentLap == 255 || speedKmh < 2f) // invalid lap or stationary
             {
-              LastLapTime = packet.LastLapTime,
-              CurrentLap = packet.CurrentLap,
-              TrackId = packet.Track,
-              Speed = packet.Speed,
-              CoordinatesX = packet.CoordinatesX,
-              CoordinatesY = packet.CoordinatesY
-            };
-            PlayerPath.Add(record);
+              continue;
+            }
+            else
+            {
+              Debug.Log($"Last Lap Time: {packet.LastLapTime}, Lap: {packet.CurrentLap}, Speed: {speedKmh}, X: {packet.CoordinatesX}, Y: {packet.CoordinatesY}");
+              RecordedData record = new RecordedData
+              {
+                LastLapTime = packet.LastLapTime,
+                CurrentLap = packet.CurrentLap,
+                TrackId = packet.Track,
+                Speed = packet.Speed,
+                CoordinatesX = packet.CoordinatesX,
+                CoordinatesY = packet.CoordinatesY
+              };
+              PlayerPath.Add(record);
+            }
           }
           else
           {

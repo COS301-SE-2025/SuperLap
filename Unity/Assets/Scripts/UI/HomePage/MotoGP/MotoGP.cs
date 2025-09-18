@@ -103,7 +103,7 @@ public class MotoGP : MonoBehaviour
     }
 
     List<MotoGPTelemetry.RecordedData> recordedData = recorder.Stop();
-    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadUDP.Convert(recordedData);
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadUDP.Convert(recordedData, 2);
 
     if (playerline == null)
     {
@@ -111,6 +111,12 @@ public class MotoGP : MonoBehaviour
       return;
     }
 
+    List<int> laps = recorder.getLaps();
+    Debug.Log("Laps found: " + laps.Count);
+    foreach (int lap in laps)
+    {
+      Debug.Log("Lap: " + lap);
+    }
     Debug.Log("Raceline Count: " + playerline.Raceline.Count);
     if (playerline == null)
     {

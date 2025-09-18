@@ -72,7 +72,7 @@ namespace MotoGPTelemetry
                         float frontKmh = packet.WheelSpeedF;
                         float rearKmh  = packet.WheelSpeedR;
                         float speedKmh = (frontKmh + rearKmh) / 2f;
-                        if (packet.CurrentLap == 256 || speedKmh < 2f) // invalid lap or stationary
+                        if (packet.CurrentLap == 255 || speedKmh < 2f) // invalid lap or stationary
                         {
                            continue;
                         }
