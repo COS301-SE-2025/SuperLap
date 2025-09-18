@@ -111,7 +111,7 @@ public class AnalysisGetInfo : MonoBehaviour
     if (!manualTrackRequested)
       AttemptToLoadTracks();
   }
-  private void AttemptToLoadTracks()
+  private async void AttemptToLoadTracks()
   {
     if (isLoading) return;
     isLoading = true;
@@ -120,11 +120,9 @@ public class AnalysisGetInfo : MonoBehaviour
     {
       if (apiManager != null)
       {
-        apiManager.GetAllTracks((success, message, tracks) =>
-        {
-          isLoading = false;
-          OnTracksLoaded(success, message, tracks);
-        });
+        var (success, message, tracks) = await apiManager.GetAllTracksAsync();
+        isLoading = false;
+        OnTracksLoaded(success, message, tracks);
       }
       else
       {
@@ -140,6 +138,7 @@ public class AnalysisGetInfo : MonoBehaviour
       HandleLoadFailure();
     }
   }
+
 
   private void HandleLoadFailure()
   {
@@ -162,7 +161,7 @@ public class AnalysisGetInfo : MonoBehaviour
     }
   }
 
-  private void OnTracksLoaded(bool success, string message, List<APIManager.Track> tracks)
+  private void OnTracksLoaded(bool success, string message, List<Track> tracks)
   {
     if (!success)
     {
@@ -190,7 +189,7 @@ public class AnalysisGetInfo : MonoBehaviour
     }
   }
 
-  private void DisplayTrackInfo(APIManager.Track track)
+  private void DisplayTrackInfo(Track track)
   {
     if (trackNameText != null)
       trackNameText.text = track.name ?? "Unknown Track";
@@ -238,7 +237,7 @@ public class AnalysisGetInfo : MonoBehaviour
     trackName = track.name;
     if (isActiveAndEnabled)
     {
-        StartCoroutine(DelayedRacingLineInitialization());
+      StartCoroutine(DelayedRacingLineInitialization());
     }
   }
 
@@ -249,14 +248,15 @@ public class AnalysisGetInfo : MonoBehaviour
     LoadRacingLinePreview();
   }
 
-  public void DisplayTrackByIndex(int index)
+  public async void DisplayTrackByIndex(int index)
   {
     try
     {
       if (apiManager != null)
       {
         trackIndex = index;
-        apiManager.GetAllTracks(OnTracksLoaded);
+        var (success, message, tracks) = await apiManager.GetAllTracksAsync();
+        OnTracksLoaded(success, message, tracks);
       }
       else
       {
@@ -271,7 +271,8 @@ public class AnalysisGetInfo : MonoBehaviour
     }
   }
 
-  public void DisplayTrackByName(string trackName)
+
+  public async void DisplayTrackByName(string trackName)
   {
     manualTrackRequested = true;
     this.trackName = trackName;
@@ -279,18 +280,17 @@ public class AnalysisGetInfo : MonoBehaviour
     {
       if (apiManager != null)
       {
-        apiManager.GetTrackByName(trackName, (success, message, track) =>
+        var (success, message, track) = await apiManager.GetTrackByNameAsync(trackName);
+
+        if (success && track != null)
         {
-          if (success && track != null)
-          {
-            DisplayTrackInfo(track);
-          }
-          else
-          {
-            Debug.Log($"Failed to load track '{trackName}': {message}");
-            SetDefaultValues();
-          }
-        });
+          DisplayTrackInfo(track);
+        }
+        else
+        {
+          Debug.Log($"Failed to load track '{trackName}': {message}");
+          SetDefaultValues();
+        }
       }
       else
       {
@@ -305,7 +305,7 @@ public class AnalysisGetInfo : MonoBehaviour
     }
   }
 
-  public void DisplaySpecificTrack(APIManager.Track track)
+  public void DisplaySpecificTrack(Track track)
   {
     if (track != null)
     {
@@ -340,13 +340,14 @@ public class AnalysisGetInfo : MonoBehaviour
     if (trackCountryText != null) trackCountryText.text = "";
   }
 
-  public void RefreshTrackInfo()
+  public async void RefreshTrackInfo()
   {
     try
     {
       if (apiManager != null)
       {
-        apiManager.GetAllTracks(OnTracksLoaded);
+        var (success, message, tracks) = await apiManager.GetAllTracksAsync();
+        OnTracksLoaded(success, message, tracks);
       }
       else
       {

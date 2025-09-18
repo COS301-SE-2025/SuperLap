@@ -86,6 +86,10 @@ public class MotoGP : MonoBehaviour
       {
         recordButtonText.text = "Recording game";
       }
+      if (recorder != null && isRecording)
+      {
+          recorder.Stop();
+      }
       recorder = new MotoGPTelemetry.TelemetryRecorder();
       recorder.Start();
       isRecording = true;

@@ -1,11 +1,12 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
-using System.Text.RegularExpressions;
 
+#region Models
 [System.Serializable]
 public class User
 {
@@ -29,6 +30,46 @@ public class TrackImageResponse
   public string data;
 }
 
+[System.Serializable]
+public class Track
+{
+  public string id;
+  public string name;
+  public string type;
+  public string city;
+  public string country;
+  public string location;
+  public string uploadedBy;
+  public string description;
+  public string dateUploaded;
+  public string _id;
+  public string borders;
+}
+
+[System.Serializable]
+public class TrackList
+{
+  public List<Track> tracks;
+}
+
+[System.Serializable]
+public class UserListWrapper
+{
+  public List<User> users;
+}
+#endregion
+
+public static class UnityWebRequestExtensions
+{
+  public static async Task<UnityWebRequest> SendWebRequestAsync(this UnityWebRequest request)
+  {
+    var tcs = new TaskCompletionSource<UnityWebRequest>();
+    var operation = request.SendWebRequest();
+    operation.completed += _ => tcs.TrySetResult(request);
+    return await tcs.Task;
+  }
+}
+
 public class APIManager : MonoBehaviour
 {
   [Header("API Configuration")]
@@ -40,8 +81,6 @@ public class APIManager : MonoBehaviour
   private List<Track> allTracksCache = null;
   private Dictionary<string, Texture2D> trackImageCache = new Dictionary<string, Texture2D>();
   private Dictionary<string, byte[]> trackBorderCache = new Dictionary<string, byte[]>();
-
-
 
   public static APIManager Instance
   {
@@ -73,179 +112,268 @@ public class APIManager : MonoBehaviour
       Destroy(gameObject);
     }
   }
-  public void RegisterUser(string username, string email, string password, System.Action<bool, string> callback)
-  {
-    Debug.Log($"Registering user: {username}, Email: {email} with password: {password}");
-    StartCoroutine(RegisterUserCoroutine(username, email, password, callback));
-  }
 
-  private IEnumerator RegisterUserCoroutine(string username, string email, string password, System.Action<bool, string> callback)
+  #region User APIs
+  public async Task<(bool success, string message)> RegisterUserAsync(string username, string email, string password)
   {
-    User newUser = new User
-    {
-      username = username,
-      email = email,
-      password = password
-    };
-
+    User newUser = new User { username = username, email = email, password = password };
     string jsonData = JsonUtility.ToJson(newUser);
-    byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
 
     using (UnityWebRequest request = new UnityWebRequest($"{baseURL}/users", "POST"))
     {
-      request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+      request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonData));
       request.downloadHandler = new DownloadHandlerBuffer();
       request.SetRequestHeader("Content-Type", "application/json");
 
-      yield return request.SendWebRequest();
+      var response = await request.SendWebRequestAsync();
 
-      if (request.result == UnityWebRequest.Result.Success)
+      if (response.result == UnityWebRequest.Result.Success)
       {
-        Debug.Log("User registered successfully: " + request.downloadHandler.text);
-        callback?.Invoke(true, "User registered successfully");
+        return (true, "User registered successfully");
       }
       else
       {
-        string errorMessage = "Registration failed";
+        string errorMessage = response.error;
         try
         {
-          ApiResponse response = JsonUtility.FromJson<ApiResponse>(request.downloadHandler.text);
-          errorMessage = response.message;
+          ApiResponse res = JsonUtility.FromJson<ApiResponse>(response.downloadHandler.text);
+          errorMessage = res.message;
         }
-        catch
-        {
-          errorMessage = request.error;
-        }
-        Debug.LogWarning("Registration error: " + errorMessage);
-        callback?.Invoke(false, errorMessage);
+        catch { }
+        return (false, errorMessage);
       }
     }
   }
 
-  public void LoginUser(string username, string password, System.Action<bool, string, User> callback)
-  {
-    Debug.Log($"Logging in user: {username} with password: {password}");
-    StartCoroutine(LoginUserCoroutine(username, password, callback));
-  }
-
-  private IEnumerator LoginUserCoroutine(string username, string password, System.Action<bool, string, User> callback)
+  public async Task<(bool success, string message, User user)> LoginUserAsync(string username, string password)
   {
     string loginUrl = $"{baseURL}/users/login";
-
-    User Login = new User
-    {
-      username = username,
-      password = password
-    };
-
-    string jsonData = JsonUtility.ToJson(Login);
+    User login = new User { username = username, password = password };
+    string jsonData = JsonUtility.ToJson(login);
 
     using (UnityWebRequest request = new UnityWebRequest(loginUrl, "POST"))
     {
-      byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
-      request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+      request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonData));
       request.downloadHandler = new DownloadHandlerBuffer();
       request.SetRequestHeader("Content-Type", "application/json");
 
-      yield return request.SendWebRequest();
+      var response = await request.SendWebRequestAsync();
 
-      if (request.result == UnityWebRequest.Result.Success)
+      if (response.result == UnityWebRequest.Result.Success)
       {
-        string responseText = request.downloadHandler.text;
-
         try
         {
-          User user = JsonUtility.FromJson<User>(responseText);
-          Debug.Log("User logged in successfully: " + user.username);
-          callback?.Invoke(true, "Login successful", user);
+          User user = JsonUtility.FromJson<User>(response.downloadHandler.text);
+          return (true, "Login successful", user);
         }
         catch (Exception e)
         {
-          Debug.Log("Error parsing login response: " + e.Message);
-          callback?.Invoke(false, "Error parsing server response", null);
+          return (false, $"Error parsing server response: {e.Message}", null);
         }
       }
       else
       {
-        string message = "Login failed";
-
-        if (request.responseCode == 404)
-          message = "User not found";
-        else if (request.responseCode == 401)
-          message = "Invalid password";
-        else if (!string.IsNullOrEmpty(request.error))
-          message = request.error;
-
-        Debug.LogWarning("Login error: " + message);
-        callback?.Invoke(false, message, null);
+        string message = response.responseCode switch
+        {
+          404 => "User not found",
+          401 => "Invalid password",
+          _ => response.error
+        };
+        return (false, message, null);
       }
     }
   }
 
-
-  public void GetAllUsers(System.Action<bool, string, List<User>> callback)
-  {
-    StartCoroutine(GetAllUsersCoroutine(callback));
-  }
-
-  private IEnumerator GetAllUsersCoroutine(System.Action<bool, string, List<User>> callback)
+  public async Task<(bool success, string message, List<User> users)> GetAllUsersAsync()
   {
     using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/users"))
     {
-      yield return request.SendWebRequest();
-
-      if (request.result == UnityWebRequest.Result.Success)
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
       {
         try
         {
-          string jsonResponse = request.downloadHandler.text;
-          string wrappedJson = "{\"users\":" + jsonResponse + "}";
-          UserListWrapper wrapper = JsonUtility.FromJson<UserListWrapper>(wrappedJson);
-
-          Debug.Log("Retrieved " + wrapper.users.Count + " users");
-          callback?.Invoke(true, "Users retrieved successfully", wrapper.users);
+          string wrapped = "{\"users\":" + response.downloadHandler.text + "}";
+          UserListWrapper wrapper = JsonUtility.FromJson<UserListWrapper>(wrapped);
+          return (true, "Users retrieved successfully", wrapper.users);
         }
         catch
         {
-          callback?.Invoke(false, "Error parsing users data", null);
+          return (false, "Error parsing users data", null);
         }
       }
       else
       {
-        callback?.Invoke(false, request.error, null);
+        return (false, response.error, null);
+      }
+    }
+  }
+  #endregion
+
+  #region Track APIs
+  public async Task<(bool success, string message, List<Track> tracks)> GetAllTracksAsync(bool forceRefresh = false)
+  {
+    if (!forceRefresh && allTracksCache != null)
+      return (true, "Tracks loaded from cache", new List<Track>(allTracksCache));
+
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/tracks"))
+    {
+      var networkStart = stopwatch.ElapsedMilliseconds;
+      var response = await request.SendWebRequestAsync();
+      var networkEnd = stopwatch.ElapsedMilliseconds;
+
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        var parseStart = stopwatch.ElapsedMilliseconds;
+        Track[] tracks = JsonHelper.FromJson<Track>(response.downloadHandler.text);
+        allTracksCache = new List<Track>(tracks);
+        var parseEnd = stopwatch.ElapsedMilliseconds;
+
+        return (true, "Tracks loaded successfully", allTracksCache);
+      }
+      else
+      {
+        Debug.Log($"[APIManager] Request failed after {stopwatch.ElapsedMilliseconds} ms: {response.error}");
+        return (false, response.error ?? "Unknown error", null);
       }
     }
   }
 
 
-  [System.Serializable]
-  private class UserListWrapper
+
+  public async Task<(bool success, string message, Track track)> GetTrackByNameAsync(string name, bool forceRefresh = false)
   {
-    public List<User> users;
+    if (!forceRefresh && trackCache.TryGetValue(name, out Track cached))
+      return (true, "Track loaded from cache", cached);
+
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/tracks/{name}"))
+    {
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        try
+        {
+          Track track = JsonUtility.FromJson<Track>(response.downloadHandler.text);
+          trackCache[name] = track;
+          return (true, "Track fetched successfully", track);
+        }
+        catch
+        {
+          return (false, "Error parsing track data", null);
+        }
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
   }
 
-
-
-  [System.Serializable]
-  public class Track
+  public async Task<(bool success, string message, Texture2D image)> GetTrackImageAsync(string name, bool forceRefresh = false)
   {
-    public string id;
-    public string name;
-    public string type;
-    public string city;
-    public string country;
-    public string location;
-    public string uploadedBy;
-    public string description;
-    public string dateUploaded;
-    public string _id;
-    public string borders;
+    if (!forceRefresh && trackImageCache.TryGetValue(name, out Texture2D cached))
+      return (true, "Image loaded from cache", cached);
+
+    string url = $"{baseURL}/images/{name}";
+    using (UnityWebRequest request = UnityWebRequest.Get(url))
+    {
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        string base64Data = response.downloadHandler.text.Trim();
+        if (base64Data.StartsWith("\"") && base64Data.EndsWith("\""))
+          base64Data = base64Data.Substring(1, base64Data.Length - 2);
+
+        base64Data = CleanBase64String(base64Data);
+
+        if (string.IsNullOrEmpty(base64Data))
+          return (false, "Invalid image data after cleaning", null);
+
+        try
+        {
+          byte[] bytes = Convert.FromBase64String(base64Data);
+          Texture2D texture = new Texture2D(2, 2);
+          if (texture.LoadImage(bytes))
+          {
+            trackImageCache[name] = texture;
+            return (true, "Image loaded successfully", texture);
+          }
+          else
+            return (false, "Failed to load texture", null);
+        }
+        catch (Exception ex)
+        {
+          return (false, $"Base64 decode error: {ex.Message}", null);
+        }
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
   }
 
-  [System.Serializable]
-  public class TrackList
+  public async Task<(bool success, string message, byte[] border)> GetTrackBorderAsync(string name, bool forceRefresh = false)
   {
-    public List<Track> tracks;
+    if (!forceRefresh && trackBorderCache.TryGetValue(name, out byte[] cached))
+      return (true, "Border loaded from cache", cached);
+
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/tracks/{name}"))
+    {
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        Track track = JsonUtility.FromJson<Track>(response.downloadHandler.text);
+        if (string.IsNullOrEmpty(track.borders))
+          return (false, $"No border data found for track: {name}", null);
+
+        try
+        {
+          byte[] borderBytes = Convert.FromBase64String(track.borders);
+          // Trim trailing 0
+          int trailingIndex = borderBytes.Length - 4;
+          if (trailingIndex >= 0)
+          {
+            int trailingValue = BitConverter.ToInt32(borderBytes, trailingIndex);
+            if (trailingValue == 0)
+              Array.Resize(ref borderBytes, trailingIndex);
+          }
+
+          trackBorderCache[name] = borderBytes;
+          return (true, "Success", borderBytes);
+        }
+        catch (FormatException ex)
+        {
+          return (false, $"Failed to decode base64 border: {ex.Message}", null);
+        }
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
+  }
+  #endregion
+
+  private string CleanBase64String(string input)
+  {
+    input = Regex.Replace(input, @"[^\w\d+/=]", "");
+    input = input.Replace('-', '+').Replace('_', '/');
+    int mod4 = input.Length % 4;
+    if (mod4 > 0)
+      input += new string('=', 4 - mod4);
+
+    return input;
+  }
+
+  public void ClearCache()
+  {
+    trackCache.Clear();
+    allTracksCache = null;
+    trackImageCache.Clear();
+    trackBorderCache.Clear();
   }
 
   public static class JsonHelper
@@ -264,271 +392,15 @@ public class APIManager : MonoBehaviour
     }
   }
 
-  private IEnumerator GetAllTracksCoroutine(System.Action<bool, string, List<Track>> callback)
-  {
-    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/tracks"))
-    {
-      request.downloadHandler = new DownloadHandlerBuffer();
-
-      yield return request.SendWebRequest();
-
-      if (request.result == UnityWebRequest.Result.Success)
-      {
-        string json = request.downloadHandler.text;
-
-        Track[] tracks = JsonHelper.FromJson<Track>(json);
-        callback?.Invoke(true, "Tracks loaded successfully", new List<Track>(tracks));
-      }
-      else
-      {
-        string errorMessage = request.error ?? "Unknown error occurred";
-        callback?.Invoke(false, errorMessage, null);
-      }
-    }
-  }
-
-  public void GetAllTracks(System.Action<bool, string, List<Track>> callback, bool forceRefresh = false)
-  {
-    if (!forceRefresh && allTracksCache != null)
-    {
-      callback?.Invoke(true, "Tracks loaded from cache", new List<Track>(allTracksCache));
-      return;
-    }
-
-    StartCoroutine(GetAllTracksCoroutine((success, message, tracks) =>
-    {
-      if (success)
-      {
-        allTracksCache = tracks;
-      }
-      callback?.Invoke(success, message, tracks);
-    }));
-  }
-
-
-  public void GetTrackByName(string name, System.Action<bool, string, Track> callback, bool forceRefresh = false)
-  {
-    if (!forceRefresh && trackCache.TryGetValue(name, out Track cachedTrack))
-    {
-      callback?.Invoke(true, "Track loaded from cache", cachedTrack);
-      return;
-    }
-
-    StartCoroutine(GetTrackByNameCoroutine(name, (success, message, track) =>
-    {
-      if (success && track != null)
-      {
-        trackCache[name] = track;
-      }
-      callback?.Invoke(success, message, track);
-    }));
-  }
-
-
-  private IEnumerator GetTrackByNameCoroutine(string name, System.Action<bool, string, Track> callback)
-  {
-    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/tracks/{name}"))
-    {
-      yield return request.SendWebRequest();
-
-      if (request.result == UnityWebRequest.Result.Success)
-      {
-        try
-        {
-          string json = request.downloadHandler.text;
-          Track track = JsonUtility.FromJson<Track>(json);
-          callback?.Invoke(true, "Track fetched successfully", track);
-        }
-        catch
-        {
-          callback?.Invoke(false, "Error parsing track data", null);
-        }
-      }
-      else
-      {
-        callback?.Invoke(false, request.error, null);
-      }
-    }
-  }
-
-  public void GetTrackImage(string name, System.Action<bool, string, Texture2D> callback, bool forceRefresh = false)
-  {
-    if (!forceRefresh && trackImageCache.TryGetValue(name, out Texture2D cachedImage))
-    {
-      callback?.Invoke(true, "Image loaded from cache", cachedImage);
-      return;
-    }
-
-    StartCoroutine(GetTrackImageCoroutine(name, (success, message, image) =>
-    {
-      if (success && image != null)
-      {
-        trackImageCache[name] = image;
-      }
-      callback?.Invoke(success, message, image);
-    }));
-  }
-
-
-  private IEnumerator GetTrackImageCoroutine(string name, System.Action<bool, string, Texture2D> callback)
-  {
-    string url = $"{baseURL}/images/{name}";
-    using (UnityWebRequest request = UnityWebRequest.Get(url))
-    {
-      yield return request.SendWebRequest();
-
-      if (request.result == UnityWebRequest.Result.Success)
-      {
-        string base64Data = request.downloadHandler.text.Trim();
-
-
-
-        if (base64Data.StartsWith("\"") && base64Data.EndsWith("\""))
-        {
-          base64Data = base64Data.Substring(1, base64Data.Length - 2);
-        }
-
-        base64Data = CleanBase64String(base64Data);
-
-        if (string.IsNullOrEmpty(base64Data))
-        {
-          callback?.Invoke(false, "Invalid image data after cleaning", null);
-          yield break;
-        }
-
-        try
-        {
-          byte[] imageBytes = Convert.FromBase64String(base64Data);
-          Texture2D texture = new Texture2D(2, 2);
-          if (texture.LoadImage(imageBytes))
-          {
-            callback?.Invoke(true, "Image loaded successfully", texture);
-          }
-          else
-          {
-            callback?.Invoke(false, "Failed to load texture from bytes", null);
-          }
-        }
-        catch (Exception ex)
-        {
-          Debug.LogError($"Base64 decode error: {ex.Message}\nCleaned data: {base64Data}");
-          callback?.Invoke(false, $"Base64 decode error: {ex.Message}", null);
-        }
-      }
-      else
-      {
-        string errorMsg = request.responseCode == 404
-            ? $"Image not found for track: {name}"
-            : $"Failed to load image: {request.error}";
-        Debug.LogError(errorMsg);
-        callback?.Invoke(false, errorMsg, null);
-      }
-    }
-  }
-
-  public void GetTrackBorder(string name, System.Action<bool, string, byte[]> callback, bool forceRefresh = false)
-  {
-    if (!forceRefresh && trackBorderCache.TryGetValue(name, out byte[] cachedBorder))
-    {
-      StartCoroutine(ReturnCachedBorderCoroutine(cachedBorder, callback));
-      return;
-    }
-
-    StartCoroutine(GetTrackBorderCoroutine(name, (success, message, border) =>
-    {
-      if (success && border != null)
-      {
-        trackBorderCache[name] = border;
-      }
-      callback?.Invoke(success, message, border);
-    }));
-  }
-
-  private IEnumerator ReturnCachedBorderCoroutine(byte[] cachedBorder, System.Action<bool, string, byte[]> callback)
-  {
-    yield return new WaitForEndOfFrame();
-    callback?.Invoke(true, "Border loaded from cache", cachedBorder);
-  }
-
-
-  private IEnumerator GetTrackBorderCoroutine(string name, System.Action<bool, string, byte[]> callback)
-  {
-    string url = $"{baseURL}/tracks/{name}";
-
-    using (UnityWebRequest request = UnityWebRequest.Get(url))
-    {
-      yield return request.SendWebRequest();
-
-      if (request.result == UnityWebRequest.Result.Success)
-      {
-        string baseData = request.downloadHandler.text.Trim();
-
-        Track track = JsonUtility.FromJson<Track>(baseData);
-
-        if (string.IsNullOrEmpty(track.borders))
-        {
-          string errorMsg = $"No border data found for track: {name}";
-          Debug.LogError(errorMsg);
-          callback?.Invoke(false, errorMsg, null);
-          yield break;
-        }
-
-        try
-        {
-          byte[] borderBytes = Convert.FromBase64String(track.borders);
-          int trailingIndex = borderBytes.Length - 4;
-          if (trailingIndex >= 0)
-          {
-            int trailingValue = BitConverter.ToInt32(borderBytes, trailingIndex);
-            if (trailingValue == 0)
-            {
-              Array.Resize(ref borderBytes, trailingIndex);
-            }
-          }
-          callback(true, "Success", borderBytes);
-        }
-        catch (FormatException ex)
-        {
-          string errorMsg = $"Failed to decode base64 border: {ex.Message}";
-          Debug.LogError(errorMsg);
-          callback?.Invoke(false, errorMsg, null);
-        }
-      }
-      else
-      {
-        string errorMsg = request.responseCode == 404
-            ? $"Image not found for track: {name}"
-            : $"Failed to load image: {request.error}";
-        Debug.LogError(errorMsg);
-        callback?.Invoke(false, errorMsg, null);
-      }
-    }
-  }
-
-
-  private string CleanBase64String(string input)
-  {
-    input = Regex.Replace(input, @"[^\w\d+/=]", "");
-    input = input.Replace('-', '+').Replace('_', '/');
-    int mod4 = input.Length % 4;
-    if (mod4 > 0)
-    {
-      input += new string('=', 4 - mod4);
-    }
-
-    return input;
-  }
   public Vector2[] GetDataPoints()
   {
-    return new Vector2[] { new Vector2(1, 0.5f), new Vector2(2, 1), new Vector2(3, 1.5f), new Vector2(4, 2.0f) };
+    // Example static data
+    return new Vector2[]
+    {
+        new Vector2(0,0),
+        new Vector2(1,2),
+        new Vector2(2,1),
+        new Vector2(3,3)
+    };
   }
-
-  public void ClearCache()
-  {
-    trackCache.Clear();
-    allTracksCache = null;
-    trackImageCache.Clear();
-    trackBorderCache.Clear();
-  }
-
 }

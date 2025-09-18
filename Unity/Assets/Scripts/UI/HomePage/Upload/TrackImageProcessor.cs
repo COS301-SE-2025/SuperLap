@@ -329,6 +329,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     centerlineOverlay.Apply();
 
     Sprite overlaySprite = Sprite.Create(centerlineOverlay, new Rect(0, 0, centerlineOverlay.width, centerlineOverlay.height), new Vector2(0.5f, 0.5f));
+    if (previewImage.sprite != null) previewImage.sprite = null;
     previewImage.sprite = overlaySprite;
   }
 
@@ -458,7 +459,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           new Rect(0, 0, loadedTexture.width, loadedTexture.height),
           new Vector2(0.5f, 0.5f)
       );
-
+      if (previewImage.sprite != null) previewImage.sprite = null;
       previewImage.sprite = imageSprite;
       previewImage.preserveAspect = true;
       previewImage.gameObject.SetActive(true);
@@ -531,6 +532,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (loadedTexture != null && previewImage != null)
     {
       Sprite imageSprite = Sprite.Create(loadedTexture, new Rect(0, 0, loadedTexture.width, loadedTexture.height), new Vector2(0.5f, 0.5f));
+      if (previewImage.sprite != null) previewImage.sprite = null;
       previewImage.sprite = imageSprite;
     }
     if (processButton != null)
@@ -626,14 +628,18 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       yield break;
     }
 
+    // Align boundaries with user-traced centerline start and direction
+    List<Vector2> alignedInner = AlignBoundaryWithUserInput(boundaries.innerBoundary);
+    List<Vector2> alignedOuter = AlignBoundaryWithUserInput(boundaries.outerBoundary);
+
     // Rest of your existing processing code...
     Debug.Log($"Image processing successful. Running PSO optimization...");
     OnProcessingStarted?.Invoke("Optimizing raceline...");
 
     // Run PSO optimization
     PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
-        boundaries.innerBoundary,
-        boundaries.outerBoundary,
+        alignedInner,
+        alignedOuter,
         particleCount,
         maxIterations
     );
@@ -691,6 +697,96 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     OnProcessingComplete?.Invoke(lastResults);
   }
 
+  private List<Vector2> AlignBoundaryWithUserInput(List<Vector2> boundary)
+  {
+    if (boundary == null || boundary.Count == 0 || centerlinePoints.Count < 2)
+    {
+      Debug.LogWarning("Cannot align boundary - missing data");
+      return boundary;
+    }
+    // Find the closest point on the boundary to the user-defined start position
+    Vector2 userStart = startPosition ?? centerlinePoints[0];
+    int closestIndex = FindClosestPointIndex(boundary, userStart);
+
+    // Reorder the boundary to start from this point
+    List<Vector2> reorderedBoundary = ReorderBoundary(boundary, closestIndex);
+
+    // Check and correct direction
+    List<Vector2> directionCorrectedBoundary = EnsureBoundaryDirection(reorderedBoundary);
+
+    Debug.Log($"Boundary aligned with user input. Start index: {closestIndex}");
+
+    return directionCorrectedBoundary;
+  }
+
+  private int FindClosestPointIndex(List<Vector2> points, Vector2 target)
+  {
+    int closestIndex = 0;
+    float closestDistSqr = float.MaxValue;
+
+    for (int i = 0; i < points.Count; i++)
+    {
+      float distSqr = (points[i] - target).sqrMagnitude;
+      if (distSqr < closestDistSqr)
+      {
+        closestDistSqr = distSqr;
+        closestIndex = i;
+      }
+    }
+
+    return closestIndex;
+  }
+
+  private List<Vector2> ReorderBoundary(List<Vector2> boundary, int startIndex)
+  {
+    List<Vector2> reordered = new List<Vector2>();
+
+    for (int i = 0; i < boundary.Count; i++)
+    {
+      int index = (startIndex + i) % boundary.Count;
+      reordered.Add(boundary[index]);
+    }
+
+    return reordered;
+  }
+
+  private List<Vector2> EnsureBoundaryDirection(List<Vector2> boundary)
+  {
+    if (boundary.Count < 3 || centerlinePoints.Count < 2)
+    {
+      return boundary;
+    }
+
+    // Calculate boundary direction using first three points
+    Vector2 bStart = boundary[0];
+    Vector2 bMid = boundary[1];
+    Vector2 bEnd = boundary[2];
+
+    Vector2 bDir1 = (bMid - bStart).normalized;
+    Vector2 bDir2 = (bEnd - bMid).normalized;
+    Vector2 boundaryDirection = ((bDir1 + bDir2) * 0.5f).normalized;
+
+    // Calculate user-defined centerline direction
+    Vector2 cStart = centerlinePoints[0];
+    Vector2 cEnd = centerlinePoints[Mathf.Min(10, centerlinePoints.Count - 1)];
+    Vector2 centerlineDirection = (cEnd - cStart).normalized;
+
+    // Calculate angle between directions
+    float angle = Vector2.SignedAngle(boundaryDirection, centerlineDirection);
+
+    // If angle is greater than 90 degrees, reverse the boundary
+    if (Mathf.Abs(angle) > 90f)
+    {
+      boundary.Reverse();
+      Debug.Log("Boundary direction reversed to match user-defined direction");
+    }
+    else
+    {
+      Debug.Log("Boundary direction matches user-defined direction");
+    }
+
+    return boundary;
+  }
 
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
   {
@@ -1039,6 +1135,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           new Rect(0, 0, outputImageWidth, outputImageHeight),
           new Vector2(0.5f, 0.5f)
       );
+      if (outputImage.sprite != null) outputImage.sprite = null;
 
       outputImage.sprite = outputSprite;
       outputImage.gameObject.SetActive(true);

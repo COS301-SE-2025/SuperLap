@@ -7,9 +7,40 @@ using UnityEngine.TestTools;
 using UnityEngine.UI;
 using UnityEditor;
 using TMPro;
+using System.Linq;
 
 namespace TrackImageProcessorTests
 {
+    // Helper class to access private methods and fields via reflection
+    public static class TestExtensions
+    {
+        public static T CallPrivateMethod<T>(this object obj, string methodName, params object[] parameters)
+        {
+            var method = obj.GetType().GetMethod(methodName,
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            if (method == null)
+            {
+                throw new System.ArgumentException($"Method {methodName} not found");
+            }
+
+            return (T)method.Invoke(obj, parameters);
+        }
+
+        public static void CallPrivateMethod(this object obj, string methodName, params object[] parameters)
+        {
+            var method = obj.GetType().GetMethod(methodName,
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            if (method == null)
+            {
+                throw new System.ArgumentException($"Method {methodName} not found");
+            }
+
+            method.Invoke(obj, parameters);
+        }
+    }
+
     [TestFixture]
     public class TrackImageProcessorEditModeTests
     {
@@ -283,6 +314,234 @@ namespace TrackImageProcessorTests
         {
             var outputTexture = processor.GetOutputTexture();
             Assert.IsNull(outputTexture);
+        }
+
+        #endregion
+
+        #region Boundary Alignment Tests
+
+        [Test]
+        public void AlignBoundaryWithUserInput_WithNullBoundary_ReturnsOriginal()
+        {
+            // Arrange
+            List<Vector2> nullBoundary = null;
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("AlignBoundaryWithUserInput", nullBoundary);
+            
+            // Assert
+            Assert.IsNull(result);
+        }
+
+        [Test]
+        public void AlignBoundaryWithUserInput_WithEmptyBoundary_ReturnsOriginal()
+        {
+            // Arrange
+            var emptyBoundary = new List<Vector2>();
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("AlignBoundaryWithUserInput", emptyBoundary);
+            
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [Test]
+        public void AlignBoundaryWithUserInput_WithoutStartPosition_ReturnsOriginal()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(10, 10),
+                new Vector2(20, 20),
+                new Vector2(30, 30)
+            };
+            
+            // startPosition is null by default
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("AlignBoundaryWithUserInput", boundary);
+            
+            // Assert
+            Assert.IsNotNull(result);
+            CollectionAssert.AreEqual(boundary, result);
+        }
+
+        public void AlignBoundaryWithUserInput_WithStartPosition_ReordersBoundary()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(10, 10),
+                new Vector2(20, 20),
+                new Vector2(30, 30),
+                new Vector2(40, 40)
+            };
+            
+            var startPosition = new Vector2(35, 35); // Closest to index 2 (30,30)
+            
+            // Set start position through reflection
+            var processorType = typeof(TrackImageProcessor);
+            var startPositionField = processorType.GetField("startPosition", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            startPositionField?.SetValue(processor, startPosition);
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("AlignBoundaryWithUserInput", boundary);
+            
+            // Assert - should start from closest point
+            Assert.IsNotNull(result);
+            Assert.AreEqual(boundary.Count, result.Count);
+            Assert.AreEqual(boundary[2], result[0]); // Should start at index 2
+            Assert.AreEqual(boundary[3], result[1]); // Then index 3
+            Assert.AreEqual(boundary[0], result[2]); // Then index 0
+            Assert.AreEqual(boundary[1], result[3]); // Then index 1
+        }
+
+        [Test]
+        public void FindClosestPointIndex_ReturnsCorrectIndex()
+        {
+            // Arrange
+            var points = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(10, 10),
+                new Vector2(20, 20),
+                new Vector2(30, 30)
+            };
+            
+            var target = new Vector2(25, 25); // Closest to index 3
+            
+            // Act
+            var result = processor.CallPrivateMethod<int>("FindClosestPointIndex", points, target);
+            
+            // Assert
+            Assert.AreEqual(3, result);
+        }
+
+        [Test]
+        public void FindClosestPointIndex_WithEmptyList_ReturnsZero()
+        {
+            // Arrange
+            var emptyPoints = new List<Vector2>();
+            var target = new Vector2(10, 10);
+            
+            // Act
+            var result = processor.CallPrivateMethod<int>("FindClosestPointIndex", emptyPoints, target);
+            
+            // Assert
+            Assert.AreEqual(0, result);
+        }
+
+        [Test]
+        public void ReorderBoundaryFromIndex_ReordersCorrectly()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 1),
+                new Vector2(2, 2),
+                new Vector2(3, 3)
+            };
+            
+            int startIndex = 2;
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("ReorderBoundaryFromIndex", boundary, startIndex);
+            
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(boundary.Count, result.Count);
+            Assert.AreEqual(boundary[2], result[0]);
+            Assert.AreEqual(boundary[3], result[1]);
+            Assert.AreEqual(boundary[0], result[2]);
+            Assert.AreEqual(boundary[1], result[3]);
+        }
+
+        [Test]
+        public void ReorderBoundaryFromIndex_WithZeroIndex_ReturnsOriginal()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 1),
+                new Vector2(2, 2)
+            };
+            
+            int startIndex = 0;
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("ReorderBoundaryFromIndex", boundary, startIndex);
+            
+            // Assert
+            CollectionAssert.AreEqual(boundary, result);
+        }
+
+        [Test]
+        public void CorrectBoundaryDirection_WithMatchingDirection_ReturnsOriginal()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 1), // Direction: (1,1)
+                new Vector2(2, 2)
+            };
+            
+            var centerlinePoints = new List<Vector2>
+            {
+                new Vector2(5, 5),
+                new Vector2(6, 6), // Direction: (1,1) - same as boundary
+                new Vector2(7, 7)
+            };
+            
+            // Set centerline points through reflection
+            var processorType = typeof(TrackImageProcessor);
+            var centerlinePointsField = processorType.GetField("centerlinePoints", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            centerlinePointsField?.SetValue(processor, centerlinePoints);
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("CorrectBoundaryDirection", boundary);
+            
+            // Assert - should not reverse since directions match
+            CollectionAssert.AreEqual(boundary, result);
+        }
+
+        [Test]
+        public void CorrectBoundaryDirection_WithOppositeDirection_ReversesBoundary()
+        {
+            // Arrange
+            var boundary = new List<Vector2>
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 1), // Direction: (1,1)
+                new Vector2(2, 2)
+            };
+            
+            var centerlinePoints = new List<Vector2>
+            {
+                new Vector2(5, 5),
+                new Vector2(4, 4), // Direction: (-1,-1) - opposite to boundary
+                new Vector2(3, 3)
+            };
+            
+            // Set centerline points through reflection
+            var processorType = typeof(TrackImageProcessor);
+            var centerlinePointsField = processorType.GetField("centerlinePoints", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            centerlinePointsField?.SetValue(processor, centerlinePoints);
+            
+            // Act
+            var result = processor.CallPrivateMethod<List<Vector2>>("CorrectBoundaryDirection", boundary);
+            
+            // Assert - should reverse since directions are opposite
+            Assert.IsNotNull(result);
+            Assert.AreEqual(boundary.Count, result.Count);
+            CollectionAssert.AreEqual(boundary.AsEnumerable().Reverse(), result);
         }
 
         #endregion
