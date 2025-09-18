@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+
 public class ACOAgentReplay : MonoBehaviour
 {
     List<ReplayState> replayStates;
@@ -11,7 +12,9 @@ public class ACOAgentReplay : MonoBehaviour
     bool playing = false;
     public GameObject model;
     private int currentStep = 0;
-    private LineRenderer rend;
+    private MeshRenderer meshRenderer;
+    private MeshFilter meshFilter;
+
     public void InitializeString(string data)
     {
         string temp = data;
@@ -26,14 +29,116 @@ public class ACOAgentReplay : MonoBehaviour
             replayStates.Add(ReplayState.Parse(line));
         }
 
-        DrawLine();
+        DrawLineWithMesh();
     }
 
-    private void DrawLine()
+    private void DrawLineWithMesh()
     {
-        rend.positionCount = replayStates.Count;
-        int count = 0;
-        replayStates.ForEach((state) => rend.SetPosition(count++, new Vector3(state.position.X, 1, state.position.Y)));
+        if (meshFilter == null)
+        {
+            meshFilter = gameObject.AddComponent<MeshFilter>();
+            meshRenderer = gameObject.AddComponent<MeshRenderer>();
+            Material mat = new Material(Shader.Find("Sprites/Default"));
+            meshRenderer.material = mat;
+        }
+
+        if (replayStates.Count < 2) return;
+
+        // Apply color weighting to create weighted colors array
+        Color[] weightedColors = ApplyColorWeighting();
+
+        List<Vector3> vertices = new List<Vector3>();
+        List<Color> colors = new List<Color>();
+        List<int> triangles = new List<int>();
+
+        float lineWidth = 10.0f;
+
+        for (int i = 0; i < replayStates.Count - 1; i++)
+        {
+            Vector3 pos1 = new Vector3(replayStates[i].position.X, 1, replayStates[i].position.Y);
+            Vector3 pos2 = new Vector3(replayStates[i + 1].position.X, 1, replayStates[i + 1].position.Y);
+            
+            Vector3 direction = (pos2 - pos1).normalized;
+            Vector3 perpendicular = Vector3.Cross(direction, Vector3.up) * lineWidth * 0.5f;
+
+            // Use the weighted color instead of the original throttle color
+            Color segmentColor = weightedColors[i];
+
+            int vertexIndex = vertices.Count;
+
+            // Create quad for this segment
+            vertices.Add(pos1 - perpendicular);
+            vertices.Add(pos1 + perpendicular);
+            vertices.Add(pos2 + perpendicular);
+            vertices.Add(pos2 - perpendicular);
+
+            colors.Add(segmentColor);
+            colors.Add(segmentColor);
+            colors.Add(segmentColor);
+            colors.Add(segmentColor);
+
+            // Create triangles for the quad
+            triangles.Add(vertexIndex);
+            triangles.Add(vertexIndex + 1);
+            triangles.Add(vertexIndex + 2);
+            
+            triangles.Add(vertexIndex);
+            triangles.Add(vertexIndex + 2);
+            triangles.Add(vertexIndex + 3);
+        }
+
+        Mesh mesh = new Mesh();
+        mesh.vertices = vertices.ToArray();
+        mesh.colors = colors.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.RecalculateNormals();
+
+        meshFilter.mesh = mesh;
+    }
+
+    private Color[] ApplyColorWeighting()
+    {
+        Color[] weightedColors = new Color[replayStates.Count];
+        int segmentSize = 50;
+        
+        for (int i = 0; i < replayStates.Count; i++)
+        {
+            // Determine the window for this segment
+            int windowStart = (i / segmentSize) * segmentSize;
+            int windowEnd = Mathf.Min(windowStart + segmentSize, replayStates.Count);
+            
+            // Count colors in this window
+            int redCount = 0;
+            int yellowCount = 0;
+            int greenCount = 0;
+            
+            for (int j = windowStart; j < windowEnd; j++)
+            {
+                float throttle = replayStates[j].throttle;
+                if (throttle == 0) yellowCount++;
+                else if (throttle == 1) greenCount++;
+                else redCount++;
+            }
+            
+            // Apply color rules
+            Color segmentColor;
+            if (redCount >= 10)
+            {
+                segmentColor = Color.red;
+            }
+            else if (yellowCount >= 25)
+            {
+                segmentColor = Color.yellow;
+            }
+            else
+            {
+                segmentColor = Color.green;
+            }
+            
+            weightedColors[i] = segmentColor;
+        }
+        
+        return weightedColors;
     }
 
     public void InitializeTextFile(string fileName)
@@ -45,6 +150,13 @@ public class ACOAgentReplay : MonoBehaviour
         }
 
         InitializeString(data);
+    }
+
+    private Color GetColorFromThrottle(float throttle)
+    {
+        if (throttle == 0) return Color.yellow;
+        else if (throttle == 1) return Color.green;
+        else return Color.red;
     }
 
     public void Update()
@@ -69,9 +181,7 @@ public class ACOAgentReplay : MonoBehaviour
 
     public void Start()
     {
-        rend = gameObject.AddComponent<LineRenderer>();
-        rend.startWidth = 50.0f;
-        rend.endWidth = 50.0f;
+
     }
     
     private void UpdateView()
@@ -81,5 +191,10 @@ public class ACOAgentReplay : MonoBehaviour
         model.transform.position = new Vector3(state.position.X, 1, state.position.Y);
         model.transform.rotation = Quaternion.Euler(0.0f, state.bear, 0.0f);
         currentStep++;
+
+        if (currentStep >= replayStates.Count)
+        {
+            currentStep = 0; // Loop back to start
+        }
     }
 }

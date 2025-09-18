@@ -45,7 +45,8 @@ public class AgentContainer
             new ReplayState
             {
                 position = agent.Position,
-                bear = agent.GetCurrentBearing()
+                bear = agent.GetCurrentBearing(),
+                throttle = 0
             }
         };
     }
@@ -71,7 +72,8 @@ public class AgentContainer
             replayStates.Add(new ReplayState
             {
                 position = agent.Position,
-                bear = agent.GetCurrentBearing()
+                bear = agent.GetCurrentBearing(),
+                throttle = lastThrottle
             });
         }
 
