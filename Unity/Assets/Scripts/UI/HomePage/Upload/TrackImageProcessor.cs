@@ -688,14 +688,70 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         };
       }
     });
-
     // Wait for combined task to complete while keeping UI responsive
     while (!combinedTask.IsCompleted)
     {
       yield return null; // Keep UI responsive
     }
 
-    ProcessingTaskResult taskResult = combinedTask.Result;
+    ProcessingTaskResult taskResult;
+
+    // Handle task completion states safely
+    if (combinedTask.IsFaulted)
+    {
+      // Handle background exception
+      string errorMsg = "Background processing task failed: " + combinedTask.Exception?.GetBaseException().Message;
+      Debug.LogError(errorMsg);
+
+      lastResults = new ProcessingResults
+      {
+        success = false,
+        errorMessage = errorMsg,
+        processingTime = Time.realtimeSinceStartup - startTime
+      };
+
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
+      OnProcessingComplete?.Invoke(lastResults);
+      yield break;
+    }
+    else if (combinedTask.IsCanceled)
+    {
+      string errorMsg = "Background processing task was canceled.";
+      Debug.LogError(errorMsg);
+
+      lastResults = new ProcessingResults
+      {
+        success = false,
+        errorMessage = errorMsg,
+        processingTime = Time.realtimeSinceStartup - startTime
+      };
+
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
+      OnProcessingComplete?.Invoke(lastResults);
+      yield break;
+    }
+    else
+    {
+      taskResult = combinedTask.Result;
+    }
 
     if (!taskResult.success)
     {
