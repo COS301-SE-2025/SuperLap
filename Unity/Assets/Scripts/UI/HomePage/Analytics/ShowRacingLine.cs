@@ -78,63 +78,63 @@ public static class RacelineDisplayImporter
 public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPointerDownHandler
 {
   [Header("Display Settings")]
-  public RectTransform trackContainer;
-  public RectTransform zoomContainer;
-  public RectTransform viewportRect;
-  public Slider timeline;
-  public Texture2D playTexture;
-  public Texture2D pauseTexture;
-  public Texture2D play_0;
-  public Texture2D play_1;
-  public Texture2D play_2;
-  public Texture2D play_3;
-  public Texture2D play_4;
-  public Texture2D play_5;
-  public Image playPauseImage;
-  public Image ForwardImage;
-  public Image ReverseImage;
+  [SerializeField] private RectTransform trackContainer;
+  [SerializeField] private RectTransform zoomContainer;
+  [SerializeField] private RectTransform viewportRect;
+  [SerializeField] private Slider timeline;
+  [SerializeField] private Texture2D playTexture;
+  [SerializeField] private Texture2D pauseTexture;
+  [SerializeField] private Texture2D play_0;
+  [SerializeField] private Texture2D play_1;
+  [SerializeField] private Texture2D play_2;
+  [SerializeField] private Texture2D play_3;
+  [SerializeField] private Texture2D play_4;
+  [SerializeField] private Texture2D play_5;
+  [SerializeField] private Image playPauseImage;
+  [SerializeField] private Image ForwardImage;
+  [SerializeField] private Image ReverseImage;
 
   [Header("Line Renderer Settings")]
-  public Material lineMaterial;
-  public float outerBoundaryWidth = 1f;
-  public float innerBoundaryWidth = 1f;
-  public float racelineWidth = 1f;
+  [SerializeField] private Material lineMaterial;
+  [SerializeField] private float outerBoundaryWidth = 1f;
+  [SerializeField] private float innerBoundaryWidth = 1f;
+  [SerializeField] private float racelineWidth = 1f;
 
   [Header("Track Colors")]
-  public Color outerBoundaryColor = Color.blue;
-  public Color innerBoundaryColor = Color.red;
-  public Color roadColor = new Color(0.0f, 0.0f, 0.0f, 1);
-  public Color racelineColor = Color.green;
+  [SerializeField] private Color outerBoundaryColor = Color.blue;
+  [SerializeField] private Color innerBoundaryColor = Color.red;
+  [SerializeField] private Color roadColor = new Color(0.0f, 0.0f, 0.0f, 1);
+  [SerializeField] private Color racelineColor = Color.green;
 
   [Header("Track Controls")]
-  public bool showOuterBoundary = true;
-  public bool showInnerBoundary = true;
-  public bool showRaceLine = true;
+  [SerializeField] private bool showOuterBoundary = true;
+  [SerializeField] private bool showInnerBoundary = true;
+  [SerializeField] private bool showRaceLine = true;
 
   [Header("Zoom/Pan Settings")]
-  public float zoomSpeed = 0.1f;
-  public float minZoom = 0.5f;
-  public float maxZoom = 3f;
-  public float panPadding = 100f;
-  [SerializeField] public float currentZoom = 1f;
-  public float panSpeed = 1f;
-  public bool enablePanZoom = true;
+  [SerializeField] private float zoomSpeed = 0.1f;
+  [SerializeField] private float minZoom = 0.5f;
+  [SerializeField] private float maxZoom = 3f;
+  [SerializeField] private float panPadding = 100f;
+  [SerializeField] private float currentZoom = 1f;
+  [SerializeField] private float panSpeed = 1f;
+  [SerializeField] private bool enablePanZoom = true;
 
   [Header("Car Cursor Settings")]
-  public RectTransform carCursorPrefab;
-  public float cursorSize = 5f;
-  public float carSpeed = 50f;
-  public Color trailColor = new Color(1f, 1f, 0f, 0.8f);
+  [SerializeField] private RectTransform carCursorPrefab;
+  [SerializeField] private float cursorSize = 5f;
+  [SerializeField] private float carSpeed = 50f;
+  [SerializeField] private Color trailColor = new Color(1f, 1f, 0f, 0.8f);
 
   [Header("Camera Follow")]
-  private bool followCar = true;
-  public float lerpSpeed = 5f;
-  private bool goingToCar = true;
+  [SerializeField] private bool followCar = true;
+  [SerializeField] private float lerpSpeed = 5f;
+  [SerializeField] private bool goingToCar = true;
 
   [Header("Time Control")]
-  public float currentTime = 0f;
-  public float timeSpeed = 1f;
-  public bool isRacing = false;
+  [SerializeField] private float currentTime = 0f;
+  [SerializeField] private float timeSpeed = 1f;
+  [SerializeField] private bool isRacing = false;
   private RectTransform carCursor;
   private UILineRenderer trailLineRenderer;
   private List<Vector2> trailPositions = new List<Vector2>();

@@ -210,6 +210,12 @@ public class MotoGP : MonoBehaviour
     {
       return;
     }
+
+    if (lapIndices.Count == 0)
+    {
+      return;
+    }
+
     dropdown.options.Clear();
     foreach (int lapIndex in lapIndices)
     {
@@ -228,6 +234,33 @@ public class MotoGP : MonoBehaviour
     if (DropDownText != null)
     {
       DropDownText.SetActive(true);
+    }
+    ProcessRacingLine();
+  }
+
+  public void ProcessRacingLine()
+  {
+    int selectedLapIndex = lapIndexList[dropdown.value];
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, selectedLapIndex);
+
+    if (playerline == null)
+    {
+      Debug.LogError("PlayerLine data could not be generated.");
+      return;
+    }
+
+    ShowMotoGP showMotoGP = previewImage.GetComponent<ShowMotoGP>();
+    if (showMotoGP != null)
+    {
+      showMotoGP.DisplayPlayerLineData(playerline);
+    }
+    else
+    {
+      Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
+    }
+    if (controlPanel != null)
+    {
+      controlPanel.SetActive(true);
     }
   }
   public void UploadData()

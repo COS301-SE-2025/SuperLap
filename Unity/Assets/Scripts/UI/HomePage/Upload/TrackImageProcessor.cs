@@ -594,8 +594,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       processButton.interactable = false;
     }
 
+    yield return null;
     // Create mask from centerline
     Texture2D centerlineMask = CreateMaskFromCenterline();
+    yield return null;
     if (centerlineMask == null)
     {
       string errorMsg = "Failed to create centerline mask";
@@ -614,6 +616,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processButton.interactable = true;
       }
 
+      
+      if (LoaderPanel != null)
+      {
+        LoaderPanel.SetActive(false);
+      }
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
@@ -621,15 +628,15 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
-
+    yield return null;
     // Apply the mask to the original image
     Texture2D maskedImage = ApplyMaskToImage(loadedTexture, centerlineMask);
-
+    yield return null;
     // Save the masked image to a temporary file
     string tempFilePath = Path.Combine(Application.persistentDataPath, "temp_masked_track.png");
     byte[] maskedImageBytes = maskedImage.EncodeToPNG();
     File.WriteAllBytes(tempFilePath, maskedImageBytes);
-
+    yield return null;
     // Clean up textures we don't need anymore
     Destroy(centerlineMask);
     Destroy(maskedImage);
@@ -646,6 +653,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     List<Vector2> centerlinePointsCopy = new List<Vector2>(centerlinePoints);
     Vector2? startPositionCopy = startPosition;
 
+    yield return null;
     // Run both image processing and PSO optimization in background tasks
     Task<ProcessingTaskResult> combinedTask = Task.Run(() =>
     {
@@ -699,7 +707,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       }
     });
     // Wait for combined task to complete while keeping UI responsive
-  
+
 
     while (!combinedTask.IsCompleted)
     {

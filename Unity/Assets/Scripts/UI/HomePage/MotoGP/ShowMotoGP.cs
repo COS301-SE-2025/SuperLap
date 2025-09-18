@@ -18,36 +18,36 @@ public class MotoGPDisplayData
 public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerDownHandler
 {
   [Header("Display Settings")]
-  public RectTransform trackContainer;
-  public RectTransform zoomContainer;
-  public RectTransform viewportRect;
+  [SerializeField] private RectTransform trackContainer;
+  [SerializeField] private RectTransform zoomContainer;
+  [SerializeField] private RectTransform viewportRect;
 
   [Header("Line Renderer Settings")]
-  public Material lineMaterial;
-  public float outerBoundaryWidth = 1f;
-  public float innerBoundaryWidth = 1f;
-  public float racelineWidth = 1f;
-  public float playerPathWidth = 1f;
+  [SerializeField] private Material lineMaterial;
+  [SerializeField] private float outerBoundaryWidth = 1f;
+  [SerializeField] private float innerBoundaryWidth = 1f;
+  [SerializeField] private float racelineWidth = 1f;
+  [SerializeField] private float playerPathWidth = 1f;
 
   [Header("Track Colors")]
-  public Color outerBoundaryColor = Color.blue;
-  public Color innerBoundaryColor = Color.red;
-  public Color roadColor = new Color(0.2f, 0.2f, 0.2f, 1);
-  public Color racelineColor = Color.green;
-  public Color playerRaceLineColor = new Color(0, 0.5f, 1, 1);
+  [SerializeField] private Color outerBoundaryColor = Color.blue;
+  [SerializeField] private Color innerBoundaryColor = Color.red;
+  [SerializeField] private Color roadColor = new Color(0.2f, 0.2f, 0.2f, 1);
+  [SerializeField] private Color racelineColor = Color.green;
+  [SerializeField] private Color playerRaceLineColor = new Color(0, 0.5f, 1, 1);
 
   [Header("Track Controls")]
-  public bool showOuterBoundary = true;
-  public bool showInnerBoundary = true;
-  public bool showRaceLine = true;
-  public bool showPlayerRaceLine = true;
+  [SerializeField] private bool showOuterBoundary = true;
+  [SerializeField] private bool showInnerBoundary = true;
+  [SerializeField] private bool showRaceLine = true;
+  [SerializeField] private bool showPlayerRaceLine = true;
 
   [Header("Zoom/Pan Settings")]
-  public float zoomSpeed = 0.1f;
-  public float minZoom = 0.5f;
-  public float maxZoom = 3f;
-  public float panSpeed = 1f;
-  public bool invertZoom = false;
+  [SerializeField] private float zoomSpeed = 0.1f;
+  [SerializeField] private float minZoom = 0.5f;
+  [SerializeField] private float maxZoom = 3f;
+  [SerializeField] private float panSpeed = 1f;
+  [SerializeField] private bool invertZoom = false;
 
   private MotoGPDisplayData currentTrackData;
   private Dictionary<string, UILineRenderer> lineRenderers = new Dictionary<string, UILineRenderer>();

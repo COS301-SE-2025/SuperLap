@@ -6,22 +6,25 @@ using System.Collections.Generic;
 public class GalleryGetInfo : MonoBehaviour
 {
   [Header("Getters")]
-  public GameObject defaultPanel;
-
+  [SerializeField] private GameObject defaultPanel;
   public GameObject scrollPanel;
 
   [Header("Layout Settings")]
-  public RectTransform contentPanel;
-  public Transform column1Parent;
-  public Transform column2Parent;
-  public Transform column3Parent;
+  [SerializeField] private RectTransform contentPanel;
+  [SerializeField] private Transform column1Parent;
+  [SerializeField] private Transform column2Parent;
+  [SerializeField] private Transform column3Parent;
 
   [Header("Panel Content References")]
-  public TextMeshProUGUI trackNameText;
-  public Image trackImage;
+  [SerializeField] private TextMeshProUGUI trackNameText;
+  [SerializeField] private Image trackImage;
 
   [Header("Backup Panel")]
-  public GameObject backupPanel;
+  [SerializeField] private GameObject backupPanel;
+
+  [Header("Loader")]
+  [SerializeField] private GameObject loaderPanel;
+
   private APIManager apiManager;
   private List<GameObject> instantiatedPanels = new List<GameObject>();
   private int currentColumn = 0;
@@ -39,6 +42,8 @@ public class GalleryGetInfo : MonoBehaviour
     {
       backupPanel.SetActive(false);
     }
+
+    if (loaderPanel != null) loaderPanel.SetActive(false);
   }
 
   private void Start()
@@ -58,7 +63,12 @@ public class GalleryGetInfo : MonoBehaviour
 
     ClearAllPanels();
 
+    if (loaderPanel != null) loaderPanel.SetActive(true);
+
     var (success, message, tracks) = await apiManager.GetAllTracksAsync();
+
+    if (loaderPanel != null) loaderPanel.SetActive(false);
+
     OnTracksLoaded(success, message, tracks);
   }
 
