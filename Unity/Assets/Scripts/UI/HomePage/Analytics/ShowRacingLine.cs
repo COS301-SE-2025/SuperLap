@@ -127,7 +127,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public Color trailColor = new Color(1f, 1f, 0f, 0.8f);
 
   [Header("Camera Follow")]
-  private bool followCar = false;
+  private bool followCar = true;
   public float lerpSpeed = 5f;
   private bool goingToCar = true;
 
@@ -501,6 +501,25 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   {
     return list.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList();
   }
+  
+  private List<Vector2> Downsample(List<Vector2> points, int step)
+  {
+    return points.Where((pt, idx) => idx % step == 0).ToList();
+  }
+  
+  private List<Vector2> EnsureBelowLimit(List<Vector2> points, int limit = 64000)
+  {
+    if (points == null)
+      return points;
+
+    int step = 2; 
+    while (points.Count > limit)
+    {
+      points = Downsample(points, step);
+    }
+
+    return points;
+  }
 
   public void DisplayRacelineData(RacelineDisplayData trackData)
   {
@@ -517,9 +536,9 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     trackData = new RacelineDisplayData
     {
-      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(trackData.InnerBoundary), simplificationTolerance)),
-      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(trackData.OuterBoundary), simplificationTolerance)),
-      Raceline = EnsureLooped(trackData.Raceline)
+      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary)), simplificationTolerance)),
+      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary)), simplificationTolerance)),
+      Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline))
     };
 
     ClearExistingLines();
@@ -530,7 +549,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
 
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
-    
+
     if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
     if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
     if (showRaceLine) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);

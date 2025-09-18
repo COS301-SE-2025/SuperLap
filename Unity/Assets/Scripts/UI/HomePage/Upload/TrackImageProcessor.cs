@@ -20,7 +20,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   [SerializeField] private Button processButton;
   [SerializeField] private Slider maskWidthSlider;
   [SerializeField] private TextMeshProUGUI maskWidthLabel;
-
+  [SerializeField] private GameObject LoaderPanel;
 
 
   [Header("Upload Settings")]
@@ -133,6 +133,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       maskWidthLabel.gameObject.SetActive(false);
     }
+
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
   }
 
   private void OnEnable()
@@ -174,6 +179,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (maskWidthSlider != null) maskWidthSlider.gameObject.SetActive(false);
     if (maskWidthLabel != null) maskWidthLabel.gameObject.SetActive(false);
     if (outputImage != null) outputImage.gameObject.SetActive(false);
+    if (LoaderPanel != null)LoaderPanel.SetActive(false);
 
     // Reset slider value
     if (maskWidthSlider != null) maskWidthSlider.value = maskWidth;
@@ -561,16 +567,20 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       return;
     }
 
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(true);
+    }
     StartCoroutine(ProcessTrackImageCoroutine());
   }
 
   private IEnumerator ProcessTrackImageCoroutine()
   {
+    yield return null;
     if (isProcessing) yield break;
 
     isProcessing = true;
     float startTime = Time.realtimeSinceStartup;
-
 
     // SHOW LOADING SCREEN HERE
     // Example: LoadingScreenManager.Instance.ShowLoadingScreen("Processing track image...");
@@ -689,9 +699,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       }
     });
     // Wait for combined task to complete while keeping UI responsive
+  
+
     while (!combinedTask.IsCompleted)
     {
       yield return null; // Keep UI responsive
+    }
+
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
     }
 
     ProcessingTaskResult taskResult;

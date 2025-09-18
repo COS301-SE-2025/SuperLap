@@ -198,6 +198,25 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     }
     return points;
   }
+  
+  private List<Vector2> Downsample(List<Vector2> points, int step)
+  {
+    return points.Where((pt, idx) => idx % step == 0).ToList();
+  }
+  
+  private List<Vector2> EnsureBelowLimit(List<Vector2> points, int limit = 64000)
+  {
+    if (points == null)
+      return points;
+
+    int step = 2; 
+    while (points.Count > limit)
+    {
+      points = Downsample(points, step);
+    }
+
+    return points;
+  }
 
   public void DisplayPlayerLineData(CSVToBinConverter.LoadCSV.PlayerLine playerLine)
   {
@@ -205,10 +224,10 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
 
     MotoGPDisplayData displayData = new MotoGPDisplayData
     {
-      PlayerPath = ConvertToUnityVector2(playerLine.PlayerPath),
-      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(ConvertToUnityVector2(playerLine.InnerBoundary)), simplificationTolerance)),simplificationTolerance)),
-      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(ConvertToUnityVector2(playerLine.OuterBoundary)), simplificationTolerance)),simplificationTolerance)),
-      Raceline = EnsureLooped(ConvertToUnityVector2(playerLine.Raceline))
+      PlayerPath = EnsureBelowLimit(ConvertToUnityVector2(playerLine.PlayerPath)),
+      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(ConvertToUnityVector2(playerLine.InnerBoundary))), simplificationTolerance)), simplificationTolerance)),
+      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(ConvertToUnityVector2(playerLine.OuterBoundary))), simplificationTolerance)), simplificationTolerance)),
+      Raceline = EnsureLooped(EnsureBelowLimit(ConvertToUnityVector2(playerLine.Raceline)))
     };
 
     DisplayRacelineData(displayData);

@@ -16,6 +16,9 @@ public class HomePageNavigation : MonoBehaviour
   public GameObject motoGPPage;
   public GameObject AISettingsPage;
 
+  [Header("Loader")]
+  [SerializeField] private GameObject LoaderPanel;
+
   [Header("Help Tooltips")]
   [SerializeField] private Tooltip[] tooltips;
 
@@ -37,6 +40,11 @@ public class HomePageNavigation : MonoBehaviour
     NavigateToDashboard();
     if (tooltips == null || tooltips.Length == 0)
       tooltips = GetComponentsInChildren<Tooltip>(true);
+
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
 
     hideSupportPopups();
   }
