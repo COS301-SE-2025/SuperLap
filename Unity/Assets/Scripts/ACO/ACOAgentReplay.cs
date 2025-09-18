@@ -21,8 +21,9 @@ public class ACOAgentReplay : MonoBehaviour
         {
             int pos = temp.IndexOf('\n');
             string line = temp[..pos];
-            replayStates.Add(ReplayState.Parse(line));
             temp = temp[(pos + 1)..];
+            if (line.StartsWith("#")) continue;
+            replayStates.Add(ReplayState.Parse(line));
         }
 
         DrawLine();

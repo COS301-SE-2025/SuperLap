@@ -68,11 +68,14 @@ public class AgentContainer
         inputs.Add((lastThrottle, lastTurn));
         agent.Step();
 
-        replayStates.Add(new ReplayState
+        if (!passedTarget)
         {
-            position = agent.Position,
-            bear = agent.GetCurrentBearing()
-        });
+            replayStates.Add(new ReplayState
+            {
+                position = agent.Position,
+                bear = agent.GetCurrentBearing()
+            });
+        }
 
         isValid = !agent.IsOffTrack();
 

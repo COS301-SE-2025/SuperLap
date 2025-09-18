@@ -12,7 +12,7 @@ public class ACOWorkerThreadTest : MonoBehaviour
     private bool running = false;
     private int c = 0;
     [SerializeField] private int checkpointCount = 10;
-    List<AgentContainer> bestAgents = new();
+    Dictionary<int, AgentContainer> bestAgents = new();
     float waitTimer = 0.05f;
     int retryCounter = 5;
 
@@ -111,8 +111,14 @@ public class ACOWorkerThreadTest : MonoBehaviour
                     {
                         Debug.LogWarning($"Could not find solution for split {c} after all retries. Backing up to split {c - 1}.");
                         
-                        // Remove the last successful agent (corresponds to split c-1)
-                        bestAgents.RemoveAt(bestAgents.Count - 1);
+                        // Only remove the current failed split (c) if it exists
+                        // Don't remove the previous successful split (c-1)
+                        if (bestAgents.ContainsKey(c))
+                        {
+                            bestAgents.Remove(c);
+                            Debug.Log($"Removed failed agent for split {c} during backtracking");
+                        }
+                        
                         c--;
                         retryCounter = 5;
                         
@@ -133,7 +139,29 @@ public class ACOWorkerThreadTest : MonoBehaviour
             else
             {
                 AgentContainer bestAgent = currentSolutions.OrderBy((ac) => ac.TotalSteps).First();
-                bestAgents.Add(bestAgent);
+                
+                // Debug: Check if we're overwriting an existing agent for this split
+                if (bestAgents.ContainsKey(c))
+                {
+                    Debug.LogWarning($"OVERWRITING existing agent for split {c}! Old agent had {bestAgents[c].TotalSteps} steps, new agent has {bestAgent.TotalSteps} steps");
+                    Debug.LogWarning($"Old agent target position: {bestAgents[c].TargetPassPosition}, speed: {bestAgents[c].TargetPassSpeed}");
+                    Debug.LogWarning($"New agent target position: {bestAgent.TargetPassPosition}, speed: {bestAgent.TargetPassSpeed}");
+                }
+                else
+                {
+                    Debug.Log($"Adding NEW agent for split {c} with {bestAgent.TotalSteps} steps");
+                    Debug.Log($"Agent target position: {bestAgent.TargetPassPosition}, speed: {bestAgent.TargetPassSpeed}");
+                }
+                
+                // Always overwrite the current split's best agent (this ensures only the best is kept)
+                bestAgents[c] = bestAgent;
+                
+                // Debug: Show current state of bestAgents dictionary
+                Debug.Log($"Current bestAgents dictionary contains {bestAgents.Count} entries:");
+                foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
+                {
+                    Debug.Log($"  Split {kvp.Key}: {kvp.Value.TotalSteps} steps, target pos: {kvp.Value.TargetPassPosition}, speed: {kvp.Value.TargetPassSpeed}");
+                }
                 
                 retryCounter = 5; // Reset retry counter
                 c++;
@@ -149,6 +177,15 @@ public class ACOWorkerThreadTest : MonoBehaviour
     {
         string filePath = Path.Combine(Application.persistentDataPath, "bestAgent.txt");
 
+        Debug.Log($"=== SAVING BEST AGENT TO FILE ===");
+        Debug.Log($"Total splits to save: {bestAgents.Count}");
+        
+        // Debug: Check for overlapping agents
+        foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
+        {
+            Debug.Log($"Split {kvp.Key}: {kvp.Value.ReplayStates.Count} replay states, target position: {kvp.Value.TargetPassPosition}");
+        }
+
         using (StreamWriter writer = new StreamWriter(filePath))
         {
             // Write initial state as first line
@@ -158,18 +195,30 @@ public class ACOWorkerThreadTest : MonoBehaviour
             float bearing = CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z));
             
             writer.WriteLine($"{startPos.x}:{startPos.z}:{bearing}");
+            Debug.Log($"Initial state written: pos=({startPos.x:F2}, {startPos.z:F2}), bearing={bearing:F2}");
+            
+            int totalStatesWritten = 0;
             
             // Write all inputs from all segments
-            bestAgents.ForEach((agent) =>
+            bestAgents.Values.ToList().ForEach((agent) =>
             {
+                writer.WriteLine($"# Start of Agent {totalStatesWritten}");
+                Debug.Log($"Writing {agent.ReplayStates.Count} states from agent with {agent.TotalSteps} total steps");
+                int statesFromThisAgent = 0;
                 agent.ReplayStates.ForEach((state) =>
                 {
                     writer.WriteLine(state.ToString());
+                    statesFromThisAgent++;
+                    totalStatesWritten++;
                 });
+                Debug.Log($"Wrote {statesFromThisAgent} states from this agent");
             });
+            
+            Debug.Log($"Total replay states written to file: {totalStatesWritten}");
         }
         
         Debug.Log($"Best agent path saved to: {filePath}");
+        Debug.Log($"=== SAVE COMPLETE ===");
     }
     
     List<System.Numerics.Vector2> InitializeDistanceBasedCheckpoints()
@@ -242,9 +291,8 @@ public class ACOWorkerThreadTest : MonoBehaviour
         Vector3 startPos = ACOTrackMaster.GetTrainingSpawnPosition(0, threadRl);
         Vector3 startDir = ACOTrackMaster.GetTrainingSpawnDirection(0, threadRl);
 
-        Debug.Log($"Initializing system for split {currentSplit}");
-        Debug.Log($"Start position: {startPos}");
-        Debug.Log($"Start bearing: {CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z))}");
+        Debug.Log($"=== INITIALIZING SYSTEM FOR SPLIT {currentSplit} ===");
+        Debug.Log($"Current bestAgents dictionary has {bestAgents.Count} entries");
 
         workers = new();
 
@@ -283,7 +331,7 @@ public class ACOWorkerThreadTest : MonoBehaviour
             float speed;
             float turnAngle;
             
-            if (currentSplit > 0 && bestAgents.Count >= currentSplit)
+            if (currentSplit > 0 && bestAgents.ContainsKey(currentSplit - 1))
             {
                 // Use the end state of the previous successful segment
                 AgentContainer previousAgent = bestAgents[currentSplit - 1];
@@ -291,6 +339,8 @@ public class ACOWorkerThreadTest : MonoBehaviour
                 bear = previousAgent.TargetPassBear;
                 speed = previousAgent.TargetPassSpeed;
                 turnAngle = previousAgent.TargetPassTurnAngle;
+                Debug.Log($"Using previous agent state from split {currentSplit - 1}: pos={pos}, bear={bear:F2}, speed={speed:F2}");
+                Debug.Log($"Previous agent had {previousAgent.ReplayStates.Count} replay states and {previousAgent.TotalSteps} total steps");
             }
             else
             {
@@ -299,6 +349,7 @@ public class ACOWorkerThreadTest : MonoBehaviour
                 bear = CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z));
                 speed = 0;
                 turnAngle = 0;
+                Debug.Log($"Using initial spawn state: pos={pos}, bear={bear:F2}, speed={speed:F2}");
             }
 
             wt.SetStartState(pos, bear, speed, turnAngle);
