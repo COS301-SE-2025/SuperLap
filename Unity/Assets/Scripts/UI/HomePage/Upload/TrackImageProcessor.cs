@@ -571,6 +571,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     isProcessing = true;
     float startTime = Time.realtimeSinceStartup;
 
+    
     // SHOW LOADING SCREEN HERE
     // Example: LoadingScreenManager.Instance.ShowLoadingScreen("Processing track image...");
 
@@ -625,22 +626,83 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     yield return null; // Allow UI to update
 
-    // Process the MASKED image to get boundaries (this should be fast)
-    ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
-
     Debug.Log(tempFilePath);
 
-    yield return null; // Allow UI to update
+    // Run both image processing and PSO optimization in background tasks
+    Debug.Log($"Starting background image processing and PSO optimization...");
+    OnProcessingStarted?.Invoke("Processing boundaries and optimizing raceline...");
 
-    if (!boundaries.success)
+    // Create a combined task that handles both image processing and PSO
+    Task<ProcessingTaskResult> combinedTask = Task.Run(() =>
     {
-      string errorMsg = $"Image processing failed: {boundaries.errorMessage}";
+      try
+      {
+        // Process the MASKED image to get boundaries
+        ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
+
+        if (!boundaries.success)
+        {
+          return new ProcessingTaskResult
+          {
+            success = false,
+            errorMessage = boundaries.errorMessage,
+            boundaries = null,
+            racelineResult = null
+          };
+        }
+
+        // Align boundaries with user-traced centerline start and direction
+        // Note: We need to pass centerlinePoints data to the background thread
+        List<Vector2> alignedInner = AlignBoundaryWithUserInputBackground(boundaries.innerBoundary, centerlinePoints, startPosition);
+        List<Vector2> alignedOuter = AlignBoundaryWithUserInputBackground(boundaries.outerBoundary, centerlinePoints, startPosition);
+
+        // Run PSO optimization
+        PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
+            alignedInner,
+            alignedOuter,
+            particleCount,
+            maxIterations
+        );
+
+        return new ProcessingTaskResult
+        {
+          success = true,
+          errorMessage = "",
+          boundaries = boundaries,
+          alignedInner = alignedInner,
+          alignedOuter = alignedOuter,
+          racelineResult = racelineResult
+        };
+      }
+      catch (System.Exception ex)
+      {
+        return new ProcessingTaskResult
+        {
+          success = false,
+          errorMessage = $"Background processing failed: {ex.Message}",
+          boundaries = null,
+          racelineResult = null
+        };
+      }
+    });
+
+    // Wait for combined task to complete while keeping UI responsive
+    while (!combinedTask.IsCompleted)
+    {
+      yield return null; // Keep UI responsive
+    }
+
+    ProcessingTaskResult taskResult = combinedTask.Result;
+
+    if (!taskResult.success)
+    {
+      string errorMsg = taskResult.errorMessage;
       Debug.LogError(errorMsg);
 
       lastResults = new ProcessingResults
       {
         success = false,
-        errorMessage = boundaries.errorMessage,
+        errorMessage = taskResult.errorMessage,
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
@@ -658,33 +720,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       yield break;
     }
 
-    // Align boundaries with user-traced centerline start and direction
-    List<Vector2> alignedInner = AlignBoundaryWithUserInput(boundaries.innerBoundary);
-    List<Vector2> alignedOuter = AlignBoundaryWithUserInput(boundaries.outerBoundary);
-
-    yield return null; // Allow UI to update
-
-    Debug.Log($"Image processing successful. Running PSO optimization...");
-    OnProcessingStarted?.Invoke("Optimizing raceline...");
-
-    // Run PSO optimization in a separate task to keep UI responsive
-    Task<PSOInterface.RacelineResult> psoTask = Task.Run(() =>
-    {
-      return PSOIntegrator.RunPSO(
-          alignedInner,
-          alignedOuter,
-          particleCount,
-          maxIterations
-      );
-    });
-
-    // Wait for PSO to complete while keeping UI responsive
-    while (!psoTask.IsCompleted)
-    {
-      yield return null; // Keep UI responsive
-    }
-
-    PSOInterface.RacelineResult racelineResult = psoTask.Result;
+    PSOInterface.RacelineResult racelineResult = taskResult.racelineResult;
 
     if (racelineResult == null)
     {
@@ -752,6 +788,17 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     OnProcessingComplete?.Invoke(lastResults);
   }
 
+  // Helper class for background task results
+  private class ProcessingTaskResult
+  {
+    public bool success;
+    public string errorMessage;
+    public ImageProcessing.TrackBoundaries boundaries;
+    public List<Vector2> alignedInner;
+    public List<Vector2> alignedOuter;
+    public PSOInterface.RacelineResult racelineResult;
+  }
+
   private List<Vector2> AlignBoundaryWithUserInput(List<Vector2> boundary)
   {
     if (boundary == null || boundary.Count == 0 || centerlinePoints.Count < 2)
@@ -772,6 +819,100 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     Debug.Log($"Boundary aligned with user input. Start index: {closestIndex}");
 
     return directionCorrectedBoundary;
+  }
+
+  // Background thread version of AlignBoundaryWithUserInput
+  private List<Vector2> AlignBoundaryWithUserInputBackground(List<Vector2> boundary, List<Vector2> centerlinePointsCopy, Vector2? startPositionCopy)
+  {
+    if (boundary == null || boundary.Count == 0 || centerlinePointsCopy.Count < 2)
+    {
+      Debug.LogWarning("Cannot align boundary - missing data");
+      return boundary;
+    }
+    
+    // Find the closest point on the boundary to the user-defined start position
+    Vector2 userStart = startPositionCopy ?? centerlinePointsCopy[0];
+    int closestIndex = FindClosestPointIndexBackground(boundary, userStart);
+
+    // Reorder the boundary to start from this point
+    List<Vector2> reorderedBoundary = ReorderBoundaryBackground(boundary, closestIndex);
+
+    // Check and correct direction
+    List<Vector2> directionCorrectedBoundary = EnsureBoundaryDirectionBackground(reorderedBoundary, centerlinePointsCopy);
+
+    Debug.Log($"Boundary aligned with user input. Start index: {closestIndex}");
+
+    return directionCorrectedBoundary;
+  }
+
+  // Background thread versions of helper methods
+  private int FindClosestPointIndexBackground(List<Vector2> points, Vector2 target)
+  {
+    int closestIndex = 0;
+    float closestDistSqr = float.MaxValue;
+
+    for (int i = 0; i < points.Count; i++)
+    {
+      float distSqr = (points[i] - target).sqrMagnitude;
+      if (distSqr < closestDistSqr)
+      {
+        closestDistSqr = distSqr;
+        closestIndex = i;
+      }
+    }
+
+    return closestIndex;
+  }
+
+  private List<Vector2> ReorderBoundaryBackground(List<Vector2> boundary, int startIndex)
+  {
+    List<Vector2> reordered = new List<Vector2>();
+
+    for (int i = 0; i < boundary.Count; i++)
+    {
+      int index = (startIndex + i) % boundary.Count;
+      reordered.Add(boundary[index]);
+    }
+
+    return reordered;
+  }
+
+  private List<Vector2> EnsureBoundaryDirectionBackground(List<Vector2> boundary, List<Vector2> centerlinePointsCopy)
+  {
+    if (boundary.Count < 3 || centerlinePointsCopy.Count < 2)
+    {
+      return boundary;
+    }
+
+    // Calculate boundary direction using first three points
+    Vector2 bStart = boundary[0];
+    Vector2 bMid = boundary[1];
+    Vector2 bEnd = boundary[2];
+
+    Vector2 bDir1 = (bMid - bStart).normalized;
+    Vector2 bDir2 = (bEnd - bMid).normalized;
+    Vector2 boundaryDirection = ((bDir1 + bDir2) * 0.5f).normalized;
+
+    // Calculate user-defined centerline direction
+    Vector2 cStart = centerlinePointsCopy[0];
+    Vector2 cEnd = centerlinePointsCopy[Mathf.Min(10, centerlinePointsCopy.Count - 1)];
+    Vector2 centerlineDirection = (cEnd - cStart).normalized;
+
+    // Calculate angle between directions
+    float angle = Vector2.SignedAngle(boundaryDirection, centerlineDirection);
+
+    // If angle is greater than 90 degrees, reverse the boundary
+    if (Mathf.Abs(angle) > 90f)
+    {
+      boundary.Reverse();
+      Debug.Log("Boundary direction reversed to match user-defined direction");
+    }
+    else
+    {
+      Debug.Log("Boundary direction matches user-defined direction");
+    }
+
+    return boundary;
   }
 
   private int FindClosestPointIndex(List<Vector2> points, Vector2 target)
