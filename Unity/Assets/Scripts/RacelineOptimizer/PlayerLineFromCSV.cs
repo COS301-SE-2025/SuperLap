@@ -35,8 +35,12 @@ namespace CSVToBinConverter
       int trackIndex = Array.IndexOf(headers, "trackId");
       string trackName = "Unknown";
 
+
+
       if (lapIdxIndex == -1 || xIdx == -1 || yIdx == -1)
         throw new Exception("Required columns not found in CSV");
+
+      List<(float x, float y)> rawPoints = new();
 
       while (!reader.EndOfStream)
       {
@@ -55,41 +59,39 @@ namespace CSVToBinConverter
         if (float.TryParse(fields[xIdx], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
             float.TryParse(fields[yIdx], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
         {
-          string settingsPath = Path.Combine(Application.streamingAssetsPath, "AdjustPlayerlineSettings", $"{trackName}.json");
-          PlayerlineSettings settings = LoadSettings(settingsPath);
-
-          if (settings == null)
-          {
-            Debug.LogError($"Settings not found or invalid for track {trackName}. Using defaults.");
-            settings = new PlayerlineSettings
-            {
-              tx = 0f,
-              ty = 0f,
-              scale = 1f,
-              rotation = 0f,
-              reflect_x = false,
-              reflect_y = false
-            };
-          }
-
-          float rad = settings.rotation * (float)Math.PI / 180f;
-          float cos = MathF.Cos(rad);
-          float sin = MathF.Sin(rad);
-
-          float rotatedX = cos * x - sin * y;
-          float rotatedY = sin * x + cos * y;
-
-          rotatedX *= settings.scale;
-          rotatedY *= settings.scale;
-
-          if (settings.reflect_x) rotatedX = -rotatedX;
-          if (settings.reflect_y) rotatedY = -rotatedY;
-
-          rotatedX += settings.tx;
-          rotatedY += settings.ty;
-
-          playerline.Add(new Vector2(rotatedX, rotatedY));
+          rawPoints.Add((x, y));
         }
+      }
+
+      string settingsPath = Path.Combine(Application.streamingAssetsPath, "AdjustPlayerlineSettings", $"{trackName}.json");
+      PlayerlineSettings settings = LoadSettings(settingsPath) ?? new PlayerlineSettings
+      {
+        tx = 0f,
+        ty = 0f,
+        scale = 1f,
+        rotation = 0f,
+        reflect_x = false,
+        reflect_y = false
+      };
+
+      float rad = settings.rotation * (float)Math.PI / 180f;
+      float cos = MathF.Cos(rad);
+      float sin = MathF.Sin(rad);
+      foreach (var (x, y) in rawPoints)
+      {
+        float rotatedX = cos * x - sin * y;
+        float rotatedY = sin * x + cos * y;
+
+        rotatedX *= settings.scale;
+        rotatedY *= settings.scale;
+
+        if (settings.reflect_x) rotatedX = -rotatedX;
+        if (settings.reflect_y) rotatedY = -rotatedY;
+
+        rotatedX += settings.tx;
+        rotatedY += settings.ty;
+
+        playerline.Add(new Vector2(rotatedX, rotatedY));
       }
 
       if (playerline.Count == 0)
