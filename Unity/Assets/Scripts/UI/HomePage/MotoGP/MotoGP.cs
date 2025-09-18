@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Generic;
 using System;
 using TMPro;
+using System.Linq;
 public class MotoGP : MonoBehaviour
 {
 
@@ -103,20 +104,20 @@ public class MotoGP : MonoBehaviour
     }
 
     List<MotoGPTelemetry.RecordedData> recordedData = recorder.Stop();
-    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadUDP.Convert(recordedData, 2);
-
-    if (playerline == null)
-    {
-      Debug.Log("Didnt record nothing");
-      return;
-    }
-
     List<int> laps = recorder.getLaps();
     Debug.Log("Laps found: " + laps.Count);
     foreach (int lap in laps)
     {
       Debug.Log("Lap: " + lap);
     }
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadUDP.Convert(recordedData, laps.First());
+
+    if (playerline == null)
+    {
+      Debug.Log("Didnt record nothing");
+      return;
+    }
+    
     Debug.Log("Raceline Count: " + playerline.Raceline.Count);
     if (playerline == null)
     {
