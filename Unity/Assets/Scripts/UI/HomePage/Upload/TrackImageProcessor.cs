@@ -567,11 +567,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private IEnumerator ProcessTrackImageCoroutine()
   {
     if (isProcessing) yield break;
-    
+
     isProcessing = true;
     float startTime = Time.realtimeSinceStartup;
 
-    
+
     // SHOW LOADING SCREEN HERE
     // Example: LoadingScreenManager.Instance.ShowLoadingScreen("Processing track image...");
 
@@ -633,6 +633,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     OnProcessingStarted?.Invoke("Processing boundaries and optimizing raceline...");
 
     // Create a combined task that handles both image processing and PSO
+    List<Vector2> centerlinePointsCopy = new List<Vector2>(centerlinePoints);
+    Vector2? startPositionCopy = startPosition;
+
+    // Run both image processing and PSO optimization in background tasks
     Task<ProcessingTaskResult> combinedTask = Task.Run(() =>
     {
       try
@@ -651,10 +655,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           };
         }
 
-        // Align boundaries with user-traced centerline start and direction
-        // Note: We need to pass centerlinePoints data to the background thread
-        List<Vector2> alignedInner = AlignBoundaryWithUserInputBackground(boundaries.innerBoundary, centerlinePoints, startPosition);
-        List<Vector2> alignedOuter = AlignBoundaryWithUserInputBackground(boundaries.outerBoundary, centerlinePoints, startPosition);
+        // Use the copied variables instead of the original ones
+        List<Vector2> alignedInner = AlignBoundaryWithUserInputBackground(boundaries.innerBoundary, centerlinePointsCopy, startPositionCopy);
+        List<Vector2> alignedOuter = AlignBoundaryWithUserInputBackground(boundaries.outerBoundary, centerlinePointsCopy, startPositionCopy);
 
         // Run PSO optimization
         PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
@@ -829,7 +832,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       Debug.LogWarning("Cannot align boundary - missing data");
       return boundary;
     }
-    
+
     // Find the closest point on the boundary to the user-defined start position
     Vector2 userStart = startPositionCopy ?? centerlinePointsCopy[0];
     int closestIndex = FindClosestPointIndexBackground(boundary, userStart);
@@ -1428,7 +1431,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   {
     return CreateMaskFromCenterline();
   }
-  
+
   private void OnDestroy()
   {
     if (loadedTexture != null)
