@@ -895,7 +895,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     // Calculate user-defined centerline direction
     Vector2 cStart = centerlinePointsCopy[0];
-    Vector2 cEnd = centerlinePointsCopy[Mathf.Min(10, centerlinePointsCopy.Count - 1)];
+    Vector2 cEnd = centerlinePointsCopy[Math.Min(10, centerlinePointsCopy.Count - 1)];
     Vector2 centerlineDirection = (cEnd - cStart).normalized;
 
     // Calculate angle between directions
