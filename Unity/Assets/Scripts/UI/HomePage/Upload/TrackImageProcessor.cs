@@ -902,7 +902,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     float angle = Vector2.SignedAngle(boundaryDirection, centerlineDirection);
 
     // If angle is greater than 90 degrees, reverse the boundary
-    if (Mathf.Abs(angle) > 90f)
+    if ((float)System.Math.Abs(angle) > 90f)
     {
       boundary.Reverse();
       Debug.Log("Boundary direction reversed to match user-defined direction");
