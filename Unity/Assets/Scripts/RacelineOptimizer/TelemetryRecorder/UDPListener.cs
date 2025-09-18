@@ -37,7 +37,7 @@ namespace MotoGPTelemetry
       this.port = port;
       PlayerPath = new List<RecordedData>();
     }
-    
+
     ~TelemetryRecorder()
     {
       Dispose();
@@ -68,27 +68,27 @@ namespace MotoGPTelemetry
 
     public List<RecordedData> Stop()
     {
-        if (cts != null)
+      if (cts != null)
+      {
+        cts.Cancel();
+
+        try
         {
-            cts.Cancel();
-
-            try
-            {
-                udp?.Close();
-                udp?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"Error while closing UDP client: {ex}");
-            }
-
-            udp = null;
-            listenerTask = null;
-            cts = null;
-
-            Debug.Log("Telemetry recording stopped.");
+          udp?.Close();
+          udp?.Dispose();
         }
-        return PlayerPath;
+        catch (Exception ex)
+        {
+          Debug.LogWarning($"Error while closing UDP client: {ex}");
+        }
+
+        udp = null;
+        listenerTask = null;
+        cts = null;
+
+        Debug.Log("Telemetry recording stopped.");
+      }
+      return PlayerPath;
     }
 
 
@@ -167,7 +167,14 @@ namespace MotoGPTelemetry
 
     public void SaveToCSV()
     {
-      string csvPath = "lastSession.csv";
+      string folder = Application.streamingAssetsPath;
+      if (!Directory.Exists(folder))
+      {
+        Directory.CreateDirectory(folder);
+      }
+
+      string csvPath = Path.Combine(folder, "lastSession.csv");
+
       using (var writer = new StreamWriter(csvPath, false, new UTF8Encoding(false)))
       {
         writer.WriteLine("trackId\tlap_number\tworld_position_X\tworld_position_Y");
@@ -178,5 +185,6 @@ namespace MotoGPTelemetry
       }
       Debug.Log($"Telemetry data saved to {csvPath}");
     }
+
   }
 }
