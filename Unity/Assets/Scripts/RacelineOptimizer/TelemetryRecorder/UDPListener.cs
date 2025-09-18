@@ -105,6 +105,50 @@ namespace MotoGPTelemetry
       return ret;
     }
 
+    public float getFastestLapTime()
+    {
+      Dictionary<int, float> lapTimes = new Dictionary<int, float>();
+      for (int i = 0; i < PlayerPath.Count; i++)
+      {
+        if (PlayerPath[i].CurrentLap != 255)
+        {
+          if (!lapTimes.ContainsKey(PlayerPath[i].CurrentLap))
+          {
+            lapTimes[PlayerPath[i].CurrentLap] = PlayerPath[i].LastLapTime;
+          }
+          else
+          {
+            lapTimes[PlayerPath[i].CurrentLap] = Math.Min(lapTimes[PlayerPath[i].CurrentLap], PlayerPath[i].LastLapTime);
+          }
+        }
+      }
+
+      float fastest = float.MaxValue;
+      foreach (var time in lapTimes.Values)
+      {
+        if (time > 0 && time < fastest)
+        {
+          fastest = time;
+        }
+      }
+      return fastest == float.MaxValue ? 0f : fastest;
+    }
+
+    public float getAverageSpeed(int lapIndex)
+    {
+      float totalSpeed = 0f;
+      int count = 0;
+      for (int i = 0; i < PlayerPath.Count; i++)
+      {
+        if (PlayerPath[i].CurrentLap == lapIndex)
+        {
+          totalSpeed += PlayerPath[i].Speed;
+          count++;
+        }
+      }
+      return count > 0 ? totalSpeed / count : 0f;
+    }
+    
 
     private void Listen(CancellationToken token)
     {
