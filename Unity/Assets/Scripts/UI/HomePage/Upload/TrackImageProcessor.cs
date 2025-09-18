@@ -9,6 +9,7 @@ using RacelineOptimizer;
 using System;
 using UnityEngine.EventSystems;
 using TMPro;
+using System.Threading.Tasks;
 
 public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
@@ -60,6 +61,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private float raceDirection = 0f;
   private Texture2D centerlineOverlay;
   private RectTransform previewImageRect;
+
+  // Processing state
+  private bool isProcessing = false;
 
   // Results data
 
@@ -147,6 +151,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     startPosition = null;
     raceDirection = 0f;
     centerlinePoints.Clear();
+    isProcessing = false;
 
     // Destroy textures
     if (loadedTexture != null) Destroy(loadedTexture);
@@ -544,27 +549,40 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   public void ProcessTrackImage()
   {
+    if (isProcessing)
+    {
+      Debug.LogWarning("Processing already in progress");
+      return;
+    }
+
     if (string.IsNullOrEmpty(selectedImagePath))
     {
       Debug.LogError("No image selected for processing");
       return;
     }
 
-    // if (centerlinePoints.Count < 100)
-    // {
-    //   Debug.LogError("Need to trace centerline before processing");
-    //   return;
-    // }
-
     StartCoroutine(ProcessTrackImageCoroutine());
   }
 
   private IEnumerator ProcessTrackImageCoroutine()
   {
+    if (isProcessing) yield break;
+
+    isProcessing = true;
     float startTime = Time.realtimeSinceStartup;
+
+
+    // SHOW LOADING SCREEN HERE
+    // Example: LoadingScreenManager.Instance.ShowLoadingScreen("Processing track image...");
 
     Debug.Log("Starting track image processing...");
     OnProcessingStarted?.Invoke("Processing track image...");
+
+    // Disable process button during processing
+    if (processButton != null)
+    {
+      processButton.interactable = false;
+    }
 
     // Create mask from centerline
     Texture2D centerlineMask = CreateMaskFromCenterline();
@@ -580,6 +598,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
@@ -596,55 +624,162 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     Destroy(centerlineMask);
     Destroy(maskedImage);
 
-    // Process the MASKED image to get boundaries
-    ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
-
-    Debug.Log(tempFilePath);
-    //Delete the temporary file after processing
-    // try
-    // {
-    //   File.Delete(tempFilePath);
-    // }
-    // catch (System.Exception e)
-    // {
-    //   Debug.LogWarning($"Could not delete temporary file: {e.Message}");
-    // }
-
     yield return null; // Allow UI to update
 
-    if (!boundaries.success)
+    Debug.Log(tempFilePath);
+
+    // Run both image processing and PSO optimization in background tasks
+    Debug.Log($"Starting background image processing and PSO optimization...");
+    OnProcessingStarted?.Invoke("Processing boundaries and optimizing raceline...");
+
+    // Create a combined task that handles both image processing and PSO
+    List<Vector2> centerlinePointsCopy = new List<Vector2>(centerlinePoints);
+    Vector2? startPositionCopy = startPosition;
+
+    // Run both image processing and PSO optimization in background tasks
+    Task<ProcessingTaskResult> combinedTask = Task.Run(() =>
     {
-      string errorMsg = $"Image processing failed: {boundaries.errorMessage}";
+      try
+      {
+        // Process the MASKED image to get boundaries
+        ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
+
+        if (!boundaries.success)
+        {
+          return new ProcessingTaskResult
+          {
+            success = false,
+            errorMessage = boundaries.errorMessage,
+            boundaries = null,
+            racelineResult = null
+          };
+        }
+
+        // Use the copied variables instead of the original ones
+        List<Vector2> alignedInner = AlignBoundaryWithUserInputBackground(boundaries.innerBoundary, centerlinePointsCopy, startPositionCopy);
+        List<Vector2> alignedOuter = AlignBoundaryWithUserInputBackground(boundaries.outerBoundary, centerlinePointsCopy, startPositionCopy);
+
+        // Run PSO optimization
+        PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
+            alignedInner,
+            alignedOuter,
+            particleCount,
+            maxIterations
+        );
+
+        return new ProcessingTaskResult
+        {
+          success = true,
+          errorMessage = "",
+          boundaries = boundaries,
+          alignedInner = alignedInner,
+          alignedOuter = alignedOuter,
+          racelineResult = racelineResult
+        };
+      }
+      catch (System.Exception ex)
+      {
+        return new ProcessingTaskResult
+        {
+          success = false,
+          errorMessage = $"Background processing failed: {ex.Message}",
+          boundaries = null,
+          racelineResult = null
+        };
+      }
+    });
+    // Wait for combined task to complete while keeping UI responsive
+    while (!combinedTask.IsCompleted)
+    {
+      yield return null; // Keep UI responsive
+    }
+
+    ProcessingTaskResult taskResult;
+
+    // Handle task completion states safely
+    if (combinedTask.IsFaulted)
+    {
+      // Handle background exception
+      string errorMsg = "Background processing task failed: " + combinedTask.Exception?.GetBaseException().Message;
       Debug.LogError(errorMsg);
 
       lastResults = new ProcessingResults
       {
         success = false,
-        errorMessage = boundaries.errorMessage,
+        errorMessage = errorMsg,
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
+      OnProcessingComplete?.Invoke(lastResults);
+      yield break;
+    }
+    else if (combinedTask.IsCanceled)
+    {
+      string errorMsg = "Background processing task was canceled.";
+      Debug.LogError(errorMsg);
+
+      lastResults = new ProcessingResults
+      {
+        success = false,
+        errorMessage = errorMsg,
+        processingTime = Time.realtimeSinceStartup - startTime
+      };
+
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
+      OnProcessingComplete?.Invoke(lastResults);
+      yield break;
+    }
+    else
+    {
+      taskResult = combinedTask.Result;
+    }
+
+    if (!taskResult.success)
+    {
+      string errorMsg = taskResult.errorMessage;
+      Debug.LogError(errorMsg);
+
+      lastResults = new ProcessingResults
+      {
+        success = false,
+        errorMessage = taskResult.errorMessage,
+        processingTime = Time.realtimeSinceStartup - startTime
+      };
+
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
 
-    // Align boundaries with user-traced centerline start and direction
-    List<Vector2> alignedInner = AlignBoundaryWithUserInput(boundaries.innerBoundary);
-    List<Vector2> alignedOuter = AlignBoundaryWithUserInput(boundaries.outerBoundary);
-
-    // Rest of your existing processing code...
-    Debug.Log($"Image processing successful. Running PSO optimization...");
-    OnProcessingStarted?.Invoke("Optimizing raceline...");
-
-    // Run PSO optimization
-    PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
-        alignedInner,
-        alignedOuter,
-        particleCount,
-        maxIterations
-    );
-
-    yield return null; // Allow UI to update
+    PSOInterface.RacelineResult racelineResult = taskResult.racelineResult;
 
     if (racelineResult == null)
     {
@@ -658,12 +793,21 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
 
     // Convert System.Numerics.Vector2 to UnityEngine.Vector2
-
     List<Vector2> innerBoundary = ConvertToUnityVectors(racelineResult.InnerBoundary);
     List<Vector2> outerBoundary = ConvertToUnityVectors(racelineResult.OuterBoundary);
     List<Vector2> raceline = ConvertToUnityVectors(racelineResult.Raceline);
@@ -686,15 +830,32 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     Debug.Log($"Track processing completed successfully in {processingTime:F2} seconds.");
 
-    // Generate output image
-    // GenerateOutputImage();
+    // Re-enable button
+    if (processButton != null)
+    {
+      processButton.interactable = true;
+    }
 
-    // TrackMaster.LoadTrack(lastResults);
+    // HIDE LOADING SCREEN HERE
+    // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+    isProcessing = false;
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
 
     OnProcessingComplete?.Invoke(lastResults);
+  }
+
+  // Helper class for background task results
+  private class ProcessingTaskResult
+  {
+    public bool success;
+    public string errorMessage;
+    public ImageProcessing.TrackBoundaries boundaries;
+    public List<Vector2> alignedInner;
+    public List<Vector2> alignedOuter;
+    public PSOInterface.RacelineResult racelineResult;
   }
 
   private List<Vector2> AlignBoundaryWithUserInput(List<Vector2> boundary)
@@ -717,6 +878,100 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     Debug.Log($"Boundary aligned with user input. Start index: {closestIndex}");
 
     return directionCorrectedBoundary;
+  }
+
+  // Background thread version of AlignBoundaryWithUserInput
+  private List<Vector2> AlignBoundaryWithUserInputBackground(List<Vector2> boundary, List<Vector2> centerlinePointsCopy, Vector2? startPositionCopy)
+  {
+    if (boundary == null || boundary.Count == 0 || centerlinePointsCopy.Count < 2)
+    {
+      Debug.LogWarning("Cannot align boundary - missing data");
+      return boundary;
+    }
+
+    // Find the closest point on the boundary to the user-defined start position
+    Vector2 userStart = startPositionCopy ?? centerlinePointsCopy[0];
+    int closestIndex = FindClosestPointIndexBackground(boundary, userStart);
+
+    // Reorder the boundary to start from this point
+    List<Vector2> reorderedBoundary = ReorderBoundaryBackground(boundary, closestIndex);
+
+    // Check and correct direction
+    List<Vector2> directionCorrectedBoundary = EnsureBoundaryDirectionBackground(reorderedBoundary, centerlinePointsCopy);
+
+    Debug.Log($"Boundary aligned with user input. Start index: {closestIndex}");
+
+    return directionCorrectedBoundary;
+  }
+
+  // Background thread versions of helper methods
+  private int FindClosestPointIndexBackground(List<Vector2> points, Vector2 target)
+  {
+    int closestIndex = 0;
+    float closestDistSqr = float.MaxValue;
+
+    for (int i = 0; i < points.Count; i++)
+    {
+      float distSqr = (points[i] - target).sqrMagnitude;
+      if (distSqr < closestDistSqr)
+      {
+        closestDistSqr = distSqr;
+        closestIndex = i;
+      }
+    }
+
+    return closestIndex;
+  }
+
+  private List<Vector2> ReorderBoundaryBackground(List<Vector2> boundary, int startIndex)
+  {
+    List<Vector2> reordered = new List<Vector2>();
+
+    for (int i = 0; i < boundary.Count; i++)
+    {
+      int index = (startIndex + i) % boundary.Count;
+      reordered.Add(boundary[index]);
+    }
+
+    return reordered;
+  }
+
+  private List<Vector2> EnsureBoundaryDirectionBackground(List<Vector2> boundary, List<Vector2> centerlinePointsCopy)
+  {
+    if (boundary.Count < 3 || centerlinePointsCopy.Count < 2)
+    {
+      return boundary;
+    }
+
+    // Calculate boundary direction using first three points
+    Vector2 bStart = boundary[0];
+    Vector2 bMid = boundary[1];
+    Vector2 bEnd = boundary[2];
+
+    Vector2 bDir1 = (bMid - bStart).normalized;
+    Vector2 bDir2 = (bEnd - bMid).normalized;
+    Vector2 boundaryDirection = ((bDir1 + bDir2) * 0.5f).normalized;
+
+    // Calculate user-defined centerline direction
+    Vector2 cStart = centerlinePointsCopy[0];
+    Vector2 cEnd = centerlinePointsCopy[Math.Min(10, centerlinePointsCopy.Count - 1)];
+    Vector2 centerlineDirection = (cEnd - cStart).normalized;
+
+    // Calculate angle between directions
+    float angle = Vector2.SignedAngle(boundaryDirection, centerlineDirection);
+
+    // If angle is greater than 90 degrees, reverse the boundary
+    if ((float)System.Math.Abs(angle) > 90f)
+    {
+      boundary.Reverse();
+      Debug.Log("Boundary direction reversed to match user-defined direction");
+    }
+    else
+    {
+      Debug.Log("Boundary direction matches user-defined direction");
+    }
+
+    return boundary;
   }
 
   private int FindClosestPointIndex(List<Vector2> points, Vector2 target)
@@ -827,12 +1082,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   private Texture2D CreateMaskFromCenterline()
   {
-    // if (centerlinePoints.Count < 100 || loadedTexture == null)
-    // {
-    //   Debug.LogError("Need at least 100 centerline points and a loaded texture to create mask");
-    //   return null;
-    // }
-
     if (loadedTexture == null)
     {
       Debug.LogError("Need at least 100 centerline points and a loaded texture to create mask");
@@ -1049,6 +1298,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     return raceDirection;
   }
 
+  public bool IsProcessing()
+  {
+    return isProcessing;
+  }
+
   // Public method to manually navigate to racing line with current results
   public void ViewRacingLine()
   {
@@ -1231,12 +1485,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   public Texture2D GetCenterlineMask()
   {
-    // if (centerlinePoints.Count < 100)
-    // {
-    //   return null;
-    // }
     return CreateMaskFromCenterline();
   }
+
   private void OnDestroy()
   {
     if (loadedTexture != null)
