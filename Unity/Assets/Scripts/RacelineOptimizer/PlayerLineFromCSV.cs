@@ -139,7 +139,27 @@ namespace CSVToBinConverter
       }
     }
 
-    
+    public static void SaveToBin(PlayerLine data, string binOutputPath)
+    {
+      if (data == null)
+        throw new ArgumentNullException(nameof(data));
+
+      string fileNameNoExt = Path.GetFileNameWithoutExtension(binOutputPath);
+      string outputDir = Path.GetDirectoryName(binOutputPath);
+
+      if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        Directory.CreateDirectory(outputDir);
+
+      using (var writer = new BinaryWriter(File.Create(binOutputPath)))
+      {
+        WritePoints(writer, data.OuterBoundary);
+        WritePoints(writer, data.InnerBoundary);
+        WritePoints(writer, data.Raceline);
+        WritePoints(writer, data.PlayerPath);
+      }
+
+      Debug.Log($"Combined edge + playerline data written to: {binOutputPath}");
+    }
 
 
     private static void WritePoints(BinaryWriter writer, List<Vector2> points)
