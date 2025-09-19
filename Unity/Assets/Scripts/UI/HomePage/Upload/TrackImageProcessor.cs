@@ -304,8 +304,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private string GetCompassDirection(float angle)
   {
     string[] directions = {
-      "East", "Southeast", "South", "Southwest",
-      "West", "Northwest", "North", "Northeast"
+      "East", "Northeast", "North", "Northwest",
+      "West", "Southwest", "South", "Southeast"
     };
 
     int idx = Mathf.RoundToInt(angle / 45f) % 8;
@@ -573,6 +573,13 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
     StartCoroutine(ProcessTrackImageCoroutine());
   }
+  
+  // Flip Y of CNN points to Unity space
+  private List<Vector2> FlipY(List<Vector2> pts, float height)
+  {
+      if (pts == null) return null;
+      return pts.Select(p => new Vector2(p.x, height - p.y)).ToList();
+  }
 
   private IEnumerator ProcessTrackImageCoroutine()
   {
@@ -616,7 +623,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processButton.interactable = true;
       }
 
-      
+
       if (LoaderPanel != null)
       {
         LoaderPanel.SetActive(false);
@@ -673,6 +680,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           };
         }
 
+        float imageHeight = loadedTexture.height;
+        // Flip Y of boundaries to Unity space
+        boundaries.innerBoundary = FlipY(boundaries.innerBoundary, imageHeight);
+        boundaries.outerBoundary = FlipY(boundaries.outerBoundary, imageHeight);
         // Use the copied variables instead of the original ones
         List<Vector2> alignedInner = AlignBoundaryWithUserInputBackground(boundaries.innerBoundary, centerlinePointsCopy, startPositionCopy);
         List<Vector2> alignedOuter = AlignBoundaryWithUserInputBackground(boundaries.outerBoundary, centerlinePointsCopy, startPositionCopy);
@@ -833,9 +844,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
 
     // Convert System.Numerics.Vector2 to UnityEngine.Vector2
-    List<Vector2> innerBoundary = ConvertToUnityVectors(racelineResult.InnerBoundary);
-    List<Vector2> outerBoundary = ConvertToUnityVectors(racelineResult.OuterBoundary);
-    List<Vector2> raceline = ConvertToUnityVectors(racelineResult.Raceline);
+    float imageHeight = loadedTexture.height;
+    List<Vector2> innerBoundary = FlipY(ConvertToUnityVectors(racelineResult.InnerBoundary), imageHeight);
+    List<Vector2> outerBoundary = FlipY(ConvertToUnityVectors(racelineResult.OuterBoundary), imageHeight);
+    List<Vector2> raceline = FlipY(ConvertToUnityVectors(racelineResult.Raceline), imageHeight);
 
     float processingTime = Time.realtimeSinceStartup - startTime;
 
@@ -908,7 +920,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   // Background thread version of AlignBoundaryWithUserInput
   private List<Vector2> AlignBoundaryWithUserInputBackground(List<Vector2> boundary, List<Vector2> centerlinePointsCopy, Vector2? startPositionCopy)
   {
-    if (boundary == null || boundary.Count == 0 || centerlinePointsCopy.Count < 2)
+    if (boundary == null || boundary.Count == 0 || centerlinePointsCopy.Count < 200)
     {
       Debug.LogWarning("Cannot align boundary - missing data");
       return boundary;
