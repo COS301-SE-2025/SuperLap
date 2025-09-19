@@ -18,6 +18,7 @@ namespace CSVToBinConverter
       public List<Vector2> OuterBoundary { get; set; }
       public List<Vector2> Raceline { get; set; }
       public List<Vector2> PlayerPath { get; set; }
+      public List<Vector2> WorstDeviationSections { get; set; } = new();
     }
 
     public static PlayerLine Convert(string csvPath, int targetLapIndex = 0)
