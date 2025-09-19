@@ -92,10 +92,9 @@ namespace RacelineOptimizer
 
 
 
-    private float CalculateCorneringCost(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, float[] ratios, List<(Vector2 inner, Vector2 outer)> cornerTrack)
+    private float CalculateCorneringCost(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, float[] ratios, List<(Vector2 inner, Vector2 outer)> cornerTrack, bool isCounterClockwise)
     {
       float cost = 0f;
-      bool isCounterClockwise = IsTrackCounterClockwise(track.Select(p => (p.inner + p.outer) / 2).ToList());
       for (int i = 0; i < track.Count; i++)
       {
         float idealBias = GetCornerBias(corners, i, track.Count, cornerTrack.Count, isCounterClockwise);
@@ -165,14 +164,14 @@ namespace RacelineOptimizer
       return totalDistance;
     }
 
-    private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> cornerTrack)
+    private float EvaluateCost(List<(Vector2 inner, Vector2 outer)> track, float[] ratios, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> cornerTrack, bool isCounterClockwise)
     {
       List<Vector2> path = new(track.Count);
       for (int i = 0; i < track.Count; i++)
         path.Add(Vector2.Lerp(track[i].inner, track[i].outer, ratios[i]));
 
       float cost = 0f;
-      float corneringCost = CalculateCorneringCost(track, corners, ratios, cornerTrack);
+      float corneringCost = CalculateCorneringCost(track, corners, ratios, cornerTrack, isCounterClockwise);
       float smoothnessCost = CalculateSmoothnessCost(path);
       float distanceCost = EvaluateDistanceCost(path);
       cost += distanceCost * distanceWeight
@@ -185,6 +184,7 @@ namespace RacelineOptimizer
 
     public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> cornerTrack, int numParticles = 30, int iterations = 100)
     {
+      bool isCounterClockwise = IsTrackCounterClockwise(track.Select(p => (p.inner + p.outer) / 2).ToList());
       object globalLock = new();
       ThreadLocal<Random> threadRand = new(() => new Random(Guid.NewGuid().GetHashCode()));
       int dimensions = track.Count;
@@ -202,7 +202,7 @@ namespace RacelineOptimizer
         p.Position[^1] = p.Position[0];
         p.BestPosition[^1] = p.BestPosition[0];
 
-        p.BestCost = EvaluateCost(track, p.Position, corners, cornerTrack);
+        p.BestCost = EvaluateCost(track, p.Position, corners, cornerTrack, isCounterClockwise);
         if (p.BestCost < globalBestCost)
         {
           globalBestCost = p.BestCost;
@@ -231,7 +231,7 @@ namespace RacelineOptimizer
           }
           p.Position[^1] = p.Position[0]; // Ensure loop closure
 
-          float cost = EvaluateCost(track, p.Position, corners, cornerTrack);
+          float cost = EvaluateCost(track, p.Position, corners, cornerTrack, isCounterClockwise);
           if (cost < p.BestCost)
           {
             p.BestCost = cost;
@@ -268,7 +268,7 @@ namespace RacelineOptimizer
             worst.Randomize(rand);
             worst.Position[^1] = worst.Position[0];
             worst.BestPosition[^1] = worst.BestPosition[0];
-            worst.BestCost = EvaluateCost(track, worst.Position, corners, cornerTrack);
+            worst.BestCost = EvaluateCost(track, worst.Position, corners, cornerTrack, isCounterClockwise);
             if (worst.BestCost < globalBestCost)
             {
               globalBestCost = worst.BestCost;
