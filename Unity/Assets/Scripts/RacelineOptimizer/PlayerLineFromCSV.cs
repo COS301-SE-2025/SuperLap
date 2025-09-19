@@ -18,6 +18,7 @@ namespace CSVToBinConverter
       public List<Vector2> OuterBoundary { get; set; }
       public List<Vector2> Raceline { get; set; }
       public List<Vector2> PlayerPath { get; set; }
+      public List<Vector2> WorstDeviationSections { get; set; } = new();
     }
 
     public static PlayerLine Convert(string csvPath, int targetLapIndex = 0)
@@ -114,13 +115,15 @@ namespace CSVToBinConverter
         Debug.Log($"Error: Edge data for {trackName} is empty or malformed.");
         return null;
       }
-
+      List<Vector2> worstSections = DeviationAnalyzer.GetWorstDeviationSections(playerline, edgeData.Raceline, 5);
+      Debug.Log($"Found {worstSections.Count} worst deviation sections.");
       return new PlayerLine
       {
         InnerBoundary = edgeData.InnerBoundary,
         OuterBoundary = edgeData.OuterBoundary,
         Raceline = edgeData.Raceline,
-        PlayerPath = playerline
+        PlayerPath = playerline,
+        WorstDeviationSections = worstSections
       };
     }
 
