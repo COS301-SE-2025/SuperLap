@@ -13,6 +13,7 @@ public class MotoGPDisplayData
   public List<Vector2> InnerBoundary;
   public List<Vector2> Raceline;
   public List<Vector2> PlayerPath;
+  public List<Vector2> WorstDeviationSections;
 }
 
 public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerDownHandler
@@ -28,6 +29,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   [SerializeField] private float innerBoundaryWidth = 1f;
   [SerializeField] private float racelineWidth = 1f;
   [SerializeField] private float playerPathWidth = 1f;
+  [SerializeField] private float deviationSectionWidth = 1f;
 
   [Header("Track Colors")]
   [SerializeField] private Color outerBoundaryColor = Color.blue;
@@ -35,12 +37,14 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   [SerializeField] private Color roadColor = new Color(0.2f, 0.2f, 0.2f, 1);
   [SerializeField] private Color racelineColor = Color.green;
   [SerializeField] private Color playerRaceLineColor = new Color(0, 0.5f, 1, 1);
+  [SerializeField] private Color deviationSectionColor = new Color(1, 0.4f, 0, 1);
 
   [Header("Track Controls")]
   [SerializeField] private bool showOuterBoundary = true;
   [SerializeField] private bool showInnerBoundary = true;
   [SerializeField] private bool showRaceLine = true;
   [SerializeField] private bool showPlayerRaceLine = true;
+  [SerializeField] private bool showDeviationSections = true;
 
   [Header("Zoom/Pan Settings")]
   [SerializeField] private float zoomSpeed = 0.1f;
@@ -51,6 +55,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
 
   private MotoGPDisplayData currentTrackData;
   private Dictionary<string, UILineRenderer> lineRenderers = new Dictionary<string, UILineRenderer>();
+  private List<UILineRenderer> deviationLineRenderers = new List<UILineRenderer>();
   private float currentZoom = 1f;
   private Vector2 panOffset = Vector2.zero;
   private Vector2 initialPosition;
@@ -62,6 +67,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     if (!zoomContainer && trackContainer) zoomContainer = trackContainer.parent as RectTransform;
     if (!viewportRect) viewportRect = GetComponentInParent<Canvas>().GetComponent<RectTransform>();
     initialPosition = zoomContainer.anchoredPosition;
+    deviationSectionWidth = playerPathWidth;
     UpdateLineWidths();
   }
 
@@ -144,10 +150,34 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   public void changePlayerPathWidth(float newWidth)
   {
     playerPathWidth = newWidth;
+    deviationSectionWidth = newWidth;
 
-    if (lineRenderers.TryGetValue("PlayerPath", out UILineRenderer renderer))
+    foreach (var kvp in lineRenderers)
     {
-      renderer.LineThickness = playerPathWidth / currentZoom;
+      if (kvp.Key.StartsWith("PlayerPath_Segment_") && kvp.Value != null)
+      {
+        kvp.Value.LineThickness = playerPathWidth / currentZoom;
+      }
+    }
+    foreach (var renderer in deviationLineRenderers)
+    {
+      if (renderer != null)
+      {
+        renderer.LineThickness = deviationSectionWidth / currentZoom;
+      }
+    }
+  }
+
+  public void changeDeviationSectionWidth(float newWidth)
+  {
+    deviationSectionWidth = newWidth;
+    
+    foreach (var renderer in deviationLineRenderers)
+    {
+      if (renderer != null)
+      {
+        renderer.LineThickness = deviationSectionWidth / currentZoom;
+      }
     }
   }
 
@@ -172,18 +202,26 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
 
   private void UpdateLineWidths()
   {
+    deviationSectionWidth = playerPathWidth;
     foreach (var kvp in lineRenderers)
     {
       if (!kvp.Value) continue;
-      float baseWidth = kvp.Key switch
-      {
-        "OuterBoundary" => outerBoundaryWidth,
-        "InnerBoundary" => innerBoundaryWidth,
-        "Raceline" => racelineWidth,
-        "PlayerPath" => playerPathWidth,
-        _ => 1f
-      };
+
+      float baseWidth = 1f;
+      if (kvp.Key == "OuterBoundary") baseWidth = outerBoundaryWidth;
+      else if (kvp.Key == "InnerBoundary") baseWidth = innerBoundaryWidth;
+      else if (kvp.Key == "Raceline") baseWidth = racelineWidth;
+      else if (kvp.Key.StartsWith("PlayerPath_Segment_")) baseWidth = playerPathWidth;
+
       kvp.Value.LineThickness = baseWidth / currentZoom;
+    }
+
+    foreach (var renderer in deviationLineRenderers)
+    {
+      if (renderer != null)
+      {
+        renderer.LineThickness = deviationSectionWidth / currentZoom;
+      }
     }
   }
 
@@ -227,7 +265,8 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
       PlayerPath = EnsureBelowLimit(ConvertToUnityVector2(playerLine.PlayerPath)),
       InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(ConvertToUnityVector2(playerLine.InnerBoundary))), simplificationTolerance)), simplificationTolerance)),
       OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(ConvertToUnityVector2(playerLine.OuterBoundary))), simplificationTolerance)), simplificationTolerance)),
-      Raceline = EnsureLooped(EnsureBelowLimit(ConvertToUnityVector2(playerLine.Raceline)))
+      Raceline = EnsureLooped(EnsureBelowLimit(ConvertToUnityVector2(playerLine.Raceline))),
+      WorstDeviationSections = ConvertToUnityVector2(playerLine.WorstDeviationSections) // Added this conversion
     };
 
     DisplayRacelineData(displayData);
@@ -248,22 +287,102 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     float scale = CalculateScale(bounds.size);
     Vector2 offset = CalculateOffset(bounds.size, scale);
 
-
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
 
     if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
     if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
     if (showRaceLine) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
-    if (showPlayerRaceLine) CreateLineRenderer("PlayerPath", trackData.PlayerPath, playerRaceLineColor, playerPathWidth, bounds.min, scale, offset);
+
+    if (showPlayerRaceLine && trackData.PlayerPath != null)
+    {
+      CreatePlayerPathWithDeviations(trackData.PlayerPath, trackData.WorstDeviationSections, bounds.min, scale, offset);
+    }
 
     ResetView();
   }
+  private void CreatePlayerPathWithDeviations(List<Vector2> playerPath, List<Vector2> deviationSections, Vector2 min, float scale, Vector2 offset)
+  {
+    if (playerPath == null || playerPath.Count < 2) return;
 
+    bool[] isDeviationIndex = new bool[playerPath.Count];
+    
+    if (deviationSections != null && showDeviationSections)
+    {
+      foreach (Vector2 section in deviationSections)
+      {
+        int startIndex = Mathf.FloorToInt(section.x);
+        int endIndex = Mathf.FloorToInt(section.y);
+        
+        for (int i = Mathf.Max(0, startIndex); i <= Mathf.Min(playerPath.Count - 1, endIndex); i++)
+        {
+          isDeviationIndex[i] = true;
+        }
+      }
+    }
+
+    List<Vector2> currentSegment = new List<Vector2>();
+    bool currentIsDeviation = false;
+    int segmentCount = 0;
+
+    for (int i = 0; i < playerPath.Count; i++)
+    {
+      bool thisIsDeviation = showDeviationSections && isDeviationIndex[i];
+      if (i == 0 || thisIsDeviation != currentIsDeviation)
+      {
+        if (currentSegment.Count >= 2)
+        {
+          CreatePlayerPathSegment(currentSegment, currentIsDeviation, segmentCount, min, scale, offset);
+          segmentCount++;
+        }
+        
+        currentSegment.Clear();
+        currentIsDeviation = thisIsDeviation;
+        
+        if (i > 0)
+        {
+          currentSegment.Add(playerPath[i - 1]);
+        }
+      }
+      
+      currentSegment.Add(playerPath[i]);
+    }
+
+    if (currentSegment.Count >= 2)
+    {
+      CreatePlayerPathSegment(currentSegment, currentIsDeviation, segmentCount, min, scale, offset);
+    }
+
+    Debug.Log($"Created {segmentCount + 1} player path segments");
+  }
+
+  private void CreatePlayerPathSegment(List<Vector2> segmentPoints, bool isDeviation, int segmentIndex, Vector2 min, float scale, Vector2 offset)
+  {
+    Color segmentColor = isDeviation ? deviationSectionColor : playerRaceLineColor;
+    float segmentWidth = isDeviation ? deviationSectionWidth : playerPathWidth;
+    string segmentName = isDeviation ? $"PlayerPath_Deviation_{segmentIndex}" : $"PlayerPath_Normal_{segmentIndex}";
+
+    UILineRenderer lr = new GameObject(segmentName, typeof(RectTransform), typeof(UILineRenderer)).GetComponent<UILineRenderer>();
+    lr.transform.SetParent(trackContainer, false);
+    lr.material = lineMaterial;
+    lr.color = segmentColor;
+    lr.LineThickness = segmentWidth / currentZoom;
+    lr.Points = segmentPoints.ConvertAll(p => TransformPoint(p, min, scale, offset)).ToArray();
+    
+    if (isDeviation)
+    {
+      deviationLineRenderers.Add(lr);
+    }
+    else
+    {
+      lineRenderers[$"PlayerPath_Segment_{segmentIndex}"] = lr;
+    }
+  }
 
   private void ClearExistingLines()
   {
     foreach (Transform child in trackContainer) Destroy(child.gameObject);
     lineRenderers.Clear();
+    deviationLineRenderers.Clear();
   }
 
   private (Vector2 min, Vector2 max, Vector2 size) CalculateBounds(MotoGPDisplayData trackData)
@@ -304,7 +423,6 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     );
   }
 
-
   private Vector2 TransformPoint(Vector2 point, Vector2 min, float scale, Vector2 offset)
   {
     Vector2 transformed = (point - min) * scale + offset;
@@ -328,7 +446,6 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     roadMesh.Points = combined.ConvertAll(p => TransformPoint(p, min, scale, offset));
     roadMesh.color = roadColor;
   }
-
 
   private void CreateLineRenderer(string key, List<Vector2> points, Color color, float width, Vector2 min, float scale, Vector2 offset)
   {
