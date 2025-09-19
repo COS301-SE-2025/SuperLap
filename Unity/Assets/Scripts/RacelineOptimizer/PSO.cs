@@ -31,7 +31,7 @@ namespace RacelineOptimizer
         float cognitiveWeight = 1.7f,
         float socialWeight = 1.7f,
         float maxVelocity = 0.01f,
-        int patience = 500
+        int patience = 1000
     )
     {
       this.smoothnessWeight = smoothnessWeight;
