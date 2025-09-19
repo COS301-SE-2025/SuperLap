@@ -24339,7 +24339,7 @@ MonoBehaviour:
   errorPopUp: {fileID: 483597684342853666}
   LoaderPanel: {fileID: 1615689644}
   particleCount: 100
-  maxIterations: 6000
+  maxIterations: 10000
   maskWidth: 50
   centerlineColor: {r: 0, g: 1, b: 0.53333336, a: 0.49019608}
   startPositionColor: {r: 1, g: 0, b: 0, a: 1}
