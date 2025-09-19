@@ -20,6 +20,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   [SerializeField] private Button processButton;
   [SerializeField] private Slider maskWidthSlider;
   [SerializeField] private TextMeshProUGUI maskWidthLabel;
+  [SerializeField] private GameObject errorPopUp;
   [SerializeField] private GameObject LoaderPanel;
 
 
@@ -138,6 +139,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       LoaderPanel.SetActive(false);
     }
+    if (errorPopUp != null)
+    {
+      errorPopUp.SetActive(false);
+    }
   }
 
   private void OnEnable()
@@ -179,7 +184,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (maskWidthSlider != null) maskWidthSlider.gameObject.SetActive(false);
     if (maskWidthLabel != null) maskWidthLabel.gameObject.SetActive(false);
     if (outputImage != null) outputImage.gameObject.SetActive(false);
-    if (LoaderPanel != null)LoaderPanel.SetActive(false);
+    if (errorPopUp != null) errorPopUp.SetActive(false);
+    if (LoaderPanel != null) LoaderPanel.SetActive(false);
 
     // Reset slider value
     if (maskWidthSlider != null) maskWidthSlider.value = maskWidth;
@@ -553,6 +559,22 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     Debug.Log("Centerline reset");
   }
 
+  private void ShowErrorPopUp()
+  {
+    ResetCenterline();
+    if (errorPopUp != null)
+    {
+      errorPopUp.SetActive(true);
+      StartCoroutine(HideAfterDelay(5f)); // 5 seconds
+    }
+  }
+
+  private IEnumerator HideAfterDelay(float delay)
+  {
+    yield return new WaitForSeconds(delay);
+    errorPopUp.SetActive(false);
+  }
+
   public void ProcessTrackImage()
   {
     if (isProcessing)
@@ -573,12 +595,12 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
     StartCoroutine(ProcessTrackImageCoroutine());
   }
-  
+
   // Flip Y of CNN points to Unity space
   private List<Vector2> FlipY(List<Vector2> pts, float height)
   {
-      if (pts == null) return null;
-      return pts.Select(p => new Vector2(p.x, height - p.y)).ToList();
+    if (pts == null) return null;
+    return pts.Select(p => new Vector2(p.x, height - p.y)).ToList();
   }
 
   private IEnumerator ProcessTrackImageCoroutine()
@@ -623,11 +645,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processButton.interactable = true;
       }
 
-
-      if (LoaderPanel != null)
-      {
-        LoaderPanel.SetActive(false);
-      }
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
@@ -764,6 +781,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       string errorMsg = "Background processing task was canceled.";
       Debug.LogError(errorMsg);
 
+      ShowErrorPopUp();
+
       lastResults = new ProcessingResults
       {
         success = false,
@@ -791,8 +810,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     if (!taskResult.success)
     {
-      string errorMsg = taskResult.errorMessage;
-      Debug.LogError(errorMsg);
+      // string errorMsg = taskResult.errorMessage;
+      // Debug.LogError(errorMsg);
+      ShowErrorPopUp();
 
       lastResults = new ProcessingResults
       {
@@ -821,6 +841,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       string errorMsg = "Raceline optimization failed - no result returned";
       Debug.LogError(errorMsg);
+      ShowErrorPopUp();
 
       lastResults = new ProcessingResults
       {
@@ -834,7 +855,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         processButton.interactable = true;
       }
-
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
