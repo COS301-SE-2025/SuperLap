@@ -83,6 +83,8 @@ module.exports = function (db) {
         }
     });
 
+    //Fetch last track data uploaded by user
+
     // Upload racing data (CSV file)
     router.post('/racing-data/upload', upload.single('csvFile'), async (req, res) => {
         try {
@@ -93,10 +95,10 @@ module.exports = function (db) {
             const {
                 trackName,
                 userName,
-                sessionType,
-                lapTime,
+                fastestLapTime,
+                averageSpeed,
+                topSpeed,
                 vehicleUsed,
-                gameVersion,
                 description
             } = req.body;
 
@@ -110,10 +112,12 @@ module.exports = function (db) {
                 _id: recordId,
                 trackName: trackName || 'Unknown',
                 userName: userName || 'Anonymous',
-                sessionType: sessionType || 'Practice', // Practice, Qualifying, Race
-                lapTime: lapTime || null,
+                //sessionType: sessionType || 'Practice', // Practice, Qualifying, Race
+                fastestLapTime: fastestLapTime || null,
+                averageSpeed: averageSpeed || null,
+                topSpeed: topSpeed || null,
                 vehicleUsed: vehicleUsed || 'Unknown',
-                gameVersion: gameVersion || 'MotoGP18',
+                //gameVersion: gameVersion || 'MotoGP18',
                 description: description || '',
                 fileName: req.file.originalname,
                 fileSize: req.file.size,
@@ -148,10 +152,8 @@ module.exports = function (db) {
             const {
                 trackName,
                 userName,
-                sessionType,
                 lapTime,
                 vehicleUsed,
-                gameVersion,
                 description,
                 fileName,
                 csvData // Expecting base64 encoded string
@@ -168,10 +170,8 @@ module.exports = function (db) {
                 _id: recordId,
                 trackName: trackName || 'Unknown',
                 userName: userName || 'Anonymous',
-                sessionType: sessionType || 'Practice',
                 lapTime: lapTime || null,
                 vehicleUsed: vehicleUsed || 'Unknown',
-                gameVersion: gameVersion || 'MotoGP18',
                 description: description || '',
                 fileName: fileName || 'racing_data.csv',
                 fileSize: Buffer.from(csvData, 'base64').length,
