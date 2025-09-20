@@ -415,13 +415,13 @@ public class APIManager : MonoBehaviour
         }
         catch (Exception ex)
         {
-          Debug.LogError($"[APIManager] JSON parse error: {ex.Message}");
+          Debug.LogWarning($"[APIManager] JSON parse error: {ex.Message}");
           return (false, $"Error parsing racing data: {ex.Message}", null);
         }
       }
       else
       {
-        Debug.LogError($"[APIManager] Request failed: {response.error}");
+        Debug.LogWarning($"[APIManager] Request failed: {response.error}");
         return (false, response.error, null);
       }
     }
