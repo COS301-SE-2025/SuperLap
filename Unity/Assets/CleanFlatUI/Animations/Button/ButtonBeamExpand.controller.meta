@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 43c643091fb5a5041b12ffd7d8bb1a4d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonBeamExpand.controller
+  uploadId: 658581

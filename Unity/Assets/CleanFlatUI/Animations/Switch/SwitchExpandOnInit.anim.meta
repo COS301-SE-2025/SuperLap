@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6aeee36b7bd68e1459db6d1b87e80366
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Switch/SwitchExpandOnInit.anim
+  uploadId: 658581

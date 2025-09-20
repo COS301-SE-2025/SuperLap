@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6720b0c1c5372584e9b3c01d32d55cc9
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Switch/SwitchRoundThickText/SwitchRoundThickText_BGStretch.prefab
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0fc1b152604e9e6439a2d7cc507ca01c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toggle/ToggleBasicText/ToggleBasicText_Fade.prefab
+  uploadId: 658581

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 039ba8242418e6d4aadaa20a939d38c7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Image/ImageFadeAuto.controller
+  uploadId: 658581

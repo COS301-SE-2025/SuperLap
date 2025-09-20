@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a0f9f87a2a67f1341b400255773d49b9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Switch/SwitchScaleHorizontalOnInit.anim
+  uploadId: 658581

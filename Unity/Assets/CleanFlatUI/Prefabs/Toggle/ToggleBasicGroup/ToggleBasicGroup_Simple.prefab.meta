@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 76e5174621ad9b84b9b002d91b7d9e6d
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toggle/ToggleBasicGroup/ToggleBasicGroup_Simple.prefab
+  uploadId: 658581

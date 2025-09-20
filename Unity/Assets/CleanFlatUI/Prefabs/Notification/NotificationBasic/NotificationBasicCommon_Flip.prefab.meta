@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 53597c2d7b31a8b4bab3c53b873aebaf
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationBasic/NotificationBasicCommon_Flip.prefab
+  uploadId: 658581

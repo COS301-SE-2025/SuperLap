@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a4aac58cadaeb0d4f81601833ee8fc5d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/ProgressBar/ProgressBarSpecialPatternEditor.cs
+  uploadId: 658581

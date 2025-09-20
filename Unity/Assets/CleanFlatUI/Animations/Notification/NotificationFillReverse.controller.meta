@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 38bd0fc77893125488a0e6be3484281f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Notification/NotificationFillReverse.controller
+  uploadId: 658581

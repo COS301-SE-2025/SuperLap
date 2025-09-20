@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 62b238c474c19df42947360a4ff445ed
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ProgressBar/ProgressBarCircularLoop_ArcMultipleFill.controller
+  uploadId: 658581

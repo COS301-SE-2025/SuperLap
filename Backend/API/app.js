@@ -13,17 +13,34 @@ let db;
 let client; // this will be used to close the connection later
 
 async function connectToDb() {
-  client = await MongoClient.connect(uri);
-  db = client.db("Superlap");
-  app.locals.db = db;
+  const maxRetries = 5;
+  const retryDelay = 2000; // 2 seconds
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      client = await MongoClient.connect(uri, {
+        serverSelectionTimeoutMS: 10000, // 10 second timeout
+        connectTimeoutMS: 10000,
+      });
+      db = client.db("Superlap");
+      app.locals.db = db;
 
-  const trackRouter = require('./endpoints/trackEndpoints')(db);
-  const userRouter = require('./endpoints/userEndpoints')(db);
+      const trackRouter = require('./endpoints/trackEndpoints')(db);
+      const userRouter = require('./endpoints/userEndpoints')(db);
 
-  app.use('', trackRouter);
-  app.use('', userRouter);
+      app.use('', trackRouter);
+      app.use('', userRouter);
 
-  console.log("Connected to MongoDB");
+      console.log("Connected to MongoDB");
+      return;
+    } catch (error) {
+      console.log(`MongoDB connection attempt ${i + 1}/${maxRetries} failed:`, error.message);
+      if (i === maxRetries - 1) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
+  }
 }
 
 

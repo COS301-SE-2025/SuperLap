@@ -162,8 +162,6 @@ public class SidebarResize : MonoBehaviour, IPointerClickHandler
         buttonTextElements.Add(tmp.gameObject);
       }
     }
-
-    Debug.Log($"Found {buttonTextElements.Count} text elements in sidebar buttons");
   }
 
   private void SetTextVisibility(bool visible)

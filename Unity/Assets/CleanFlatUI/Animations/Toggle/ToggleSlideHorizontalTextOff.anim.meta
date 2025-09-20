@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 448c9753ea2cf364785c064a21e72c88
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toggle/ToggleSlideHorizontalTextOff.anim
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 824af968bc5ca624c98b1cc280e280bf
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Window/WindowResizeHandle/WindowResizeHandleBasic.prefab
+  uploadId: 658581

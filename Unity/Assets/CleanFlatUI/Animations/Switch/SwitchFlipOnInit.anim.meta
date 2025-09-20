@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a0a6efbe036df0243a11074c1ab48cd3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Switch/SwitchFlipOnInit.anim
+  uploadId: 658581

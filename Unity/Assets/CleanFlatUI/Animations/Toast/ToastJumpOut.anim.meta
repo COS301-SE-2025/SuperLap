@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 28b3c875d5c5f994caeb94861ba1c70f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toast/ToastJumpOut.anim
+  uploadId: 658581

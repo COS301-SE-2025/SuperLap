@@ -16,7 +16,7 @@
 
 <p align="center">
     <!-- GitHub Actions Build --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions"> <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2025/SuperLap/build.yml?branch=main&label=Build&logo=github" alt="Build Status"> </a>
-    <!-- Code Coverage (Codecov) --> <a href="https://codecov.io/gh/COS301-SE-2025/SuperLap"> <img src="https://codecov.io/gh/COS301-SE-2025/SuperLap/branch/main/graph/badge.svg" alt="Code Coverage"> </a>
+    <!-- Unity Test Coverage --> <a href="https://github.com/COS301-SE-2025/SuperLap/actions/workflows/unity-tests.yml"> <img src="docs/images/coverage-badge.svg" alt="Unity Test Coverage"> </a>
     <!-- Requirements (shields.io custom) --> <img src="https://img.shields.io/badge/requirements-met-brightgreen" alt="Requirements Status">
     <!-- GitHub Issues --> <a href="https://github.com/COS301-SE-2025/SuperLap/issues"> <img src="https://img.shields.io/github/issues/COS301-SE-2025/SuperLap?label=issues" alt="GitHub Issues"> </a>
     <!-- Uptime Robot (customize as needed) -->
@@ -55,6 +55,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 - [Demo Links](#demo-links)
 - [Project Management](#project-management)
 - [Documentation](#documentation)
+- [Testing & Code Coverage](#testing--code-coverage)
 - [Meet the Quintessential Team](#meet-the-quintessential-team)
 - [Wireframe](#wireframe)
 

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f504ca51eb71b0e479b2e74408f6c7aa
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ModalWindow/ModalWindowShakeOut.anim
+  uploadId: 658581

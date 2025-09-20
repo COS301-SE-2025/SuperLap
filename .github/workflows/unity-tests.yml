@@ -1,11 +1,8 @@
 name: Unity Integration Tests with Backend
 
 on:
-  push:
-    branches: [main, dev]
   pull_request:
     branches: [main, dev]
-  workflow_dispatch:
 
 jobs:
   unity-tests:
@@ -130,12 +127,37 @@ jobs:
                 FAILED_TESTS=$(echo "$RESPONSE" | jq -r '.failedTests // 0')
                 PASSED_TESTS=$(echo "$RESPONSE" | jq -r '.passedTests // 0')
                 
+                # Extract coverage data
+                COVERAGE_AVAILABLE=$(echo "$RESPONSE" | jq -r '.coverage.available // false')
+                LINE_COVERAGE=$(echo "$RESPONSE" | jq -r '.coverage.lineCoverage // 0')
+                METHOD_COVERAGE=$(echo "$RESPONSE" | jq -r '.coverage.methodCoverage // 0')
+                TEST_CLASS_COUNT=$(echo "$RESPONSE" | jq -r '.coverage.testClassCount // 0')
+                
                 echo ""
                 echo "🎯 Unity Tests Completed!"
                 echo "📊 Results Summary:"
                 echo "   • Total Tests: $TOTAL_TESTS"
                 echo "   • Passed: $PASSED_TESTS"
                 echo "   • Failed: $FAILED_TESTS"
+                
+                if [ "$COVERAGE_AVAILABLE" = "true" ]; then
+                  echo "📈 Coverage Summary:"
+                  echo "   • Line Coverage: $LINE_COVERAGE%"
+                  echo "   • Method Coverage: $METHOD_COVERAGE%"
+                  echo "   • Test Classes: $TEST_CLASS_COUNT"
+                  
+                  # Set environment variables for later steps
+                  echo "coverage_available=true" >> $GITHUB_ENV
+                  echo "line_coverage=$LINE_COVERAGE" >> $GITHUB_ENV
+                  echo "method_coverage=$METHOD_COVERAGE" >> $GITHUB_ENV
+                  echo "test_class_count=$TEST_CLASS_COUNT" >> $GITHUB_ENV
+                else
+                  echo "ℹ️  No coverage data available"
+                  echo "coverage_available=false" >> $GITHUB_ENV
+                  echo "line_coverage=0" >> $GITHUB_ENV
+                  echo "method_coverage=0" >> $GITHUB_ENV
+                  echo "test_class_count=0" >> $GITHUB_ENV
+                fi
                 echo ""
                 
                 # Get detailed logs
@@ -184,3 +206,150 @@ jobs:
           echo "⏰ Test polling timed out after $((MAX_ATTEMPTS * 10)) seconds!"
           echo "::error::Test polling timeout - Unity tests may still be running"
           exit 1
+
+      - name: Generate Coverage Badge
+        if: env.coverage_available == 'true'
+        run: |
+          COVERAGE="${{ env.line_coverage }}"
+          echo "🎨 Generating coverage badge with $COVERAGE% coverage"
+          python scripts/generate-badge.py "$COVERAGE" docs/images/coverage-badge.svg
+
+      - name: Commit Coverage Badge
+        if: env.coverage_available == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Check if badge file changed
+          if git diff --quiet docs/images/coverage-badge.svg 2>/dev/null; then
+            echo "Coverage badge unchanged, skipping commit"
+          else
+            git add docs/images/coverage-badge.svg
+            git commit -m "Update coverage badge: ${{ env.line_coverage }}% [skip ci]"
+            git push
+            echo "✅ Coverage badge updated and committed"
+          fi
+
+      - name: Create Coverage Check
+        if: env.coverage_available == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const coverage = '${{ env.line_coverage }}';
+            const methodCoverage = '${{ env.method_coverage }}';
+            const testCount = '${{ env.test_class_count }}';
+            
+            const summary = `Unity Test Coverage: ${coverage}%`;
+            
+            const output = {
+              title: 'Unity Test Coverage Report',
+              summary: summary,
+              text: `## 🧪 Unity Test Coverage\n\n` +
+                    `- **Line Coverage:** ${coverage}%\n` +
+                    `- **Method Coverage:** ${methodCoverage}%\n` +
+                    `- **Test Classes:** ${testCount}\n\n` +
+                    `Coverage includes EditMode tests and selected MainAssembly classes.`
+            };
+            
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Unity Test Coverage',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: 'neutral',
+              output: output
+            });
+
+      - name: Calculate and Report Coverage
+        if: always()
+        run: |
+          # Run our coverage calculation locally if coverage files exist
+          if [ -f "Unity/CodeCoverage/Report/Summary.json" ]; then
+            echo "📊 Calculating coverage for selected test classes..."
+            python scripts/calculate-coverage.py --github
+            
+            # Also generate JSON for artifacts
+            python scripts/calculate-coverage.py --json > coverage-summary.json
+            
+            echo "✅ Coverage calculation completed"
+          else
+            echo "ℹ️  No local coverage data found"
+          fi
+
+      - name: Upload Coverage Summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-coverage-summary-${{ github.run_number }}
+          path: |
+            coverage-summary.json
+            Unity/CodeCoverage/Report/Summary.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Comment Coverage on PR
+        if: github.event_name == 'pull_request' && hashFiles('coverage-summary.json') != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const coverage = JSON.parse(fs.readFileSync('coverage-summary.json', 'utf8'));
+              
+              if (coverage.editmode_tests_found) {
+                const linePercent = coverage.overall_line_coverage;
+                const methodPercent = coverage.overall_method_coverage;
+                const quality = linePercent >= 90 ? '🟢 Excellent' : 
+                               linePercent >= 70 ? '🟡 Good' : '🔴 Needs Improvement';
+                
+                let comment = `## 🧪 Unity Test Coverage Report
+            
+            | Metric | Coverage | Status |
+            |--------|----------|---------|
+            | 📊 Overall Quality | ${quality} | |
+            | 📝 Line Coverage | ${linePercent}% (${coverage.total_covered_lines}/${coverage.total_coverable_lines}) | ${linePercent >= 70 ? '✅' : '❌'} |
+            | 🔧 Method Coverage | ${methodPercent}% (${coverage.total_covered_methods}/${coverage.total_methods}) | ${methodPercent >= 70 ? '✅' : '❌'} |
+            | 🎯 Test Classes | ${coverage.test_count} | |
+            
+            ### 📋 Coverage by Assembly
+            `;
+                
+                if (coverage.by_assembly) {
+                  if (coverage.by_assembly.EditMode && coverage.by_assembly.EditMode.length > 0) {
+                    comment += `\n**EditMode Tests (${coverage.by_assembly.EditMode.length}):**\n`;
+                    coverage.by_assembly.EditMode.forEach(test => {
+                      const status = test.line_coverage >= 90 ? '🟢' : test.line_coverage >= 70 ? '🟡' : '🔴';
+                      comment += `- ${status} ${test.name}: ${test.line_coverage}%\n`;
+                    });
+                  }
+                  
+                  if (coverage.by_assembly.MainAssembly && coverage.by_assembly.MainAssembly.length > 0) {
+                    comment += `\n**MainAssembly Classes (${coverage.by_assembly.MainAssembly.length}):**\n`;
+                    coverage.by_assembly.MainAssembly.forEach(test => {
+                      const status = test.line_coverage >= 90 ? '🟢' : test.line_coverage >= 70 ? '🟡' : '🔴';
+                      comment += `- ${status} ${test.name}: ${test.line_coverage}%\n`;
+                    });
+                  }
+                }
+                
+                const summary = coverage.summary;
+                comment += `\n### � Summary
+            - 🟢 Excellent (≥90%): ${summary.excellent} classes
+            - 🟡 Good (70-89%): ${summary.good} classes  
+            - 🔴 Needs work (<70%): ${summary.needs_improvement} classes
+            
+            ---
+            *Coverage calculated from selected EditMode tests and MainAssembly classes*`;
+                
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: comment
+                });
+              }
+            } catch (error) {
+              console.log('Could not post coverage comment:', error);
+            };

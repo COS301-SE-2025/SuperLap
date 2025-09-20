@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 049e5c10613865c458546e7653cb9961
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/TabView/TabViewLine/TabViewLine_FadeJumpDown.prefab
+  uploadId: 658581

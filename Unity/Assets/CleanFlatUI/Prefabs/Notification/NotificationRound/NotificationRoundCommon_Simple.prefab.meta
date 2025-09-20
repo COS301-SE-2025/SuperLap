@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5ae69b5fcd8b3a24b85a8597d1acb1ad
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationRound/NotificationRoundCommon_Simple.prefab
+  uploadId: 658581

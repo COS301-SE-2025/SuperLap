@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bb79a3f7df6bec140bfa0c2ce48a5f44
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/ModalWindow/ModalWindowFlipSlightIn.anim
+  uploadId: 658581

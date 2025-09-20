@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: add77e380eb80d641a4f54d90ee61195
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ButtonGradient/ButtonGradientRoundAuto/ButtonGradientRoundAuto_Purple_HaloScaleFade.prefab
+  uploadId: 658581

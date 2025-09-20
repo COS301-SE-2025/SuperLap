@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c29c6ab4c3af6e14883747f797bfdcc9
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/PopupMenu/PopupMenuRound/PopupMenuRound_Flip.prefab
+  uploadId: 658581
