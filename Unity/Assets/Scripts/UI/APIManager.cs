@@ -47,6 +47,41 @@ public class Track
 }
 
 [System.Serializable]
+public class RacingData
+{
+  public string _id;
+  public string trackName;
+  public string userName;
+  public string fastestLapTime;
+  public string averageSpeed;
+  public string topSpeed;
+  public string vehicleUsed;
+  public string description;
+  public string fileName;
+  public long fileSize;
+  public string dateUploaded;
+  public string uploadedBy;
+  public string csvData;
+}
+
+[System.Serializable]
+public class RacingDataListWrapper
+{
+  public List<RacingData> Items;
+}
+
+[System.Serializable]
+public class RacingStatsSummary
+{
+  public int totalRecords;
+  public int uniqueTracksCount;
+  public int uniqueUsersCount;
+  public float avgFileSizeKB;
+  public float totalDataSizeMB;
+}
+
+
+[System.Serializable]
 public class TrackList
 {
   public List<Track> tracks;
@@ -73,7 +108,8 @@ public static class UnityWebRequestExtensions
 public class APIManager : MonoBehaviour
 {
   [Header("API Configuration")]
-  public string baseURL = "https://superlap-api.online";
+  //public string baseURL = "https://superlap-api.online";
+  public string baseURL = "http://localhost:3000";
 
   private static APIManager _instance;
 
@@ -356,6 +392,130 @@ public class APIManager : MonoBehaviour
     }
   }
   #endregion
+
+  #region Racing Data APIs
+
+  public async Task<(bool success, string message, List<RacingData> data)> GetAllRacingDataAsync()
+  {
+    string url = $"{baseURL}/racing-data";
+
+    using (UnityWebRequest request = UnityWebRequest.Get(url))
+    {
+      var response = await request.SendWebRequestAsync();
+
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        string responseText = response.downloadHandler.text;
+
+        try
+        {
+          string wrapped = "{\"Items\":" + responseText + "}";
+          RacingDataListWrapper wrapper = JsonUtility.FromJson<RacingDataListWrapper>(wrapped);
+          return (true, "Racing data retrieved successfully", wrapper.Items);
+        }
+        catch (Exception ex)
+        {
+          Debug.LogError($"[APIManager] JSON parse error: {ex.Message}");
+          return (false, $"Error parsing racing data: {ex.Message}", null);
+        }
+      }
+      else
+      {
+        Debug.LogError($"[APIManager] Request failed: {response.error}");
+        return (false, response.error, null);
+      }
+    }
+  }
+
+
+  public async Task<(bool success, string message, RacingData data)> GetRacingDataByIdAsync(string id)
+  {
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/racing-data/{id}"))
+    {
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        RacingData data = JsonUtility.FromJson<RacingData>(response.downloadHandler.text);
+        return (true, "Racing data retrieved successfully", data);
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
+  }
+
+  public async Task<(bool success, string message, List<RacingData> data)> GetRacingDataByTrackAsync(string trackName)
+  {
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/racing-data/track/{trackName}"))
+    {
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        string wrapped = "{\"Items\":" + response.downloadHandler.text + "}";
+        RacingDataListWrapper wrapper = JsonUtility.FromJson<RacingDataListWrapper>(wrapped);
+        return (true, "Track racing data retrieved successfully", wrapper.Items);
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
+  }
+
+  public async Task<(bool success, string message, List<RacingData> data)> GetRacingDataByUserAsync(string userName)
+  {
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/racing-data/user/{userName}"))
+    {
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        string wrapped = "{\"Items\":" + response.downloadHandler.text + "}";
+        RacingDataListWrapper wrapper = JsonUtility.FromJson<RacingDataListWrapper>(wrapped);
+        return (true, "User racing data retrieved successfully", wrapper.Items);
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
+  }
+
+  public async Task<(bool success, string message, RacingStatsSummary stats)> GetRacingDataStatsAsync()
+  {
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/racing-data/stats/summary"))
+    {
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        RacingStatsSummary stats = JsonUtility.FromJson<RacingStatsSummary>(response.downloadHandler.text);
+        return (true, "Stats retrieved successfully", stats);
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
+  }
+
+  public async Task<(bool success, string message, byte[] csvBytes)> DownloadRacingDataCsvAsync(string id)
+  {
+    using (UnityWebRequest request = UnityWebRequest.Get($"{baseURL}/racing-data/{id}/download"))
+    {
+      var response = await request.SendWebRequestAsync();
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        return (true, "CSV downloaded successfully", response.downloadHandler.data);
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
+  }
+
+  #endregion
+
 
   private string CleanBase64String(string input)
   {
