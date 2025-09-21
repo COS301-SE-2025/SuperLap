@@ -2739,6 +2739,8 @@ RectTransform:
   - {fileID: 538852867}
   - {fileID: 1418202293}
   - {fileID: 664034394}
+  - {fileID: 614843490}
+  - {fileID: 1738728450}
   m_Father: {fileID: 2014269205}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -9604,7 +9606,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1632040934}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 624663387}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -11060,7 +11062,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultPanel: {fileID: 1088205959}
-  scrollPanel: {fileID: 0}
+  scrollPanel: {fileID: 1079817674}
   contentPanel: {fileID: 200201224}
   column1Parent: {fileID: 204524498}
   column2Parent: {fileID: 934614740}
@@ -11366,7 +11368,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1612588801}
-  - {fileID: 1233366434}
   m_Father: {fileID: 138269532}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -11945,7 +11946,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1738728450}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -18904,6 +18905,7 @@ RectTransform:
   - {fileID: 1117956919}
   - {fileID: 650839297}
   - {fileID: 469415510}
+  - {fileID: 1737800515}
   m_Father: {fileID: 1226407335}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -19669,6 +19671,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1553913588}
+  - {fileID: 624663387}
   m_Father: {fileID: 1606233407}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -21705,7 +21708,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1879178431}
   m_Father: {fileID: 57723113}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -22183,7 +22187,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1737516129}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -25152,7 +25156,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 322815121}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 624663387}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -25304,7 +25308,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 166888521}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 624663387}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
@@ -30992,7 +30996,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e1ffc056802dca4fbf2b54b6ad87db6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settingsPage: {fileID: 0}
+  settingsPage: {fileID: 624663386}
   previewPage: {fileID: 1553913587}
   Selector_Preview: {fileID: 1616377542}
   Selector_Settings: {fileID: 1249180927}
@@ -31192,7 +31196,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 614843490}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -32301,7 +32305,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 624663387}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
@@ -33298,17 +33302,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 3113676909939675390, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
   m_PrefabInstance: {fileID: 1764136276}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1744312378 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3113676909939675384, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
-  m_PrefabInstance: {fileID: 1764136276}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1764136276
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33820,7 +33813,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1426841443}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.30769232
+  m_Size: 0.26666668
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -33977,7 +33970,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 1738728450}
     m_Modifications:
     - target: {fileID: -3909358886715836153, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
       propertyPath: m_text
@@ -38533,6 +38526,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1967784506}
+  - {fileID: 1744312376}
   m_Father: {fileID: 138269532}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -39007,7 +39001,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1737516129}
   m_Father: {fileID: 254720290}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -43045,7 +43040,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '0.012 '
+  m_text: '0,012 '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -43318,7 +43313,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '0.48 '
+  m_text: '0,48 '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -43823,14 +43818,6 @@ SceneRoots:
   - {fileID: 729960489}
   - {fileID: 1443641091}
   - {fileID: 113658014}
-  - {fileID: 515901053}
-  - {fileID: 685767575}
-  - {fileID: 1115591372}
   - {fileID: 2128451764}
-  - {fileID: 1778589442}
-  - {fileID: 1303321898}
-  - {fileID: 1304215574}
-  - {fileID: 1612588801}
-  - {fileID: 1707256483}
   - {fileID: 591936641}
   - {fileID: 67269622}
