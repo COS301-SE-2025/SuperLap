@@ -175,25 +175,25 @@ public class ACOAgentReplay : MonoBehaviour
     InitializeString(data);
   }
 
-  public void Update()
-  {
-    if (Input.GetKeyDown(KeyCode.Space))
-    {
-      playing = !playing;
-    }
+  // public void Update()
+  // {
+  //   if (Input.GetKeyDown(KeyCode.Space))
+  //   {
+  //     playing = !playing;
+  //   }
 
-    if (playing)
-    {
-      if (remainingTime > 0)
-      {
-        remainingTime -= Time.deltaTime;
-      }
-      else
-      {
-        UpdateView();
-      }
-    }
-  }
+  //   if (playing)
+  //   {
+  //     if (remainingTime > 0)
+  //     {
+  //       remainingTime -= Time.deltaTime;
+  //     }
+  //     else
+  //     {
+  //       UpdateView();
+  //     }
+  //   }
+  // }
 
   public void Start()
   {
