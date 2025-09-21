@@ -188,15 +188,6 @@ public class ACOWorkerThreadTest : MonoBehaviour
 
         using (StreamWriter writer = new StreamWriter(filePath))
         {
-            // Write initial state as first line
-            List<System.Numerics.Vector2> threadRl = ACOTrackMaster.GetCurrentRaceline();
-            Vector3 startPos = ACOTrackMaster.GetTrainingSpawnPosition(0, threadRl);
-            Vector3 startDir = ACOTrackMaster.GetTrainingSpawnDirection(0, threadRl);
-            float bearing = CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z));
-            
-            writer.WriteLine($"{startPos.x}:{startPos.z}:{bearing}");
-            Debug.Log($"Initial state written: pos=({startPos.x:F2}, {startPos.z:F2}), bearing={bearing:F2}");
-            
             int totalStatesWritten = 0;
             
             // Write all inputs from all segments
