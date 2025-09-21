@@ -1288,7 +1288,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       if (racingLineComponent != null)
       {
         // Send the processed data to the racing line display
-        racingLineComponent.DisplayRacelineData(racelineData);
+        bool ACOenabled = true;
+        racingLineComponent.DisplayRacelineData(racelineData, ACOenabled);
         Debug.Log($"Successfully sent processed track data to racing line page");
       }
       else

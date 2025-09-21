@@ -29,7 +29,7 @@ public class ACOAgentReplay : MonoBehaviour
       replayStates.Add(ReplayState.Parse(line));
     }
 
-    DrawLineWithMesh();
+    //DrawLineWithMesh();
   }
 
   public List<ReplayState> getReplays()

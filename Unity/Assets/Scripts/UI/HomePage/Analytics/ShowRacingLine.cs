@@ -521,7 +521,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return points;
   }
 
-  public void DisplayRacelineData(RacelineDisplayData trackData)
+  public void DisplayRacelineData(RacelineDisplayData trackData, bool ACOenabled = false)
   {
     if (!isInitialized)
     {
@@ -550,19 +550,13 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
 
-    float Width = 5f;
-    
-    ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
-    replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
+    if (ACOenabled)
+    {
+      ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
+      replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
 
-
-Debug.Log($"ACOTrainer raceline points: {trackData.Raceline.Count}");
-Debug.Log($"ACOAgentReplay replay points: {replay.getReplays().Count}");
-
-    //Debug.Log($"First raceline x: {trackData.Raceline[0].Position.x} y: {trackData.Raceline[0].Position.y}");
-    //Debug.Log($"First replay x: {replay.getReplays()[0].start.x} y: {replay.getReplays()[0].start.y}");
-
-    CreateBreakingPoints(replay.getReplays(), Width);
+      CreateBreakingPoints(replay.getReplays(), racelineWidth);
+    }
 
     if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
     if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
