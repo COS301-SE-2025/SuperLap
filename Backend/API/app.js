@@ -27,9 +27,11 @@ async function connectToDb() {
 
       const trackRouter = require('./endpoints/trackEndpoints')(db);
       const userRouter = require('./endpoints/userEndpoints')(db);
+      const racingDataRouter = require('./endpoints/racingDataEndpoints')(db);
 
       app.use('', trackRouter);
       app.use('', userRouter);
+      app.use('', racingDataRouter);
 
       console.log("Connected to MongoDB");
       return;

@@ -5,7 +5,8 @@ using RainbowArt.CleanFlatUI;
 using System.IO;
 using System.Collections.Generic;
 using System;
-
+using TMPro;
+using System.Linq;
 public class MotoGP : MonoBehaviour
 {
 
@@ -13,18 +14,35 @@ public class MotoGP : MonoBehaviour
   [SerializeField] private GameObject previewImage;
   [SerializeField] private DropdownTransition dropdown;
   [SerializeField] private GameObject DropDownText;
-  [SerializeField] private GameObject processButton;
+  [SerializeField] private GameObject uploadButton;
   [SerializeField] private GameObject controlPanel;
-
-
+  [SerializeField] private TextMeshProUGUI recordButtonText;
+  bool isRecording = false;
+  private MotoGPTelemetry.TelemetryRecorder recorder;
   List<int> lapIndexList = new List<int>();
   void Start()
   {
-    dropdown.options.Clear();
-    dropdown.gameObject.SetActive(false);
-    DropDownText.SetActive(false);
-    processButton.SetActive(false);
-    controlPanel.SetActive(false);
+    recorder = new MotoGPTelemetry.TelemetryRecorder();
+    if (dropdown != null)
+    {
+      dropdown.options.Clear();
+      dropdown.gameObject.SetActive(false);
+    }
+
+    if (DropDownText != null)
+    {
+      DropDownText.SetActive(false);
+    }
+
+    if (uploadButton != null)
+    {
+      uploadButton.SetActive(false);
+    }
+
+    if (controlPanel != null)
+    {
+      controlPanel.SetActive(false);
+    }
   }
   private ExtensionFilter[] extensionFilters = new ExtensionFilter[]
   {
@@ -40,9 +58,98 @@ public class MotoGP : MonoBehaviour
     if (paths.Length > 0 && !string.IsNullOrEmpty(paths[0]))
     {
       filePath = paths[0];
+      controlPanel.SetActive(false);
       LoadCSV(filePath);
     }
   }
+
+  public void RecordMotoGP()
+  {
+    if (uploadButton != null) uploadButton.SetActive(false);
+    if (dropdown != null)
+    {
+      dropdown.options.Clear();
+      dropdown.gameObject.SetActive(false);
+    }
+    if (DropDownText != null) DropDownText.SetActive(false);
+
+    if (!isRecording)
+    {
+      if (recordButtonText != null) recordButtonText.text = "Recording game";
+
+      // Start recorder
+      recorder?.Dispose(); // dispose previous session
+      recorder = new MotoGPTelemetry.TelemetryRecorder();
+      recorder.Start();
+      isRecording = true;
+      return;
+    }
+
+    // Stop recording
+    isRecording = false;
+    if (recordButtonText != null) recordButtonText.text = "Record game";
+
+    List<MotoGPTelemetry.RecordedData> recordedData = recorder.Stop();
+    List<int> laps = recorder.getLaps();
+
+    if (laps.Count == 0)
+    {
+      Debug.Log("No laps recorded.");
+      return;
+    }
+
+    lapIndexList.Clear();
+    if (dropdown != null)
+    {
+      dropdown.options.Clear();
+      foreach (int lapIndex in laps)
+      {
+        dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
+        lapIndexList.Add(lapIndex);
+      }
+
+      dropdown.value = 0;
+      dropdown.gameObject.SetActive(true);
+      dropdown.RefreshShownValue();
+
+      if (DropDownText != null) DropDownText.SetActive(true);
+      if (uploadButton != null) uploadButton.SetActive(true);
+    }
+
+    ProcessTelemetryLap(dropdown.value);
+  }
+
+  public void ProcessTelemetryLap(int dropdownValue)
+  {
+    if (recorder == null || recorder.PlayerPath.Count == 0) return;
+
+    int selectedLapIndex = lapIndexList[dropdownValue];
+
+    List<MotoGPTelemetry.RecordedData> lapData = recorder.PlayerPath
+        .Where(r => r.CurrentLap == selectedLapIndex)
+        .ToList();
+
+    CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadUDP.Convert(lapData, selectedLapIndex);
+
+    if (playerline == null)
+    {
+      Debug.LogError("PlayerLine data could not be generated for selected lap.");
+      return;
+    }
+
+    ShowMotoGP showMotoGP = previewImage.GetComponent<ShowMotoGP>();
+    if (showMotoGP != null)
+    {
+      showMotoGP.DisplayPlayerLineData(playerline);
+    }
+    else
+    {
+      Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
+    }
+
+    if (controlPanel != null) controlPanel.SetActive(true);
+  }
+
 
   public void LoadCSV(string filePath)
   {
@@ -95,22 +202,40 @@ public class MotoGP : MonoBehaviour
 
     if (lapIndices.Count > 0)
     {
-        int lastLap = Mathf.Max(new List<int>(lapIndices).ToArray());
-        lapIndices.Remove(lastLap);
+      int lastLap = Mathf.Max(new List<int>(lapIndices).ToArray());
+      // lapIndices.Remove(lastLap);
+    }
+
+    if (dropdown == null)
+    {
+      return;
+    }
+
+    if (lapIndices.Count == 0)
+    {
+      return;
     }
 
     dropdown.options.Clear();
     foreach (int lapIndex in lapIndices)
     {
-        dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
-        lapIndexList.Add(lapIndex);
+      dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
+      lapIndexList.Add(lapIndex);
     }
 
     dropdown.value = 0;
     dropdown.gameObject.SetActive(true);
     dropdown.RefreshShownValue();
-    processButton.SetActive(true);
-    DropDownText.SetActive(true);
+
+    if (uploadButton != null)
+    {
+      uploadButton.SetActive(true);
+    }
+    if (DropDownText != null)
+    {
+      DropDownText.SetActive(true);
+    }
+    ProcessRacingLine();
   }
 
   public void ProcessRacingLine()
@@ -118,7 +243,6 @@ public class MotoGP : MonoBehaviour
     int selectedLapIndex = lapIndexList[dropdown.value];
     CSVToBinConverter.LoadCSV.PlayerLine playerline = CSVToBinConverter.LoadCSV.Convert(filePath, selectedLapIndex);
 
-    Debug.Log("Raceline Count: " + playerline.Raceline.Count);
     if (playerline == null)
     {
       Debug.LogError("PlayerLine data could not be generated.");
@@ -134,7 +258,13 @@ public class MotoGP : MonoBehaviour
     {
       Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
     }
-    controlPanel.SetActive(true);
-
+    if (controlPanel != null)
+    {
+      controlPanel.SetActive(true);
+    }
+  }
+  public void UploadData()
+  {
+    return;
   }
 }

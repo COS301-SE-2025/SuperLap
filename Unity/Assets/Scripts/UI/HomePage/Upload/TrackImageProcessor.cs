@@ -9,6 +9,7 @@ using RacelineOptimizer;
 using System;
 using UnityEngine.EventSystems;
 using TMPro;
+using System.Threading.Tasks;
 
 public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
@@ -17,10 +18,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   [SerializeField] private Button traceButton;
   [SerializeField] private Button resetTraceButton;
   [SerializeField] private Button processButton;
-  [SerializeField] private Text instructionText;
   [SerializeField] private Slider maskWidthSlider;
-  [SerializeField] private Text maskWidthLabel;
-
+  [SerializeField] private TextMeshProUGUI maskWidthLabel;
+  [SerializeField] private GameObject errorPopUp;
+  [SerializeField] private GameObject LoaderPanel;
 
 
   [Header("Upload Settings")]
@@ -61,6 +62,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private float raceDirection = 0f;
   private Texture2D centerlineOverlay;
   private RectTransform previewImageRect;
+
+  // Processing state
+  private bool isProcessing = false;
 
   // Results data
 
@@ -107,69 +111,97 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     //Trace button
     if (traceButton != null)
     {
-      traceButton.onClick.AddListener(ToggleTracingMode);
-      //traceButton.interactable = false;
+      traceButton.gameObject.SetActive(false);
     }
     //Reset button
     if (resetTraceButton != null)
     {
-      resetTraceButton.onClick.AddListener(ResetCenterline);
-      //resetTraceButton.interactable = false;
+      resetTraceButton.gameObject.SetActive(false);
     }
     //Process button
     if (processButton != null)
     {
-      processButton.onClick.AddListener(ProcessTrackImage);
-      //processButton.interactable = false;
+      processButton.gameObject.SetActive(false);
     }
     //Setup mask width slider
     if (maskWidthSlider != null)
     {
       maskWidthSlider.value = maskWidth;
-      maskWidthSlider.onValueChanged.AddListener(OnMaskWidthChanged);
+      maskWidthSlider.gameObject.SetActive(false);
     }
 
-    UpdateInstructions();
-    UpdateMaskWidthLabel();
-  }
-
-  private void UpdateMaskWidthLabel()
-  {
     if (maskWidthLabel != null)
     {
-      maskWidthLabel.text = $"Mask Width: {maskWidth}px";
+      maskWidthLabel.gameObject.SetActive(false);
+    }
+
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
+    if (errorPopUp != null)
+    {
+      errorPopUp.SetActive(false);
     }
   }
+
+  private void OnEnable()
+  {
+    ResetPage();
+    SetupUI();
+    SetTracingMode(false);
+  }
+
+
+  private void ResetPage()
+  {
+    // Clear data
+    selectedImagePath = null;
+    lastResults = null;
+    startPosition = null;
+    raceDirection = 0f;
+    centerlinePoints.Clear();
+    isProcessing = false;
+
+    // Destroy textures
+    if (loadedTexture != null) Destroy(loadedTexture);
+    if (centerlineOverlay != null) Destroy(centerlineOverlay);
+    if (outputTexture != null) Destroy(outputTexture);
+
+    loadedTexture = null;
+    centerlineOverlay = null;
+    outputTexture = null;
+
+    // Reset UI visibility
+    if (previewImage != null)
+    {
+      previewImage.sprite = null;
+      previewImage.gameObject.SetActive(false);
+    }
+    if (traceButton != null) traceButton.gameObject.SetActive(false);
+    if (resetTraceButton != null) resetTraceButton.gameObject.SetActive(false);
+    if (processButton != null) processButton.gameObject.SetActive(false);
+    if (maskWidthSlider != null) maskWidthSlider.gameObject.SetActive(false);
+    if (maskWidthLabel != null) maskWidthLabel.gameObject.SetActive(false);
+    if (outputImage != null) outputImage.gameObject.SetActive(false);
+    if (errorPopUp != null) errorPopUp.SetActive(false);
+    if (LoaderPanel != null) LoaderPanel.SetActive(false);
+
+    // Reset slider value
+    if (maskWidthSlider != null) maskWidthSlider.value = maskWidth;
+
+    Debug.Log("TrackImageProcessor reset to default state.");
+  }
+
 
   public void OnMaskWidthChanged(float value)
   {
     maskWidth = Mathf.RoundToInt(value);
     centerlineThickness = maskWidth;
-    UpdateMaskWidthLabel();
+    ResetCenterline();
   }
 
-  private void UpdateInstructions()
-  {
-    if (instructionText == null) return;
-    if (loadedTexture == null)
-    {
-      instructionText.text = "Upload a track image to begin";
-    }
-    else if (isTracingMode)
-    {
-      instructionText.text = "Click and drag to trace the centerline. First point = start/finish line.";
-    }
-    else if (centerlinePoints.Count > 100)
-    {
-      instructionText.text = $"Centerline traced with {centerlinePoints.Count} points. Ready to process!";
-    }
-    else
-    {
-      instructionText.text = "Click 'Trace Centerline' to begin tracing the track centerline";
-    }
-  }
-
-  private void ToggleTracingMode()
+  public void ToggleTracingMode()
   {
     SetTracingMode(!isTracingMode);
     ResetCenterline();
@@ -182,7 +214,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       traceButton.GetComponentInChildren<TextMeshProUGUI>().text = isTracingMode ? "Stop Tracing" : "Trace Centerline";
     }
-    UpdateInstructions();
   }
 
   public void OnPointerDown(PointerEventData eventData)
@@ -204,7 +235,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       UpdateCenterlineOverlay();
     }
   }
-  
+
 
   public void OnDrag(PointerEventData eventData)
   {
@@ -247,6 +278,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       }
 
       CalculateRaceDirection();
+      if (processButton != null)
+      {
+        processButton.gameObject.SetActive(true);
+      }
       Debug.Log($"Centerline completed with {centerlinePoints.Count} points");
       Debug.Log($"Race direction: {raceDirection:F1} degrees ({GetCompassDirection(raceDirection)})");
     }
@@ -275,8 +310,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private string GetCompassDirection(float angle)
   {
     string[] directions = {
-      "East", "Southeast", "South", "Southwest",
-      "West", "Northwest", "North", "Northeast"
+      "East", "Northeast", "North", "Northwest",
+      "West", "Southwest", "South", "Southeast"
     };
 
     int idx = Mathf.RoundToInt(angle / 45f) % 8;
@@ -297,11 +332,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
 
     if (centerlinePoints.Count >= 2)
-      {
-        Vector2 start = centerlinePoints[centerlinePoints.Count - 2];
-        Vector2 end = centerlinePoints[centerlinePoints.Count - 1];
-        DrawLineOnTexture(centerlineOverlay, start, end, centerlineColor);
-      }
+    {
+      Vector2 start = centerlinePoints[centerlinePoints.Count - 2];
+      Vector2 end = centerlinePoints[centerlinePoints.Count - 1];
+      DrawLineOnTexture(centerlineOverlay, start, end, centerlineColor);
+    }
 
     if (startPosition.HasValue)
     {
@@ -311,6 +346,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     centerlineOverlay.Apply();
 
     Sprite overlaySprite = Sprite.Create(centerlineOverlay, new Rect(0, 0, centerlineOverlay.width, centerlineOverlay.height), new Vector2(0.5f, 0.5f));
+    if (previewImage.sprite != null) previewImage.sprite = null;
     previewImage.sprite = overlaySprite;
   }
 
@@ -344,6 +380,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     int y2 = Mathf.RoundToInt(end.y);
 
     int thickness = centerlineThickness;
+    int radius = centerlineThickness / 2;
     int halfThickness = thickness / 2;
     int textureWidth = texture.width;
     int textureHeight = texture.height;
@@ -363,14 +400,17 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         for (int offsetY = -halfThickness; offsetY <= halfThickness; offsetY++)
         {
-          int pixelX = x + offsetX;
-          int pixelY = y + offsetY;
-
-          if (pixelX >= 0 && pixelX < textureWidth && pixelY >= 0 && pixelY < textureHeight)
+          if (offsetX * offsetX + offsetY * offsetY <= radius * radius)
           {
-            Color originalPixel = loadedTexture.GetPixel(pixelX, pixelY);
-            Color blended = Color.Lerp(originalPixel, color, 0.5f);
-            texture.SetPixel(pixelX, pixelY, blended);
+            int pixelX = x + offsetX;
+            int pixelY = y + offsetY;
+
+            if (pixelX >= 0 && pixelX < textureWidth && pixelY >= 0 && pixelY < textureHeight)
+            {
+              Color originalPixel = loadedTexture.GetPixel(pixelX, pixelY);
+              Color blended = Color.Lerp(originalPixel, color, 0.5f);
+              texture.SetPixel(pixelX, pixelY, blended);
+            }
           }
         }
       }
@@ -422,23 +462,43 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       Destroy(loadedTexture);
     }
 
-    loadedTexture = new Texture2D(2, 2);
-    bool imageLoaded = loadedTexture.LoadImage(imageData);
+    Texture2D tempTexture = new Texture2D(2, 2);
+    bool imageLoaded = tempTexture.LoadImage(imageData);
 
     if (imageLoaded && previewImage != null)
     {
+      loadedTexture = ScaleTexture(tempTexture, outputImageWidth, outputImageHeight);
+
+      Destroy(tempTexture);
+
       Sprite imageSprite = Sprite.Create(
           loadedTexture,
           new Rect(0, 0, loadedTexture.width, loadedTexture.height),
           new Vector2(0.5f, 0.5f)
       );
-
+      if (previewImage.sprite != null) previewImage.sprite = null;
       previewImage.sprite = imageSprite;
+      previewImage.preserveAspect = true;
       previewImage.gameObject.SetActive(true);
 
       if (traceButton != null)
       {
-        //traceButton.interactable = true;
+        traceButton.gameObject.SetActive(true);
+      }
+
+      if (resetTraceButton != null)
+      {
+        resetTraceButton.gameObject.SetActive(true);
+      }
+
+      if (maskWidthSlider != null)
+      {
+        maskWidthSlider.gameObject.SetActive(true);
+      }
+
+      if (maskWidthLabel != null)
+      {
+        maskWidthLabel.gameObject.SetActive(true);
       }
 
       string fileName = Path.GetFileName(imagePath);
@@ -447,7 +507,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
       //Reset any existing centerline
       ResetCenterline();
-      UpdateInstructions();
     }
     else
     {
@@ -457,7 +516,23 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     yield return null;
   }
 
-  private void ResetCenterline()
+  private Texture2D ScaleTexture(Texture2D source, int targetWidth, int targetHeight)
+  {
+    RenderTexture rt = RenderTexture.GetTemporary(targetWidth, targetHeight);
+    RenderTexture.active = rt;
+    Graphics.Blit(source, rt);
+
+    Texture2D result = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBA32, false);
+    result.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
+    result.Apply();
+
+    RenderTexture.active = null;
+    RenderTexture.ReleaseTemporary(rt);
+
+    return result;
+  }
+
+  public void ResetCenterline()
   {
     centerlinePoints.Clear();
     startPosition = null;
@@ -474,43 +549,84 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (loadedTexture != null && previewImage != null)
     {
       Sprite imageSprite = Sprite.Create(loadedTexture, new Rect(0, 0, loadedTexture.width, loadedTexture.height), new Vector2(0.5f, 0.5f));
+      if (previewImage.sprite != null) previewImage.sprite = null;
       previewImage.sprite = imageSprite;
     }
     if (processButton != null)
     {
-      //processButton.interactable = false;
+      processButton.gameObject.SetActive(false);
     }
-
-    UpdateInstructions();
     Debug.Log("Centerline reset");
+  }
+
+  private void ShowErrorPopUp()
+  {
+    ResetCenterline();
+    if (errorPopUp != null)
+    {
+      errorPopUp.SetActive(true);
+      StartCoroutine(HideAfterDelay(5f)); // 5 seconds
+    }
+  }
+
+  private IEnumerator HideAfterDelay(float delay)
+  {
+    yield return new WaitForSeconds(delay);
+    errorPopUp.SetActive(false);
   }
 
   public void ProcessTrackImage()
   {
+    if (isProcessing)
+    {
+      Debug.LogWarning("Processing already in progress");
+      return;
+    }
+
     if (string.IsNullOrEmpty(selectedImagePath))
     {
       Debug.LogError("No image selected for processing");
       return;
     }
 
-    // if (centerlinePoints.Count < 100)
-    // {
-    //   Debug.LogError("Need to trace centerline before processing");
-    //   return;
-    // }
-
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(true);
+    }
     StartCoroutine(ProcessTrackImageCoroutine());
+  }
+
+  // Flip Y of CNN points to Unity space
+  private List<Vector2> FlipY(List<Vector2> pts, float height)
+  {
+    if (pts == null) return null;
+    return pts.Select(p => new Vector2(p.x, height - p.y)).ToList();
   }
 
   private IEnumerator ProcessTrackImageCoroutine()
   {
+    yield return null;
+    if (isProcessing) yield break;
+
+    isProcessing = true;
     float startTime = Time.realtimeSinceStartup;
+
+    // SHOW LOADING SCREEN HERE
+    // Example: LoadingScreenManager.Instance.ShowLoadingScreen("Processing track image...");
 
     Debug.Log("Starting track image processing...");
     OnProcessingStarted?.Invoke("Processing track image...");
 
+    // Disable process button during processing
+    if (processButton != null)
+    {
+      processButton.interactable = false;
+    }
+
+    yield return null;
     // Create mask from centerline
     Texture2D centerlineMask = CreateMaskFromCenterline();
+    yield return null;
     if (centerlineMask == null)
     {
       string errorMsg = "Failed to create centerline mask";
@@ -523,76 +639,121 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
-
+    yield return null;
     // Apply the mask to the original image
     Texture2D maskedImage = ApplyMaskToImage(loadedTexture, centerlineMask);
-
+    yield return null;
     // Save the masked image to a temporary file
     string tempFilePath = Path.Combine(Application.persistentDataPath, "temp_masked_track.png");
     byte[] maskedImageBytes = maskedImage.EncodeToPNG();
     File.WriteAllBytes(tempFilePath, maskedImageBytes);
-
+    yield return null;
     // Clean up textures we don't need anymore
     Destroy(centerlineMask);
     Destroy(maskedImage);
 
-    // Process the MASKED image to get boundaries
-    ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
+    yield return null; // Allow UI to update
 
     Debug.Log(tempFilePath);
-    //Delete the temporary file after processing
-    // try
-    // {
-    //   File.Delete(tempFilePath);
-    // }
-    // catch (System.Exception e)
-    // {
-    //   Debug.LogWarning($"Could not delete temporary file: {e.Message}");
-    // }
 
-    yield return null; // Allow UI to update
+    // Run both image processing and PSO optimization in background tasks
+    Debug.Log($"Starting background image processing and PSO optimization...");
+    OnProcessingStarted?.Invoke("Processing boundaries and optimizing raceline...");
 
-    if (!boundaries.success)
+    // Create a combined task that handles both image processing and PSO
+    List<Vector2> centerlinePointsCopy = new List<Vector2>(centerlinePoints);
+    Vector2? startPositionCopy = startPosition;
+
+    yield return null;
+    // Run both image processing and PSO optimization in background tasks
+    Task<ProcessingTaskResult> combinedTask = Task.Run(() =>
     {
-      string errorMsg = $"Image processing failed: {boundaries.errorMessage}";
-      Debug.LogError(errorMsg);
-
-      lastResults = new ProcessingResults
+      try
       {
-        success = false,
-        errorMessage = boundaries.errorMessage,
-        processingTime = Time.realtimeSinceStartup - startTime
-      };
+        // Process the MASKED image to get boundaries
+        ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
 
-      OnProcessingComplete?.Invoke(lastResults);
-      yield break;
+        if (!boundaries.success)
+        {
+          return new ProcessingTaskResult
+          {
+            success = false,
+            errorMessage = boundaries.errorMessage,
+            boundaries = null,
+            racelineResult = null
+          };
+        }
+
+        float imageHeight = loadedTexture.height;
+        // Flip Y of boundaries to Unity space
+        boundaries.innerBoundary = FlipY(boundaries.innerBoundary, imageHeight);
+        boundaries.outerBoundary = FlipY(boundaries.outerBoundary, imageHeight);
+        // Use the copied variables instead of the original ones
+        List<Vector2> alignedInner = AlignBoundaryWithUserInputBackground(boundaries.innerBoundary, centerlinePointsCopy, startPositionCopy);
+        List<Vector2> alignedOuter = AlignBoundaryWithUserInputBackground(boundaries.outerBoundary, centerlinePointsCopy, startPositionCopy);
+
+        // Run PSO optimization
+        PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
+            alignedInner,
+            alignedOuter,
+            particleCount,
+            maxIterations
+        );
+
+        return new ProcessingTaskResult
+        {
+          success = true,
+          errorMessage = "",
+          boundaries = boundaries,
+          alignedInner = alignedInner,
+          alignedOuter = alignedOuter,
+          racelineResult = racelineResult
+        };
+      }
+      catch (System.Exception ex)
+      {
+        return new ProcessingTaskResult
+        {
+          success = false,
+          errorMessage = $"Background processing failed: {ex.Message}",
+          boundaries = null,
+          racelineResult = null
+        };
+      }
+    });
+    // Wait for combined task to complete while keeping UI responsive
+
+
+    while (!combinedTask.IsCompleted)
+    {
+      yield return null; // Keep UI responsive
     }
 
-    // Rest of your existing processing code...
-    Debug.Log($"Image processing successful. Running PSO optimization...");
-    OnProcessingStarted?.Invoke("Optimizing raceline...");
-
-    // Run PSO optimization
-    PSOInterface.RacelineResult racelineResult = PSOIntegrator.RunPSO(
-        boundaries.innerBoundary,
-        boundaries.outerBoundary,
-        particleCount,
-        maxIterations
-    );
-
-    yield return null; // Allow UI to update
-
-    // Convert System.Numerics.Vector2 to UnityEngine.Vector2
-    List<Vector2> innerBoundary = ConvertToUnityVectors(racelineResult.InnerBoundary);
-    List<Vector2> outerBoundary = ConvertToUnityVectors(racelineResult.OuterBoundary);
-    List<Vector2> raceline = ConvertToUnityVectors(racelineResult.Raceline);
-
-    if (racelineResult == null)
+    if (LoaderPanel != null)
     {
-      string errorMsg = "Raceline optimization failed - no result returned";
+      LoaderPanel.SetActive(false);
+    }
+
+    ProcessingTaskResult taskResult;
+
+    // Handle task completion states safely
+    if (combinedTask.IsFaulted)
+    {
+      // Handle background exception
+      string errorMsg = "Background processing task failed: " + combinedTask.Exception?.GetBaseException().Message;
       Debug.LogError(errorMsg);
 
       lastResults = new ProcessingResults
@@ -602,9 +763,111 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
         processingTime = Time.realtimeSinceStartup - startTime
       };
 
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
+    else if (combinedTask.IsCanceled)
+    {
+      string errorMsg = "Background processing task was canceled.";
+      Debug.LogError(errorMsg);
+
+      ShowErrorPopUp();
+
+      lastResults = new ProcessingResults
+      {
+        success = false,
+        errorMessage = errorMsg,
+        processingTime = Time.realtimeSinceStartup - startTime
+      };
+
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
+      OnProcessingComplete?.Invoke(lastResults);
+      yield break;
+    }
+    else
+    {
+      taskResult = combinedTask.Result;
+    }
+
+    if (!taskResult.success)
+    {
+      // string errorMsg = taskResult.errorMessage;
+      // Debug.LogError(errorMsg);
+      ShowErrorPopUp();
+
+      lastResults = new ProcessingResults
+      {
+        success = false,
+        errorMessage = taskResult.errorMessage,
+        processingTime = Time.realtimeSinceStartup - startTime
+      };
+
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
+      OnProcessingComplete?.Invoke(lastResults);
+      yield break;
+    }
+
+    PSOInterface.RacelineResult racelineResult = taskResult.racelineResult;
+
+    if (racelineResult == null)
+    {
+      string errorMsg = "Raceline optimization failed - no result returned";
+      Debug.LogError(errorMsg);
+      ShowErrorPopUp();
+
+      lastResults = new ProcessingResults
+      {
+        success = false,
+        errorMessage = errorMsg,
+        processingTime = Time.realtimeSinceStartup - startTime
+      };
+
+      // Re-enable button
+      if (processButton != null)
+      {
+        processButton.interactable = true;
+      }
+      // HIDE LOADING SCREEN HERE
+      // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+      isProcessing = false;
+      OnProcessingComplete?.Invoke(lastResults);
+      yield break;
+    }
+
+    // Convert System.Numerics.Vector2 to UnityEngine.Vector2
+    float imageHeight = loadedTexture.height;
+    List<Vector2> innerBoundary = FlipY(ConvertToUnityVectors(racelineResult.InnerBoundary), imageHeight);
+    List<Vector2> outerBoundary = FlipY(ConvertToUnityVectors(racelineResult.OuterBoundary), imageHeight);
+    List<Vector2> raceline = FlipY(ConvertToUnityVectors(racelineResult.Raceline), imageHeight);
 
     float processingTime = Time.realtimeSinceStartup - startTime;
 
@@ -627,12 +890,218 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     // Generate output image
     // GenerateOutputImage();
 
+    // Re-enable button
+    if (processButton != null)
+    {
+      processButton.interactable = true;
+    }
     ACOTrackMaster.LoadTrack(lastResults);
+
+    // HIDE LOADING SCREEN HERE
+    // Example: LoadingScreenManager.Instance.HideLoadingScreen();
+
+    isProcessing = false;
 
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
 
     OnProcessingComplete?.Invoke(lastResults);
+  }
+
+  // Helper class for background task results
+  private class ProcessingTaskResult
+  {
+    public bool success;
+    public string errorMessage;
+    public ImageProcessing.TrackBoundaries boundaries;
+    public List<Vector2> alignedInner;
+    public List<Vector2> alignedOuter;
+    public PSOInterface.RacelineResult racelineResult;
+  }
+
+  private List<Vector2> AlignBoundaryWithUserInput(List<Vector2> boundary)
+  {
+    if (boundary == null || boundary.Count == 0 || centerlinePoints.Count < 2)
+    {
+      Debug.LogWarning("Cannot align boundary - missing data");
+      return boundary;
+    }
+    // Find the closest point on the boundary to the user-defined start position
+    Vector2 userStart = startPosition ?? centerlinePoints[0];
+    int closestIndex = FindClosestPointIndex(boundary, userStart);
+
+    // Reorder the boundary to start from this point
+    List<Vector2> reorderedBoundary = ReorderBoundary(boundary, closestIndex);
+
+    // Check and correct direction
+    List<Vector2> directionCorrectedBoundary = EnsureBoundaryDirection(reorderedBoundary);
+
+    Debug.Log($"Boundary aligned with user input. Start index: {closestIndex}");
+
+    return directionCorrectedBoundary;
+  }
+
+  // Background thread version of AlignBoundaryWithUserInput
+  private List<Vector2> AlignBoundaryWithUserInputBackground(List<Vector2> boundary, List<Vector2> centerlinePointsCopy, Vector2? startPositionCopy)
+  {
+    if (boundary == null || boundary.Count == 0 || centerlinePointsCopy.Count < 200)
+    {
+      Debug.LogWarning("Cannot align boundary - missing data");
+      return boundary;
+    }
+
+    // Find the closest point on the boundary to the user-defined start position
+    Vector2 userStart = startPositionCopy ?? centerlinePointsCopy[0];
+    int closestIndex = FindClosestPointIndexBackground(boundary, userStart);
+
+    // Reorder the boundary to start from this point
+    List<Vector2> reorderedBoundary = ReorderBoundaryBackground(boundary, closestIndex);
+
+    // Check and correct direction
+    List<Vector2> directionCorrectedBoundary = EnsureBoundaryDirectionBackground(reorderedBoundary, centerlinePointsCopy);
+
+    Debug.Log($"Boundary aligned with user input. Start index: {closestIndex}");
+
+    return directionCorrectedBoundary;
+  }
+
+  // Background thread versions of helper methods
+  private int FindClosestPointIndexBackground(List<Vector2> points, Vector2 target)
+  {
+    int closestIndex = 0;
+    float closestDistSqr = float.MaxValue;
+
+    for (int i = 0; i < points.Count; i++)
+    {
+      float distSqr = (points[i] - target).sqrMagnitude;
+      if (distSqr < closestDistSqr)
+      {
+        closestDistSqr = distSqr;
+        closestIndex = i;
+      }
+    }
+
+    return closestIndex;
+  }
+
+  private List<Vector2> ReorderBoundaryBackground(List<Vector2> boundary, int startIndex)
+  {
+    List<Vector2> reordered = new List<Vector2>();
+
+    for (int i = 0; i < boundary.Count; i++)
+    {
+      int index = (startIndex + i) % boundary.Count;
+      reordered.Add(boundary[index]);
+    }
+
+    return reordered;
+  }
+
+  private List<Vector2> EnsureBoundaryDirectionBackground(List<Vector2> boundary, List<Vector2> centerlinePointsCopy)
+  {
+    if (boundary.Count < 3 || centerlinePointsCopy.Count < 2)
+    {
+      return boundary;
+    }
+
+    // Calculate boundary direction using first three points
+    Vector2 bStart = boundary[0];
+    Vector2 bMid = boundary[1];
+    Vector2 bEnd = boundary[2];
+
+    Vector2 bDir1 = (bMid - bStart).normalized;
+    Vector2 bDir2 = (bEnd - bMid).normalized;
+    Vector2 boundaryDirection = ((bDir1 + bDir2) * 0.5f).normalized;
+
+    // Calculate user-defined centerline direction
+    Vector2 cStart = centerlinePointsCopy[0];
+    Vector2 cEnd = centerlinePointsCopy[Math.Min(10, centerlinePointsCopy.Count - 1)];
+    Vector2 centerlineDirection = (cEnd - cStart).normalized;
+
+    // Calculate angle between directions
+    float angle = Vector2.SignedAngle(boundaryDirection, centerlineDirection);
+
+    // If angle is greater than 90 degrees, reverse the boundary
+    if ((float)System.Math.Abs(angle) > 90f)
+    {
+      boundary.Reverse();
+      Debug.Log("Boundary direction reversed to match user-defined direction");
+    }
+    else
+    {
+      Debug.Log("Boundary direction matches user-defined direction");
+    }
+
+    return boundary;
+  }
+
+  private int FindClosestPointIndex(List<Vector2> points, Vector2 target)
+  {
+    int closestIndex = 0;
+    float closestDistSqr = float.MaxValue;
+
+    for (int i = 0; i < points.Count; i++)
+    {
+      float distSqr = (points[i] - target).sqrMagnitude;
+      if (distSqr < closestDistSqr)
+      {
+        closestDistSqr = distSqr;
+        closestIndex = i;
+      }
+    }
+
+    return closestIndex;
+  }
+
+  private List<Vector2> ReorderBoundary(List<Vector2> boundary, int startIndex)
+  {
+    List<Vector2> reordered = new List<Vector2>();
+
+    for (int i = 0; i < boundary.Count; i++)
+    {
+      int index = (startIndex + i) % boundary.Count;
+      reordered.Add(boundary[index]);
+    }
+
+    return reordered;
+  }
+
+  private List<Vector2> EnsureBoundaryDirection(List<Vector2> boundary)
+  {
+    if (boundary.Count < 3 || centerlinePoints.Count < 2)
+    {
+      return boundary;
+    }
+
+    // Calculate boundary direction using first three points
+    Vector2 bStart = boundary[0];
+    Vector2 bMid = boundary[1];
+    Vector2 bEnd = boundary[2];
+
+    Vector2 bDir1 = (bMid - bStart).normalized;
+    Vector2 bDir2 = (bEnd - bMid).normalized;
+    Vector2 boundaryDirection = ((bDir1 + bDir2) * 0.5f).normalized;
+
+    // Calculate user-defined centerline direction
+    Vector2 cStart = centerlinePoints[0];
+    Vector2 cEnd = centerlinePoints[Mathf.Min(10, centerlinePoints.Count - 1)];
+    Vector2 centerlineDirection = (cEnd - cStart).normalized;
+
+    // Calculate angle between directions
+    float angle = Vector2.SignedAngle(boundaryDirection, centerlineDirection);
+
+    // If angle is greater than 90 degrees, reverse the boundary
+    if (Mathf.Abs(angle) > 90f)
+    {
+      boundary.Reverse();
+      Debug.Log("Boundary direction reversed to match user-defined direction");
+    }
+    else
+    {
+      Debug.Log("Boundary direction matches user-defined direction");
+    }
+
+    return boundary;
   }
 
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
@@ -674,12 +1143,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   private Texture2D CreateMaskFromCenterline()
   {
-    // if (centerlinePoints.Count < 100 || loadedTexture == null)
-    // {
-    //   Debug.LogError("Need at least 100 centerline points and a loaded texture to create mask");
-    //   return null;
-    // }
-
     if (loadedTexture == null)
     {
       Debug.LogError("Need at least 100 centerline points and a loaded texture to create mask");
@@ -809,22 +1272,16 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       return;
     }
 
-    // Navigate to racing line page
     homePageNavigation.NavigateToRacingLine();
-
     // Get the racing line component and send the data
     if (homePageNavigation.racingLinePage != null)
     {
-      ShowRacingLine racingLineComponent = homePageNavigation.racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      ShowRacingLine racingLineComponent = homePageNavigation.racingLinePage.GetComponentInChildren<ShowRacingLine>(true);
       if (racingLineComponent != null)
       {
-        // Generate a track name from the selected image
-        string trackName = GenerateTrackNameFromImage();
-
         // Send the processed data to the racing line display
-        racingLineComponent.DisplayRacelineData(racelineData, trackName);
-
-        Debug.Log($"Successfully sent processed track data to racing line page. Track: {trackName}");
+        racingLineComponent.DisplayRacelineData(racelineData);
+        Debug.Log($"Successfully sent processed track data to racing line page");
       }
       else
       {
@@ -900,6 +1357,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   public float GetRaceDirection()
   {
     return raceDirection;
+  }
+
+  public bool IsProcessing()
+  {
+    return isProcessing;
   }
 
   // Public method to manually navigate to racing line with current results
@@ -988,6 +1450,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           new Rect(0, 0, outputImageWidth, outputImageHeight),
           new Vector2(0.5f, 0.5f)
       );
+      if (outputImage.sprite != null) outputImage.sprite = null;
 
       outputImage.sprite = outputSprite;
       outputImage.gameObject.SetActive(true);
@@ -1083,12 +1546,9 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   public Texture2D GetCenterlineMask()
   {
-    // if (centerlinePoints.Count < 100)
-    // {
-    //   return null;
-    // }
     return CreateMaskFromCenterline();
   }
+
   private void OnDestroy()
   {
     if (loadedTexture != null)

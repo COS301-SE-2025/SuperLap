@@ -87,10 +87,17 @@ namespace RacelineOptimizer
       public List<Vector2> Raceline { get; set; }
     }
 
-    public static RacelineResult GetRaceline(List<Vector2> innerBoundary, List<Vector2> outerBoundary, string trackName = "track", int numParticles = 100, int iterations = 6000)
+    public static RacelineResult GetRaceline(
+    List<Vector2> innerBoundary,
+    List<Vector2> outerBoundary,
+    string trackName = "track",
+    int numParticles = 100,
+    int iterations = 6000,
+    string outputPath = "Output")
     {
       Debug.Log($"Processing track: {trackName}...");
       Debug.Log($"Running PSO with {numParticles} particles and {iterations} iterations");
+
       if (outerBoundary.Count == 0 || innerBoundary.Count == 0)
       {
         Debug.Log("Error: Boundary data is empty.");
@@ -118,12 +125,14 @@ namespace RacelineOptimizer
         Debug.Log("Error: Track sampling returned no points.");
         return null;
       }
+
       var cornerTrack = TrackSampler.Sample(edgeData.InnerBoundary, edgeData.OuterBoundary, edgeData.InnerBoundary.Count);
       if (cornerTrack.Count == 0)
       {
         Debug.Log("Error: Corner track sampling returned no points.");
         return null;
       }
+
       var corners = CornerDetector.DetectCorners(cornerTrack);
       if (corners.Count == 0)
       {
@@ -146,6 +155,7 @@ namespace RacelineOptimizer
       }
       raceline = pso.SmoothRaceline(raceline, iterations: 2);
 
+      // Apply Savitzky-Golay smoothing
       int sgWindowSize = 7;
       int sgPolyOrder = 3;
       var sgFilter = new SavitzkyGolayFilter(sgWindowSize, sgPolyOrder);
@@ -160,8 +170,18 @@ namespace RacelineOptimizer
         raceline[i] = new Vector2(smoothedX[i], smoothedY[i]);
       }
 
+      // Update boundaries after scaling
       innerBoundary = edgeData.InnerBoundary;
       outerBoundary = edgeData.OuterBoundary;
+
+      // 🔹 Save to bin file
+      if (!Directory.Exists(outputPath))
+      {
+        Directory.CreateDirectory(outputPath);
+      }
+      string racelineFilePath = Path.Combine(outputPath, $"{trackName}.bin");
+      RacelineExporter.SaveToBinary(racelineFilePath, innerBoundary, outerBoundary, raceline, corners);
+      Debug.Log($"Raceline optimization completed and saved to {racelineFilePath}");
 
       RacelineResult result = new RacelineResult
       {
@@ -172,5 +192,6 @@ namespace RacelineOptimizer
 
       return result;
     }
+
   }
 }

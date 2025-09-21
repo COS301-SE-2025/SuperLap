@@ -65,7 +65,6 @@
     <Compile Include="Assets/CleanFlatUI/Scripts/Toast/Toast.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowProgressBarLoop.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowContentFitterMultiButtonUI.cs" />
-    <Compile Include="Assets/CleanFlatUI/Scripts/Selector/Selector.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionHover.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/PopupMenu/PopupMenuRightClick.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/Switch/SwitchSimple.cs" />
@@ -77,11 +76,7 @@
     <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowProgressBarUI.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/InputField/InputFieldSimple.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/ContextMenu/ContextMenuRightClick.cs" />
-    <Compile Include="Assets/CleanFlatUI/Scripts/Slider/SliderRangeTransition.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowUI.cs" />
-    <Compile Include="Assets/CleanFlatUI/Scripts/Slider/SliderCircular.cs" />
-    <Compile Include="Assets/CleanFlatUI/Scripts/Slider/SliderRange.cs" />
-    <Compile Include="Assets/CleanFlatUI/Scripts/Selector/SelectorSimple.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/ContextMenu/ContextMenuLongPress.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowList.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindow.cs" />
@@ -113,7 +108,6 @@
     <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowInputField.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowContentFitterUI.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/Toast/ToastContentFitterUI.cs" />
-    <Compile Include="Assets/CleanFlatUI/Scripts/Slider/SliderTransition.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/TabView/TabSimple.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionMultiHover.cs" />
     <Compile Include="Assets/CleanFlatUI/Scripts/Notification/NotificationWithButton.cs" />

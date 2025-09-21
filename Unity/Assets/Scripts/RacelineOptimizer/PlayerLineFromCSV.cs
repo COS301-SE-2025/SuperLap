@@ -18,6 +18,7 @@ namespace CSVToBinConverter
       public List<Vector2> OuterBoundary { get; set; }
       public List<Vector2> Raceline { get; set; }
       public List<Vector2> PlayerPath { get; set; }
+      public List<Vector2> WorstDeviationSections { get; set; } = new();
     }
 
     public static PlayerLine Convert(string csvPath, int targetLapIndex = 0)
@@ -27,15 +28,21 @@ namespace CSVToBinConverter
       string? headerLine = reader.ReadLine();
       if (headerLine == null)
         throw new Exception("CSV is empty");
+
       string[] headers = headerLine.Split('\t');
-      int lapIdxIndex = Array.IndexOf(headers, "lapIndex");
+      int lapIdxIndex = Array.IndexOf(headers, "lap_number");
       int xIdx = Array.IndexOf(headers, "world_position_X");
       int yIdx = Array.IndexOf(headers, "world_position_Y");
       int trackIndex = Array.IndexOf(headers, "trackId");
       string trackName = "Unknown";
 
+
+
       if (lapIdxIndex == -1 || xIdx == -1 || yIdx == -1)
         throw new Exception("Required columns not found in CSV");
+
+      List<(float x, float y)> rawPoints = new();
+
       while (!reader.EndOfStream)
       {
         string? line = reader.ReadLine();
@@ -51,39 +58,41 @@ namespace CSVToBinConverter
           continue;
 
         if (float.TryParse(fields[xIdx], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
-        float.TryParse(fields[yIdx], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
+            float.TryParse(fields[yIdx], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
         {
-          if (trackName == "Losail")
-          {
-            float angleDeg = 241f;
-            float angleRad = angleDeg * (float)Math.PI / 180f;
-            float cos = MathF.Cos(angleRad);
-            float sin = MathF.Sin(angleRad);
-            float rotatedX = cos * x - sin * y;
-            float rotatedY = sin * x + cos * y;
-
-            float scaleFactor = 6.834f; // Adjust scale factor as needed
-            rotatedX *= scaleFactor;
-            rotatedY *= scaleFactor;
-
-            playerline.Add(new Vector2(-rotatedX, rotatedY));
-          }
-          else
-          {
-            float angleDeg = 145.0f;
-            float angleRad = angleDeg * (float)Math.PI / 180f;
-            float cos = MathF.Cos(angleRad);
-            float sin = MathF.Sin(angleRad);
-            float rotatedX = cos * x - sin * y;
-            float rotatedY = sin * x + cos * y;
-
-            float scaleFactor = 0.514f; // Adjust scale factor as needed
-            rotatedX *= scaleFactor;
-            rotatedY *= scaleFactor;
-
-            playerline.Add(new Vector2(-rotatedX, rotatedY));
-          }
+          rawPoints.Add((x, y));
         }
+      }
+
+      string settingsPath = Path.Combine(Application.streamingAssetsPath, "AdjustPlayerlineSettings", $"{trackName}.json");
+      PlayerlineSettings settings = LoadSettings(settingsPath) ?? new PlayerlineSettings
+      {
+        tx = 0f,
+        ty = 0f,
+        scale = 1f,
+        rotation = 0f,
+        reflect_x = false,
+        reflect_y = false
+      };
+
+      float rad = settings.rotation * (float)Math.PI / 180f;
+      float cos = MathF.Cos(rad);
+      float sin = MathF.Sin(rad);
+      foreach (var (x, y) in rawPoints)
+      {
+        float rotatedX = cos * x - sin * y;
+        float rotatedY = sin * x + cos * y;
+
+        rotatedX *= settings.scale;
+        rotatedY *= settings.scale;
+
+        if (settings.reflect_x) rotatedX = -rotatedX;
+        if (settings.reflect_y) rotatedY = -rotatedY;
+
+        rotatedX += settings.tx;
+        rotatedY += settings.ty;
+
+        playerline.Add(new Vector2(rotatedX, rotatedY));
       }
 
       if (playerline.Count == 0)
@@ -92,7 +101,6 @@ namespace CSVToBinConverter
         return null;
       }
 
-      // Load existing edge data
       string trackPath = Path.Combine(Application.streamingAssetsPath, "MotoGPTracks", $"{trackName}.bin");
       if (!File.Exists(trackPath))
       {
@@ -107,73 +115,55 @@ namespace CSVToBinConverter
         Debug.Log($"Error: Edge data for {trackName} is empty or malformed.");
         return null;
       }
-
-      var allEdges = edgeData.OuterBoundary.Concat(edgeData.InnerBoundary).ToList();
-
-      float edgeMinX = allEdges.Min(p => p.X);
-      float edgeMaxX = allEdges.Max(p => p.X);
-      float edgeMinY = allEdges.Min(p => p.Y);
-      float edgeMaxY = allEdges.Max(p => p.Y);
-
-      float edgeCenterX = (edgeMinX + edgeMaxX) / 2f;
-      float edgeCenterY = (edgeMinY + edgeMaxY) / 2f;
-
-      for (int i = 0; i < edgeData.OuterBoundary.Count; i++)
-      {
-        edgeData.OuterBoundary[i] -= new Vector2(edgeCenterX, edgeCenterY);
-      }
-
-      for (int i = 0; i < edgeData.InnerBoundary.Count; i++)
-      {
-        edgeData.InnerBoundary[i] -= new Vector2(edgeCenterX, edgeCenterY);
-      }
-
-      for (int i = 0; i < edgeData.Raceline.Count; i++)
-      {
-        edgeData.Raceline[i] -= new Vector2(edgeCenterX, edgeCenterY);
-      }
-
-      float playerMinX = playerline.Min(p => p.X);
-      float playerMaxX = playerline.Max(p => p.X);
-      float playerMinY = playerline.Min(p => p.Y);
-      float playerMaxY = playerline.Max(p => p.Y);
-
-      float playerCenterX = (playerMinX + playerMaxX) / 2f;
-      float playerCenterY = (playerMinY + playerMaxY) / 2f;
-
-      Vector2 offset = new Vector2(-1f, 0f);
-      for (int i = 0; i < playerline.Count; i++)
-      {
-        playerline[i] -= new Vector2(playerCenterX, playerCenterY);
-        playerline[i] += offset;
-
-      }
-
-      // string fileNameNoExt = Path.GetFileNameWithoutExtension(binOutputPath);
-      // string outputDir = $"Output/CSV/{fileNameNoExt}";
-      // if (!Directory.Exists(outputDir))
-      //     Directory.CreateDirectory(outputDir);
-
-      // string fullBinPath = $"{outputDir}/{fileNameNoExt}.bin";
-
-      // using (var writer = new BinaryWriter(File.Create(fullBinPath)))
-      // {
-      //     WritePoints(writer, edgeData.OuterBoundary);
-      //     WritePoints(writer, edgeData.InnerBoundary);
-      //     WritePoints(writer, edgeData.Raceline);
-      //     WritePoints(writer, playerline);
-      // }
-
-      //Console.WriteLine($"Combined edge + playerline data written to: {fullBinPath}");
-      PlayerLine result = new PlayerLine
+      List<Vector2> worstSections = DeviationAnalyzer.GetWorstDeviationSections(playerline, edgeData.Raceline, 5);
+      Debug.Log($"Found {worstSections.Count} worst deviation sections.");
+      return new PlayerLine
       {
         InnerBoundary = edgeData.InnerBoundary,
         OuterBoundary = edgeData.OuterBoundary,
         Raceline = edgeData.Raceline,
-        PlayerPath = playerline
+        PlayerPath = playerline,
+        WorstDeviationSections = worstSections
       };
+    }
 
-      return result;
+    private static PlayerlineSettings LoadSettings(string path)
+    {
+      try
+      {
+        if (!File.Exists(path))
+          return null;
+
+        string json = File.ReadAllText(path);
+        return JsonUtility.FromJson<PlayerlineSettings>(json);
+      }
+      catch (Exception ex)
+      {
+        Debug.LogError($"Failed to load playerline settings from {path}: {ex.Message}");
+        return null;
+      }
+    }
+
+    public static void SaveToBin(PlayerLine data, string binOutputPath)
+    {
+      if (data == null)
+        throw new ArgumentNullException(nameof(data));
+
+      string fileNameNoExt = Path.GetFileNameWithoutExtension(binOutputPath);
+      string outputDir = Path.GetDirectoryName(binOutputPath);
+
+      if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        Directory.CreateDirectory(outputDir);
+
+      using (var writer = new BinaryWriter(File.Create(binOutputPath)))
+      {
+        WritePoints(writer, data.OuterBoundary);
+        WritePoints(writer, data.InnerBoundary);
+        WritePoints(writer, data.Raceline);
+        WritePoints(writer, data.PlayerPath);
+      }
+
+      Debug.Log($"Combined edge + playerline data written to: {binOutputPath}");
     }
 
 
