@@ -2,8 +2,8 @@ import os
 import numpy as np
 from PIL import Image
 
-MASK_PATH = "Silverstone(Mask).png"   # change to the files you want to process
-IMAGE_PATH = "Silverstone.png" 
+MASK_PATH = "10(Mask).png"   # change to the files you want to process
+IMAGE_PATH = "10.png" 
 
 OUTPUT_MASK_DIR = "mask"
 OUTPUT_IMAGE_DIR = "image"
