@@ -8926,6 +8926,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   checkpointCount: 15
+  maxRetries: 5
 --- !u!114 &618252567
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25005,7 +25006,7 @@ MonoBehaviour:
   agentSpawnHeight: 1
   mainCamera: {fileID: 841067261}
   screen: {fileID: 729960482}
-  loadTestTrack: 1
+  loadTestTrack: 0
   trackDataFileName: saved_track_data.txt
 --- !u!4 &1898709290
 Transform:

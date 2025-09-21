@@ -228,7 +228,10 @@ public class ACOTrackMaster : MonoBehaviour
         ACORacelineAnalyzer.Initialize(currentRaceline);
 
         // Save track data to file for future loading
-        SaveTrackDataToFile(results);
+        if(instance.loadTestTrack)
+        {
+            SaveTrackDataToFile(results);
+        }
 
         // Spawn the motorcycle agent on the raceline
         //SpawnMotorcycleAgent();

@@ -26,6 +26,8 @@ public class ACOTrainer : MonoBehaviour
     }
 
     /// PUBLIC METHODS FOR UI
+    
+    // Requires that a track has been processed by the PSO
     public void StartTraining()
     {
         if (running) return;
@@ -49,6 +51,23 @@ public class ACOTrainer : MonoBehaviour
     {
         string filePath = Path.Combine(Application.persistentDataPath, "bestAgent.txt");
         GetComponent<ACOAgentReplay>().InitializeTextFile(filePath);
+    }
+
+    public List<Vector2> GetNewRaceline()
+    {
+        List<Vector2> positions = new();
+
+        if (bestAgents.Count == 0) return positions;
+
+        foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
+        {
+            kvp.Value.ReplayStates.ForEach((state) =>
+            {
+                positions.Add(new Vector2(state.position.X, state.position.Y));
+            });
+        }
+
+        return positions;
     }
     /// END PUBLIC METHODS
 
