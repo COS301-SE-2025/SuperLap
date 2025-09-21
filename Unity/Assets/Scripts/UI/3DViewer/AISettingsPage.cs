@@ -244,5 +244,8 @@ private void OnSelectorSettingsChanged(int index)
   {
     if (settingsPage != null) settingsPage.SetActive(false);
     if (previewPage != null) previewPage.SetActive(true);
+
+    // ACOTrainer trainer = new ACOTrainer();
+    // trainer.StartTraining();
   }
 }
