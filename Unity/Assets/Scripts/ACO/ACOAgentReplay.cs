@@ -151,14 +151,7 @@ public class ACOAgentReplay : MonoBehaviour
 
         InitializeString(data);
     }
-
-    private Color GetColorFromThrottle(float throttle)
-    {
-        if (throttle == 0) return Color.yellow;
-        else if (throttle == 1) return Color.green;
-        else return Color.red;
-    }
-
+    
     public void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))

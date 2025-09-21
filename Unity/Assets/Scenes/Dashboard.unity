@@ -8889,7 +8889,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 618252565}
-  - component: {fileID: 618252564}
   - component: {fileID: 618252566}
   - component: {fileID: 618252567}
   m_Layer: 0
@@ -8899,33 +8898,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &618252564
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 618252563}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a72440b9668661759b73acd789f1bed6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  agentCount: 1000
-  agentPrefab: {fileID: 5433541524235702189, guid: 0cd56998953a77f01b4eff2a8931376c, type: 3}
-  decisionInterval: 5
-  iterations: 100
-  enableMultithreading: 1
-  threadCount: 10
-  agentsPerThread: 100
-  currentIteration: 0
-  totalAttempts: 0
-  currentSessionIndex: 0
-  activeAgents: 0
-  isTraining: 0
-  checkpointTriggerDistance: 50
-  useDistanceBasedCheckpoints: 1
-  totalCheckpoints: 50
 --- !u!4 &618252565
 Transform:
   m_ObjectHideFlags: 0
