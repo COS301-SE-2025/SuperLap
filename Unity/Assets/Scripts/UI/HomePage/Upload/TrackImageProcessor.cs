@@ -22,6 +22,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   [SerializeField] private TextMeshProUGUI maskWidthLabel;
   [SerializeField] private GameObject errorPopUp;
   [SerializeField] private GameObject LoaderPanel;
+  [SerializeField] private ACOTrainer trainer;
 
 
   [Header("Upload Settings")]
@@ -895,7 +896,22 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       processButton.interactable = true;
     }
+
+    Debug.Log("Training started");
+
     ACOTrackMaster.LoadTrack(lastResults);
+
+    trainer.StartTraining();
+
+    while (!trainer.IsDone())
+    {
+      yield break;
+    }
+
+
+    lastResults.raceline = trainer.GetNewRaceline();
+
+    Debug.Log("Training finished");
 
     // HIDE LOADING SCREEN HERE
     // Example: LoadingScreenManager.Instance.HideLoadingScreen();

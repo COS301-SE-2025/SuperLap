@@ -1303,7 +1303,7 @@ MonoBehaviour:
   agentSpawnHeight: 1
   mainCamera: {fileID: 0}
   screen: {fileID: 0}
-  loadTestTrack: 1
+  loadTestTrack: 0
   trackDataFileName: saved_track_data.txt
 --- !u!4 &67269622
 Transform:
@@ -26171,8 +26171,9 @@ MonoBehaviour:
   maskWidthLabel: {fileID: 760810138}
   errorPopUp: {fileID: 483597684342853666}
   LoaderPanel: {fileID: 1615689644}
+  trainer: {fileID: 591936640}
   particleCount: 100
-  maxIterations: 1000
+  maxIterations: 100
   maskWidth: 50
   centerlineColor: {r: 0, g: 1, b: 0.53333336, a: 0.49019608}
   startPositionColor: {r: 1, g: 0, b: 0, a: 1}
