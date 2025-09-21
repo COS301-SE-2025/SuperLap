@@ -892,8 +892,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       processButton.interactable = true;
     }
 
-    Debug.Log("Training started");
-
     ACOTrackMaster.LoadTrack(lastResults);
 
     trainer.StartTraining();
@@ -902,11 +900,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       yield return null;
     }
-    Debug.Log($"Previous last result: {lastResults.raceline.Count}");
-
     lastResults.raceline = trainer.GetNewRaceline();
 
-    Debug.Log($"After last result: {lastResults.raceline.Count}");
     // HIDE LOADING SCREEN HERE
     // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 

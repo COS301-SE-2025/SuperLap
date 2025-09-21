@@ -11166,7 +11166,7 @@ MonoBehaviour:
   checkpointCount: 10
   maxRetries: 5
   threadCount: 1
-  agentCount: 100
+  agentCount: 10
 --- !u!4 &591936641
 Transform:
   m_ObjectHideFlags: 0
@@ -26173,7 +26173,7 @@ MonoBehaviour:
   LoaderPanel: {fileID: 1615689644}
   trainer: {fileID: 591936640}
   particleCount: 100
-  maxIterations: 100
+  maxIterations: 1000
   maskWidth: 50
   centerlineColor: {r: 0, g: 1, b: 0.53333336, a: 0.49019608}
   startPositionColor: {r: 1, g: 0, b: 0, a: 1}

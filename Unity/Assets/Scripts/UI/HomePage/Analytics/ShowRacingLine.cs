@@ -541,8 +541,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline)),
     };
 
-    Debug.Log($"Show racing line: {trackData.Raceline.Count}");
-
     ClearExistingLines();
     currentTrackData = trackData;
     (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(trackData);
@@ -556,6 +554,13 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     
     ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
     replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
+
+
+Debug.Log($"ACOTrainer raceline points: {trackData.Raceline.Count}");
+Debug.Log($"ACOAgentReplay replay points: {replay.getReplays().Count}");
+
+    //Debug.Log($"First raceline x: {trackData.Raceline[0].Position.x} y: {trackData.Raceline[0].Position.y}");
+    //Debug.Log($"First replay x: {replay.getReplays()[0].start.x} y: {replay.getReplays()[0].start.y}");
 
     CreateBreakingPoints(replay.getReplays(), Width);
 

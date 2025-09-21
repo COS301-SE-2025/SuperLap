@@ -18,25 +18,28 @@ public class ACOTrainer : MonoBehaviour
     private int retryCounter = 5;
     [SerializeField] private int threadCount = 1;
     [SerializeField] private int agentCount = 100;
+    
+    private bool SaveCompleted = false;
 
     public void Update()
+  {
+    if (running)
     {
-        if (running)
-        {
-            HandleTraining();
-        }
+      HandleTraining();
     }
+  }
 
-    /// PUBLIC METHODS FOR UI
-    
-    // Requires that a track has been processed by the PSO
-    public void StartTraining()
-    {
-        if (running) return;
-        c = 0;
-        bestAgents.Clear();
-        InitializeSystem(c);
-        running = true;
+  /// PUBLIC METHODS FOR UI
+
+  // Requires that a track has been processed by the PSO
+  public void StartTraining()
+  {
+    if (running) return;
+    c = 0;
+    bestAgents.Clear();
+    InitializeSystem(c);
+    running = true;
+    SaveCompleted = false;
     }
 
     public float GetProgress()
@@ -46,7 +49,7 @@ public class ACOTrainer : MonoBehaviour
 
     public bool IsDone()
     {
-        return c >= checkpointCount;
+        return SaveCompleted;
     }
 
     public void ShowAgentReplay()
@@ -184,43 +187,45 @@ public class ACOTrainer : MonoBehaviour
         }
     }
 
-    private void SaveBestAgentToFile()
+  private void SaveBestAgentToFile()
+  {
+    string filePath = Path.Combine(Application.persistentDataPath, "bestAgent.txt");
+
+    Debug.Log($"=== SAVING BEST AGENT TO FILE ===");
+    Debug.Log($"Total splits to save: {bestAgents.Count}");
+
+    // Debug: Check for overlapping agents
+    foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
     {
-        string filePath = Path.Combine(Application.persistentDataPath, "bestAgent.txt");
+      Debug.Log($"Split {kvp.Key}: {kvp.Value.ReplayStates.Count} replay states, target position: {kvp.Value.TargetPassPosition}");
+    }
 
-        Debug.Log($"=== SAVING BEST AGENT TO FILE ===");
-        Debug.Log($"Total splits to save: {bestAgents.Count}");
-        
-        // Debug: Check for overlapping agents
-        foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
-        {
-            Debug.Log($"Split {kvp.Key}: {kvp.Value.ReplayStates.Count} replay states, target position: {kvp.Value.TargetPassPosition}");
-        }
+    using (StreamWriter writer = new StreamWriter(filePath))
+    {
+      int totalStatesWritten = 0;
 
-        using (StreamWriter writer = new StreamWriter(filePath))
-        {
-            int totalStatesWritten = 0;
-            
-            // Write all inputs from all segments
-            bestAgents.Values.ToList().ForEach((agent) =>
-            {
-                writer.WriteLine($"# Start of Agent {totalStatesWritten}");
-                Debug.Log($"Writing {agent.ReplayStates.Count} states from agent with {agent.TotalSteps} total steps");
-                int statesFromThisAgent = 0;
-                agent.ReplayStates.ForEach((state) =>
-                {
-                    writer.WriteLine(state.ToString());
-                    statesFromThisAgent++;
-                    totalStatesWritten++;
-                });
-                Debug.Log($"Wrote {statesFromThisAgent} states from this agent");
-            });
-            
-            Debug.Log($"Total replay states written to file: {totalStatesWritten}");
-        }
-        
-        Debug.Log($"Best agent path saved to: {filePath}");
-        Debug.Log($"=== SAVE COMPLETE ===");
+      // Write all inputs from all segments
+      bestAgents.Values.ToList().ForEach((agent) =>
+      {
+        writer.WriteLine($"# Start of Agent {totalStatesWritten}");
+        Debug.Log($"Writing {agent.ReplayStates.Count} states from agent with {agent.TotalSteps} total steps");
+        int statesFromThisAgent = 0;
+        agent.ReplayStates.ForEach((state) =>
+              {
+                writer.WriteLine(state.ToString());
+                statesFromThisAgent++;
+                totalStatesWritten++;
+              });
+        Debug.Log($"Wrote {statesFromThisAgent} states from this agent");
+      });
+
+      Debug.Log($"Total replay states written to file: {totalStatesWritten}");
+    }
+
+    Debug.Log($"Best agent path saved to: {filePath}");
+    Debug.Log($"=== SAVE COMPLETE ===");
+
+    SaveCompleted = true;
     }
     
     List<System.Numerics.Vector2> InitializeDistanceBasedCheckpoints()
