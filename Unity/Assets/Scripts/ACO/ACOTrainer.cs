@@ -16,6 +16,8 @@ public class ACOTrainer : MonoBehaviour
     float waitTimer = 0.05f;
     [SerializeField] private int maxRetries = 5;
     private int retryCounter = 5;
+    [SerializeField] private int threadCount = 1;
+    [SerializeField] private int agentCount = 100;
 
     public void Update()
     {
@@ -51,6 +53,16 @@ public class ACOTrainer : MonoBehaviour
     {
         string filePath = Path.Combine(Application.persistentDataPath, "bestAgent.txt");
         GetComponent<ACOAgentReplay>().InitializeTextFile(filePath);
+    }
+
+    public void SetAgentCount(int count)
+    {
+        agentCount = count;
+    }
+    
+    public void SetThreadCount(int count)
+    {
+        threadCount = count;
     }
 
     public List<Vector2> GetNewRaceline()
@@ -287,7 +299,7 @@ public class ACOTrainer : MonoBehaviour
         workers = new();
 
         // only 1 thread for now
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < threadCount; i++)
         {
             System.Numerics.Vector2[] outer = threadTrack.GetOuterData;
             System.Numerics.Vector2[] inner = threadTrack.GetInnerData;
@@ -310,7 +322,7 @@ public class ACOTrainer : MonoBehaviour
             List<System.Numerics.Vector2> newRl = new();
             threadRl.ForEach((point) => newRl.Add(new System.Numerics.Vector2(point.X, point.Y)));
 
-            workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, 100, 40.0f));
+            workers.Add(new ACOWorkerThread2(newTrack, i, 5, newRl, agentCount, 40.0f));
         }
 
         workers.ForEach((wt) =>
