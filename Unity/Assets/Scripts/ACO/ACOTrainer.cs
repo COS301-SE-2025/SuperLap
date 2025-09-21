@@ -277,13 +277,13 @@ public class ACOTrainer : MonoBehaviour
         
         if (currentSplit < 0)
         {
-            Debug.LogError($"Invalid split index: {currentSplit}. Cannot be negative.");
+            Debug.LogWarning($"Invalid split index: {currentSplit}. Cannot be negative.");
             return;
         }
 
         if (currentSplit >= checkPoints.Count)
         {
-            Debug.LogError($"Invalid split index: {currentSplit}. Not enough checkpoints remaining (need {currentSplit + 2}, have {checkPoints.Count}).");
+            Debug.LogWarning($"Invalid split index: {currentSplit}. Not enough checkpoints remaining (need {currentSplit + 2}, have {checkPoints.Count}).");
             return;
         }
 

@@ -501,18 +501,18 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   {
     return list.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList();
   }
-  
+
   private List<Vector2> Downsample(List<Vector2> points, int step)
   {
     return points.Where((pt, idx) => idx % step == 0).ToList();
   }
-  
+
   private List<Vector2> EnsureBelowLimit(List<Vector2> points, int limit = 64000)
   {
     if (points == null)
       return points;
 
-    int step = 2; 
+    int step = 2;
     while (points.Count > limit)
     {
       points = Downsample(points, step);
@@ -538,8 +538,10 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     {
       InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary)), simplificationTolerance)),
       OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary)), simplificationTolerance)),
-      Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline))
+      Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline)),
     };
+
+    Debug.Log($"Show racing line: {trackData.Raceline.Count}");
 
     ClearExistingLines();
     currentTrackData = trackData;
@@ -549,6 +551,13 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
 
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
+
+    float Width = 5f;
+    
+    ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
+    replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
+
+    CreateBreakingPoints(replay.getReplays(), Width);
 
     if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
     if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
@@ -626,6 +635,34 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     Vector2 transformed = (point - min) * scale + offset;
     transformed.y = trackContainer.rect.height - transformed.y;
     return transformed - trackContainer.rect.size * 0.5f;
+  }
+
+  private void CreateBreakingPoints(List<ReplayState> replays, float width)
+  {
+    if (replays == null || replays.Count < 2) return;
+
+    ACOAgentReplay replay = GetComponent<ACOAgentReplay>();
+    var segments = replay.GetColoredSegments();
+
+    (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(currentTrackData);
+    float scale = CalculateScale(bounds.size);
+    Vector2 offset = CalculateOffset(bounds.size, scale);
+
+    foreach (var seg in segments)
+    {
+      UILineRenderer lr = new GameObject("ReplaySegment", typeof(RectTransform), typeof(UILineRenderer))
+          .GetComponent<UILineRenderer>();
+
+      lr.transform.SetParent(trackContainer, false);
+      lr.material = lineMaterial;
+      lr.color = seg.color;
+      lr.LineThickness = width / currentZoom;
+      lr.Points = new Vector2[]
+      {
+            TransformPoint(seg.start, bounds.min, scale, offset),
+            TransformPoint(seg.end, bounds.min, scale, offset)
+      };
+    }
   }
 
   private void CreateRoadArea(List<Vector2> outer, List<Vector2> inner, Vector2 min, float scale, Vector2 offset)

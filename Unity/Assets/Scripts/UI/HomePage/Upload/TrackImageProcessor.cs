@@ -743,11 +743,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       yield return null; // Keep UI responsive
     }
 
-    if (LoaderPanel != null)
-    {
-      LoaderPanel.SetActive(false);
-    }
-
     ProcessingTaskResult taskResult;
 
     // Handle task completion states safely
@@ -905,19 +900,21 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     while (!trainer.IsDone())
     {
-      yield break;
+      yield return null;
     }
-
+    Debug.Log($"Previous last result: {lastResults.raceline.Count}");
 
     lastResults.raceline = trainer.GetNewRaceline();
 
-    Debug.Log("Training finished");
-
+    Debug.Log($"After last result: {lastResults.raceline.Count}");
     // HIDE LOADING SCREEN HERE
     // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
     isProcessing = false;
-
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
     // Navigate to racing line page with processed data
     NavigateToRacingLineWithProcessedData();
 
