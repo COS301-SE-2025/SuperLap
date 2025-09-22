@@ -27062,6 +27062,7 @@ MonoBehaviour:
   showOuterBoundary: 1
   showInnerBoundary: 1
   showRaceLine: 1
+  showBreakPoints: 1
   zoomSpeed: 0.1
   minZoom: 10
   maxZoom: 30
@@ -31395,6 +31396,7 @@ MonoBehaviour:
   showOuterBoundary: 1
   showInnerBoundary: 1
   showRaceLine: 1
+  showBreakPoints: 1
   zoomSpeed: 0.1
   minZoom: 0.5
   maxZoom: 100
@@ -33657,8 +33659,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -703.6345, y: 548}
-  m_SizeDelta: {x: 543.738, y: 105.1678}
+  m_AnchoredPosition: {x: -606.9304, y: 493.7274}
+  m_SizeDelta: {x: 737.1462, y: 213.7132}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1737800516
 MonoBehaviour:
@@ -33685,10 +33687,12 @@ MonoBehaviour:
     Click and drag - Pan around
     the track
 
-    ScrollWheel - Zoom in and out'
+    ScrollWheel - Zoom in and out
+
+    F - Toggle Break Points'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 487e40bc5a3faa4d8a3ba62cbdd307ea, type: 2}
+  m_sharedMaterial: {fileID: -7190893634375909534, guid: 487e40bc5a3faa4d8a3ba62cbdd307ea, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

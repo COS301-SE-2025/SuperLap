@@ -110,6 +110,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private bool showOuterBoundary = true;
   [SerializeField] private bool showInnerBoundary = true;
   [SerializeField] private bool showRaceLine = true;
+  [SerializeField] private bool showBreakPoints = true;
 
   [Header("Zoom/Pan Settings")]
   [SerializeField] private float zoomSpeed = 0.1f;
@@ -220,6 +221,11 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     if (Input.GetKeyDown(KeyCode.Space))
     {
       ToggleFollowCar();
+    }
+
+    if (Input.GetKeyDown(KeyCode.F))
+    {
+      ToggleShowBreakPoints();
     }
   }
 
@@ -455,10 +461,28 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
   }
 
-  public void ToggleFollowCar()
+  private void ToggleFollowCar()
   {
     followCar = !followCar;
     goingToCar = followCar;
+  }
+
+  private void ToggleShowBreakPoints()
+  {
+    showBreakPoints = !showBreakPoints;
+    showRaceLine = !showBreakPoints;
+
+    foreach (var kvp in lineRenderers)
+    {
+      if (kvp.Key.StartsWith("ReplaySegment"))
+      {
+        kvp.Value.enabled = showBreakPoints;
+      }
+      else if (kvp.Key.StartsWith("Raceline"))
+      {
+        kvp.Value.enabled = showRaceLine;
+      }
+    }
   }
 
   private void ConstrainToViewport()
@@ -491,6 +515,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         "OuterBoundary" => outerBoundaryWidth,
         "InnerBoundary" => innerBoundaryWidth,
         "Raceline" => racelineWidth,
+        _ when kvp.Key.StartsWith("ReplaySegment") => racelineWidth,
         _ => 1f
       };
       kvp.Value.LineThickness = baseWidth / currentZoom;
@@ -636,6 +661,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return transformed - trackContainer.rect.size * 0.5f;
   }
 
+
   private void CreateBreakingPoints(List<ReplayState> replays, float width)
   {
     if (replays == null || replays.Count < 2) return;
@@ -643,24 +669,59 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     ACOAgentReplay replay = GetComponent<ACOAgentReplay>();
     var segments = replay.GetColoredSegments();
 
+    if (segments == null || segments.Count == 0) return;
+
     (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(currentTrackData);
     float scale = CalculateScale(bounds.size);
     Vector2 offset = CalculateOffset(bounds.size, scale);
 
+    UILineRenderer currentLine = null;
+    List<Vector2> currentPoints = null;
+    Color currentColor = Color.clear;
+
+    int count = 0;
+
+    Vector2? firstPoint = null;
+
     foreach (var seg in segments)
     {
-      UILineRenderer lr = new GameObject("ReplaySegment", typeof(RectTransform), typeof(UILineRenderer))
-          .GetComponent<UILineRenderer>();
-
-      lr.transform.SetParent(trackContainer, false);
-      lr.material = lineMaterial;
-      lr.color = seg.color;
-      lr.LineThickness = width / currentZoom;
-      lr.Points = new Vector2[]
+      if (currentLine == null || seg.color != currentColor)
       {
-            TransformPoint(seg.start, bounds.min, scale, offset),
-            TransformPoint(seg.end, bounds.min, scale, offset)
-      };
+        if (currentLine != null)
+        {
+          currentLine.Points = currentPoints.ToArray();
+        }
+
+        currentLine = new GameObject($"ReplaySegment_{count}", typeof(RectTransform), typeof(UILineRenderer))
+            .GetComponent<UILineRenderer>();
+
+        currentLine.transform.SetParent(trackContainer, false);
+        currentLine.material = lineMaterial;
+        currentLine.color = seg.color;
+        currentLine.LineThickness = width / currentZoom;
+
+        currentPoints = new List<Vector2>();
+        currentColor = seg.color;
+
+        lineRenderers[$"ReplaySegment_{count++}"] = currentLine;
+      }
+
+      Vector2 startPoint = TransformPoint(seg.start, bounds.min, scale, offset);
+      Vector2 endPoint = TransformPoint(seg.end, bounds.min, scale, offset);
+
+      if (firstPoint == null)
+      {
+        firstPoint = startPoint;
+      }
+
+      currentPoints.Add(startPoint);
+      currentPoints.Add(endPoint);
+    }
+
+    if (currentLine != null && currentPoints != null && currentPoints.Count >= 2 && firstPoint.HasValue)
+    {
+      currentPoints.Add(firstPoint.Value);
+      currentLine.Points = currentPoints.ToArray();
     }
   }
 

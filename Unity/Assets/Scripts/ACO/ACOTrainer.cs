@@ -157,7 +157,7 @@ public class ACOTrainer : MonoBehaviour
                     else
                     {
                         // Cannot backtrack further - training failed
-                        Debug.LogError("Training failed: Could not find solution for initial split and cannot backtrack further.");
+                        Debug.LogWarning("Training failed: Could not find solution for initial split and cannot backtrack further.");
                         c = 0;
                         bestAgents.Clear();
                         return;
