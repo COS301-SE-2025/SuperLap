@@ -90,3 +90,5 @@ Backend/RacelineOptimizer/MotoGPTelemetry/lastSession.csv
 /Backend/MotoGPTelemetry/bin
 /Backend/MotoGPTelemetry/obj
 /Unity/Output
+/Backend/HelperScripts/TrainingDataGenerator/data
+/Backend/ImageProcessing/CNN/data
