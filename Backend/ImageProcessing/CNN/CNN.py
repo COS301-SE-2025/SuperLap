@@ -13,9 +13,31 @@ from skimage.morphology import skeletonize, dilation, erosion
 
 NUM_EDGE_POINTS = 4550  # Fixed number of points for each boundary
 
+
+def remove_small_regions(mask, min_area=5000):
+    """Remove small connected components (blobs/warts) from binary mask."""
+    num_labels, labels, stats, _ = cv.connectedComponentsWithStats(mask, connectivity=8)
+    cleaned = np.zeros_like(mask)
+
+    for i in range(1, num_labels):  # skip background
+        area = stats[i, cv.CC_STAT_AREA]
+        if area >= min_area:
+            cleaned[labels == i] = 255
+
+    return cleaned
+
+
+def smooth_contour(contour, epsilon_ratio=0.0001):
+    """Simplify contour to remove tiny bumps."""
+    if contour is None or len(contour) < 5:
+        return contour
+    epsilon = epsilon_ratio * cv.arcLength(contour, True)
+    return cv.approxPolyDP(contour, epsilon, True)
+
+
 class CNNTrackProcessor:
-    def __init__(self, model_path="MapSegmentationGenerator.keras"):
-        self.model = load_model(model_path, compile=True)
+    def __init__(self, model_path="best_modelv2.keras"):
+        self.model = load_model(model_path, compile=False)
         self.original_image = None
         self.track_mask = None
         self.track_boundaries = None
@@ -137,21 +159,75 @@ class CNNTrackProcessor:
         stitched = stitched / weight_map
         
         return stitched
+      
+    def fill_track_gaps(self, mask, gap_size=10):
+      """Fill gaps in track mask using morphological operations"""
+      # Convert to binary if needed
+      if mask.dtype != np.uint8:
+          mask = (mask > 0.5).astype(np.uint8) * 255
+      
+      # Dilate to close gaps
+      kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (gap_size, gap_size))
+      filled = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel, iterations=2)
+      
+      # Optional: erode slightly to restore original width
+      restore_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (gap_size//3, gap_size//3))
+      filled = cv.erode(filled, restore_kernel, iterations=1)
+      
+      return filled
+      
+    def generate_track_mask_enhanced(self, image_path, tile_size=(128, 128)):
+      """Enhanced multi-pass prediction with more overlap"""
+      original_image = Image.open(image_path).convert("RGB")
+      original_size = original_image.size
+      self.original_image = np.array(original_image)
+      
+      # Multiple passes with different offsets
+      offsets = [(0, 0), (64, 0), (0, 64), (64, 64), (32, 32)]
+      masks = []
+      
+      for offset in offsets:
+          tiles, coords, ignore = self.tile_image_with_offset(original_image, tile_size, offset=offset)
+          predictions = self.predict_on_tiles(tiles, ignore)
+          mask = self.stitch_tiles_with_weights(predictions, original_size, coords, tile_size)
+          masks.append(mask)
+      
+      # Ensemble averaging
+      final_mask = np.mean(masks, axis=0)
+      binary_mask = (final_mask > 0.2).astype(np.uint8) * 255
+      
+      binary_mask = remove_small_regions(binary_mask, min_area=20000)
+      binary_mask = self.fill_track_gaps(binary_mask, gap_size=10)
+      
+      self.track_mask = binary_mask
+      # Display for debugging
+      plt.figure(figsize=(12, 6))
+      plt.subplot(1, 2, 1)
+      plt.title("Original Image")
+      plt.imshow(self.original_image)
+      plt.axis('off')
+      
+      plt.subplot(1, 2, 2)
+      plt.title("Track Mask")
+      plt.imshow(self.track_mask, cmap='gray')
+      plt.axis('off')
+      
+      plt.show()
+      return binary_mask
 
+    # Old version kept for reference
     def generate_track_mask(self, image_path, tile_size=(128, 128)):
-        """Generate track mask using CNN with overlapping tiles and gap filling"""
+        """Generate track mask using CNN with overlapping tiles and wart cleanup"""
         # Load original image
         original_image = Image.open(image_path).convert("RGB")
         original_size = original_image.size
         self.original_image = np.array(original_image)
         
         # Multi-pass prediction for better coverage
-        # Pass 1: Regular grid
         tiles1, coords1, ignore1 = self.tile_image_with_offset(original_image, tile_size, offset=(0, 0))
         predictions1 = self.predict_on_tiles(tiles1, ignore1)
         mask1 = self.stitch_tiles_with_weights(predictions1, original_size, coords1, tile_size)
         
-        # Pass 2: Offset grid
         offset = (tile_size[0]//2, tile_size[1]//2)
         tiles2, coords2, ignore2 = self.tile_image_with_offset(original_image, tile_size, offset=offset)
         predictions2 = self.predict_on_tiles(tiles2, ignore2)
@@ -165,60 +241,62 @@ class CNNTrackProcessor:
         merged_mask = (mask1 * weight1 + mask2 * weight2) / total_weight
         
         # Convert to binary mask
-        binary_mask = (merged_mask > 0.3).astype(np.uint8)
-        
-        # Clean up the mask
-        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
+        binary_mask = (merged_mask > 0.3).astype(np.uint8) * 255
+
+        # Remove warts: kill small blobs
+        binary_mask = remove_small_regions(binary_mask, min_area=5000)
+
+        # Morphological smoothing
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
         binary_mask = cv.morphologyEx(binary_mask, cv.MORPH_CLOSE, kernel, iterations=2)
         binary_mask = cv.morphologyEx(binary_mask, cv.MORPH_OPEN, kernel, iterations=1)
         
-        self.track_mask = binary_mask * 255  # Convert to 0-255 range
+        # Gap filling
+        gap_kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (30, 30))
+        binary_mask = cv.morphologyEx(binary_mask, cv.MORPH_CLOSE, gap_kernel, iterations=2)
+        
+        self.track_mask = binary_mask
         return self.track_mask
       
-      
-      
     def detectBoundaries(self, mask):
-      """Detect track boundaries from the CNN-generated mask, fixing gaps/forks but keeping inner loop."""
+        """Detect track boundaries, shaving bumps/warts but keeping inner loop."""
+        contours, hierarchy = cv.findContours(mask, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+        if not contours or hierarchy is None:
+            return None
 
-     # Close gaps + remove forks
-      kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
-      closed = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel, iterations=0)
+        # Pick the largest contour as outer
+        areas = [cv.contourArea(c) for c in contours]
+        largest_idx = int(np.argmax(areas))
+        outer_boundary = contours[largest_idx]
 
-      # Find contours with hierarchy (needed to detect holes)
-      contours, hierarchy = cv.findContours(closed, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
-      if not contours or hierarchy is None:
-          return None
+        # Look for children (holes) of that contour
+        inner_boundary = None
+        for i, h in enumerate(hierarchy[0]):
+            parent = h[3]
+            if parent == largest_idx:
+                if inner_boundary is None or cv.contourArea(contours[i]) > cv.contourArea(inner_boundary):
+                    inner_boundary = contours[i]
 
-      # Pick the largest contour as outer
-      areas = [cv.contourArea(c) for c in contours]
-      largest_idx = int(np.argmax(areas))
-      outer_boundary = contours[largest_idx]
+        # Fallback: approximate with erosion
+        if inner_boundary is None:
+            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (20, 20))
+            eroded = cv.erode(mask, kernel, iterations=3)
+            inner_contours, _ = cv.findContours(eroded, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+            if inner_contours:
+                inner_boundary = max(inner_contours, key=cv.contourArea)
 
-      # Look for children (holes) of that contour
-      inner_boundary = None
-      for i, h in enumerate(hierarchy[0]):
-          parent = h[3]  # parent index (-1 = no parent)
-          if parent == largest_idx:
-              # child of the outer contour → candidate inner boundary
-              if inner_boundary is None or cv.contourArea(contours[i]) > cv.contourArea(inner_boundary):
-                  inner_boundary = contours[i]
+        # Smooth contours (shaves bumps)
+        outer_boundary = smooth_contour(outer_boundary)
+        if inner_boundary is not None:
+            inner_boundary = smooth_contour(inner_boundary)
 
-      # Fallback: if no inner boundary found, approximate with erosion
-      if inner_boundary is None:
-          kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (20, 20))
-          eroded = cv.erode(closed, kernel, iterations=3)
-          inner_contours, _ = cv.findContours(eroded, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-          if inner_contours:
-              inner_boundary = max(inner_contours, key=cv.contourArea)
-
-      self.track_boundaries = {"outer": outer_boundary, "inner": inner_boundary}
-      return self.track_boundaries
+        self.track_boundaries = {"outer": outer_boundary, "inner": inner_boundary}
+        return self.track_boundaries
 
     def processImageForCSharp(self, img_path):
         """Main processing function that matches the original interface"""
         try:
-            # Generate track mask using CNN
-            mask = self.generate_track_mask(img_path)
+            mask = self.generate_track_mask_enhanced(img_path)
             if mask is None:
                 return {
                     "success": False,
@@ -227,7 +305,6 @@ class CNNTrackProcessor:
                     "error": "Failed to generate track mask"
                 }
 
-            # Detect boundaries from the mask
             boundaries = self.detectBoundaries(mask)
             if boundaries is None:
                 return {
@@ -237,7 +314,6 @@ class CNNTrackProcessor:
                     "error": "Failed to detect track boundaries"
                 }
 
-            # Resample contours to fixed point count
             outer_coords = []
             inner_coords = []
 
@@ -262,6 +338,7 @@ class CNNTrackProcessor:
                 "error": str(e)
             }
 
+
 def write_result_to_file(result, output_file):
     """Write result to file instead of printing to stdout"""
     try:
@@ -271,6 +348,7 @@ def write_result_to_file(result, output_file):
     except Exception as e:
         print(f"Error writing to file: {e}", file=sys.stderr)
         return False
+
 
 def main():
     if len(sys.argv) < 2:
@@ -289,20 +367,18 @@ def main():
     img_path = sys.argv[1]
     output_file = sys.argv[2] if len(sys.argv) >= 3 else None
     
-    # Use CNN processor instead of traditional processor
     processor = CNNTrackProcessor()
     result = processor.processImageForCSharp(img_path)
     
     if output_file:
-        # Write to file
         if write_result_to_file(result, output_file):
             sys.exit(0 if result["success"] else 1)
         else:
-            sys.exit(2)  # File write error
+            sys.exit(2)
     else:
-        # Fallback to stdout (for backwards compatibility)
         print(json.dumps(result, separators=(',', ':')))
         sys.exit(0 if result["success"] else 1)
 
+
 if __name__ == "__main__":
-    main()    
+    main()
