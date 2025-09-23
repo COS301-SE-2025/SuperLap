@@ -81,3 +81,5 @@ Backend/RacelineOptimizer/MotoGPTelemetry/lastSession.csv
 /Backend/MotoGPTelemetry/bin
 /Backend/MotoGPTelemetry/obj
 /Unity/Output
+Unity/Assets/StreamingAssets/CNN.exe
+Unity/Assets/StreamingAssets/CNN
