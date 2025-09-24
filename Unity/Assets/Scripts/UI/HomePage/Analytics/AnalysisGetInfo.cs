@@ -117,7 +117,7 @@ public class AnalysisGetInfo : MonoBehaviour
     if (homePageNavigation != null)
     {
       string trackName = GetCurrentTrackName();
-      homePageNavigation.NavigateToRacingLineWithTrack(trackName);
+      homePageNavigation.NavigateToRacingLineWithTrackAndSession(trackName , selectedSession);
     }
     else
     {
@@ -363,7 +363,7 @@ public class AnalysisGetInfo : MonoBehaviour
       if (!racingLinePreview.gameObject.activeSelf)
         racingLinePreview.gameObject.SetActive(true);
 
-      racingLinePreview.InitializeWithTrack(trackName);
+      racingLinePreview.InitializeWithTrackAndSession(trackName, selectedSession);
     }
   }
 
