@@ -23,7 +23,32 @@ module.exports = {
     '!**/coverage/**'
   ],
 
-  testTimeout: 60000, // 60 seconds default timeout
+  // Coverage thresholds
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  },
+
+  // Test timeout
+  testTimeout: 30000, // 30 seconds default timeout
+
+  // Enable verbose output
   verbose: true,
-  
+
+  // Clear mocks between tests
+  clearMocks: true,
+
+  // Force exit after tests complete
+  forceExit: true,
+
+  // Detect open handles
+  detectOpenHandles: true,
+
+  // Global setup and teardown
+  globalSetup: '<rootDir>/tests/globalSetup.js',
+  globalTeardown: '<rootDir>/tests/globalTeardown.js',
 };
