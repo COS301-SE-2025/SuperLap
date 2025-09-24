@@ -70,5 +70,31 @@ describe('Racing Data Endpoints Unit Tests', function() {
             });
         });
     });
-    
+
+    // Mock update field validation
+    describe('Update Field Validation', function() {
+        it('should only allow specific fields to be updated', function() {
+            const allowedUpdates = ['trackName', 'userName', 'sessionType', 'lapTime', 'vehicleUsed', 'description'];
+            const requestBody = {
+                trackName: 'newtrack',
+                userName: 'newuser',
+                invalidField: 'shouldnotbeallowed',
+                csvData: 'shouldnotbeallowed',
+                _id: 'shouldnotbeallowed'
+            };
+
+            const updateData = {};
+            Object.keys(requestBody).forEach(key => {
+                if (allowedUpdates.includes(key)) {
+                updateData[key] = requestBody[key];
+                }
+            });
+
+            expect(updateData).toHaveProperty('trackName', 'newtrack');
+            expect(updateData).toHaveProperty('userName', 'newuser');
+            expect(updateData).not.toHaveProperty('invalidField');
+            expect(updateData).not.toHaveProperty('csvData');
+            expect(updateData).not.toHaveProperty('_id');
+        });
+    });
 });
