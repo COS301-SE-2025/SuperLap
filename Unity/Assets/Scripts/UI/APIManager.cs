@@ -516,6 +516,70 @@ public class APIManager : MonoBehaviour
 
   #endregion
 
+  #region Racing Data Upload
+
+  public async Task<(bool success, string message, RacingData data)> UploadRacingDataAsync(
+      string filePath,
+      string trackName,
+      string userName,
+      string fastestLapTime,
+      string averageSpeed,
+      string topSpeed,
+      string vehicleUsed,
+      string description)
+  {
+    if (!System.IO.File.Exists(filePath))
+      return (false, "CSV file not found", null);
+
+    byte[] fileBytes = System.IO.File.ReadAllBytes(filePath);
+    string fileName = System.IO.Path.GetFileName(filePath);
+
+    // Multipart form request
+    WWWForm form = new WWWForm();
+    form.AddBinaryData("csvFile", fileBytes, fileName, "text/csv");
+    form.AddField("trackName", trackName);
+    form.AddField("userName", userName);
+    form.AddField("fastestLapTime", fastestLapTime ?? "");
+    form.AddField("averageSpeed", averageSpeed ?? "");
+    form.AddField("topSpeed", topSpeed ?? "");
+    form.AddField("vehicleUsed", vehicleUsed ?? "");
+    form.AddField("description", description ?? "");
+
+    using (UnityWebRequest request = UnityWebRequest.Post($"{baseURL}/racing-data/upload", form))
+    {
+      var response = await request.SendWebRequestAsync();
+
+      if (response.result == UnityWebRequest.Result.Success)
+      {
+        try
+        {
+          // Response has { message, data }
+          string json = response.downloadHandler.text;
+          var wrapper = JsonUtility.FromJson<RacingUploadResponseWrapper>(json);
+          return (true, wrapper.message, wrapper.data);
+        }
+        catch (Exception ex)
+        {
+          return (false, $"Parsing error: {ex.Message}", null);
+        }
+      }
+      else
+      {
+        return (false, response.error, null);
+      }
+    }
+  }
+
+  [System.Serializable]
+  private class RacingUploadResponseWrapper
+  {
+    public string message;
+    public RacingData data;
+  }
+
+  #endregion
+
+
 
   private string CleanBase64String(string input)
   {
