@@ -17,7 +17,7 @@ public class ImageProcessing
     public string errorMessage;
   }
 
-  public static TrackBoundaries ProcessImage(string imagePath)
+  public static TrackBoundaries ProcessImage(string imagePath, bool isGrayScale = true)
   {
     Debug.Log($"Processing image: {imagePath}");
     var result = new TrackBoundaries { success = false };
@@ -31,18 +31,27 @@ public class ImageProcessing
         return result;
       }
 
+      Debug.Log($"IsGrayScale: {isGrayScale}");
+
       // Get the path to the executable
       string exeName;
-      if (Application.platform == RuntimePlatform.WindowsPlayer ||
-          Application.platform == RuntimePlatform.WindowsEditor)
+
+      if (isGrayScale)
       {
-        exeName = "TrackProcessor.exe";
+        exeName = "TrackProcessor";
       }
       else
       {
-        exeName = "TrackProcessor"; // Linux / macOS (no .exe)
+        exeName = "CNN";
       }
 
+      if (Application.platform == RuntimePlatform.WindowsPlayer ||
+          Application.platform == RuntimePlatform.WindowsEditor)
+      {
+        exeName += ".exe";
+      }
+
+      Debug.Log($"Using executable: {exeName}");
       string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
       if (!File.Exists(exePath))
       {
@@ -54,7 +63,9 @@ public class ImageProcessing
 
       // Create unique output file path in temp directory
       string outputFileName = $"track_result_{Guid.NewGuid():N}.json";
-      string outputFilePath = Path.Combine(Path.GetTempPath(), outputFileName);
+      string outputFilePath = Path.Combine(Application.streamingAssetsPath, outputFileName);
+      // string outputFilePath = Path.Combine(Path.GetTempPath(), outputFileName);
+      Debug.Log($"Output file will be: {outputFilePath}");
 
       // Create and configure the process
       ProcessStartInfo startInfo = new ProcessStartInfo
@@ -85,7 +96,8 @@ public class ImageProcessing
         if (process.ExitCode != 0)
         {
           result.errorMessage = $"TrackProcessor failed with exit code {process.ExitCode}. Error: {error}";
-          CleanupOutputFile(outputFilePath);
+          Debug.Log(result.errorMessage);
+          // CleanupOutputFile(outputFilePath);
           return result;
         }
 
@@ -93,6 +105,7 @@ public class ImageProcessing
         if (!File.Exists(outputFilePath))
         {
           result.errorMessage = "TrackProcessor did not create output file";
+          Debug.Log(result.errorMessage);
           return result;
         }
 
@@ -104,7 +117,7 @@ public class ImageProcessing
         result = ParseTrackBoundaries(jsonContent);
 
         // Cleanup the temporary file
-        CleanupOutputFile(outputFilePath);
+        // CleanupOutputFile(outputFilePath);
 
         if (result.success)
         {

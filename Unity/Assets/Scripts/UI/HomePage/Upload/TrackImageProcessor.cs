@@ -45,8 +45,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   [Header("Output Settings")]
   [SerializeField] private Image outputImage;
-  [SerializeField] private int outputImageWidth = 1024;
-  [SerializeField] private int outputImageHeight = 1024;
+  [SerializeField] private int outputImageWidth = 2560;
+  [SerializeField] private int outputImageHeight = 2560;
   [SerializeField] private Color innerBoundaryColor = Color.red;
   [SerializeField] private Color outerBoundaryColor = Color.blue;
   [SerializeField] private Color racelineColor = Color.green;
@@ -63,6 +63,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private float raceDirection = 0f;
   private Texture2D centerlineOverlay;
   private RectTransform previewImageRect;
+
+  private bool isGrayScaleImage = true;
 
   // Processing state
   private bool isProcessing = false;
@@ -468,6 +470,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     if (imageLoaded && previewImage != null)
     {
+      isGrayScaleImage = CheckIfGrayscale(tempTexture, sampleStep: 5);
       loadedTexture = ScaleTexture(tempTexture, outputImageWidth, outputImageHeight);
 
       Destroy(tempTexture);
@@ -516,6 +519,20 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     yield return null;
   }
+
+  
+  private bool CheckIfGrayscale(Texture2D tex, int sampleStep = 1)
+  {
+    Color32[] pixels = tex.GetPixels32();
+    for (int i = 0; i < pixels.Length; i += sampleStep)
+    {
+      var p = pixels[i];
+      if (!(p.r == p.g && p.g == p.b))
+        return false;
+    }
+    return true;
+  }
+
 
   private Texture2D ScaleTexture(Texture2D source, int targetWidth, int targetHeight)
   {
@@ -685,7 +702,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       try
       {
         // Process the MASKED image to get boundaries
-        ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
+        ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath, isGrayScaleImage);
 
         if (!boundaries.success)
         {
