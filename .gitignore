@@ -93,3 +93,5 @@ Backend/RacelineOptimizer/MotoGPTelemetry/lastSession.csv
 /Backend/HelperScripts/TrainingDataGenerator/data
 /Backend/ImageProcessing/CNN/data
 Backend/ImageProcessing/CNN/Output.json
+Unity/Assets/StreamingAssets/CNN
+Unity/Assets/StreamingAssets/CNN.exe
