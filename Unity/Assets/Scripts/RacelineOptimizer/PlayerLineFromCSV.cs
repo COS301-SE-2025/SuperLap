@@ -166,7 +166,6 @@ namespace CSVToBinConverter
       Debug.Log($"Combined edge + playerline data written to: {binOutputPath}");
     }
 
-
     private static void WritePoints(BinaryWriter writer, List<Vector2> points)
     {
       writer.Write(points.Count);

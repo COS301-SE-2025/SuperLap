@@ -580,7 +580,10 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
       replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
 
-      CreateBreakingPoints(replay.getReplays(), racelineWidth);
+      // for Sean: output the data
+      replay.SaveBinFile();
+
+      CreateBreakingPoints(replay.GetReplays(), racelineWidth);
     }
 
     if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
