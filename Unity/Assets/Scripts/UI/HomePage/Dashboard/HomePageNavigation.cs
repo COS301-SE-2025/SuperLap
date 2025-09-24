@@ -228,22 +228,6 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-  public void NavigateToRacingLineFromAnalysis()
-  {
-    string currentTrackName = "Unknown Track";
-
-    if (analysisPage != null)
-    {
-      AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
-      if (analysisComponent != null)
-      {
-        currentTrackName = analysisComponent.GetCurrentTrackName();
-      }
-    }
-
-    NavigateToRacingLineWithTrack(currentTrackName);
-  }
-
   public void NavigateToPage(int pageIndex)
   {
     activePageIndex = pageIndex;

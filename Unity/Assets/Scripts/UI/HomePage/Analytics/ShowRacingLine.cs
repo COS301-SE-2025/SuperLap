@@ -258,14 +258,23 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
   private void OnDisable()
   {
+    ClearPreview();
+  }
+
+  public void ClearPreview()
+  {
+    // Stop any coroutines running raceline updates
     StopAllCoroutines();
 
+    // Clear internal data
     racelinePoints = null;
     racelineSegmentLengths = null;
     totalRacelineLength = 0f;
     currentTrackData = null;
+    pendingTrackData = null;
     trailPositions.Clear();
 
+    // Destroy the car cursor and trail
     if (carCursor != null)
     {
       Destroy(carCursor.gameObject);
@@ -278,26 +287,25 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       trailLineRenderer = null;
     }
 
+    // Destroy all line renderers
     foreach (var kvp in lineRenderers)
-    {
-      if (kvp.Value != null)
-        Destroy(kvp.Value.gameObject);
-    }
+      if (kvp.Value != null) Destroy(kvp.Value.gameObject);
     lineRenderers.Clear();
 
+    // Clear children of track container
     if (trackContainer != null)
-    {
-      foreach (Transform child in trackContainer)
-        Destroy(child.gameObject);
-    }
+      foreach (Transform child in trackContainer) Destroy(child.gameObject);
 
+    // Reset pan/zoom/camera
     panOffset = Vector2.zero;
+    currentZoom = 1f;
     followCar = false;
     goingToCar = false;
-    currentTime = 0;
+    currentTime = 0f;
+
+    UpdateZoomContainer();
+    UpdateLineWidths();
   }
-
-
 
   private void HandleCameraFollow()
   {
@@ -831,6 +839,31 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       Debug.LogError($"Exception while loading track border: {ex.Message}");
     }
   }
+
+  public void InitializeWithRacelineData(RacelineDisplayData data)
+  {
+    if (data == null)
+    {
+      Debug.LogWarning("Raceline data is null. Cannot initialize preview.");
+      return;
+    }
+
+    if (!isInitialized)
+    {
+      pendingTrackData = data;
+      return;
+    }
+
+    StartCoroutine(DisplayRacelineDataNextFrame(data));
+  }
+
+  private IEnumerator DisplayRacelineDataNextFrame(RacelineDisplayData data)
+  {
+    yield return new WaitForEndOfFrame();
+    DisplayRacelineData(data);
+    StartCoroutine(WaitForTrackLoadAndSettle());
+  }
+
 
 
 

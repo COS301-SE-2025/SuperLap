@@ -25175,7 +25175,7 @@ MonoBehaviour:
   minPointDistance: 5
   outputImage: {fileID: 0}
   outputImageWidth: 1024
-  outputImageHeight: 576
+  outputImageHeight: 589
   innerBoundaryColor: {r: 1, g: 0, b: 0, a: 1}
   outerBoundaryColor: {r: 0, g: 0, b: 1, a: 1}
   racelineColor: {r: 0, g: 1, b: 0, a: 1}
@@ -26055,7 +26055,7 @@ MonoBehaviour:
   racelineColor: {r: 0, g: 1, b: 0, a: 1}
   showOuterBoundary: 1
   showInnerBoundary: 1
-  showRaceLine: 0
+  showRaceLine: 1
   showPlayerLine: 1
   showBreakPoints: 1
   zoomSpeed: 0.1
@@ -41973,7 +41973,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '0.012 '
+  m_text: '0,012 '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -42337,7 +42337,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '0.48 '
+  m_text: '0,48 '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
