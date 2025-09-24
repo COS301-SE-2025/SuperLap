@@ -339,6 +339,60 @@ public class ACOTrackMaster : MonoBehaviour
         Debug.Log($"Created raceline visualization with {raceline.Count} points");
     }
 
+    public static void CreateLineVisualization(List<Vector2> linePoints, string name, Color color, float width)
+    {
+        if (!instance.showRaceline || linePoints == null || linePoints.Count == 0)
+        {
+            if (racelineRenderer != null)
+            {
+                racelineRenderer.enabled = false;
+            }
+            return;
+        }
+        LineRenderer lineRenderer = null;
+        // Create or get the LineRenderer component
+        if (lineRenderer == null)
+        {
+            GameObject lineObject = new GameObject(name);
+            lineObject.transform.SetParent(instance.transform);
+            lineRenderer = lineObject.AddComponent<LineRenderer>();
+        }
+
+        // Configure the LineRenderer
+        if (lineRenderer == null) return;
+
+        // Create a material for the line if it doesn't exist
+        Material lineMat = new Material(Shader.Find("Sprites/Default"));
+        lineMat.color = color;
+
+        // Configure LineRenderer properties
+        lineRenderer.material = lineMat;
+        lineRenderer.startWidth = instance.racelineWidth;
+        lineRenderer.endWidth = instance.racelineWidth;
+        lineRenderer.useWorldSpace = true;
+        lineRenderer.loop = false; // We manually close the loop
+        lineRenderer.sortingOrder = 1; // Render on top of track
+
+        // Convert 2D raceline points to 3D positions with height offset
+        Vector3[] linePoints3D = new Vector3[linePoints.Count + 1]; // +1 to close the loop
+
+        for (int i = 0; i < linePoints.Count; i++)
+        {
+            Vector2 point = linePoints[i];
+            linePoints3D[i] = new Vector3(point.x, instance.racelineHeightOffset, point.y);
+        }
+
+        // Close the loop by connecting back to the first point
+        linePoints3D[linePoints.Count] = linePoints3D[0];
+
+        // Apply the points to the LineRenderer
+        lineRenderer.positionCount = linePoints3D.Length;
+        lineRenderer.SetPositions(linePoints3D);
+        lineRenderer.enabled = true;
+
+        Debug.Log($"Created line visualization with {linePoints.Count} points");
+    }
+
     private static void SetupRacelineRenderer()
     {
         if (racelineRenderer == null) return;

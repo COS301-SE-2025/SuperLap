@@ -125,11 +125,21 @@ public class ACOTrainer : MonoBehaviour
                 // No solution found for current split
                 if (retryCounter > 0)
                 {
+                    workers.ForEach((w) =>
+                    {
+                        w.CurrentSolutions.ForEach((ac) =>
+                        {
+                            //
+                            Color randomColor = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
+                            ACOTrackMaster.CreateLineVisualization(ac.ReplayStates.Select(rs => new Vector2(rs.position.X, rs.position.Y)).ToList(), "Agent Replay", randomColor, 1f);
+                        });
+                    });
+
                     // Retry current split
                     Debug.LogWarning($"Could not find solution for split {c}. Retrying. Attempts remaining: {retryCounter}");
                     retryCounter--;
                     InitializeSystem(c);
-                    running = true;
+                    // running = true;
                     return;
                 }
                 else

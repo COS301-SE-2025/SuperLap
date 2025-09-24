@@ -132,6 +132,8 @@ public class ACOWorkerThread2
     private float checkpointDistance;
     private AgentContainer bestAgent;
     public AgentContainer BestAgent => bestAgent;
+    private List<AgentContainer> currentSolutions = new List<AgentContainer>();
+    public List<AgentContainer> CurrentSolutions => currentSolutions;
 
     public ACOWorkerThread2(
         PolygonTrack pt,
@@ -235,7 +237,7 @@ public class ACOWorkerThread2
     {
         Debug.Log($"Worker thread {workerId} main loop started");
 
-        List<AgentContainer> containers = new List<AgentContainer>();
+        currentSolutions = new List<AgentContainer>();
 
         if (track == null)
         {
@@ -263,7 +265,7 @@ public class ACOWorkerThread2
 
         for (int i = 0; i < agentCount; i++)
         {
-            containers.Add(new AgentContainer(track, startPos, startBear, startSpeed, turnAngle, raceline, racelineAnalyzer, checkPoints, checkpointDistance));
+            currentSolutions.Add(new AgentContainer(track, startPos, startBear, startSpeed, turnAngle, raceline, racelineAnalyzer, checkPoints, checkpointDistance));
         }
 
         int iteration = 0;
@@ -271,7 +273,7 @@ public class ACOWorkerThread2
         while (running)
         {
             bool update = iteration % decisionInterval == 0;
-            List<AgentContainer> busy = containers.FindAll((ct) => ct.ShouldRun);
+            List<AgentContainer> busy = currentSolutions.FindAll((ct) => ct.ShouldRun);
             busy.ForEach((ct) =>
             {
                 ct.Step(update);
@@ -286,7 +288,7 @@ public class ACOWorkerThread2
 
             iteration++;
         }
-        List<AgentContainer> valids = containers.FindAll((ct) => ct.IsDone && ct.IsValid);
+        List<AgentContainer> valids = currentSolutions.FindAll((ct) => ct.IsDone && ct.IsValid);
 
         if(valids.Count == 0)
         {
