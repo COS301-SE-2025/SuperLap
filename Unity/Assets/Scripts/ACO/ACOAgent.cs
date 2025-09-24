@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.Numerics;
 public class ACOAgent
 {
-    private float enginePower = 150000f;
-    private float maxTractionForce = 7000f;
-    private float brakingForce = 8000f;
+    private static float enginePower = 150000f;
+    private static float maxTractionForce = 7000f;
+    private static float brakingForce = 8000f;
 
-    private float mass = 200f;
-    private float dragCoefficient = 0.6f;
-    private float frontalArea = 0.48f;
-    private float rollingResistanceCoefficient = 0.012f;
+    private static float mass = 200f;
+    private static float dragCoefficient = 0.6f;
+    private static float frontalArea = 0.48f;
+    private static float rollingResistanceCoefficient = 0.012f;
 
-    private float turnRate = 100f;
+    private static float turnRate = 100f;
     private float steeringDecay = 0.9f;
-    private float minSteeringSpeed = 0.5f;
-    private float fullSteeringSpeed = 5f;
+    private static float minSteeringSpeed = 0.5f;
+    private static float fullSteeringSpeed = 5f;
     private float steeringIntensity = 0.5f;
 
     private bool enableRecommendations = true;
@@ -72,11 +72,28 @@ public class ACOAgent
         }
     }
 
+    // set static field values
+    public static void SetParameters(float enginePower, float maxTractionForce, float brakingForce,
+                                       float mass, float dragCoefficient, float frontalArea, float rollingResistanceCoefficient,
+                                       float turnRate, float minSteeringSpeed, float fullSteeringSpeed)
+    {
+        ACOAgent.enginePower = enginePower;
+        ACOAgent.maxTractionForce = maxTractionForce;
+        ACOAgent.brakingForce = brakingForce;
+        ACOAgent.mass = mass;
+        ACOAgent.dragCoefficient = dragCoefficient;
+        ACOAgent.frontalArea = frontalArea;
+        ACOAgent.rollingResistanceCoefficient = rollingResistanceCoefficient;
+        ACOAgent.turnRate = turnRate;
+        ACOAgent.minSteeringSpeed = minSteeringSpeed;
+        ACOAgent.fullSteeringSpeed = fullSteeringSpeed;
+    }
+
     public ACOAgent(PolygonTrack track, Vector2 pos, float bear, List<Vector2> raceline = null, ThreadLocalRacelineAnalyzer analyzer = null, int agentId = -1)
     {
         position = pos;
         bearing = bear;
-        
+
         // Use provided agentId to avoid atomic contention, fallback to interlocked only if not provided
         if (agentId >= 0)
         {
@@ -87,7 +104,7 @@ public class ACOAgent
             // Fallback for backward compatibility (but this should be avoided in multithreaded scenarios)
             instanceId = System.Threading.Interlocked.Increment(ref globalInstanceCounter);
         }
-        
+
         InitializeConfigurations();
         InitializeComponents();
         theoreticalTopSpeed = MotorcyclePhysicsCalculator.CalculateTheoreticalTopSpeed(
@@ -106,12 +123,12 @@ public class ACOAgent
         {
             this.threadLocalRaceline = null; // Fall back to shared raceline if needed
         }
-        
+
         // Initialize Random with a unique seed to prevent thread contention
         // Use agent ID and current high-resolution timestamp to ensure uniqueness
         int uniqueSeed = instanceId * 31 + (int)(System.DateTime.UtcNow.Ticks & 0x7FFFFFFF);
         random = new Random(uniqueSeed);
-        
+
         // Use provided analyzer, or create new one if raceline is provided
         if (analyzer != null)
         {
@@ -128,17 +145,17 @@ public class ACOAgent
     {
         physicsConfig = new MotorcyclePhysicsConfig
         {
-            enginePower = this.enginePower,
-            maxTractionForce = this.maxTractionForce,
-            brakingForce = this.brakingForce,
-            mass = this.mass,
-            dragCoefficient = this.dragCoefficient,
-            frontalArea = this.frontalArea,
-            rollingResistanceCoefficient = this.rollingResistanceCoefficient,
-            turnRate = this.turnRate,
+            enginePower = ACOAgent.enginePower,
+            maxTractionForce = ACOAgent.maxTractionForce,
+            brakingForce = ACOAgent.brakingForce,
+            mass = ACOAgent.mass,
+            dragCoefficient = ACOAgent.dragCoefficient,
+            frontalArea = ACOAgent.frontalArea,
+            rollingResistanceCoefficient = ACOAgent.rollingResistanceCoefficient,
+            turnRate = ACOAgent.turnRate,
             steeringDecay = this.steeringDecay,
-            minSteeringSpeed = this.minSteeringSpeed,
-            fullSteeringSpeed = this.fullSteeringSpeed,
+            minSteeringSpeed = ACOAgent.minSteeringSpeed,
+            fullSteeringSpeed = ACOAgent.fullSteeringSpeed,
             steeringIntensity = this.steeringIntensity
         };
 
