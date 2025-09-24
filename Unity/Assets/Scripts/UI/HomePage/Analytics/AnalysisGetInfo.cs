@@ -117,7 +117,7 @@ public class AnalysisGetInfo : MonoBehaviour
     if (homePageNavigation != null)
     {
       string trackName = GetCurrentTrackName();
-      homePageNavigation.NavigateToRacingLineWithTrack(trackName);
+      homePageNavigation.NavigateToRacingLineWithTrackAndSession(trackName, selectedSession);
     }
     else
     {
@@ -316,9 +316,14 @@ public class AnalysisGetInfo : MonoBehaviour
     var (success, message, track) = await apiManager.GetTrackByNameAsync(trackName);
 
     if (success && track != null)
+    {
       DisplayTrackInfo(track);
+    }
     else
+    {
+      ClearTrackInfo();
       DisplayErrorMessage("Failed to load track data");
+    }
   }
 
   private void DisplayTrackInfo(Track track)
@@ -363,7 +368,7 @@ public class AnalysisGetInfo : MonoBehaviour
       if (!racingLinePreview.gameObject.activeSelf)
         racingLinePreview.gameObject.SetActive(true);
 
-      racingLinePreview.InitializeWithTrack(trackName);
+      racingLinePreview.InitializeWithTrackAndSession(trackName, selectedSession);
     }
   }
 
@@ -375,6 +380,25 @@ public class AnalysisGetInfo : MonoBehaviour
     }
     instantiatedPanels.Clear();
   }
+
+  private void ClearTrackInfo()
+  {
+    if (trackNameText != null) trackNameText.text = "Unknown Track";
+    if (trackTypeText != null) trackTypeText.text = "";
+    if (trackCityText != null) trackCityText.text = "";
+    if (trackCountryText != null) trackCountryText.text = "";
+    if (trackDescriptionText != null) trackDescriptionText.text = "";
+    if (trackLocationText != null) trackLocationText.text = "";
+
+    trackName = "";
+
+    if (racingLineButton != null)
+      racingLineButton.interactable = false;
+
+    if (racingLinePreview != null)
+      racingLinePreview.gameObject.SetActive(false);
+  }
+
 
   private void DisplayErrorMessage(string msg)
   {

@@ -35,29 +35,16 @@ public class AISettingsPage : MonoBehaviour
 
   [Header("Turning")]
   [SerializeField] private Slider turnRateSlider;
-  [SerializeField] private Slider steeringDecaySlider;
   [SerializeField] private Slider minSteeringSpeedSlider;
   [SerializeField] private Slider fullSteeringSpeedSlider;
-  [SerializeField] private Slider steeringIntensitySlider;
   [SerializeField] private float turnRate = 100f;
-  [SerializeField] private float steeringDecay = 0.9f;
   [SerializeField] private float minSteeringSpeed = 0.5f;
   [SerializeField] private float fullSteeringSpeed = 5f;
-  [SerializeField] private float steeringIntensity = 0.5f;
-
-  [Header("Motorcycle Banking/Leaning")]
-  [SerializeField] private Slider maxLeanAngleSlider;
-  [SerializeField] private Slider optimalLeanSpeedSlider;
-  [SerializeField] private Slider leanSpeedSlider;
-  [SerializeField] private float maxLeanAngle = 45f;
-  [SerializeField] private float optimalLeanSpeed = 15f;
-  [SerializeField] private float leanSpeed = 5f;
 
   // Default values for reset
   private float defaultEnginePower, defaultMaxTractionForce, defaultBrakingForce;
   private float defaultMass, defaultDragCoefficient, defaultFrontalArea, defaultRollingResistanceCoefficient;
-  private float defaultTurnRate, defaultSteeringDecay, defaultMinSteeringSpeed, defaultFullSteeringSpeed, defaultSteeringIntensity;
-  private float defaultMaxLeanAngle, defaultOptimalLeanSpeed, defaultLeanSpeed;
+  private float defaultTurnRate, defaultMinSteeringSpeed, defaultFullSteeringSpeed;
 
   void Start()
   {
@@ -79,14 +66,8 @@ public class AISettingsPage : MonoBehaviour
     defaultRollingResistanceCoefficient = rollingResistanceCoefficient;
 
     defaultTurnRate = turnRate;
-    defaultSteeringDecay = steeringDecay;
     defaultMinSteeringSpeed = minSteeringSpeed;
     defaultFullSteeringSpeed = fullSteeringSpeed;
-    defaultSteeringIntensity = steeringIntensity;
-
-    defaultMaxLeanAngle = maxLeanAngle;
-    defaultOptimalLeanSpeed = optimalLeanSpeed;
-    defaultLeanSpeed = leanSpeed;
   }
   private bool isSyncingSelectors = false;
   private void SetupSelector()
@@ -126,14 +107,8 @@ public class AISettingsPage : MonoBehaviour
     if (rollingResistanceCoefficientSlider != null) rollingResistanceCoefficientSlider.onValueChanged.AddListener(ChangeRollingResistanceCoefficient);
 
     if (turnRateSlider != null) turnRateSlider.onValueChanged.AddListener(ChangeTurnRate);
-    if (steeringDecaySlider != null) steeringDecaySlider.onValueChanged.AddListener(ChangeSteeringDecay);
     if (minSteeringSpeedSlider != null) minSteeringSpeedSlider.onValueChanged.AddListener(ChangeMinSteeringSpeed);
     if (fullSteeringSpeedSlider != null) fullSteeringSpeedSlider.onValueChanged.AddListener(ChangeFullSteeringSpeed);
-    if (steeringIntensitySlider != null) steeringIntensitySlider.onValueChanged.AddListener(ChangeSteeringIntensity);
-
-    if (maxLeanAngleSlider != null) maxLeanAngleSlider.onValueChanged.AddListener(ChangeMaxLeanAngle);
-    if (optimalLeanSpeedSlider != null) optimalLeanSpeedSlider.onValueChanged.AddListener(ChangeOptimalLeanSpeed);
-    if (leanSpeedSlider != null) leanSpeedSlider.onValueChanged.AddListener(ChangeLeanSpeed);
 
     // Optionally sync sliders with current values
     SyncSlidersWithValues();
@@ -151,34 +126,28 @@ public class AISettingsPage : MonoBehaviour
     if (rollingResistanceCoefficientSlider != null) rollingResistanceCoefficientSlider.value = rollingResistanceCoefficient;
 
     if (turnRateSlider != null) turnRateSlider.value = turnRate;
-    if (steeringDecaySlider != null) steeringDecaySlider.value = steeringDecay;
     if (minSteeringSpeedSlider != null) minSteeringSpeedSlider.value = minSteeringSpeed;
     if (fullSteeringSpeedSlider != null) fullSteeringSpeedSlider.value = fullSteeringSpeed;
-    if (steeringIntensitySlider != null) steeringIntensitySlider.value = steeringIntensity;
-
-    if (maxLeanAngleSlider != null) maxLeanAngleSlider.value = maxLeanAngle;
-    if (optimalLeanSpeedSlider != null) optimalLeanSpeedSlider.value = optimalLeanSpeed;
-    if (leanSpeedSlider != null) leanSpeedSlider.value = leanSpeed;
   }
 
   // ---------------- CHANGE FUNCTIONS ----------------
   private void OnSelectorPreviewChanged(int index)
-{
+  {
     if (isSyncingSelectors) return; // prevent recursion
     isSyncingSelectors = true;
     Selector_Settings.CurrentIndex = index;
     Selector_Settings.StartIndex = index;
     isSyncingSelectors = false;
-}
+  }
 
-private void OnSelectorSettingsChanged(int index)
-{
+  private void OnSelectorSettingsChanged(int index)
+  {
     if (isSyncingSelectors) return; // prevent recursion
     isSyncingSelectors = true;
     Selector_Preview.CurrentIndex = index;
     Selector_Preview.StartIndex = index;
     isSyncingSelectors = false;
-}
+  }
 
   private IEnumerator WaitAndSync(SelectorSimple selector, int index)
   {
@@ -198,14 +167,8 @@ private void OnSelectorSettingsChanged(int index)
   private void ChangeRollingResistanceCoefficient(float value) => rollingResistanceCoefficient = (float)System.Math.Round(value, 3);
 
   private void ChangeTurnRate(float value) => turnRate = (float)System.Math.Round(value, 1);
-  private void ChangeSteeringDecay(float value) => steeringDecay = value;
   private void ChangeMinSteeringSpeed(float value) => minSteeringSpeed = value;
   private void ChangeFullSteeringSpeed(float value) => fullSteeringSpeed = value;
-  private void ChangeSteeringIntensity(float value) => steeringIntensity = (float)System.Math.Round(value, 1);
-
-  private void ChangeMaxLeanAngle(float value) => maxLeanAngle = value;
-  private void ChangeOptimalLeanSpeed(float value) => optimalLeanSpeed = value;
-  private void ChangeLeanSpeed(float value) => leanSpeed = value;
 
   // ---------------- RESET FUNCTION ----------------
   public void ResetSettings()
@@ -220,14 +183,8 @@ private void OnSelectorSettingsChanged(int index)
     rollingResistanceCoefficient = defaultRollingResistanceCoefficient;
 
     turnRate = defaultTurnRate;
-    steeringDecay = defaultSteeringDecay;
     minSteeringSpeed = defaultMinSteeringSpeed;
     fullSteeringSpeed = defaultFullSteeringSpeed;
-    steeringIntensity = defaultSteeringIntensity;
-
-    maxLeanAngle = defaultMaxLeanAngle;
-    optimalLeanSpeed = defaultOptimalLeanSpeed;
-    leanSpeed = defaultLeanSpeed;
 
     SyncSlidersWithValues();
     Debug.Log("All settings reset to default values.");
@@ -247,5 +204,10 @@ private void OnSelectorSettingsChanged(int index)
 
     // ACOTrainer trainer = new ACOTrainer();
     // trainer.StartTraining();
+  }
+
+  public void SaveSettings()
+  {
+    ACOAgent.SetParameters(enginePower , maxTractionForce , brakingForce , mass , dragCoefficient , frontalArea , rollingResistanceCoefficient , turnRate , minSteeringSpeed , fullSteeringSpeed);
   }
 }

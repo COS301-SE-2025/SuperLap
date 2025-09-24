@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using UnityEngine;
 
 public class ACOTrackMaster : MonoBehaviour
@@ -40,6 +41,8 @@ public class ACOTrackMaster : MonoBehaviour
 
     // Event to notify when track is loaded
     public static System.Action OnTrackLoaded;
+    private TrackImageProcessor.ProcessingResults lastProcessingResults;
+    public TrackImageProcessor.ProcessingResults LastProcessingResults => lastProcessingResults;
 
     void Start()
     {
@@ -170,6 +173,7 @@ public class ACOTrackMaster : MonoBehaviour
 
     public static void LoadTrack(TrackImageProcessor.ProcessingResults results)
     {
+        instance.lastProcessingResults = results;
         // Store raceline for agent spawning
         List<Vector2> rl = results.raceline;
         Debug.Log($"Original raceline has {rl.Count} points.");

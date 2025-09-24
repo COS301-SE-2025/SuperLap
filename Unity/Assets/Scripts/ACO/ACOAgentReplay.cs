@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,7 +33,86 @@ public class ACOAgentReplay : MonoBehaviour
     //DrawLineWithMesh();
   }
 
-  public List<ReplayState> getReplays()
+  public void SaveBinFile()
+  {
+    string outputPath = Path.Combine(Application.streamingAssetsPath, DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_breakPoints.bin");
+    List<(Vector2 start, Vector2 end, Color color)> segments = GetColoredSegments();
+    // simplify the list
+    List<(Vector2 start, Vector2 end, Color color)> simplifiedSegments = new List<(Vector2, Vector2, Color)>();
+
+    if (segments.Count > 0)
+    {
+      Vector2 currentStart = segments[0].start;
+      Color currentColor = segments[0].color;
+
+      for (int i = 1; i < segments.Count; i++)
+      {
+        if (!segments[i].color.Equals(currentColor))
+        {
+          simplifiedSegments.Add((currentStart, segments[i - 1].end, currentColor));
+          currentStart = segments[i].start;
+          currentColor = segments[i].color;
+        }
+      }
+
+      simplifiedSegments.Add((currentStart, segments[segments.Count - 1].end, currentColor));
+    }
+
+    List<Vector2> redSegments = new List<Vector2>(); // Braking - implicit pairs (index 0=start, 1=end, 2=start, 3=end, etc.)
+    List<Vector2> yellowSegments = new List<Vector2>(); // Idling - implicit pairs
+    List<Vector2> greenSegments = new List<Vector2>(); // Acceleration - implicit pairs
+
+    foreach (var segment in simplifiedSegments)
+    {
+      if (segment.color.Equals(Color.red))
+      {
+        redSegments.Add(segment.start);
+        redSegments.Add(segment.end);
+      }
+      else if (segment.color.Equals(Color.yellow))
+      {
+        yellowSegments.Add(segment.start);
+        yellowSegments.Add(segment.end);
+      }
+      else if (segment.color.Equals(Color.green))
+      {
+        greenSegments.Add(segment.start);
+        greenSegments.Add(segment.end);
+      }
+    }
+
+    List<Vector2> playerLine = replayStates.Select(rs => new Vector2(rs.position.X, rs.position.Y)).ToList();
+
+    var trackData = ACOTrackMaster.instance.LastProcessingResults;
+
+    string outputDir = Path.GetDirectoryName(outputPath);
+
+    if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+      Directory.CreateDirectory(outputDir);
+
+    using (var writer = new BinaryWriter(File.Create(outputPath)))
+    {
+      WritePoints(writer, trackData.outerBoundary);
+      WritePoints(writer, trackData.innerBoundary);
+      WritePoints(writer, playerLine);
+      WritePoints(writer, yellowSegments);
+      WritePoints(writer, redSegments);
+    }
+
+    Debug.Log($"Acceleration data with {replayStates.Count} states written to: {outputPath}");
+  }
+
+  private static void WritePoints(BinaryWriter writer, List<Vector2> points)
+  {
+    writer.Write(points.Count);
+    foreach (var pt in points)
+    {
+      writer.Write(pt.x);
+      writer.Write(pt.y);
+    }
+  }
+
+  public List<ReplayState> GetReplays()
   {
     return replayStates;
   }

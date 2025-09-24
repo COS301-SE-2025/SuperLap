@@ -8,6 +8,7 @@ using LibTessDotNet;
 using System.IO;
 using System.Collections;
 using System;
+using System.Globalization;
 
 [System.Serializable]
 public class RacelineDisplayData
@@ -15,6 +16,7 @@ public class RacelineDisplayData
   public List<Vector2> OuterBoundary { get; set; }
   public List<Vector2> InnerBoundary { get; set; }
   public List<Vector2> Raceline { get; set; }
+  public List<Vector2> PlayerLine { get; set; }
 }
 
 public static class RacelineDisplayImporter
@@ -110,6 +112,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private bool showOuterBoundary = true;
   [SerializeField] private bool showInnerBoundary = true;
   [SerializeField] private bool showRaceLine = true;
+  [SerializeField] private bool showPlayerLine = true;
   [SerializeField] private bool showBreakPoints = true;
 
   [Header("Zoom/Pan Settings")]
@@ -515,6 +518,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         "OuterBoundary" => outerBoundaryWidth,
         "InnerBoundary" => innerBoundaryWidth,
         "Raceline" => racelineWidth,
+        "Playerline" => racelineWidth,
         _ when kvp.Key.StartsWith("ReplaySegment") => racelineWidth,
         _ => 1f
       };
@@ -564,6 +568,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary)), simplificationTolerance)),
       OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary)), simplificationTolerance)),
       Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline)),
+      PlayerLine = EnsureLooped(EnsureBelowLimit(trackData.PlayerLine)),
     };
 
     ClearExistingLines();
@@ -580,12 +585,23 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
       replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
 
-      CreateBreakingPoints(replay.getReplays(), racelineWidth);
+      // for Sean: output the data
+      replay.SaveBinFile();
+
+      CreateBreakingPoints(replay.GetReplays(), racelineWidth);
     }
 
-    if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
-    if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
-    if (showRaceLine) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
+    if (showOuterBoundary && trackData.OuterBoundary != null) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
+    if (showInnerBoundary && trackData.InnerBoundary != null) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
+    if (showRaceLine && trackData.Raceline != null) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
+
+    if (showPlayerLine && trackData.PlayerLine != null && trackData.PlayerLine.Count > 1)
+    {
+      Debug.Log("Making playerline");
+      Debug.Log(trackData.PlayerLine.Count);
+      CreateLineRenderer("PlayerLine", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
+    }
+
 
     panOffset = Vector2.zero;
     UpdateZoomContainer();
@@ -755,6 +771,96 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     lr.Points = points.ConvertAll(p => TransformPoint(p, min, scale, offset)).ToArray();
     lineRenderers[key] = lr;
   }
+
+  public void InitializeWithTrackAndSession(string trackName, RacingData session)
+  {
+    if (string.IsNullOrEmpty(trackName))
+    {
+      Debug.LogError("Track name is null or empty in InitializeWithTrackAndSession");
+      return;
+    }
+
+    LoadTrackDataWithSession(trackName, session);
+  }
+
+  private async void LoadTrackDataWithSession(string trackName, RacingData session)
+  {
+    currentTrackData = null;
+
+    try
+    {
+      var (success, message, bytes) = await APIManager.Instance.GetTrackBorderAsync(trackName);
+
+      if (success && bytes != null)
+      {
+        RacelineDisplayData trackData = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
+
+        if (trackData != null)
+        {
+          if (session != null && !string.IsNullOrEmpty(session.csvData) && session.csvData != "0")
+          {
+
+            var csvBytes = Convert.FromBase64String(session.csvData);
+            var csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
+            var racelinePoints = ParseRacelineFromCsv(csvText);
+
+            if (racelinePoints != null && racelinePoints.Count > 1)
+              trackData.PlayerLine = racelinePoints;
+          }
+
+          if (trackData.PlayerLine != null)
+          {
+            Debug.Log(trackData.PlayerLine.Count);
+          }
+
+          DisplayRacelineData(trackData);
+          StartCoroutine(WaitForTrackLoadAndSettle());
+        }
+        else
+        {
+          Debug.LogError($"Failed to parse track data for {trackName}");
+        }
+      }
+      else
+      {
+        Debug.LogError($"Failed to load track borders: {message}");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError($"Exception while loading track border: {ex.Message}");
+    }
+  }
+
+
+
+  private List<Vector2> ParseRacelineFromCsv(string csvText)
+  {
+    var points = new List<Vector2>();
+    if (string.IsNullOrEmpty(csvText)) return points;
+
+    string[] lines = csvText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+    for (int i = 1; i < lines.Length; i++) // skip header
+    {
+      string line = lines[i].Trim();
+      if (string.IsNullOrEmpty(line)) continue;
+
+      string[] cols = line.Split('\t'); // your file is tab-delimited
+      if (cols.Length < 4) continue;   // trackId, lap_number, x, y
+
+      if (float.TryParse(cols[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
+          float.TryParse(cols[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
+      {
+        points.Add(new Vector2(x, y));
+      }
+    }
+
+    return points;
+  }
+
+
+
+
 
   public void InitializeWithTrack(string trackName)
   {
