@@ -11163,10 +11163,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc458b22978f77b8db0119ad0975682e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  checkpointCount: 10
+  checkpointCount: 5
   maxRetries: 5
   threadCount: 1
-  agentCount: 10
+  agentCount: 20
 --- !u!4 &591936641
 Transform:
   m_ObjectHideFlags: 0
@@ -43974,7 +43974,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '0,012 '
+  m_text: '0.012 '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -44338,7 +44338,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '0,48 '
+  m_text: '0.48 '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

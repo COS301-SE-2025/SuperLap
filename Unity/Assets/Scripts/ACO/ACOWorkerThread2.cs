@@ -80,12 +80,12 @@ public class AgentContainer
         isValid = !agent.IsOffTrack();
 
         if (!passedTarget && InTargetRange())
-        {
-            passedTarget = true;
-            targetPassSpeed = agent.GetCurrentSpeed();
-            targetPassPos = Position;
-            targetPassBear = agent.GetCurrentBearing();
-        }
+            {
+                passedTarget = true;
+                targetPassSpeed = agent.GetCurrentSpeed();
+                targetPassPos = Position;
+                targetPassBear = agent.GetCurrentBearing();
+            }
 
         if(passedTarget && InValidateRange())
         {

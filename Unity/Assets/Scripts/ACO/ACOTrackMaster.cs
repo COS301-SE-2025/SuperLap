@@ -229,7 +229,6 @@ public class ACOTrackMaster : MonoBehaviour
         CreateRacelineVisualization(results.raceline);
 
         // Initialize the RacelineAnalyzer with the raceline data for optimized queries
-        ACORacelineAnalyzer.Initialize(currentRaceline);
 
         // Save track data to file for future loading
         if(instance.loadTestTrack)

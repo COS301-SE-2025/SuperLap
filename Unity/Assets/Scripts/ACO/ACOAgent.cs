@@ -20,7 +20,7 @@ public class ACOAgent
 
     private bool enableRecommendations = true;
     private int recommendationSteps = 10;
-    private float steeringSensitivity = 0.1f;
+    private float steeringSensitivity = 0.05f;
     private float throttleSensitivity = 0.15f;
     private float testInputStrength = 0.5f;
     private float inputThreshold = 0.3f;
@@ -62,6 +62,7 @@ public class ACOAgent
     private int instanceId;
     public int ID => instanceId;
     Random random;
+    public readonly static float Scale = 0.1f;
 
     public Vector2 Forward
     {
@@ -313,7 +314,7 @@ public class ACOAgent
 
         // calculate new position from bearing and current position
         float distance = currentSpeed * dt;
-        position += Forward * distance;
+        position += Forward * distance * Scale;
     }
 
     private void UpdateTurning(float dt)

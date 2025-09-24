@@ -129,7 +129,7 @@ public static class ACODrivingRecommendationEngine
         float simSpeed = currentSpeed;
         float simTurnAngle = currentTurnAngle;
         
-        float deltaTime = config.trajectoryLength / config.recommendationSteps;
+        float deltaTime = 1/30f;
         float totalDeviation = 0f;
 
         // Simulate forward for the specified number of steps

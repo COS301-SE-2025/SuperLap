@@ -77,7 +77,7 @@ public static class ACOTrajectoryPredictor
         // Calculate forward vector from bearing and move (matches ACOAgent.UpdateMovement)
         Vector2 forward = CalculateForwardFromBearing(bearing);
         float distance = speed * dt;
-        position += forward * distance;
+        position += forward * distance * ACOAgent.Scale;
     }
 
     /// <summary>
