@@ -566,7 +566,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (errorPopUp != null)
     {
       errorPopUp.SetActive(true);
-      StartCoroutine(HideAfterDelay(5f)); // 5 seconds
     }
   }
 
@@ -632,6 +631,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     {
       string errorMsg = "Failed to create centerline mask";
       Debug.LogError(errorMsg);
+      ShowErrorPopUp();
 
       lastResults = new ProcessingResults
       {
@@ -645,6 +645,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         processButton.interactable = true;
       }
+          if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
 
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
@@ -752,6 +756,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       string errorMsg = "Background processing task failed: " + combinedTask.Exception?.GetBaseException().Message;
       Debug.LogError(errorMsg);
 
+      ShowErrorPopUp();
+
       lastResults = new ProcessingResults
       {
         success = false,
@@ -764,6 +770,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         processButton.interactable = true;
       }
+          if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
 
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
@@ -791,7 +801,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         processButton.interactable = true;
       }
-
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
@@ -822,7 +835,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         processButton.interactable = true;
       }
-
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
@@ -855,6 +871,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
       isProcessing = false;
+      if (LoaderPanel != null)
+      {
+        LoaderPanel.SetActive(false);
+      }
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
