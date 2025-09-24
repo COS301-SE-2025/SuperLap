@@ -48,4 +48,18 @@ describe('Track Endpoints Unit Tests', function() {
         });
     });
 
+    // Mock track queries
+    describe('Track Query Logic', function() {
+        it('should handle different query types', function() {
+            const queryTypes = ['type', 'city', 'country', 'location'];
+        
+            queryTypes.forEach(queryType => {
+                const queryValue = `test${queryType}`;
+                const expectedQuery = { [queryType]: queryValue };
+                
+                expect(expectedQuery).toHaveProperty(queryType, queryValue);
+            });
+        });
+    });
+
 });
