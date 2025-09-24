@@ -4,6 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 import json
 import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # or '2' to keep warnings but hide INFO
 from PIL import Image
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
@@ -200,19 +201,7 @@ class CNNTrackProcessor:
       binary_mask = self.fill_track_gaps(binary_mask, gap_size=10)
       
       self.track_mask = binary_mask
-      # Display for debugging
-      plt.figure(figsize=(12, 6))
-      plt.subplot(1, 2, 1)
-      plt.title("Original Image")
-      plt.imshow(self.original_image)
-      plt.axis('off')
       
-      plt.subplot(1, 2, 2)
-      plt.title("Track Mask")
-      plt.imshow(self.track_mask, cmap='gray')
-      plt.axis('off')
-      
-      plt.show()
       return binary_mask
 
     # Old version kept for reference
