@@ -11,7 +11,7 @@ namespace RacelineOptimizer
 {
   public static class PSOInterface
   {
-    public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 6000)
+    public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 6000, bool enableBranchDetection = true)
     {
       Debug.Log($"\nProcessing {Path.GetFileName(edgeDataFilePath)}...");
       EdgeData edgeData = EdgeData.LoadFromBinary(edgeDataFilePath);
@@ -19,6 +19,25 @@ namespace RacelineOptimizer
       {
         Debug.Log("Error: Edge data is empty or not loaded correctly.");
         return false;
+      }
+
+      // Apply branch detection and mitigation
+      if (enableBranchDetection)
+      {
+        Debug.Log("Analyzing track boundaries for potential branches...");
+        BranchDetector.AnalyzeTrackCharacteristics(edgeData.InnerBoundary, edgeData.OuterBoundary);
+        
+        var branchConfig = new BranchDetector.BranchDetectionConfig
+        {
+          SpikeThreshold = 2.0f,    // Track sections 2x thicker than average
+          MinSpikeRatio = 0.05f,    // Minimum 5% of track length
+          MaxSpikeRatio = 0.3f,     // Maximum 30% of track length
+          SmoothingWindow = 5,
+          DerivativeThreshold = 1.5f
+        };
+        
+        edgeData.ProcessBranches(branchConfig);
+        Debug.Log("Branch detection and mitigation completed.");
       }
 
       float avgWidth = edgeData.GetAverageTrackWidth();
@@ -93,7 +112,9 @@ namespace RacelineOptimizer
     string trackName = "track",
     int numParticles = 100,
     int iterations = 6000,
-    string outputPath = "Output")
+    string outputPath = "Output",
+    bool enableBranchDetection = true,
+    BranchDetector.BranchDetectionConfig branchConfig = null)
     {
       Debug.Log($"Processing track: {trackName}...");
       Debug.Log($"Running PSO with {numParticles} particles and {iterations} iterations");
@@ -110,6 +131,26 @@ namespace RacelineOptimizer
 
       // Create EdgeData object from the provided vectors
       EdgeData edgeData = EdgeData.LoadFromLists(innerBoundary, outerBoundary);
+
+      // Apply branch detection and mitigation before any processing
+      if (enableBranchDetection)
+      {
+        Debug.Log("Analyzing track boundaries for potential branches...");
+        BranchDetector.AnalyzeTrackCharacteristics(edgeData.InnerBoundary, edgeData.OuterBoundary);
+        
+        // Use provided config or create default
+        branchConfig ??= new BranchDetector.BranchDetectionConfig
+        {
+          SpikeThreshold = 2.0f,    // Track sections 2x thicker than average
+          MinSpikeRatio = 0.05f,    // Minimum 5% of track length
+          MaxSpikeRatio = 0.3f,     // Maximum 30% of track length
+          SmoothingWindow = 5,
+          DerivativeThreshold = 1.5f
+        };
+        
+        edgeData.ProcessBranches(branchConfig);
+        Debug.Log("Branch detection and mitigation completed.");
+      }
 
       float avgWidth = edgeData.GetAverageTrackWidth();
       float scaleFactor = 125 / avgWidth;
@@ -174,7 +215,7 @@ namespace RacelineOptimizer
       innerBoundary = edgeData.InnerBoundary;
       outerBoundary = edgeData.OuterBoundary;
 
-      // 🔹 Save to bin file
+      // Save to bin file
       if (!Directory.Exists(outputPath))
       {
         Directory.CreateDirectory(outputPath);
@@ -193,5 +234,25 @@ namespace RacelineOptimizer
       return result;
     }
 
+    // Utility method for testing branch detection settings
+    public static void TestBranchDetection(List<Vector2> innerBoundary, List<Vector2> outerBoundary, 
+      BranchDetector.BranchDetectionConfig config = null)
+    {
+      Debug.Log("=== Branch Detection Test ===");
+      var widths = BranchDetector.AnalyzeTrackCharacteristics(innerBoundary, outerBoundary);
+      
+      config ??= new BranchDetector.BranchDetectionConfig();
+      var (processedInner, processedOuter) = BranchDetector.ProcessBoundaries(innerBoundary, outerBoundary, config);
+      
+      if (processedInner.Count != innerBoundary.Count || processedOuter.Count != outerBoundary.Count)
+      {
+        Debug.Log("Branch mitigation modified the boundaries.");
+      }
+      else
+      {
+        Debug.Log("No branches detected or boundaries unchanged.");
+      }
+      Debug.Log("=== End Branch Detection Test ===");
+    }
   }
 }
