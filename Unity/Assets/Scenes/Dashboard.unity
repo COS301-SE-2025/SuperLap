@@ -22711,7 +22711,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 74
+  m_fontSize: 74.05
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -26180,8 +26180,8 @@ MonoBehaviour:
   centerlineThickness: 3
   minPointDistance: 5
   outputImage: {fileID: 0}
-  outputImageWidth: 2560
-  outputImageHeight: 1440
+  outputImageWidth: 1024
+  outputImageHeight: 576
   innerBoundaryColor: {r: 1, g: 0, b: 0, a: 1}
   outerBoundaryColor: {r: 0, g: 0, b: 1, a: 1}
   racelineColor: {r: 0, g: 1, b: 0, a: 1}
@@ -36568,7 +36568,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 53.6
+  m_fontSize: 53.65
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

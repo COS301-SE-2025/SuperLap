@@ -31,8 +31,6 @@ public class ImageProcessing
         return result;
       }
 
-      Debug.Log($"IsGrayScale: {isGrayScale}");
-
       // Get the path to the executable
       string exeName;
 
@@ -42,7 +40,7 @@ public class ImageProcessing
       }
       else
       {
-        exeName = "CNN";
+        exeName = "CNN/CNN";
       }
 
       if (Application.platform == RuntimePlatform.WindowsPlayer ||
@@ -50,8 +48,6 @@ public class ImageProcessing
       {
         exeName += ".exe";
       }
-
-      Debug.Log($"Using executable: {exeName}");
       string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
       if (!File.Exists(exePath))
       {
@@ -63,9 +59,7 @@ public class ImageProcessing
 
       // Create unique output file path in temp directory
       string outputFileName = $"track_result_{Guid.NewGuid():N}.json";
-      string outputFilePath = Path.Combine(Application.streamingAssetsPath, outputFileName);
-      // string outputFilePath = Path.Combine(Path.GetTempPath(), outputFileName);
-      Debug.Log($"Output file will be: {outputFilePath}");
+      string outputFilePath = Path.Combine(Path.GetTempPath(), outputFileName);
 
       // Create and configure the process
       ProcessStartInfo startInfo = new ProcessStartInfo
@@ -75,7 +69,8 @@ public class ImageProcessing
         UseShellExecute = false,
         RedirectStandardOutput = true,
         RedirectStandardError = true,
-        CreateNoWindow = true
+        CreateNoWindow = true,
+        WorkingDirectory = Path.GetDirectoryName(exePath)
       };
 
       // Execute the process
@@ -96,8 +91,7 @@ public class ImageProcessing
         if (process.ExitCode != 0)
         {
           result.errorMessage = $"TrackProcessor failed with exit code {process.ExitCode}. Error: {error}";
-          Debug.Log(result.errorMessage);
-          // CleanupOutputFile(outputFilePath);
+          CleanupOutputFile(outputFilePath);
           return result;
         }
 
@@ -105,19 +99,17 @@ public class ImageProcessing
         if (!File.Exists(outputFilePath))
         {
           result.errorMessage = "TrackProcessor did not create output file";
-          Debug.Log(result.errorMessage);
           return result;
         }
 
         // Read the output file
         string jsonContent = File.ReadAllText(outputFilePath);
-        Debug.Log($"Read output file with {jsonContent.Length} characters");
 
         // Parse the results
         result = ParseTrackBoundaries(jsonContent);
 
         // Cleanup the temporary file
-        // CleanupOutputFile(outputFilePath);
+        CleanupOutputFile(outputFilePath);
 
         if (result.success)
         {
