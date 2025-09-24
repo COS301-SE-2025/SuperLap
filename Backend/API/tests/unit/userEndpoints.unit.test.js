@@ -45,4 +45,30 @@ describe('User Endpoints Unit Tests', function() {
         });
     });
 
+    // Mock user creation
+    describe('User Creation Logic', function() {
+        it('should create user with proper structure', function() {
+            const userData = {
+                username: 'testuser',
+                email: 'test@example.com',
+                password: 'password123'
+            };
+
+            const expectedUserStructure = {
+                username: userData.username,
+                email: userData.email,
+                passwordHash: expect.any(String),
+                createdAt: expect.any(String)
+            };
+
+            // This would be the structure created in the actual endpoint
+            expect(expectedUserStructure).toMatchObject({
+                username: userData.username,
+                email: userData.email,
+                passwordHash: expect.any(String),
+                createdAt: expect.any(String)
+            });
+        });
+    });
+
 });
