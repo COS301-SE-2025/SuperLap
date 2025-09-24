@@ -298,7 +298,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     // Reset pan/zoom/camera
     panOffset = Vector2.zero;
-    currentZoom = 1f;
+    currentZoom = 10f;
     followCar = false;
     goingToCar = false;
     currentTime = 0f;
@@ -609,7 +609,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       Debug.Log(trackData.PlayerLine.Count);
       CreateLineRenderer("PlayerLine", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
     }
-
 
     panOffset = Vector2.zero;
     UpdateZoomContainer();
