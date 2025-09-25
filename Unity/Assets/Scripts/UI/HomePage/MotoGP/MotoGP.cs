@@ -17,7 +17,10 @@ public class MotoGP : MonoBehaviour
   [SerializeField] private GameObject uploadButton;
   [SerializeField] private GameObject controlPanel;
   [SerializeField] private TextMeshProUGUI recordButtonText;
+  [SerializeField] private GameObject confirmationPanel;
+  [SerializeField] private TMP_InputField trackNameInput;
   bool isRecording = false;
+  bool isWaitingForConfirmation = false;
   private MotoGPTelemetry.TelemetryRecorder recorder;
   List<int> lapIndexList = new List<int>();
   void Start()
@@ -43,6 +46,8 @@ public class MotoGP : MonoBehaviour
     {
       controlPanel.SetActive(false);
     }
+
+    if (confirmationPanel != null) confirmationPanel.SetActive(false);
   }
   private ExtensionFilter[] extensionFilters = new ExtensionFilter[]
   {
@@ -268,9 +273,9 @@ public class MotoGP : MonoBehaviour
       controlPanel.SetActive(true);
     }
   }
-  public async void UploadData()
+  public void UploadData()
   {
-    if (recorder != null)
+    if (recorder != null && recorder.PlayerPath.Count > 0)
     {
       recorder.SaveToCSV();
       string folder = Application.streamingAssetsPath;
@@ -283,21 +288,67 @@ public class MotoGP : MonoBehaviour
       return;
     }
 
-    // Example telemetry info; you can replace these with actual data from your recorder
-    string trackName = "SampleTrack"; // Replace with selected track
+    if (confirmationPanel != null)
+    {
+      confirmationPanel.SetActive(true);
+
+      if (trackNameInput != null)
+      {
+        string defaultName = GetDefaultTrackName();
+
+        // Set placeholder text
+        var placeholder = trackNameInput.placeholder as TMP_Text;
+        if (placeholder != null)
+        {
+          placeholder.text = defaultName;
+        }
+
+        // Clear input so user can type if they want
+        trackNameInput.text = "";
+      }
+    }
+  }
+
+  public async void OnConfirmUpload()
+  {
+    confirmationPanel.SetActive(false);
+    string trackName;
+    if (!string.IsNullOrEmpty(trackNameInput.text))
+    {
+      trackName = trackNameInput.text;
+    }
+    else
+    {
+      var placeholder = trackNameInput.placeholder as TMP_Text;
+      trackName = placeholder != null ? placeholder.text : "Unnamed Track";
+    }
+
     string userName = !string.IsNullOrEmpty(UserManager.Instance.Username)
-    ? UserManager.Instance.Username
-    : "Postman";
+        ? UserManager.Instance.Username
+        : "Postman";
 
-    Debug.Log(userName);
-    // Replace with actual logged-in user
-    string fastestLapTime = "1:45.32"; // Replace with actual data if available
-    string averageSpeed = "180";      // Replace with actual data
-    string topSpeed = "320";          // Replace with actual data
-    string vehicleUsed = "MotoGP Bike"; // Replace if needed
+    string fastestLapTime;
+    string averageSpeed;
+    string topSpeed;
+    string vehicleUsed;
     string description = "Recorded telemetry data from Unity";
+    if (recorder != null && recorder.PlayerPath.Count > 0)
+    {
+      int selectedLapIndex = lapIndexList[dropdown.value];
+      fastestLapTime = recorder.getFastestLapTime().ToString();
+      averageSpeed = recorder.getAverageSpeed(selectedLapIndex - 1).ToString();
+      topSpeed = recorder.getTopSpeed(selectedLapIndex - 1).ToString();
+      vehicleUsed = recorder.getModel();
+    }
+    else
+    {
+      fastestLapTime = "1:45.32";
+      averageSpeed = "180";
+      topSpeed = "320";
+      vehicleUsed = "MotoGP Bike";
+    }
 
-    // Call APIManager
+
     var (success, message, data) = await APIManager.Instance.UploadRacingDataAsync(
         filePath,
         trackName,
@@ -317,6 +368,41 @@ public class MotoGP : MonoBehaviour
     {
       Debug.LogError($"Upload failed: {message}");
     }
+  }
+
+  public void OnCancelUpload()
+  {
+    confirmationPanel.SetActive(false);
+    Debug.Log("Upload cancelled by user.");
+  }
+
+  private string GetDefaultTrackName()
+  {
+    string trackId = "UnknownTrack";
+
+    // If recording session exists
+    if (recorder != null && recorder.PlayerPath.Count > 0)
+    {
+      trackId = recorder.PlayerPath[0].TrackId;
+    }
+    // Else try CSV
+    else if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+    {
+      string[] lines = File.ReadAllLines(filePath);
+      if (lines.Length > 1)
+      {
+        Debug.Log(lines[1]);
+        string[] values = lines[1].Split('\t');
+        int trackIdCol = Array.IndexOf(lines[0].Split('\t'), "trackId");
+        if (trackIdCol >= 0 && trackIdCol < values.Length)
+        {
+          trackId = values[trackIdCol];
+        }
+      }
+    }
+
+    string dateTime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+    return $"{trackId}_{dateTime}";
   }
 
 }

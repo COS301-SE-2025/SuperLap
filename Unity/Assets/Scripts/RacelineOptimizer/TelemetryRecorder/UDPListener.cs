@@ -170,6 +170,23 @@ namespace MotoGPTelemetry
       return count > 0 ? totalSpeed / count : 0f;
     }
 
+    public float getTopSpeed(int lapIndex)
+    {
+        float topSpeed = 0f;
+        for (int i = 0; i < PlayerPath.Count; i++)
+        {
+            if (PlayerPath[i].CurrentLap == lapIndex)
+            {
+                if (PlayerPath[i].Speed > topSpeed)
+                {
+                    topSpeed = PlayerPath[i].Speed;
+                }
+            }
+        }
+        return topSpeed;
+    }
+
+
     public string getModel()
     {
       return Model;
