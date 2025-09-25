@@ -62,6 +62,7 @@ public class AnalysisGetInfo : MonoBehaviour
     if (racingLineButton != null) racingLineButton.interactable = false;
   }
 
+
   private void ResetValues()
   {
     if (trackNameText != null) trackNameText.text = "Loading...";
@@ -80,14 +81,27 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private void OnEnable()
   {
-    staticUserName = !string.IsNullOrEmpty(UserManager.Instance.Username)
-    ? UserManager.Instance.Username
-    : "Postman";
-
-    Debug.Log(staticUserName);
     if (!isLoading)
-      StartCoroutine(LoadSessionsSequentially());
+    {
+      if (string.IsNullOrEmpty(UserManager.Instance.Username))
+      {
+        StartCoroutine(WaitForUsernameAndLoadSessions());
+      }
+      else
+      {
+        staticUserName = UserManager.Instance.Username;
+        StartCoroutine(LoadSessionsSequentially());
+      }
+    }
   }
+
+  private IEnumerator WaitForUsernameAndLoadSessions()
+  {
+    yield return new WaitUntil(() => !string.IsNullOrEmpty(UserManager.Instance.Username));
+    staticUserName = UserManager.Instance.Username;
+    StartCoroutine(LoadSessionsSequentially());
+  }
+
 
   private void OnDisable()
   {
@@ -123,7 +137,7 @@ public class AnalysisGetInfo : MonoBehaviour
       isLoading = false;
       yield break;
     }
-
+    Debug.Log(staticUserName);
     allSessions = result.data.FindAll(s => s.userName == staticUserName);
     if (allSessions.Count == 0)
     {
@@ -137,6 +151,7 @@ public class AnalysisGetInfo : MonoBehaviour
     allSessions.Sort((a, b) => DateTime.Parse(b.dateUploaded).CompareTo(DateTime.Parse(a.dateUploaded)));
 
     if (loaderPanel != null) loaderPanel.SetActive(false);
+    if (backupPanel != null) backupPanel.SetActive(false);
     ClearAllPanels();
 
     if (!isDashboard)
@@ -166,10 +181,7 @@ public class AnalysisGetInfo : MonoBehaviour
     TMP_Text infoText = panelInstance.GetComponentInChildren<TMP_Text>();
     if (infoText != null)
     {
-      string date = !string.IsNullOrEmpty(session.dateUploaded)
-          ? DateTime.Parse(session.dateUploaded).ToString("yyyy-MM-dd")
-          : "Unknown Date";
-      infoText.text = $"{session.trackName} | {date}";
+      infoText.text = $"{session.trackName}";
     }
 
     instantiatedPanels.Add(panelInstance);
