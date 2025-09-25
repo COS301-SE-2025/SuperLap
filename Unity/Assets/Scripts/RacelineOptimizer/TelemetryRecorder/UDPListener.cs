@@ -30,6 +30,8 @@ namespace MotoGPTelemetry
     private UdpClient udp;
     private CancellationTokenSource cts;
     private Task listenerTask;
+    private string Model;
+    private string startTrack;
     public List<RecordedData> PlayerPath;
 
     public TelemetryRecorder(int port = 7100)
@@ -166,7 +168,11 @@ namespace MotoGPTelemetry
       }
       return count > 0 ? totalSpeed / count : 0f;
     }
-    
+
+    public string getModel()
+    {
+      return Model;
+    }
 
     private void Listen(CancellationToken token)
     {
@@ -190,6 +196,20 @@ namespace MotoGPTelemetry
             else
             {
               Debug.Log($"Last Lap Time: {packet.LastLapTime}, Lap: {packet.CurrentLap}, Speed: {speedKmh}, X: {packet.CoordinatesX}, Y: {packet.CoordinatesY}");
+              if (string.IsNullOrEmpty(startTrack))
+              {
+                startTrack = packet.Track;
+              }
+              else if (startTrack != packet.Track)
+              {
+                Debug.LogWarning($"Track changed from {startTrack} to {packet.Track}. Stopping recording.");
+                cts.Cancel();
+                break;
+              }
+              if (string.IsNullOrEmpty(Model))
+              {
+                Model = packet.Model;
+              }
               RecordedData record = new RecordedData
               {
                 LastLapTime = packet.LastLapTime,
