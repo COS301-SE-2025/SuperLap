@@ -43,7 +43,7 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private bool isLoading = false;
   private string trackName;
-  private const string staticUserName = "Postman";
+  private string staticUserName = "Postman";
 
   private void Awake()
   {
@@ -76,6 +76,11 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private void OnEnable()
   {
+    staticUserName = !string.IsNullOrEmpty(UserManager.Instance.Username) 
+    ? UserManager.Instance.Username 
+    : "Postman";
+
+    Debug.Log(staticUserName);
     if (!isLoading)
       StartCoroutine(LoadSessionsSequentially());
   }
@@ -119,6 +124,7 @@ public class AnalysisGetInfo : MonoBehaviour
     if (allSessions.Count == 0)
     {
       if (loaderPanel != null) loaderPanel.SetActive(false);
+      if (backupPanel != null) backupPanel.SetActive(true);
       Debug.LogWarning($"No sessions for user {staticUserName}");
       isLoading = false;
       yield break;

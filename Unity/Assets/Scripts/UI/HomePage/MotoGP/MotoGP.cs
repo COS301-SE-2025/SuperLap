@@ -263,8 +263,48 @@ public class MotoGP : MonoBehaviour
       controlPanel.SetActive(true);
     }
   }
-  public void UploadData()
-  {
-    return;
-  }
+public async void UploadData()
+{
+    if (string.IsNullOrEmpty(filePath))
+    {
+        Debug.LogError("No CSV file selected to upload.");
+        return;
+    }
+
+    // Example telemetry info; you can replace these with actual data from your recorder
+    string trackName = "SampleTrack"; // Replace with selected track
+    string userName = !string.IsNullOrEmpty(UserManager.Instance.Username) 
+    ? UserManager.Instance.Username 
+    : "Postman";
+
+    Debug.Log(userName);
+     // Replace with actual logged-in user
+    string fastestLapTime = "1:45.32"; // Replace with actual data if available
+    string averageSpeed = "180";      // Replace with actual data
+    string topSpeed = "320";          // Replace with actual data
+    string vehicleUsed = "MotoGP Bike"; // Replace if needed
+    string description = "Recorded telemetry data from Unity";
+
+    // Call APIManager
+    var (success, message, data) = await APIManager.Instance.UploadRacingDataAsync(
+        filePath,
+        trackName,
+        userName,
+        fastestLapTime,
+        averageSpeed,
+        topSpeed,
+        vehicleUsed,
+        description
+    );
+
+    if (success)
+    {
+        Debug.Log($"Upload successful! Server message: {message}");
+    }
+    else
+    {
+        Debug.LogError($"Upload failed: {message}");
+    }
+}
+
 }
