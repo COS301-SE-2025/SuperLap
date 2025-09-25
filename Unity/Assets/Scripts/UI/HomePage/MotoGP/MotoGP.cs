@@ -57,6 +57,11 @@ public class MotoGP : MonoBehaviour
 
     if (paths.Length > 0 && !string.IsNullOrEmpty(paths[0]))
     {
+      if (recorder != null)
+      {
+        recorder.Dispose();
+        recorder = new MotoGPTelemetry.TelemetryRecorder();
+      }
       filePath = paths[0];
       controlPanel.SetActive(false);
       LoadCSV(filePath);
@@ -97,7 +102,7 @@ public class MotoGP : MonoBehaviour
       Debug.Log("No laps recorded.");
       return;
     }
-
+    filePath = null;
     lapIndexList.Clear();
     if (dropdown != null)
     {
@@ -263,22 +268,29 @@ public class MotoGP : MonoBehaviour
       controlPanel.SetActive(true);
     }
   }
-public async void UploadData()
-{
+  public async void UploadData()
+  {
+    if (recorder != null)
+    {
+      recorder.SaveToCSV();
+      string folder = Application.streamingAssetsPath;
+      string csvPath = Path.Combine(folder, "lastSession.csv");
+      filePath = csvPath;
+    }
     if (string.IsNullOrEmpty(filePath))
     {
-        Debug.LogError("No CSV file selected to upload.");
-        return;
+      Debug.LogError("No CSV file selected to upload.");
+      return;
     }
 
     // Example telemetry info; you can replace these with actual data from your recorder
     string trackName = "SampleTrack"; // Replace with selected track
-    string userName = !string.IsNullOrEmpty(UserManager.Instance.Username) 
-    ? UserManager.Instance.Username 
+    string userName = !string.IsNullOrEmpty(UserManager.Instance.Username)
+    ? UserManager.Instance.Username
     : "Postman";
 
     Debug.Log(userName);
-     // Replace with actual logged-in user
+    // Replace with actual logged-in user
     string fastestLapTime = "1:45.32"; // Replace with actual data if available
     string averageSpeed = "180";      // Replace with actual data
     string topSpeed = "320";          // Replace with actual data
@@ -299,12 +311,12 @@ public async void UploadData()
 
     if (success)
     {
-        Debug.Log($"Upload successful! Server message: {message}");
+      Debug.Log($"Upload successful! Server message: {message}");
     }
     else
     {
-        Debug.LogError($"Upload failed: {message}");
+      Debug.LogError($"Upload failed: {message}");
     }
-}
+  }
 
 }
