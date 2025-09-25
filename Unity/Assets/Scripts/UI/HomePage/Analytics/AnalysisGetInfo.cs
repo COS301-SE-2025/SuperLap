@@ -97,11 +97,23 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private IEnumerator WaitForUsernameAndLoadSessions()
   {
-    yield return new WaitUntil(() => !string.IsNullOrEmpty(UserManager.Instance.Username));
-    staticUserName = UserManager.Instance.Username;
+    float timeout = 0.5f; // 0.5 seconds
+    float timer = 0f;
+
+    while (string.IsNullOrEmpty(UserManager.Instance.Username) && timer < timeout)
+    {
+      timer += Time.deltaTime;
+      yield return null; // wait one frame
+    }
+
+    staticUserName = !string.IsNullOrEmpty(UserManager.Instance.Username)
+        ? UserManager.Instance.Username
+        : "Postman";
+
+    Debug.Log($"Using username: {staticUserName}");
+
     StartCoroutine(LoadSessionsSequentially());
   }
-
 
   private void OnDisable()
   {
@@ -137,13 +149,11 @@ public class AnalysisGetInfo : MonoBehaviour
       isLoading = false;
       yield break;
     }
-    Debug.Log(staticUserName);
     allSessions = result.data.FindAll(s => s.userName == staticUserName);
     if (allSessions.Count == 0)
     {
       if (loaderPanel != null) loaderPanel.SetActive(false);
       if (backupPanel != null) backupPanel.SetActive(true);
-      Debug.LogWarning($"No sessions for user {staticUserName}");
       isLoading = false;
       yield break;
     }
