@@ -32,6 +32,7 @@ namespace MotoGPTelemetry
     private Task listenerTask;
     private string Model;
     private string startTrack;
+    private int lastLapNo = 0;
     public List<RecordedData> PlayerPath;
 
     public TelemetryRecorder(int port = 7100)
@@ -191,6 +192,12 @@ namespace MotoGPTelemetry
             float speedKmh = (frontKmh + rearKmh) / 2f;
             if (packet.CurrentLap == 255 || speedKmh < 2f) // invalid lap or stationary
             {
+              if (packet.CurrentLap == 255 && startTrack == packet.Track){ 
+                lastLapNo = 0;
+                PlayerPath.Clear();
+                Model = null;
+              }
+              
               continue;
             }
             else
@@ -205,6 +212,18 @@ namespace MotoGPTelemetry
                 Debug.LogWarning($"Track changed from {startTrack} to {packet.Track}. Stopping recording.");
                 cts.Cancel();
                 break;
+              }
+              if (packet.CurrentLap == lastLapNo + 1 || lastLapNo == 0)
+              {
+                lastLapNo = packet.CurrentLap;
+              }
+              else if (packet.CurrentLap != lastLapNo)
+              {
+                Debug.LogWarning($"Lap number jumped from {lastLapNo} to {packet.CurrentLap}. Ignoring this packet.");
+                lastLapNo = 0;
+                PlayerPath.Clear();
+                startTrack = packet.Track;
+                Model = null;
               }
               if (string.IsNullOrEmpty(Model))
               {
