@@ -33,6 +33,9 @@ public class AnalysisGetInfo : MonoBehaviour
   [SerializeField] private GameObject loaderPanel;
   [SerializeField] private GameObject backupPanel;
 
+  [Header("Dashboard settings")]
+  [SerializeField] bool isDashboard = false;
+
   private ShowRacingLine racingLinePreview;
   private RacingData selectedSession;
   private List<RacingData> allSessions = new();
@@ -44,6 +47,7 @@ public class AnalysisGetInfo : MonoBehaviour
   private bool isLoading = false;
   private string trackName;
   private string staticUserName = "Postman";
+
 
   private void Awake()
   {
@@ -76,8 +80,8 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private void OnEnable()
   {
-    staticUserName = !string.IsNullOrEmpty(UserManager.Instance.Username) 
-    ? UserManager.Instance.Username 
+    staticUserName = !string.IsNullOrEmpty(UserManager.Instance.Username)
+    ? UserManager.Instance.Username
     : "Postman";
 
     Debug.Log(staticUserName);
@@ -135,8 +139,11 @@ public class AnalysisGetInfo : MonoBehaviour
     if (loaderPanel != null) loaderPanel.SetActive(false);
     ClearAllPanels();
 
-    foreach (var session in allSessions)
-      CreateSessionPanel(session);
+    if (!isDashboard)
+    {
+      foreach (var session in allSessions)
+        CreateSessionPanel(session);
+    }
 
     selectedSession = allSessions[0];
     DisplaySessionInfo(selectedSession);
@@ -201,8 +208,8 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private IEnumerator LoadRacingDataForSessionDelayed(RacingData session)
   {
-      yield return null; // wait one frame for layout to update
-      yield return LoadRacingDataForSession(session); // call your original coroutine
+    yield return null; // wait one frame for layout to update
+    yield return LoadRacingDataForSession(session); // call your original coroutine
   }
   private IEnumerator LoadRacingDataForSession(RacingData session)
   {

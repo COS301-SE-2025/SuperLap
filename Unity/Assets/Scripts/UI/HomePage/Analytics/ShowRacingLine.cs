@@ -570,13 +570,14 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     if (!trackContainer || trackData == null) return;
 
     float simplificationTolerance = 5f;
-
+    int maxVertices = 64000;
+    int maxPoints = (maxVertices / 6) + 1;
     trackData = new RacelineDisplayData
     {
       InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary)), simplificationTolerance)),
       OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary)), simplificationTolerance)),
       Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline)),
-      PlayerLine = EnsureLooped(EnsureBelowLimit(trackData.PlayerLine)),
+      PlayerLine = EnsureLooped(EnsureBelowLimit(trackData.PlayerLine, maxPoints)),
     };
 
     ClearExistingLines();
@@ -605,8 +606,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (showPlayerLine && trackData.PlayerLine != null && trackData.PlayerLine.Count > 1)
     {
-      Debug.Log("Making playerline");
-      Debug.Log(trackData.PlayerLine.Count);
       CreateLineRenderer("PlayerLine", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
     }
 
@@ -813,11 +812,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
             if (racelinePoints != null && racelinePoints.Count > 1)
               trackData.PlayerLine = racelinePoints;
-          }
-
-          if (trackData.PlayerLine != null)
-          {
-            Debug.Log(trackData.PlayerLine.Count);
           }
 
           DisplayRacelineData(trackData);
