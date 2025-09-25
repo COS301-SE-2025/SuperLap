@@ -97,13 +97,13 @@ public class AnalysisGetInfo : MonoBehaviour
 
   private IEnumerator WaitForUsernameAndLoadSessions()
   {
-    float timeout = 0.5f; // 0.5 seconds
+    float timeout = 0.5f;
     float timer = 0f;
 
     while (string.IsNullOrEmpty(UserManager.Instance.Username) && timer < timeout)
     {
       timer += Time.deltaTime;
-      yield return null; // wait one frame
+      yield return null;
     }
 
     staticUserName = !string.IsNullOrEmpty(UserManager.Instance.Username)
@@ -114,6 +114,13 @@ public class AnalysisGetInfo : MonoBehaviour
 
     StartCoroutine(LoadSessionsSequentially());
   }
+
+  //   private IEnumerator WaitForUsernameAndLoadSessions()
+  // {
+  //   yield return new WaitUntil(() => !string.IsNullOrEmpty(UserManager.Instance.Username));
+  //   staticUserName = UserManager.Instance.Username;
+  //   StartCoroutine(LoadSessionsSequentially());
+  // }
 
   private void OnDisable()
   {
