@@ -1,0 +1,11 @@
+{
+  "original_image": "trackImages/test2.png",
+  "output_directory": "processedTracks/test2",
+  "processed_files": [
+    "processedTracks/test2/test2_processed_image.png",
+    "processedTracks/test2/test2_original.png"
+  ],
+  "processing_successful": true,
+  "centerline_extracted": false,
+  "centerline_points": 0
+}

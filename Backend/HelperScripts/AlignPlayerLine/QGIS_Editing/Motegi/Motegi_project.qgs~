@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<qgis projectname="Motegi" version="3.28">
+  <projectlayers>
+    <maplayer type="vector" geometry="Polygon" name="Track Boundaries">
+      <datasource>Motegi_for_qgis.geojson</datasource>
+      <provider>ogr</provider>
+    </maplayer>
+  </projectlayers>
+  <properties>
+    <snapping>
+      <enabled>true</enabled>
+      <mode>vertex</mode>
+      <tolerance>10</tolerance>
+      <units>pixels</units>
+    </snapping>
+  </properties>
+</qgis>

@@ -5,74 +5,77 @@ public class EdgeData
 {
     public List<Vector2> OuterBoundary { get; private set; } = new List<Vector2>();
     public List<Vector2> InnerBoundary { get; private set; } = new List<Vector2>();
+    public List<Vector2> Raceline { get; private set; } = new List<Vector2>();
+    public static EdgeData LoadFromBinary(string filePath, bool hasRaceline = false)
+  {
+    var edgeData = new EdgeData();
 
-    public static EdgeData LoadFromBinary(string filePath)
+    using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+    using (var br = new BinaryReader(fs))
     {
-        var edgeData = new EdgeData();
+      edgeData.OuterBoundary = ReadPoints(br);
+      edgeData.InnerBoundary = ReadPoints(br);
+      if (hasRaceline)
+      {
+        edgeData.Raceline = ReadPoints(br);
+      }
+    }
+    return edgeData;
+  }
 
-        using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-        using (var br = new BinaryReader(fs))
-        {
-            edgeData.OuterBoundary = ReadPoints(br);
-            edgeData.InnerBoundary = ReadPoints(br);
-        }
+  public float GetAverageTrackWidth()
+  {
+    int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
+    if (count == 0) return 0f;
 
-        return edgeData;
+    float total = 0f;
+    for (int i = 0; i < count; i++)
+    {
+      total += Vector2.Distance(InnerBoundary[i], OuterBoundary[i]);
     }
 
-    public float GetAverageTrackWidth()
+    return total / count;
+  }    
+
+  public Vector2 GetCenter()
+  {
+    int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
+    Vector2 sum = Vector2.Zero;
+
+    for (int i = 0; i < count; i++)
     {
-        int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
-        if (count == 0) return 0f;
-
-        float total = 0f;
-        for (int i = 0; i < count; i++)
-        {
-            total += Vector2.Distance(InnerBoundary[i], OuterBoundary[i]);
-        }
-
-        return total / count;
-    }    
-
-    public Vector2 GetCenter()
-    {
-        int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
-        Vector2 sum = Vector2.Zero;
-
-        for (int i = 0; i < count; i++)
-        {
-            sum += (InnerBoundary[i] + OuterBoundary[i]) * 0.5f;
-        }
-
-        return sum / count;
+      sum += (InnerBoundary[i] + OuterBoundary[i]) * 0.5f;
     }
 
-    public void ScaleTrack(Vector2 origin, float scaleFactor)
-    {
-        for (int i = 0; i < OuterBoundary.Count; i++)
-        {
-            OuterBoundary[i] = origin + (OuterBoundary[i] - origin) * scaleFactor;
-        }
+    return sum / count;
+  }
 
-        for (int i = 0; i < InnerBoundary.Count; i++)
-        {
-            InnerBoundary[i] = origin + (InnerBoundary[i] - origin) * scaleFactor;
-        }
+  public void ScaleTrack(Vector2 origin, float scaleFactor)
+  {
+    for (int i = 0; i < OuterBoundary.Count; i++)
+    {
+      OuterBoundary[i] = origin + (OuterBoundary[i] - origin) * scaleFactor;
     }
 
-
-    private static List<Vector2> ReadPoints(BinaryReader br)
+    for (int i = 0; i < InnerBoundary.Count; i++)
     {
-        List<Vector2> points = new List<Vector2>();
-        int numPoints = br.ReadInt32();
-
-        for (int i = 0; i < numPoints; i++)
-        {
-            float x = br.ReadSingle();
-            float y = br.ReadSingle();
-            points.Add(new Vector2(x, y));
-        }
-
-        return points;
+      InnerBoundary[i] = origin + (InnerBoundary[i] - origin) * scaleFactor;
     }
+  }
+
+
+  private static List<Vector2> ReadPoints(BinaryReader br)
+  {
+    List<Vector2> points = new List<Vector2>();
+    int numPoints = br.ReadInt32();
+
+    for (int i = 0; i < numPoints; i++)
+    {
+      float x = br.ReadSingle();
+      float y = br.ReadSingle();
+      points.Add(new Vector2(x, y));
+    }
+
+    return points;
+  }
 }
