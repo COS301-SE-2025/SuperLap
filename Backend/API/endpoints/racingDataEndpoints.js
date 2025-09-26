@@ -83,6 +83,19 @@ module.exports = function (db) {
     });
 
     //Fetch last track data uploaded by user
+    router.get('/racing-data/user/:userName/last', async (req, res) => {
+        try {
+            const userName = req.params.userName;
+            const lastRacingData = await db.collection("racingData").findOne(
+                { userName: userName },
+                { sort: { dateUploaded: -1 }, projection: { csvData: 0 } } // Exclude base64 data
+            );
+            res.status(200).json(lastRacingData);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Failed to fetch last racing data for user" });
+        }
+    });
 
     // Upload racing data (CSV file)
     router.post('/racing-data/upload', upload.single('csvFile'), async (req, res) => {
