@@ -200,6 +200,20 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
+    public void InitializeWithRacelineData(RacelineDisplayData data)
+  {
+    NavigateToRacingLine();
+
+    if (racingLinePage != null)
+    {
+      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      if (racingLineComponent != null)
+      {
+        racingLineComponent.InitializeWithRacelineData(data);
+      }
+    }
+  }
+
     public void NavigateToRacingLineWithTrackAndSession(string trackName, RacingData session)
   {
     NavigateToRacingLine();

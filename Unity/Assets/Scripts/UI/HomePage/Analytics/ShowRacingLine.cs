@@ -883,10 +883,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return points;
   }
 
-
-
-
-
   public void InitializeWithTrack(string trackName)
   {
     if (string.IsNullOrEmpty(trackName))

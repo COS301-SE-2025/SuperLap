@@ -7,16 +7,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.UI.Extensions;
 using LibTessDotNet;
-using System.IO;
-using System.Collections;
-using System;
 using System.Globalization;
 
 public class AnalysisGetInfo : MonoBehaviour
@@ -53,6 +47,8 @@ public class AnalysisGetInfo : MonoBehaviour
   private List<GameObject> instantiatedPanels = new();
 
   private HomePageNavigation homePageNavigation;
+
+  private RacelineDisplayData FinalTrackData = null;
   private APIManager apiManager;
 
   private bool isLoading = false;
@@ -284,11 +280,12 @@ public class AnalysisGetInfo : MonoBehaviour
     }
 
     yield return LoadTrackMetaDataCoroutine(trackId);
-
     string savePath = Path.Combine(Application.streamingAssetsPath, "temp_csv.csv");
-    string json = JsonUtility.ToJson(session.csvData, true);
-    File.WriteAllText(savePath, json);
-    CSVToBinConverter.LoadCSV.PlayerLine csvdata = CSVToBinConverter.LoadCSV.Convert(savePath);
+
+    byte[] csvBytes = System.Convert.FromBase64String(session.csvData);
+    string csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
+    File.WriteAllText(savePath, csvText);
+    CSVToBinConverter.LoadCSV.PlayerLine csvdata = CSVToBinConverter.LoadCSV.Convert(savePath, 1);
 
     RacelineDisplayData trackData = new RacelineDisplayData
     {
@@ -297,7 +294,8 @@ public class AnalysisGetInfo : MonoBehaviour
       Raceline = ConvertToUnityVector2(csvdata.Raceline),
       PlayerLine = ConvertToUnityVector2(csvdata.PlayerPath),
     };
-
+    FinalTrackData = trackData;
+    if (racingLineButton != null) racingLineButton.interactable = true;
     if (racingLinePreview != null)
     {
       racingLinePreview.gameObject.SetActive(true);
@@ -416,7 +414,7 @@ public class AnalysisGetInfo : MonoBehaviour
   public void OpenRacingLineForCurrentTrack()
   {
     if (homePageNavigation != null)
-      homePageNavigation.NavigateToRacingLineWithTrackAndSession(GetCurrentTrackName(), selectedSession);
+      homePageNavigation.InitializeWithRacelineData(FinalTrackData);
   }
 
   #endregion
