@@ -120,7 +120,7 @@ module.exports = function (db) {
 
   // Update track
   router.put('/tracks/:name', async (req, res) => {
-    const trackName = req.params.username;
+    const trackName = req.params.name;
     const updatedData = req.body;
 
     try {
