@@ -41,7 +41,7 @@ module.exports = function(db) {
   router.get('/users', async (req, res) => {
     try {
       const users = await db.collection("users").find().toArray();
-      res.json(users);
+      res.status(200).json(users);
     } catch (error) {
       console.error("GET error:", error);
       res.status(500).json({message: "Failed to fetch users"});
@@ -53,7 +53,7 @@ module.exports = function(db) {
     try {
       const username = req.params.username;
       const user = await db.collection("users").findOne({username: username});
-      res.json(user);
+      res.status(200).json(user);
     } catch (error) {
       console.error("GET error:", error);
       res.status(500).json({message: "Failed to fetch user"});
@@ -75,7 +75,7 @@ module.exports = function(db) {
       }
       // Exclude passwordHash from the response
       const { passwordHash, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.status(200).json(userWithoutPassword);
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ message: 'Failed to login user' });
@@ -95,7 +95,7 @@ module.exports = function(db) {
         return res.status(404).json({ message: 'User not found or data unchanged' });
       }
 
-      res.json({ message: 'User updated successfully' });
+      res.status(200).json({ message: 'User updated successfully' });
     } catch (error) {
       console.error('Update error:', error);
       res.status(500).json({ message: 'Failed to update user' });

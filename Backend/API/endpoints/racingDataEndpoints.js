@@ -29,7 +29,7 @@ module.exports = function (db) {
             const racingData = await db.collection("racingData").find({}, {
                 projection: { csvData: 0 } // Exclude the large base64 data from list view
             }).toArray();
-            res.json(racingData);
+            res.status(200).json(racingData);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Failed to fetch racing data" });
@@ -45,8 +45,7 @@ module.exports = function (db) {
             if (!racingData) {
                 return res.status(404).json({ message: "Racing data not found" });
             }
-            
-            res.json(racingData);
+            res.status(200).json(racingData);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Failed to fetch racing data" });
@@ -61,7 +60,7 @@ module.exports = function (db) {
                 { trackName: trackName },
                 { projection: { csvData: 0 } } // Exclude base64 data from list view
             ).toArray();
-            res.json(racingData);
+            res.status(200).json(racingData);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Failed to fetch racing data for track" });
@@ -76,7 +75,7 @@ module.exports = function (db) {
                 { userName: userName },
                 { projection: { csvData: 0 } } // Exclude base64 data from list view
             ).toArray();
-            res.json(racingData);
+            res.status(200).json(racingData);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Failed to fetch racing data for user" });
@@ -245,7 +244,7 @@ module.exports = function (db) {
                 return res.status(404).json({ message: 'Racing data not found or no changes made' });
             }
 
-            res.json({ message: 'Racing data updated successfully' });
+            res.status(200).json({ message: 'Racing data updated successfully' });
         } catch (error) {
             console.error('Update error:', error);
             res.status(500).json({ message: 'Failed to update racing data' });
@@ -262,7 +261,7 @@ module.exports = function (db) {
                 return res.status(404).json({ message: "Racing data not found" });
             }
 
-            res.json({ message: "Racing data deleted successfully" });
+            res.status(200).json({ message: "Racing data deleted successfully" });
         } catch (error) {
             console.error("Delete error:", error);
             res.status(500).json({ message: "Failed to delete racing data" });
@@ -296,7 +295,7 @@ module.exports = function (db) {
             ];
 
             const stats = await db.collection("racingData").aggregate(pipeline).toArray();
-            res.json(stats[0] || {
+            res.status(200).json(stats[0] || {
                 totalRecords: 0,
                 uniqueTracksCount: 0,
                 uniqueUsersCount: 0,
