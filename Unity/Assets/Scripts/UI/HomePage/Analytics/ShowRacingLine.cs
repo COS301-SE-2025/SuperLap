@@ -571,13 +571,12 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     float simplificationTolerance = 5f;
     int maxVertices = 64000;
-    int maxPoints = (maxVertices / 6) + 1;
     trackData = new RacelineDisplayData
     {
-      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary)), simplificationTolerance)),
-      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary)), simplificationTolerance)),
-      Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline)),
-      PlayerLine = EnsureLooped(EnsureBelowLimit(trackData.PlayerLine, maxPoints)),
+      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary, 3200)), simplificationTolerance)),
+      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary, 3200)), simplificationTolerance)),
+      Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline, 3200)),
+      PlayerLine = EnsureLooped(EnsureBelowLimit(trackData.PlayerLine, 3200)),
     };
 
     ClearExistingLines();
