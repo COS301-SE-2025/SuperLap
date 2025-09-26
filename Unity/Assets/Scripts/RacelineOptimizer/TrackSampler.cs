@@ -10,34 +10,16 @@ namespace RacelineOptimizer
     {
         public static List<(Vector2 inner, Vector2 outer)> Sample(List<Vector2> inner, List<Vector2> outer, int numSamples, bool closed = true)
         {
-            // Debug logging
-            Debug.Log($"TrackSampler.Sample called with inner.Count={inner.Count}, outer.Count={outer.Count}, numSamples={numSamples}");
-            
-            if (inner.Count == 0 || outer.Count == 0)
-            {
-                Debug.Log("Error: Empty boundary lists passed to TrackSampler");
-                return new List<(Vector2, Vector2)>();
-            }
-
             // First, uniformly resample the inner boundary
             List<Vector2> resampledInner = Resample(inner, numSamples, closed);
-            Debug.Log($"Resampled inner boundary: {resampledInner.Count} points");
-            
-            if (resampledInner.Count == 0)
-            {
-                Debug.Log("Error: Resample returned empty list for inner boundary");
-                return new List<(Vector2, Vector2)>();
-            }
             
             // Then find corresponding outer points based on closest segments
             List<Vector2> matchedOuter = FindClosestOuterPoints(resampledInner, outer, closed);
-            Debug.Log($"Matched outer points: {matchedOuter.Count} points");
             
             var result = new List<(Vector2, Vector2)>();
-            for (int i = 0; i < numSamples && i < resampledInner.Count && i < matchedOuter.Count; i++)
+            for (int i = 0; i < numSamples; i++)
                 result.Add((resampledInner[i], matchedOuter[i]));
 
-            Debug.Log($"TrackSampler.Sample returning {result.Count} track segments");
             return result;
         }
 
@@ -103,20 +85,9 @@ namespace RacelineOptimizer
 
         private static List<Vector2> Resample(List<Vector2> path, int numSamples, bool closed = false)
         {
-            Debug.Log($"Resample called with path.Count={path.Count}, numSamples={numSamples}, closed={closed}");
-            
             List<Vector2> resampled = new();
             float totalLength = GetTotalLength(path, closed);
-            Debug.Log($"Total path length: {totalLength}");
-            
-            if (totalLength <= 0)
-            {
-                Debug.Log("Error: Total path length is zero or negative");
-                return new List<Vector2>();
-            }
-            
             float segmentLength = totalLength / (numSamples - 1);
-            Debug.Log($"Target segment length: {segmentLength}");
 
             int pathIndex = 0;
             float distanceCovered = 0f;

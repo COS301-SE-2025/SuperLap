@@ -1,8 +1,10 @@
 using UnityEngine;
 using System;
 using System.IO;
-using Python.Runtime;
 using System.Collections.Generic;
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
+using System.Globalization;
 
 public class ImageProcessing
 {
@@ -15,7 +17,7 @@ public class ImageProcessing
     public string errorMessage;
   }
 
-  public static TrackBoundaries ProcessImage(string imagePath)
+  public static TrackBoundaries ProcessImage(string imagePath, bool isGrayScale = true)
   {
     Debug.Log($"Processing image: {imagePath}");
     var result = new TrackBoundaries { success = false };
@@ -29,67 +31,89 @@ public class ImageProcessing
         return result;
       }
 
-      // Check if PythonNet is initialized
-      if (!PythonNet.Instance.IsInitialized())
+      // Get the path to the executable
+      string exeName;
+
+      if (isGrayScale)
       {
-        result.errorMessage = "Python.NET is not initialized";
+        exeName = "TrackProcessor";
+      }
+      else
+      {
+        exeName = "CNN/CNN";
+      }
+
+      if (Application.platform == RuntimePlatform.WindowsPlayer ||
+          Application.platform == RuntimePlatform.WindowsEditor)
+      {
+        exeName += ".exe";
+      }
+      string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
+      if (!File.Exists(exePath))
+      {
+        result.errorMessage = $"TrackProcessor executable not found at: {exePath}";
         return result;
       }
 
-      // Get the path to the Python script
-      string scriptPath = Application.dataPath.Replace("Unity/Assets", "Backend/ImageProcessing/TrackProcessor.py");
-      if (!File.Exists(scriptPath))
+      Debug.Log($"Using executable at: {exePath}");
+
+      // Create unique output file path in temp directory
+      string outputFileName = $"track_result_{Guid.NewGuid():N}.json";
+      string outputFilePath = Path.Combine(Path.GetTempPath(), outputFileName);
+
+      // Create and configure the process
+      ProcessStartInfo startInfo = new ProcessStartInfo
       {
-        result.errorMessage = $"TrackProcessor.py not found at: {scriptPath}";
-        return result;
-      }
+        FileName = exePath,
+        Arguments = $"\"{imagePath}\" \"{outputFilePath}\"",
+        UseShellExecute = false,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        CreateNoWindow = true,
+        WorkingDirectory = Path.GetDirectoryName(exePath)
+      };
 
-      // Create simple Python code to call the dedicated integration function
-      string pythonCode = $@"
-import sys
-import os
-sys.path.append(r'{Path.GetDirectoryName(scriptPath).Replace("\\", "\\\\")}')
-
-from TrackProcessor import process_track_for_csharp
-
-# Process the image using the dedicated function
-result_data = process_track_for_csharp(r'{imagePath.Replace("\\", "\\\\")}')
-";
-
-      // Execute the Python code and get the result
-      PyObject pythonResult = PythonNet.Instance.RunPythonScriptWithReturn(pythonCode, "result_data");
-
-      if (pythonResult == null)
+      // Execute the process
+      using (Process process = Process.Start(startInfo))
       {
-        result.errorMessage = "Failed to execute Python script";
-        return result;
-      }
-
-      // Parse the Python result
-      using (Py.GIL())
-      {
-        bool success = pythonResult["success"].As<bool>();
-
-        if (success)
+        if (process == null)
         {
-          // Extract outer boundary
-          PyObject outerBoundaryPy = pythonResult["outer_boundary"];
-          List<Vector2> outerBoundary = ConvertPythonListToVector2List(outerBoundaryPy);
-
-          // Extract inner boundary
-          PyObject innerBoundaryPy = pythonResult["inner_boundary"];
-          List<Vector2> innerBoundary = ConvertPythonListToVector2List(innerBoundaryPy);
-
-          result.outerBoundary = outerBoundary;
-          result.innerBoundary = innerBoundary;
-          result.success = true;
-
-          Debug.Log($"Successfully processed track image. Outer boundary: {result.outerBoundary.Count} points, Inner boundary: {result.innerBoundary.Count} points");
+          result.errorMessage = "Failed to start TrackProcessor";
+          return result;
         }
-        else
+
+        // Read any error output
+        string error = process.StandardError.ReadToEnd();
+
+        process.WaitForExit();
+
+        // Check if process executed successfully
+        if (process.ExitCode != 0)
         {
-          PyObject errorPy = pythonResult["error"];
-          result.errorMessage = errorPy != null ? errorPy.As<string>() : "Unknown error occurred in Python script";
+          result.errorMessage = $"TrackProcessor failed with exit code {process.ExitCode}. Error: {error}";
+          CleanupOutputFile(outputFilePath);
+          return result;
+        }
+
+        // Check if output file was created
+        if (!File.Exists(outputFilePath))
+        {
+          result.errorMessage = "TrackProcessor did not create output file";
+          return result;
+        }
+
+        // Read the output file
+        string jsonContent = File.ReadAllText(outputFilePath);
+
+        // Parse the results
+        result = ParseTrackBoundaries(jsonContent);
+
+        // Cleanup the temporary file
+        CleanupOutputFile(outputFilePath);
+
+        if (result.success)
+        {
+          Debug.Log($"Successfully processed track image. Outer boundary: {result.outerBoundary.Count} points, Inner boundary: {result.innerBoundary.Count} points");
         }
       }
     }
@@ -102,38 +126,174 @@ result_data = process_track_for_csharp(r'{imagePath.Replace("\\", "\\\\")}')
     return result;
   }
 
-  private static List<Vector2> ConvertPythonListToVector2List(PyObject pythonList)
+  private static void CleanupOutputFile(string filePath)
   {
     try
     {
-      using (Py.GIL())
+      if (File.Exists(filePath))
       {
-        if (pythonList == null || !pythonList.HasAttr("__len__"))
-        {
-          return new List<Vector2>();
-        }
-
-        long length = pythonList.Length();
-        List<Vector2> result = new List<Vector2>();
-
-        for (int i = 0; i < length; i++)
-        {
-          PyObject point = pythonList[i];
-          if (point.Length() >= 2)
-          {
-            float x = point[0].As<float>();
-            float y = point[1].As<float>();
-            result.Add(new Vector2(x, y));
-          }
-        }
-
-        return result;
+        File.Delete(filePath);
       }
     }
     catch (Exception ex)
     {
-      Debug.LogError($"Error converting Python list to Vector2 array: {ex.Message}");
-      return new List<Vector2>();
+      Debug.LogWarning($"Could not delete temporary file {filePath}: {ex.Message}");
+    }
+  }
+
+  private static TrackBoundaries ParseTrackBoundaries(string jsonContent)
+  {
+    var result = new TrackBoundaries { success = false };
+
+    try
+    {
+      // Parse JSON manually - look for the structure we expect
+      if (jsonContent.Contains("\"success\":true"))
+      {
+        result.success = true;
+
+        // Extract outer boundary
+        result.outerBoundary = ExtractBoundaryFromJson(jsonContent, "outer_boundary");
+
+        // Extract inner boundary  
+        result.innerBoundary = ExtractBoundaryFromJson(jsonContent, "inner_boundary");
+
+        Debug.Log($"Parsed boundaries - Outer: {result.outerBoundary.Count}, Inner: {result.innerBoundary.Count}");
+      }
+      else
+      {
+        result.success = false;
+        result.errorMessage = ExtractErrorFromJson(jsonContent);
+      }
+    }
+    catch (Exception ex)
+    {
+      result.success = false;
+      result.errorMessage = $"Error parsing JSON: {ex.Message}";
+      Debug.LogError($"JSON parsing error: {ex.Message}");
+    }
+
+    return result;
+  }
+
+  private static List<Vector2> ExtractBoundaryFromJson(string json, string boundaryKey)
+  {
+    List<Vector2> boundary = new List<Vector2>();
+
+    try
+    {
+      // Find the start of the boundary array
+      string searchKey = $"\"{boundaryKey}\":[";
+      int startIndex = json.IndexOf(searchKey);
+
+      if (startIndex == -1)
+      {
+        Debug.LogWarning($"Could not find {boundaryKey} in JSON");
+        return boundary;
+      }
+
+      // Move to start of array content
+      startIndex += searchKey.Length;
+
+      // Find the end of the array (matching closing bracket)
+      int bracketCount = 1;
+      int endIndex = startIndex;
+
+      while (endIndex < json.Length && bracketCount > 0)
+      {
+        char c = json[endIndex];
+        if (c == '[') bracketCount++;
+        else if (c == ']') bracketCount--;
+        endIndex++;
+      }
+
+      if (bracketCount != 0)
+      {
+        Debug.LogError($"Could not find matching closing bracket for {boundaryKey}");
+        return boundary;
+      }
+      // Extract the array content (without outer brackets)
+      string arrayContent = json.Substring(startIndex, endIndex - startIndex - 1);
+      // Parse coordinate pairs
+      boundary = ParseCoordinatePairs(arrayContent);
+
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError($"Error extracting {boundaryKey}: {ex.Message}");
+    }
+
+    return boundary;
+  }
+
+  private static List<Vector2> ParseCoordinatePairs(string arrayContent)
+  {
+    var coordinates = new List<Vector2>();
+    try
+    {
+      int index = 0;
+      while (index < arrayContent.Length)
+      {
+        int pairStart = arrayContent.IndexOf('[', index);
+        if (pairStart == -1) break;
+
+        int pairEnd = arrayContent.IndexOf(']', pairStart);
+        if (pairEnd == -1) break;
+
+        string pairContent = arrayContent.Substring(pairStart + 1, pairEnd - pairStart - 1);
+
+        string[] coords = pairContent.Split(',');
+        if (coords.Length >= 2)
+        {
+          string sx = coords[0].Trim();
+          string sy = coords[1].Trim();
+
+          // Use InvariantCulture so JSON-style floats with '.' always parse
+          if (float.TryParse(sx, NumberStyles.Float | NumberStyles.AllowThousands,
+                             CultureInfo.InvariantCulture, out float x) &&
+              float.TryParse(sy, NumberStyles.Float | NumberStyles.AllowThousands,
+                             CultureInfo.InvariantCulture, out float y))
+          {
+            coordinates.Add(new Vector2(x, y));
+          }
+          else
+          {
+            Debug.LogWarning($"Failed to parse '{pairContent}'. sx='{sx}', sy='{sy}', currentCulture={CultureInfo.CurrentCulture.Name}");
+          }
+        }
+
+        index = pairEnd + 1;
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.LogError($"Error parsing coordinate pairs: {ex}");
+    }
+
+    Debug.Log($"ParseCoordinatePairs produced {coordinates.Count} coordinates");
+    return coordinates;
+  }
+
+
+  private static string ExtractErrorFromJson(string json)
+  {
+    try
+    {
+      string searchKey = "\"error\":\"";
+      int startIndex = json.IndexOf(searchKey);
+
+      if (startIndex == -1) return "Unknown error";
+
+      startIndex += searchKey.Length;
+      int endIndex = json.IndexOf("\"", startIndex);
+
+      if (endIndex == -1) return "Unknown error";
+
+      return json.Substring(startIndex, endIndex - startIndex);
+    }
+    catch
+    {
+      return "Unknown error";
     }
   }
 
@@ -155,48 +315,27 @@ result_data = process_track_for_csharp(r'{imagePath.Replace("\\", "\\\\")}')
   }
 
   /// <summary>
-  /// Check if the required Python dependencies are available
+  /// Check if the TrackProcessor executable is available
   /// </summary>
-  /// <returns>True if all dependencies are available</returns>
-  public static bool CheckPythonDependencies()
+  /// <returns>True if the executable exists and is accessible</returns>
+  public static bool CheckExecutableAvailability()
   {
     try
     {
-      if (!PythonNet.Instance.IsInitialized())
+      string exeName = (Application.platform == RuntimePlatform.WindowsPlayer) ? "TrackProcessor.exe" : "TrackProcessor";
+      string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
+
+      if (!File.Exists(exePath))
       {
-        Debug.LogError("Python.NET is not initialized");
+        Debug.LogError($"TrackProcessor executable not found at: {exePath}");
         return false;
       }
 
-      string checkScript = @"
-try:
-    import cv2
-    import numpy
-    import scipy
-    import skimage
-    dependencies_available = True
-    missing_deps = []
-except ImportError as e:
-    dependencies_available = False
-    missing_deps = [str(e)]
-";
-
-      PyObject result = PythonNet.Instance.RunPythonScriptWithReturn(checkScript, "dependencies_available");
-
-      using (Py.GIL())
-      {
-        bool available = result.As<bool>();
-        if (!available)
-        {
-          PyObject missingDeps = PythonNet.Instance.RunPythonScriptWithReturn(checkScript, "missing_deps");
-          Debug.LogError($"Missing Python dependencies: {missingDeps}");
-        }
-        return available;
-      }
+      return true;
     }
     catch (Exception ex)
     {
-      Debug.LogError($"Error checking Python dependencies: {ex.Message}");
+      Debug.LogError($"Error checking executable availability: {ex.Message}");
       return false;
     }
   }

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3974b2e438ef9e04fbed396c521e298f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Dropdown/DropdownMultiCheckboxBasic/DropdownMultiCheckboxBasic_Expand.prefab
+  uploadId: 658581

@@ -25,7 +25,7 @@ public class PythonNet
     try
     {
       // Automatically detect and set the Python DLL path
-      string pythonDllPath = DetectLinuxPythonDLL();//@"C:\Users\milan\AppData\Local\Programs\Python\Python313\python313.dll";
+      string pythonDllPath = DetectPythonDLL();//@"C:\Users\milan\AppData\Local\Programs\Python\Python313\python313.dll";
       Runtime.PythonDLL = pythonDllPath;
       Debug.Log($"Using hardcoded Python DLL: {pythonDllPath}");
 
@@ -68,83 +68,209 @@ public class PythonNet
 
   private string DetectWindowsPythonDLL()
   {
-    // Common Python installation paths on Windows
-    string[] commonPaths = {
-            @"C:\Python3*\python3*.dll",
-            @"C:\Program Files\Python3*\python3*.dll",
-            @"C:\Program Files (x86)\Python3*\python3*.dll",
-            @"C:\Users\{0}\AppData\Local\Programs\Python\Python3*\python3*.dll"
-        };        // Try to get Python version and path using python command
-    try
+    // Strategy 1: Try to get Python path using python command
+    string dllPath = DetectPythonDLLFromCommand();
+    if (!string.IsNullOrEmpty(dllPath) && File.Exists(dllPath))
     {
-      SystemDiagnostics.ProcessStartInfo startInfo = new SystemDiagnostics.ProcessStartInfo
-      {
-        FileName = "python",
-        Arguments = "-c \"import sys; print(sys.executable); print(f'{sys.version_info.major}.{sys.version_info.minor}')\"",
-        UseShellExecute = false,
-        RedirectStandardOutput = true,
-        CreateNoWindow = true
-      };
-
-      using (SystemDiagnostics.Process process = SystemDiagnostics.Process.Start(startInfo))
-      {
-        string output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-
-        if (process.ExitCode == 0)
-        {
-          string[] lines = output.Trim().Split('\n');
-          if (lines.Length >= 2)
-          {
-            string pythonExePath = lines[0].Trim();
-            string version = lines[1].Trim();
-
-            // Try to find the DLL in the same directory as python.exe
-            string pythonDir = Path.GetDirectoryName(pythonExePath);
-            string dllPath = Path.Combine(pythonDir, $"python{version.Replace(".", "")}.dll");
-
-            if (File.Exists(dllPath))
-            {
-              return dllPath;
-            }
-
-            // Alternative naming convention
-            dllPath = Path.Combine(pythonDir, $"python{version[0]}{version[2]}.dll");
-            if (File.Exists(dllPath))
-            {
-              return dllPath;
-            }
-          }
-        }
-      }
-    }
-    catch (Exception e)
-    {
-      Debug.LogWarning($"Could not detect Python via command line: {e.Message}");
+      Debug.Log($"Found Python DLL via command: {dllPath}");
+      return dllPath;
     }
 
-    // Fallback: search common installation directories
-    foreach (string pathPattern in commonPaths)
+    // Strategy 2: Search common installation directories
+    dllPath = SearchCommonPythonDirectories();
+    if (!string.IsNullOrEmpty(dllPath) && File.Exists(dllPath))
+    {
+      Debug.Log($"Found Python DLL in common directories: {dllPath}");
+      return dllPath;
+    }
+
+    // Strategy 3: Search PATH environment variable
+    dllPath = SearchPythonInPath();
+    if (!string.IsNullOrEmpty(dllPath) && File.Exists(dllPath))
+    {
+      Debug.Log($"Found Python DLL via PATH: {dllPath}");
+      return dllPath;
+    }
+
+    Debug.LogWarning("Could not detect Python DLL automatically");
+    return null;
+  }
+
+  private string DetectPythonDLLFromCommand()
+  {
+    string[] pythonCommands = { "python", "python3", "py" };
+
+    foreach (string pythonCmd in pythonCommands)
     {
       try
       {
-        string expandedPath = pathPattern.Replace("{0}", Environment.UserName);
-        string directory = Path.GetDirectoryName(expandedPath);
-        string pattern = Path.GetFileName(expandedPath);
-
-        if (Directory.Exists(directory))
+        SystemDiagnostics.ProcessStartInfo startInfo = new SystemDiagnostics.ProcessStartInfo
         {
-          string[] files = Directory.GetFiles(directory, pattern, SearchOption.AllDirectories);
-          if (files.Length > 0)
+          FileName = pythonCmd,
+          Arguments = "-c \"import sys, os; print(f'{sys.version_info.major}{sys.version_info.minor}'); print(sys.executable)\"",
+          UseShellExecute = false,
+          RedirectStandardOutput = true,
+          RedirectStandardError = true,
+          CreateNoWindow = true
+        };
+
+        using (SystemDiagnostics.Process process = SystemDiagnostics.Process.Start(startInfo))
+        {
+          string output = process.StandardOutput.ReadToEnd();
+          string error = process.StandardError.ReadToEnd();
+          process.WaitForExit();
+
+          if (process.ExitCode == 0 && !string.IsNullOrEmpty(output))
           {
-            return files[0]; // Return the first match
+            string[] lines = output.Trim().Split('\n');
+            if (lines.Length >= 2)
+            {
+              string version = lines[0].Trim();
+              string executable = lines[1].Trim();
+
+              // Get the directory containing python.exe
+              string pythonDir = Path.GetDirectoryName(executable);
+              
+              // Try different DLL naming patterns
+              string[] dllPatterns = {
+                $"python{version}.dll",
+                $"python{version[0]}{version[1]}.dll",
+                "python3.dll",
+                "python.dll"
+              };
+
+              foreach (string pattern in dllPatterns)
+              {
+                string dllPath = Path.Combine(pythonDir, pattern);
+                if (File.Exists(dllPath))
+                {
+                  return dllPath;
+                }
+              }
+            }
           }
         }
       }
       catch (Exception e)
       {
-        Debug.LogWarning($"Error searching path {pathPattern}: {e.Message}");
+        Debug.LogWarning($"Could not detect Python via {pythonCmd} command: {e.Message}");
       }
+    }
+
+    return null;
+  }
+
+  private string SearchCommonPythonDirectories()
+  {
+    // Common Python installation directories
+    string[] basePaths = {
+      Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Programs\Python",
+      Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Python",
+      @"C:\Python",
+      @"C:\Program Files\Python",
+      @"C:\Program Files (x86)\Python",
+      Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\AppData\Local\Programs\Python"
+    };
+
+    foreach (string basePath in basePaths)
+    {
+      try
+      {
+        if (Directory.Exists(basePath))
+        {
+          // Look for Python version directories (e.g., Python39, Python310, etc.)
+          string[] versionDirs = Directory.GetDirectories(basePath, "Python*", SearchOption.TopDirectoryOnly);
+          
+          // Sort to prefer newer versions
+          Array.Sort(versionDirs, (x, y) => string.Compare(y, x, StringComparison.OrdinalIgnoreCase));
+
+          foreach (string versionDir in versionDirs)
+          {
+            string dllPath = FindPythonDLLInDirectory(versionDir);
+            if (!string.IsNullOrEmpty(dllPath))
+            {
+              return dllPath;
+            }
+          }
+        }
+      }
+      catch (Exception e)
+      {
+        Debug.LogWarning($"Error searching directory {basePath}: {e.Message}");
+      }
+    }
+
+    return null;
+  }
+
+  private string FindPythonDLLInDirectory(string directory)
+  {
+    try
+    {
+      // Look for DLL files in the directory
+      string[] dllFiles = Directory.GetFiles(directory, "python*.dll", SearchOption.TopDirectoryOnly);
+      
+      if (dllFiles.Length > 0)
+      {
+        // Prefer versioned DLLs (e.g., python39.dll over python.dll)
+        foreach (string dll in dllFiles)
+        {
+          string fileName = Path.GetFileName(dll).ToLower();
+          if (System.Text.RegularExpressions.Regex.IsMatch(fileName, @"python\d+\.dll"))
+          {
+            return dll;
+          }
+        }
+        
+        // Fallback to any python DLL
+        return dllFiles[0];
+      }
+    }
+    catch (Exception e)
+    {
+      Debug.LogWarning($"Error searching for DLL in directory {directory}: {e.Message}");
+    }
+
+    return null;
+  }
+
+  private string SearchPythonInPath()
+  {
+    try
+    {
+      string pathEnv = Environment.GetEnvironmentVariable("PATH");
+      if (string.IsNullOrEmpty(pathEnv))
+        return null;
+
+      string[] pathDirs = pathEnv.Split(';');
+
+      foreach (string pathDir in pathDirs)
+      {
+        try
+        {
+          if (Directory.Exists(pathDir))
+          {
+            // Look for python.exe in this directory
+            string pythonExe = Path.Combine(pathDir, "python.exe");
+            if (File.Exists(pythonExe))
+            {
+              string dllPath = FindPythonDLLInDirectory(pathDir);
+              if (!string.IsNullOrEmpty(dllPath))
+              {
+                return dllPath;
+              }
+            }
+          }
+        }
+        catch (Exception e)
+        {
+          Debug.LogWarning($"Error searching PATH directory {pathDir}: {e.Message}");
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      Debug.LogWarning($"Error searching PATH environment variable: {e.Message}");
     }
 
     return null;

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 85354ab119604f64daeee31900be9de9
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationRound/NotificationRoundTwoButton_Shake.prefab
+  uploadId: 658581

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4b6582e496ad0cd4885ee07392cf4961
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabShakeOn.anim
+  uploadId: 658581

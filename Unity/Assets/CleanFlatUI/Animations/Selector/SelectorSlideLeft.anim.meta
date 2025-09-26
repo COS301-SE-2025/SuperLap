@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 212b2430c57ae1a4799f83fcbbcdf5ea
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Selector/SelectorSlideLeft.anim
+  uploadId: 658581

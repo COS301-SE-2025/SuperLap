@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2f0d9022a7d5b9249b560a55ae4875bb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Slider/SliderJumpPoint.controller
+  uploadId: 658581

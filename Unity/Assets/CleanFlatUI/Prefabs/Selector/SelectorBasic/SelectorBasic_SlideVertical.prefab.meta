@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ec6974c5db176d348b2febf082844d83
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Selector/SelectorBasic/SelectorBasic_SlideVertical.prefab
+  uploadId: 658581

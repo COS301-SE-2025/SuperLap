@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f8ebe7c231d4d534fb5318fd0e5d2f48
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toast/ToastExpandOut.anim
+  uploadId: 658581

@@ -42,13 +42,84 @@
     <UnityVersion>6000.0.49f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="/home/richter/.vscode/extensions/visualstudiotoolsforunity.vstuc-1.1.2/Analyzers/Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="/home/richter/.vscode/extensions/visualstudiotoolsforunity.vstuc-1.1.3/Analyzers/Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="/home/richter/Unity/Hub/Editor/6000.0.49f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll" />
     <Analyzer Include="/home/richter/Unity/Hub/Editor/6000.0.49f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="/home/richter/Unity/Hub/Editor/6000.0.49f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/CleanFlatUI/Scripts/TabView/TabViewSimple.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ResizableWindow/WindowResize.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ResizableWindow/WindowDrag.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/InputField/InputFieldTransitionSpecial.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Button/ButtonTransition.cs" />
     <Compile Include="Assets/BikeAnimation.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Notification/NotificationContentFitterUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowCheckBox.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowProgressBar.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionMultiClick.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowMultiButtonUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Notification/NotificationUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toggle/ToggleTransition.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ContextMenu/ContextMenu.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toast/Toast.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowProgressBarLoop.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowContentFitterMultiButtonUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionHover.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/PopupMenu/PopupMenuRightClick.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Switch/SwitchSimple.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Gradient/GradientText.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Notification/Notification.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowProgressBarLoopUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toast/ToastUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Switch/Switch.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowProgressBarUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/InputField/InputFieldSimple.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ContextMenu/ContextMenuRightClick.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ContextMenu/ContextMenuLongPress.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowList.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindow.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/TabView/TabViewGroup.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toggle/ToggleCheck.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toast/ToastContentFitter.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/PopupMenu/PopupMenuLongPress.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionClick.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/InputField/InputFieldTransition.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionTwo.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ContextMenu/ContextMenuLeftClick.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/PopupMenu/PopupMenu.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowListUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Notification/NotificationContentFitter.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowRadioButtonUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Common/EventForward.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Button/ButtonMultiTransition.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/PopupMenu/PopupMenuLeftClick.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowInputFieldUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toggle/ToggleTextSimple.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowContentFitterMultiButton.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowRadioButton.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowMultiButton.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionDown.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Notification/NotificationContentFitterWithButton.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowContentFitter.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Gradient/GradientModifier.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Utility/InputModuleSwitch.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowInputField.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowContentFitterUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toast/ToastContentFitterUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/TabView/TabSimple.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionMultiHover.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Notification/NotificationWithButton.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Notification/NotificationWithButtonUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/TabView/TabView.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ResizableWindow/WindowResizeHandle.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toggle/ToggleText.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/TabView/Tab.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Notification/NotificationContentFitterWithButtonUI.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Common/TransitionMultiDown.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/Toggle/ToggleSwap.cs" />
+    <Compile Include="Assets/CleanFlatUI/Scripts/ModalWindow/ModalWindowCheckBoxUI.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
@@ -72,6 +143,7 @@
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt" />
+    <None Include="Assets/TrainingData/training_data_20250816_192751.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Sprite.shader" />
   </ItemGroup>
@@ -544,6 +616,10 @@
       <HintPath>Library/PackageCache/com.unity.ext.nunit@b16e6d09cd93/net40/unity-custom/nunit.framework.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="ReportGeneratorMerged">
+      <HintPath>Library/PackageCache/com.unity.testtools.codecoverage@205a02cbcb39/lib/ReportGenerator/ReportGeneratorMerged.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Python.Runtime">
       <HintPath>Library/PackageCache/org.nuget.pythonnet@f3888a4d4c66/lib/netstandard2.0/Python.Runtime.dll</HintPath>
       <Private>False</Private>
@@ -562,10 +638,6 @@
     </Reference>
     <Reference Include="System.Windows.Forms">
       <HintPath>Assets/StandaloneFileBrowser/Plugins/System.Windows.Forms.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ReportGeneratorMerged">
-      <HintPath>Library/PackageCache/com.unity.testtools.codecoverage@205a02cbcb39/lib/ReportGenerator/ReportGeneratorMerged.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="netstandard">
@@ -1084,6 +1156,10 @@
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Shaders.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Cinemachine.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.Cinemachine.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.RenderPipelines.Core.Runtime.Shared">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Shared.dll</HintPath>
       <Private>False</Private>
@@ -1100,12 +1176,12 @@
       <HintPath>Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.RenderPipelines.Core.Editor.Shared">
-      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Shared.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.TestTools.CodeCoverage.Editor.OpenCover.Model">
       <HintPath>Library/ScriptAssemblies/Unity.TestTools.CodeCoverage.Editor.OpenCover.Model.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Editor.Shared">
+      <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Shared.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
@@ -1116,6 +1192,10 @@
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Core.ShaderLibrary.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.TestTools.CodeCoverage.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.TestTools.CodeCoverage.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.PlasticSCM.Editor">
       <HintPath>Library/ScriptAssemblies/Unity.PlasticSCM.Editor.dll</HintPath>
       <Private>False</Private>
@@ -1124,8 +1204,8 @@
       <HintPath>Library/ScriptAssemblies/Unity.Multiplayer.Center.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.TestTools.CodeCoverage.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.TestTools.CodeCoverage.Editor.dll</HintPath>
+    <Reference Include="Unity.Splines">
+      <HintPath>Library/ScriptAssemblies/Unity.Splines.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Mathematics.Editor">
@@ -1134,6 +1214,14 @@
     </Reference>
     <Reference Include="Unity.RenderPipelines.GPUDriven.Runtime">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.GPUDriven.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Cinemachine">
+      <HintPath>Library/ScriptAssemblies/Unity.Cinemachine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityUIExtensions.editor">
+      <HintPath>Library/ScriptAssemblies/UnityUIExtensions.editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Collections">
@@ -1156,8 +1244,16 @@
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Splines.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.Splines.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Editor">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityUIExtensions">
+      <HintPath>Library/ScriptAssemblies/UnityUIExtensions.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Collections.Editor">

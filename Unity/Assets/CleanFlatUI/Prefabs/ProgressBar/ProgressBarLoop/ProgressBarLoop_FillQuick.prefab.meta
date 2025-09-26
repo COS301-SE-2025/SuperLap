@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a8eaf82dbd31f3e448f26db4981600d4
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarLoop/ProgressBarLoop_FillQuick.prefab
+  uploadId: 658581

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6a4a84bc398204f4999631799cc18198
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Dropdown/DropdownBasic/DropdownBasic_Popup.prefab
+  uploadId: 658581

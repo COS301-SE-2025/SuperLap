@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1236a2066e39f6047b070e384d4e3678
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/InputField/InputFieldMulti/InputFieldMulti_SpecialSlide.prefab
+  uploadId: 658581

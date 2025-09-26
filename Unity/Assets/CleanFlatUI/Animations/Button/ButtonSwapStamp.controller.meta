@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 629670da920a7d94186ee7ddfd7e1068
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonSwapStamp.controller
+  uploadId: 658581

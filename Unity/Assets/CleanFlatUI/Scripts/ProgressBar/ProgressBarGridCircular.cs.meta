@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 01914c9a16800d141a7f08f723947cb6
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/ProgressBar/ProgressBarGridCircular.cs
+  uploadId: 658581

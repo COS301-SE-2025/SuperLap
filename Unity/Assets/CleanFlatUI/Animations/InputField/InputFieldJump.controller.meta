@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d4eea98efe366224f8ffd6d16301f6c7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/InputField/InputFieldJump.controller
+  uploadId: 658581

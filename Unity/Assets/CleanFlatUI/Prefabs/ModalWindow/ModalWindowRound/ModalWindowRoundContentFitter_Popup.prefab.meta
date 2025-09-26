@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d8b8799edd2723749b6d67dda85baafe
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ModalWindow/ModalWindowRound/ModalWindowRoundContentFitter_Popup.prefab
+  uploadId: 658581

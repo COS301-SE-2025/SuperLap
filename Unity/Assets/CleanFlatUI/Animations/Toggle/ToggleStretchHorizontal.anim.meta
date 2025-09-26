@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c7aa04e49e1c5fa468a8f491078fd214
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toggle/ToggleStretchHorizontal.anim
+  uploadId: 658581

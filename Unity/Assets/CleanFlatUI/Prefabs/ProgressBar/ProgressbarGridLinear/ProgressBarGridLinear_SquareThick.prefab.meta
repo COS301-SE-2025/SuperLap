@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c17aa094de26c4646a582e792833011c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressbarGridLinear/ProgressBarGridLinear_SquareThick.prefab
+  uploadId: 658581

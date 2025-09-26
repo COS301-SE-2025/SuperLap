@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: fccca0e1361680a41bbb5d7c2a7a8a00
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Tooltip/TooltipSpecial/TooltipSpecialRound.prefab
+  uploadId: 658581
