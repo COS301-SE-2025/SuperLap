@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const { ObjectId } = require('mongodb');
 
-// Configure multer for file uploads
+// Configure multer for file uploads with larger limits for performance tests
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
@@ -15,7 +15,7 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit
+    fileSize: 100 * 1024 * 1024 // 100MB limit for performance tests
   }
 });
 
@@ -118,7 +118,7 @@ module.exports = function (db) {
       if (err) {
         if (err instanceof multer.MulterError) {
           if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ message: "File too large. Maximum size is 50MB." });
+            return res.status(400).json({ message: "File too large. Maximum size is 100MB." });
           }
         } else if (err.message === 'Only CSV files are allowed') {
           return res.status(400).json({ message: "Only CSV files are allowed" });
@@ -190,6 +190,12 @@ module.exports = function (db) {
         return res.status(400).json({ message: "CSV data (base64) is required" });
       }
 
+      // Check if base64 data is too large (over 100MB when decoded)
+      const decodedSize = Buffer.from(csvData, 'base64').length;
+      if (decodedSize > 100 * 1024 * 1024) {
+        return res.status(413).json({ message: "CSV data too large. Maximum size is 100MB." });
+      }
+
       // Create unique ID
       const recordId = new ObjectId();
 
@@ -201,7 +207,7 @@ module.exports = function (db) {
         vehicleUsed: vehicleUsed || 'Unknown',
         description: description || '',
         fileName: fileName || 'racing_data.csv',
-        fileSize: Buffer.from(csvData, 'base64').length,
+        fileSize: decodedSize,
         csvData: csvData,
         dateUploaded: new Date().toISOString(),
         uploadedBy: userName || 'Anonymous'

@@ -110,11 +110,6 @@ module.exports = function(db) {
     try {
       let { username, email, password } = req.body;
       
-      // Validate required fields
-      if (!username || !email || !password) {
-        return res.status(400).json({ message: "Username, email, and password are required" });
-      }
-
       // Check if the user already exists
       const existingUser = await db.collection("users").findOne({ username });
       if (existingUser) {
@@ -153,7 +148,7 @@ module.exports = function(db) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      res.status(201).json({message: "User deleted successfully"});
+      res.status(200).json({message: "User deleted successfully"});
     } catch (error) {
       console.error(error);
       res.status(500).json({message: "Failed to delete user"});

@@ -159,7 +159,7 @@ module.exports = function (db) {
         return res.status(404).json({ message: "Track not found" });
       }
       
-      res.status(201).json({ message: "Track deleted successfully" });
+      res.status(200).json({ message: "Track deleted successfully" });
     } catch (error) {
       console.error("Delete error:", error);
       res.status(500).json({ message: "Failed to delete track" });

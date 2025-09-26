@@ -17,8 +17,8 @@ describe('API Integration Tests', function () {
     });
 
     it('should support complete user workflow', async function () {
-        const user = { username: 'integrationuser', email: 'int@example.com', password: 'password123' };
-        const track = { name: 'integration-track', type: 'circuit', city: 'Test City', country: 'Test', uploadedBy: user.username };
+        const user = { username: 'integrationuser1', email: 'int1@example.com', password: 'password123' };
+        const track = { name: 'integration-track-1', type: 'circuit', city: 'Test City', country: 'Test', uploadedBy: user.username };
         const csvData = Buffer.from('lap,time\n1,1:23.456').toString('base64');
 
         // Create user
@@ -53,15 +53,22 @@ describe('API Integration Tests', function () {
         res = await request(app).get('/racing-data/stats/summary');
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('totalRecords');
+        
+        // Cleanup
+        await db.collection('racingData').deleteMany({ userName: user.username });
+        await db.collection('tracks').deleteOne({ name: track.name });
+        await db.collection('users').deleteOne({ username: user.username });
     });
 
     it('should handle cross-entity queries', async function () {
         const user = { username: 'integrationuser2', email: 'int2@example.com', password: 'password123' };
-        const track = { name: 'integration-track2', type: 'circuit', city: 'Test City', country: 'Test', uploadedBy: user.username };
+        const track = { name: 'integration-track-2', type: 'circuit', city: 'Test City', country: 'Test', uploadedBy: user.username };
         
+        // Create user and track
         await request(app).post('/users').send(user);
         await request(app).post('/tracks').send(track);
         
+        // Create racing data
         await request(app).post('/racing-data').send({
             trackName: track.name,
             userName: user.username,
@@ -79,5 +86,10 @@ describe('API Integration Tests', function () {
         res = await request(app).get(`/racing-data/track/${track.name}`);
         expect(res.status).toBe(200);
         expect(res.body.length).toBeGreaterThanOrEqual(1);
+        
+        // Cleanup
+        await db.collection('racingData').deleteMany({ userName: user.username });
+        await db.collection('tracks').deleteOne({ name: track.name });
+        await db.collection('users').deleteOne({ username: user.username });
     });
 });
