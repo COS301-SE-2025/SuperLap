@@ -17,7 +17,7 @@ module.exports = function (db) {
   });
 
   // Fetch a single track by name
-  router.get('/tracks/:name', async (req, res) => {
+  router.get('/tracks/name/:name', async (req, res) => {
     try {
       const trackName = req.params.name;
       const track = await db.collection("tracks").findOne({ name: trackName });
@@ -29,7 +29,7 @@ module.exports = function (db) {
   });
 
   // Fetch all tracks by type
-  router.get('/tracks/:type', async (req, res) => {
+  router.get('/tracks/type/:type', async (req, res) => {
     try {
       const trackType = req.params.type;
       const tracks = await db.collection("tracks").find({ type: trackType }).toArray();
@@ -41,7 +41,7 @@ module.exports = function (db) {
   });
 
   // Fetch all tracks by city
-  router.get('/tracks/:city', async (req, res) => {
+  router.get('/tracks/city/:city', async (req, res) => {
     try {
       const trackCity = req.params.city;
       const tracks = await db.collection("tracks").find({ city: trackCity }).toArray();
@@ -53,7 +53,7 @@ module.exports = function (db) {
   });
 
   // Fetch all tracks by country
-  router.get('/tracks/:country', async (req, res) => {
+  router.get('/tracks/country/:country', async (req, res) => {
     try {
       const trackCountry = req.params.country;
       const tracks = await db.collection("tracks").find({ country: trackCountry }).toArray();
@@ -65,7 +65,7 @@ module.exports = function (db) {
   });
 
   // Fetch all tracks by location
-  router.get('/tracks/:location', async (req, res) => {
+  router.get('/tracks/location/:location', async (req, res) => {
     try {
       const trackLocation = req.params.location;
       const tracks = await db.collection("tracks").find({ location: trackLocation }).toArray();
