@@ -7,6 +7,17 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine.UI.Extensions;
+using LibTessDotNet;
+using System.IO;
+using System.Collections;
+using System;
+using System.Globalization;
 
 public class AnalysisGetInfo : MonoBehaviour
 {
@@ -274,27 +285,32 @@ public class AnalysisGetInfo : MonoBehaviour
 
     yield return LoadTrackMetaDataCoroutine(trackId);
 
-    string binPath = Path.Combine(Application.streamingAssetsPath, $"MotoGPTracks/{trackId}.bin");
-    if (!File.Exists(binPath))
+    string savePath = Path.Combine(Application.streamingAssetsPath, "temp_csv.csv");
+    string json = JsonUtility.ToJson(session.csvData, true);
+    File.WriteAllText(savePath, json);
+    CSVToBinConverter.LoadCSV.PlayerLine csvdata = CSVToBinConverter.LoadCSV.Convert(savePath);
+
+    RacelineDisplayData trackData = new RacelineDisplayData
     {
-      Debug.LogWarning($"Bin file not found: {binPath}");
-      yield break;
-    }
-
-    RacelineDisplayData binRacelineData = RacelineDisplayImporter.LoadFromBinary(binPath);
-
-    RacelineDisplayData playerlineData = ConvertCsvToPlayerline(session.csvData);
-
-    RacelineDisplayData combinedData = CombineRacelineData(binRacelineData, playerlineData);
+      InnerBoundary = ConvertToUnityVector2(csvdata.InnerBoundary),
+      OuterBoundary = ConvertToUnityVector2(csvdata.OuterBoundary),
+      Raceline = ConvertToUnityVector2(csvdata.Raceline),
+      PlayerLine = ConvertToUnityVector2(csvdata.PlayerPath),
+    };
 
     if (racingLinePreview != null)
     {
       racingLinePreview.gameObject.SetActive(true);
-      racingLinePreview.InitializeWithRacelineData(combinedData);
+      racingLinePreview.InitializeWithRacelineData(trackData);
     }
 
     if (sessionTotalLapsText != null)
       sessionTotalLapsText.text = EstimateLapsFromCsv(session.csvData).ToString();
+  }
+
+    List<UnityEngine.Vector2> ConvertToUnityVector2(List<System.Numerics.Vector2> list)
+  {
+    return list.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList();
   }
 
   private IEnumerator LoadTrackMetaDataCoroutine(string trackId)
@@ -343,52 +359,6 @@ public class AnalysisGetInfo : MonoBehaviour
       return columns.Length > 0 ? columns[0] : null;
     }
     catch { return null; }
-  }
-
-  private RacelineDisplayData ConvertCsvToPlayerline(string base64Csv)
-  {
-    var racelineData = new RacelineDisplayData();
-    if (string.IsNullOrEmpty(base64Csv)) return racelineData;
-
-    try
-    {
-      byte[] csvBytes = System.Convert.FromBase64String(base64Csv);
-      string csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
-      string[] lines = csvText.Split('\n');
-      if (lines.Length <= 1) return racelineData;
-
-      var playerLine = new List<Vector2>();
-
-      for (int i = 1; i < lines.Length; i++)
-      {
-        string line = lines[i].Trim();
-        if (string.IsNullOrEmpty(line)) continue;
-
-        string[] columns = line.Split('\t');
-        if (columns.Length < 4) continue;
-
-        if (float.TryParse(columns[2], out float x) &&
-            float.TryParse(columns[3], out float y))
-        {
-          playerLine.Add(new Vector2(x, y));
-        }
-      }
-
-      racelineData.PlayerLine = playerLine;
-    }
-    catch (System.Exception ex)
-    {
-      Debug.LogError($"Error parsing CSV to playerline: {ex.Message}");
-    }
-
-    return racelineData;
-  }
-
-
-  private RacelineDisplayData CombineRacelineData(RacelineDisplayData binData, RacelineDisplayData playerline)
-  {
-    binData.PlayerLine = playerline.PlayerLine;
-    return binData;
   }
 
   private int EstimateLapsFromCsv(string base64Csv)
