@@ -73,3 +73,11 @@ Unity/Assets/StreamingAssets/TrackProcessor
 
 #Ignore RLMatrix DLL files
 Unity/Assets/Plugins/Windows/x86_64
+
+# Ignore These:
+processedTracks
+Backend/ImageProcessing/trackImages
+Backend/RacelineOptimizer/bin
+Backend/RacelineOptimizer/Output
+Backend/RacelineOptimizer/Input
+Backend/RacelineOptimizer/obj
