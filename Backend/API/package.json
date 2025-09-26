@@ -5,14 +5,19 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/unit/",
+    "test:integration": "jest tests/integration/",
+    "test:performance": "jest tests/performance/",
+    "test:ci": "jest --ci --coverage --watchAll=false"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "chai": "^4.3.7",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "mongodb": "^6.16.0",
@@ -23,6 +28,6 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "mocha": "^11.4.0",
-    "supertest": "^7.1.1"
+    "supertest": "^7.1.4"
   }
 }

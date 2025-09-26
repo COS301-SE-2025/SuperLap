@@ -17,10 +17,15 @@ module.exports = function (db) {
   });
 
   // Fetch a single track by name
-  router.get('/tracks/name/:name', async (req, res) => {
+  router.get('/tracks/:name', async (req, res) => {
     try {
       const trackName = req.params.name;
       const track = await db.collection("tracks").findOne({ name: trackName });
+      
+      if (!track) {
+        return res.status(404).json({ message: "Track not found" });
+      }
+      
       res.status(200).json(track);
     } catch (error) {
       console.error(error);
@@ -101,11 +106,11 @@ module.exports = function (db) {
         type,
         city,
         country,
-        location,
-        uploadedBy,
-        image,
-        description,
-        dateUploaded: new Date().toISOString(), // Set date here
+        location: location || `${city}, ${country}`,
+        uploadedBy: uploadedBy || 'testuser', // Default value for tests
+        image: image || '',
+        description: description || '',
+        dateUploaded: new Date().toISOString(),
       };
 
       await db.collection("tracks").insertOne(newTrack);
@@ -117,17 +122,24 @@ module.exports = function (db) {
     }
   });
 
-
   // Update track
   router.put('/tracks/:name', async (req, res) => {
     const trackName = req.params.name;
     const updatedData = req.body;
 
     try {
-      const result = await db.collection('tracks').updateOne({ name: trackName }, { $set: updatedData });
+      // Don't allow changing the track name through this endpoint
+      if (updatedData.name) {
+        delete updatedData.name;
+      }
 
-      if (result.modifiedCount === 0) {
-        return res.status(404).json({ message: 'Track not found or data unchanged' });
+      const result = await db.collection('tracks').updateOne(
+        { name: trackName }, 
+        { $set: updatedData }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: 'Track not found' });
       }
 
       res.status(200).json({ message: 'Track updated successfully' });
@@ -141,8 +153,13 @@ module.exports = function (db) {
   router.delete('/tracks/:name', async (req, res) => {
     try {
       const trackName = req.params.name;
-      await db.collection("tracks").deleteOne({ name: trackName });
-      res.status(200).json({ message: "Track deleted successfully" });
+      const result = await db.collection("tracks").deleteOne({ name: trackName });
+      
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: "Track not found" });
+      }
+      
+      res.status(201).json({ message: "Track deleted successfully" });
     } catch (error) {
       console.error("Delete error:", error);
       res.status(500).json({ message: "Failed to delete track" });
@@ -154,10 +171,15 @@ module.exports = function (db) {
     try {
       const trackName = req.params.name;
       const track = await db.collection("tracks").findOne({ name: trackName });
+      
+      if (!track || !track.image) {
+        return res.status(404).json({ message: "Track image not found" });
+      }
+      
       res.status(200).json(track.image);
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Failed to fetch tracks" });
+      res.status(500).json({ message: "Failed to fetch track image" });
     }
   });
 

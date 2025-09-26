@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const { ObjectId } = require('mongodb');
 
 module.exports = function(db) {
   const router = express.Router();
@@ -15,32 +16,10 @@ module.exports = function(db) {
 
   // USER ROUTES
 
-  /**
-   * @swagger
-   * /users:
-   *   get:
-   *     summary: Fetch all users
-   *     description: Returns a list of all users.
-   *     responses:
-   *       200:
-   *         description: A successful response
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: array
-   *               items:
-   *                 type: object
-   *                 properties:
-   *                   username:
-   *                     type: string
-   *                   email:
-   *                     type: string
-   */
-
   // Fetch all users
   router.get('/users', async (req, res) => {
     try {
-      const users = await db.collection("users").find().toArray();
+      const users = await db.collection("users").find({}, { projection: { passwordHash: 0 } }).toArray();
       res.status(200).json(users);
     } catch (error) {
       console.error("GET error:", error);
@@ -52,7 +31,15 @@ module.exports = function(db) {
   router.get('/users/:username', async (req, res) => {
     try {
       const username = req.params.username;
-      const user = await db.collection("users").findOne({username: username});
+      const user = await db.collection("users").findOne(
+        {username: username}, 
+        { projection: { passwordHash: 0 } }
+      );
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
       res.status(200).json(user);
     } catch (error) {
       console.error("GET error:", error);
@@ -60,19 +47,25 @@ module.exports = function(db) {
     }
   });
 
-  //Login a user
+  // Login a user
   router.post('/users/login', async (req, res) => {
     const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
 
     try {
       const user = await db.collection("users").findOne({ username: username });
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
+      
       const isPasswordValid = await comparePassword(password, user.passwordHash);
       if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Invalid password' });
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
+      
       // Exclude passwordHash from the response
       const { passwordHash, ...userWithoutPassword } = user;
       res.status(200).json(userWithoutPassword);
@@ -81,7 +74,6 @@ module.exports = function(db) {
       res.status(500).json({ message: 'Failed to login user' });
     }
   });
-  
 
   // Update a single user
   router.put('/users/:username', async (req, res) => {
@@ -89,10 +81,21 @@ module.exports = function(db) {
     const updatedData = req.body;
 
     try {
-      const result = await db.collection('users').updateOne({ username: username }, { $set: updatedData });
+      // Don't allow password updates through this endpoint
+      if (updatedData.password) {
+        delete updatedData.password;
+      }
+      if (updatedData.passwordHash) {
+        delete updatedData.passwordHash;
+      }
 
-      if (result.modifiedCount === 0) {
-        return res.status(404).json({ message: 'User not found or data unchanged' });
+      const result = await db.collection('users').updateOne(
+        { username: username }, 
+        { $set: updatedData }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: 'User not found' });
       }
 
       res.status(200).json({ message: 'User updated successfully' });
@@ -106,6 +109,12 @@ module.exports = function(db) {
   router.post('/users', async (req, res) => {
     try {
       let { username, email, password } = req.body;
+      
+      // Validate required fields
+      if (!username || !email || !password) {
+        return res.status(400).json({ message: "Username, email, and password are required" });
+      }
+
       // Check if the user already exists
       const existingUser = await db.collection("users").findOne({ username });
       if (existingUser) {
@@ -113,19 +122,20 @@ module.exports = function(db) {
       }
 
       const passwordHash = await hashPassword(password);
-
-      //get current date and time
       const createdAt = new Date().toISOString();
 
-      // Only insert fields you want, avoid _id from req.body
-      const newUser = { username, email, passwordHash, createdAt};
+      const newUser = { 
+        username, 
+        email, 
+        passwordHash, 
+        createdAt,
+        updatedAt: createdAt
+      };
 
-      // Insert the new user into the database
-      const result = await db.collection("users").insertOne(newUser);
+      await db.collection("users").insertOne(newUser);
 
       res.status(201).json({
-        message: "User created successfully",
-        userId: result.insertedId,
+        message: "User created successfully"
       });
     } catch (error) {
       console.error("Create error:", error);
@@ -138,6 +148,11 @@ module.exports = function(db) {
     try {
       const username = req.params.username;
       const result = await db.collection("users").deleteOne({username: username});
+      
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
       res.status(201).json({message: "User deleted successfully"});
     } catch (error) {
       console.error(error);
