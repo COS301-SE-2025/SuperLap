@@ -343,9 +343,7 @@ public class HomePageNavigation : MonoBehaviour
     if (dashboardPage != null && dashboardPage.activeSelf) return (0, 3);
     if (galleryPage != null && galleryPage.activeSelf) return (4, 4);
     if (analysisPage != null && analysisPage.activeSelf) return (5, 8);
-    if (teamPage != null && teamPage.activeSelf) return (9, 11);
-    if (supportPage != null && supportPage.activeSelf) return (12, 14);
-    if (motoGPPage != null && motoGPPage.activeSelf) return (15, 17);
+    if (motoGPPage != null && motoGPPage.activeSelf) return (9, 10);
 
     return (-1, -1);
   }
