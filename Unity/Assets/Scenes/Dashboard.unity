@@ -30226,7 +30226,7 @@ MonoBehaviour:
   - {fileID: 293901386}
   - {fileID: 382768644}
   activePage: {fileID: 1284194292}
-  transitionDuration: 0.3
+  transitionDuration: 0.5
 --- !u!114 &1217648705
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35653,7 +35653,7 @@ MonoBehaviour:
   sessionTotalLapsText: {fileID: 748189527}
   defaultSessionPanel: {fileID: 57723112}
   contentParent: {fileID: 1493160098}
-  loaderPanel: {fileID: 1615689644}
+  loaderPanel: {fileID: 0}
   backupPanel: {fileID: 307886363}
   isDashboard: 0
 --- !u!1 &1417049919
@@ -45345,7 +45345,7 @@ MonoBehaviour:
   sessionTotalLapsText: {fileID: 1464497039}
   defaultSessionPanel: {fileID: 0}
   contentParent: {fileID: 0}
-  loaderPanel: {fileID: 1615689644}
+  loaderPanel: {fileID: 0}
   backupPanel: {fileID: 78578932}
   isDashboard: 1
 --- !u!1 &1876603823
