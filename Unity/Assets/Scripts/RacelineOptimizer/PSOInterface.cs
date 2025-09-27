@@ -11,7 +11,7 @@ namespace RacelineOptimizer
 {
   public static class PSOInterface
   {
-    public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 6000, bool enableBranchDetection = true)
+    public static bool Run(string edgeDataFilePath, string outputPath, int numParticles = 100, int iterations = 6000, bool enableBranchDetection = false)
     {
       Debug.Log($"\nProcessing {Path.GetFileName(edgeDataFilePath)}...");
       EdgeData edgeData = EdgeData.LoadFromBinary(edgeDataFilePath);
@@ -113,7 +113,7 @@ namespace RacelineOptimizer
     int numParticles = 100,
     int iterations = 6000,
     string outputPath = "Output",
-    bool enableBranchDetection = true,
+    bool enableBranchDetection = false,
     BranchDetector.BranchDetectionConfig branchConfig = null)
     {
       Debug.Log($"Processing track: {trackName}...");
