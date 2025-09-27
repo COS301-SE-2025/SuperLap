@@ -1,6 +1,21 @@
 {
-    "name": "PlayMode",
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ]
+    "name": "PlayModeTests",
+    "rootNamespace": "",
+    "references": [
+        "Assembly-CSharp",
+        "UnityEngine.TestRunner",
+        "Unity.TextMeshPro",
+        "MainAssembly"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
