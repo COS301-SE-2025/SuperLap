@@ -141,6 +141,7 @@ namespace MotoGPTelemetry
     public float getFastestLapTime()
     {
       int fastestLap = getFastestLapIndex();
+      
       if (fastestLap == -1)
         return 0f;
 
@@ -152,6 +153,7 @@ namespace MotoGPTelemetry
           fastestTime = Math.Min(fastestTime, PlayerPath[i].LastLapTime);
         }
       }
+      Debug.Log($"Fastest lap: {fastestLap} Time: {fastestTime}");
       return fastestTime == float.MaxValue ? 0f : fastestTime;
     }
 
@@ -167,6 +169,7 @@ namespace MotoGPTelemetry
           count++;
         }
       }
+      Debug.Log($"Average speed for lap {lapIndex}: {(count > 0 ? totalSpeed / count : 0f)} km/h over {count} samples with total speed {totalSpeed}.");
       return count > 0 ? totalSpeed / count : 0f;
     }
 
@@ -252,7 +255,7 @@ namespace MotoGPTelemetry
                 LastLapTime = packet.LastLapTime,
                 CurrentLap = packet.CurrentLap,
                 TrackId = packet.Track,
-                Speed = packet.Speed,
+                Speed = speedKmh,
                 CoordinatesX = packet.CoordinatesX,
                 CoordinatesY = packet.CoordinatesY
               };

@@ -383,8 +383,8 @@ public class MotoGP : MonoBehaviour
     {
       int selectedLapIndex = lapIndexList[dropdown.value];
       fastestLapTime = recorder.getFastestLapTime().ToString();
-      averageSpeed = recorder.getAverageSpeed(selectedLapIndex - 1).ToString();
-      topSpeed = recorder.getTopSpeed(selectedLapIndex - 1).ToString();
+      averageSpeed = recorder.getAverageSpeed(recorder.getFastestLapIndex()).ToString();
+      topSpeed = recorder.getTopSpeed(recorder.getFastestLapIndex()).ToString();
       vehicleUsed = recorder.getModel();
     }
     else
