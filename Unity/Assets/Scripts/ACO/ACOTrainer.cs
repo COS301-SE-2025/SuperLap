@@ -379,7 +379,7 @@ public class ACOTrainer : MonoBehaviour
                 // Use initial spawn state
                 pos = new System.Numerics.Vector2(startPos.x, startPos.z);
                 bear = CalculateBearing(new System.Numerics.Vector2(startDir.x, startDir.z));
-                speed = 0;
+                speed = 10;
                 turnAngle = 0;
                 Debug.Log($"Using initial spawn state: pos={pos}, bear={bear:F2}, speed={speed:F2}");
             }

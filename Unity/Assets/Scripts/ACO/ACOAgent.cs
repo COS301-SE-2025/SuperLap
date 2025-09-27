@@ -20,7 +20,7 @@ public class ACOAgent
 
     private bool enableRecommendations = true;
     private int recommendationSteps = 10;
-    private float steeringSensitivity = 0.03f;
+    private float steeringSensitivity = 0.1f;
     private float throttleSensitivity = 0.15f;
     private float testInputStrength = 0.5f;
     private float inputThreshold = 0.3f;
@@ -31,7 +31,7 @@ public class ACOAgent
     private float maxSpeedRatio = 0.8f;
     private bool showTrackDetectionDebug = false;
 
-    private float currentSpeed = 0f;
+    private float currentSpeed = 5f;
     private float currentSpeedKmh = 0f;
     private float currentAcceleration = 0f;
     private float currentTurnAngle = 0f;
@@ -40,7 +40,7 @@ public class ACOAgent
     private bool recommendSlowDown = false;
     private bool recommendTurnLeft = false;
     private bool recommendTurnRight = false;
-    private float trajectoryLength = 5f;
+    private float trajectoryLength = 2f;
 
     // Input values
     private float throttleInput = 0f;
@@ -62,7 +62,7 @@ public class ACOAgent
     private int instanceId;
     public int ID => instanceId;
     Random random;
-    public readonly static float Scale = 0.20f;
+    public readonly static float Scale = 0.3f;
 
     public Vector2 Forward
     {

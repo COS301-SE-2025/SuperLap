@@ -32,6 +32,8 @@ public class AgentContainer
     public List<(int, int)> Inputs => inputs;
     List<ReplayState> replayStates;
     public List<ReplayState> ReplayStates => replayStates;
+    private int offTrackCount = 0;
+    private int offTrackLimit = 50;
 
     public AgentContainer(PolygonTrack track, Vector2 pos, float bear, float ss, float ta, List<Vector2> rl, ThreadLocalRacelineAnalyzer al, Vector2[] cps, float cpd)
     {
@@ -77,7 +79,18 @@ public class AgentContainer
             });
         }
 
-        isValid = !agent.IsOffTrack();
+        // if (agent.IsOffTrack())
+        // {
+        //     offTrackCount++;
+
+        //     if(offTrackCount > offTrackLimit)
+        //     {
+        //         isValid = false;
+        //     }
+        // } else
+        // {
+        //     offTrackCount = 0;
+        // }
 
         if (!passedTarget && InTargetRange())
             {
