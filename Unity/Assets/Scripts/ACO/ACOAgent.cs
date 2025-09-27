@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Numerics;
 public class ACOAgent
 {
-    private static float enginePower = 80000f;
+    private static float enginePower = 250000f;
     private static float maxTractionForce = 7000f;
-    private static float brakingForce = 8000f;
+    private static float brakingForce = 6000f;
 
     private static float mass = 200f;
     private static float dragCoefficient = 0.6f;
@@ -19,8 +19,8 @@ public class ACOAgent
     private float steeringIntensity = 0.5f;
 
     private bool enableRecommendations = true;
-    private int recommendationSteps = 10;
-    private float steeringSensitivity = 0.1f;
+    private int recommendationSteps = 5;
+    private float steeringSensitivity = 0.2f;
     private float throttleSensitivity = 0.15f;
     private float testInputStrength = 0.5f;
     private float inputThreshold = 0.3f;
@@ -31,7 +31,7 @@ public class ACOAgent
     private float maxSpeedRatio = 0.8f;
     private bool showTrackDetectionDebug = false;
 
-    private float currentSpeed = 5f;
+    private float currentSpeed = 0f;
     private float currentSpeedKmh = 0f;
     private float currentAcceleration = 0f;
     private float currentTurnAngle = 0f;
@@ -40,7 +40,7 @@ public class ACOAgent
     private bool recommendSlowDown = false;
     private bool recommendTurnLeft = false;
     private bool recommendTurnRight = false;
-    private float trajectoryLength = 2f;
+    private float trajectoryLength = 3f;
 
     // Input values
     private float throttleInput = 0f;
@@ -62,7 +62,7 @@ public class ACOAgent
     private int instanceId;
     public int ID => instanceId;
     Random random;
-    public readonly static float Scale = 0.3f;
+    public readonly static float Scale = 0.5f;
 
     public Vector2 Forward
     {

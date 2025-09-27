@@ -12309,7 +12309,7 @@ MonoBehaviour:
   checkpointCount: 5
   maxRetries: 1
   threadCount: 1
-  agentCount: 1
+  agentCount: 2
 --- !u!4 &591936641
 Transform:
   m_ObjectHideFlags: 0
