@@ -215,15 +215,11 @@ public class ACOTrackMaster : MonoBehaviour
         track = new PolygonTrack(outer.ToArray(), inner.ToArray());
 
         Mesh mesh = Processor3D.GenerateOutputMesh(innerPoints, outerPoints);
-        MeshFilter meshFilter = instance.gameObject.AddComponent<MeshFilter>();
+        MeshFilter meshFilter = instance.gameObject.AddComponent<MeshFilter>() ?? instance.gameObject.GetComponent<MeshFilter>();
         meshFilter.mesh = mesh;
-        MeshRenderer meshRenderer = instance.gameObject.AddComponent<MeshRenderer>();
+        MeshRenderer meshRenderer = instance.gameObject.AddComponent<MeshRenderer>() ?? instance.gameObject.GetComponent<MeshRenderer>();
         meshRenderer.material.color = Color.white;
         instance.GetComponent<MeshFilter>().mesh = mesh;
-
-        // Add mesh collider to the track
-        MeshCollider meshCollider = instance.gameObject.AddComponent<MeshCollider>();
-        meshCollider.sharedMesh = mesh;
 
         // CreateCheckpoints(results);
         CreateRacelineVisualization(results.raceline);

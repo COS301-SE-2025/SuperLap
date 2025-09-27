@@ -62,10 +62,15 @@ public class ACOTrainer : MonoBehaviour
     {
         agentCount = count;
     }
-    
+
     public void SetThreadCount(int count)
     {
         threadCount = count;
+    }
+    
+    public void SetCheckPointCount(int count)
+    {
+        checkpointCount = count;
     }
 
     public List<Vector2> GetNewRaceline()

@@ -11144,6 +11144,7 @@ GameObject:
   m_Component:
   - component: {fileID: 591936641}
   - component: {fileID: 591936640}
+  - component: {fileID: 591936642}
   m_Layer: 0
   m_Name: Trainer
   m_TagString: Untagged
@@ -11163,8 +11164,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc458b22978f77b8db0119ad0975682e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  checkpointCount: 10
-  maxRetries: 5
+  checkpointCount: 5
+  maxRetries: 10
   threadCount: 1
   agentCount: 1
 --- !u!4 &591936641
@@ -11182,6 +11183,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &591936642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 591936639}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 165d99cd9743b753fb815873b4cfb595, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputDirectory: /home/richter/Documents/Varsity/COS 301/SuperLap/Unity/Assets/StreamingAssets/MotoGPTracks
+  processOnStart: 1
+  useAbsolutePath: 1
+  delayBetweenFiles: 2
+  maxConcurrentProcessing: 1
+  agentCount: 1
+  threadCount: 1
+  checkpointCount: 1
+  enableDebugLogs: 1
+  OnBatchStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBatchCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  OnFileProcessed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnProcessingError:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &607754854
 GameObject:
   m_ObjectHideFlags: 0
@@ -27080,6 +27114,7 @@ MonoBehaviour:
   currentTime: 0
   timeSpeed: 0.5
   isRacing: 1
+  simplificationTolerance: 50
   minTrackScale: 0.2
   maxTrackScale: 2
 --- !u!1 &1345279357
@@ -31414,6 +31449,7 @@ MonoBehaviour:
   currentTime: 0
   timeSpeed: 1
   isRacing: 1
+  simplificationTolerance: 50
   minTrackScale: 0.2
   maxTrackScale: 2
 --- !u!114 &1594639264
