@@ -200,6 +200,34 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
+    public void InitializeWithRacelineData(RacelineDisplayData data)
+  {
+    NavigateToRacingLine();
+
+    if (racingLinePage != null)
+    {
+      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      if (racingLineComponent != null)
+      {
+        racingLineComponent.InitializeWithRacelineData(data);
+      }
+    }
+  }
+
+    public void NavigateToRacingLineWithTrackAndSession(string trackName, RacingData session)
+  {
+    NavigateToRacingLine();
+
+    if (racingLinePage != null)
+    {
+      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
+      if (racingLineComponent != null)
+      {
+        racingLineComponent.InitializeWithTrackAndSession(trackName, session);
+      }
+    }
+  }
+
   public void NavigateToRacingLineWithTrack(Track track)
   {
     NavigateToRacingLine();
@@ -212,22 +240,6 @@ public class HomePageNavigation : MonoBehaviour
         racingLineComponent.InitializeWithTrack(track.name);
       }
     }
-  }
-
-  public void NavigateToRacingLineFromAnalysis()
-  {
-    string currentTrackName = "Unknown Track";
-
-    if (analysisPage != null)
-    {
-      AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
-      if (analysisComponent != null)
-      {
-        currentTrackName = analysisComponent.GetCurrentTrackName();
-      }
-    }
-
-    NavigateToRacingLineWithTrack(currentTrackName);
   }
 
   public void NavigateToPage(int pageIndex)

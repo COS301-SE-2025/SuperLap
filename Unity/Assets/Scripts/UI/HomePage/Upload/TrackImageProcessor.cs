@@ -45,7 +45,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   [Header("Output Settings")]
   [SerializeField] private Image outputImage;
-  [SerializeField] private int outputImageWidth = 1024;
+  [SerializeField] private int outputImageWidth = 2560;
   [SerializeField] private int outputImageHeight = 1024;
   [SerializeField] private Color innerBoundaryColor = Color.red;
   [SerializeField] private Color outerBoundaryColor = Color.blue;
@@ -54,7 +54,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   [SerializeField] private int pointCount = 100;
   [SerializeField] private GameObject meshHolder;
 
-
+  private Texture2D originalTexture;
+  private Texture2D scaledTexture;
   //Centerline tracing state
   private bool isTracingMode = false;
   private bool isDrawing = false;
@@ -63,6 +64,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   private float raceDirection = 0f;
   private Texture2D centerlineOverlay;
   private RectTransform previewImageRect;
+
+  private bool isGrayScaleImage = true;
 
   // Processing state
   private bool isProcessing = false;
@@ -450,72 +453,86 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   private IEnumerator LoadImage(string imagePath)
   {
-    if (!File.Exists(imagePath))
-    {
-      Debug.LogError("Selected image file does not exist: " + imagePath);
-      yield break;
-    }
-
-    byte[] imageData = File.ReadAllBytes(imagePath);
-
-    if (loadedTexture != null)
-    {
-      Destroy(loadedTexture);
-    }
-
-    Texture2D tempTexture = new Texture2D(2, 2);
-    bool imageLoaded = tempTexture.LoadImage(imageData);
-
-    if (imageLoaded && previewImage != null)
-    {
-      loadedTexture = ScaleTexture(tempTexture, outputImageWidth, outputImageHeight);
-
-      Destroy(tempTexture);
-
-      Sprite imageSprite = Sprite.Create(
-          loadedTexture,
-          new Rect(0, 0, loadedTexture.width, loadedTexture.height),
-          new Vector2(0.5f, 0.5f)
-      );
-      if (previewImage.sprite != null) previewImage.sprite = null;
-      previewImage.sprite = imageSprite;
-      previewImage.preserveAspect = true;
-      previewImage.gameObject.SetActive(true);
-
-      if (traceButton != null)
+      if (!File.Exists(imagePath))
       {
-        traceButton.gameObject.SetActive(true);
+          Debug.LogError("Selected image file does not exist: " + imagePath);
+          yield break;
       }
 
-      if (resetTraceButton != null)
+      byte[] imageData = File.ReadAllBytes(imagePath);
+
+      // Clean up previous textures
+      if (originalTexture != null) Destroy(originalTexture);
+      if (scaledTexture != null) Destroy(scaledTexture);
+      if (loadedTexture != null) Destroy(loadedTexture);
+
+      Texture2D tempTexture = new Texture2D(2, 2);
+      bool imageLoaded = tempTexture.LoadImage(imageData);
+
+      if (imageLoaded && previewImage != null)
       {
-        resetTraceButton.gameObject.SetActive(true);
+          isGrayScaleImage = CheckIfGrayscale(tempTexture, 1000);
+          
+          // Store the original high-res texture
+          originalTexture = new Texture2D(tempTexture.width, tempTexture.height, TextureFormat.RGBA32, false);
+          originalTexture.SetPixels(tempTexture.GetPixels());
+          originalTexture.Apply();
+          
+          // Create scaled version for UI display only
+          scaledTexture = ScaleTexture(tempTexture, outputImageWidth, outputImageHeight);
+          loadedTexture = scaledTexture; // Use scaled version for UI operations
+          
+          Destroy(tempTexture);
+
+          Sprite imageSprite = Sprite.Create(
+              scaledTexture, // Use scaled texture for UI
+              new Rect(0, 0, scaledTexture.width, scaledTexture.height),
+              new Vector2(0.5f, 0.5f)
+          );
+          
+          if (previewImage.sprite != null) previewImage.sprite = null;
+          previewImage.sprite = imageSprite;
+          previewImage.preserveAspect = true;
+          previewImage.gameObject.SetActive(true);
+
+          // Show UI elements...
+          if (traceButton != null) traceButton.gameObject.SetActive(true);
+          if (resetTraceButton != null) resetTraceButton.gameObject.SetActive(true);
+          if (maskWidthSlider != null) maskWidthSlider.gameObject.SetActive(true);
+          if (maskWidthLabel != null) maskWidthLabel.gameObject.SetActive(true);
+
+          string fileName = Path.GetFileName(imagePath);
+          Debug.Log($"Image loaded successfully: {fileName} (Original: {originalTexture.width}x{originalTexture.height}, Scaled: {scaledTexture.width}x{scaledTexture.height})");
+          OnImageLoaded?.Invoke($"Image loaded: {fileName}");
+
+          ResetCenterline();
+      }
+      else
+      {
+          Debug.LogError("Failed to load image: " + imagePath);
       }
 
-      if (maskWidthSlider != null)
-      {
-        maskWidthSlider.gameObject.SetActive(true);
-      }
-
-      if (maskWidthLabel != null)
-      {
-        maskWidthLabel.gameObject.SetActive(true);
-      }
-
-      string fileName = Path.GetFileName(imagePath);
-      Debug.Log($"Image loaded successfully: {fileName} ({loadedTexture.width}x{loadedTexture.height})");
-      OnImageLoaded?.Invoke($"Image loaded: {fileName}");
-
-      //Reset any existing centerline
-      ResetCenterline();
-    }
-    else
-    {
-      Debug.LogError("Failed to load image: " + imagePath);
-    }
-
-    yield return null;
+      yield return null;
   }
+
+  private bool CheckIfGrayscale(Texture2D tex, int sampleCount = 1000)
+  {
+    Color32[] pixels = tex.GetPixels32();
+    int total = pixels.Length;
+
+    System.Random rnd = new System.Random();
+    for (int i = 0; i < sampleCount; i++)
+    {
+      int idx = rnd.Next(total);
+      var p = pixels[idx];
+      if (p.r != p.g || p.g != p.b)
+        return false; // Found a colored pixel
+    }
+
+    return true; // All sampled pixels were grayscale
+  }
+
+
 
   private Texture2D ScaleTexture(Texture2D source, int targetWidth, int targetHeight)
   {
@@ -566,7 +583,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     if (errorPopUp != null)
     {
       errorPopUp.SetActive(true);
-      StartCoroutine(HideAfterDelay(5f)); // 5 seconds
     }
   }
 
@@ -625,45 +641,97 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     }
 
     yield return null;
-    // Create mask from centerline
-    Texture2D centerlineMask = CreateMaskFromCenterline();
-    yield return null;
-    if (centerlineMask == null)
+
+    // Get texture data on main thread first
+    Color[] originalPixels = originalTexture.GetPixels();
+    int originalWidth = originalTexture.width;
+    int originalHeight = originalTexture.height;
+    int scaledWidth = scaledTexture.width;
+    int scaledHeight = scaledTexture.height;
+
+    // Copy centerline points for thread safety
+    List<Vector2> centerlinePointsCopy = new List<Vector2>(centerlinePoints);
+    int maskWidthCopy = maskWidth;
+
+    // Do heavy processing in background thread with only thread-safe data
+    Task<Color[]> maskTask = Task.Run(() =>
+    {
+        try
+        {
+            // Create mask pixels array
+            Color[] maskPixels = CreateMaskPixelsBackground(
+                centerlinePointsCopy, 
+                maskWidthCopy,
+                originalWidth, 
+                originalHeight,
+                scaledWidth, 
+                scaledHeight
+            );
+
+            if (maskPixels == null) return null;
+
+            // Apply mask to original pixels
+            Color[] maskedPixels = ApplyMaskBackground(originalPixels, maskPixels);
+            
+            return maskedPixels;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Background mask processing failed: {ex.Message}");
+            return null;
+        }
+    });
+
+    // Wait for completion while keeping UI responsive
+    while (!maskTask.IsCompleted)
+    {
+        yield return null;
+    }
+
+    Color[] result = maskTask.Result;
+    if (result == null)
     {
       string errorMsg = "Failed to create centerline mask";
       Debug.LogError(errorMsg);
+      ShowErrorPopUp();
 
-      lastResults = new ProcessingResults
-      {
-        success = false,
-        errorMessage = errorMsg,
-        processingTime = Time.realtimeSinceStartup - startTime
-      };
+        lastResults = new ProcessingResults
+        {
+            success = false,
+            errorMessage = errorMsg,
+            processingTime = Time.realtimeSinceStartup - startTime
+        };
 
       // Re-enable button
       if (processButton != null)
       {
         processButton.interactable = true;
       }
+          if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
 
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
-      isProcessing = false;
-      OnProcessingComplete?.Invoke(lastResults);
-      yield break;
+        isProcessing = false;
+        OnProcessingComplete?.Invoke(lastResults);
+        yield break;
     }
+
+    // Create final texture on main thread (Unity requirement)
+    Texture2D maskedImage = new Texture2D(originalWidth, originalHeight, TextureFormat.RGBA32, false);
+    maskedImage.SetPixels(result);
+    maskedImage.Apply();
     yield return null;
-    // Apply the mask to the original image
-    Texture2D maskedImage = ApplyMaskToImage(loadedTexture, centerlineMask);
-    yield return null;
+
     // Save the masked image to a temporary file
     string tempFilePath = Path.Combine(Application.persistentDataPath, "temp_masked_track.png");
     byte[] maskedImageBytes = maskedImage.EncodeToPNG();
     File.WriteAllBytes(tempFilePath, maskedImageBytes);
     yield return null;
     // Clean up textures we don't need anymore
-    Destroy(centerlineMask);
     Destroy(maskedImage);
 
     yield return null; // Allow UI to update
@@ -675,8 +743,18 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     OnProcessingStarted?.Invoke("Processing boundaries and optimizing raceline...");
 
     // Create a combined task that handles both image processing and PSO
-    List<Vector2> centerlinePointsCopy = new List<Vector2>(centerlinePoints);
     Vector2? startPositionCopy = startPosition;
+
+    //Scale the startPosition to original image size
+    Debug.Log($"Loaded texture size: {loadedTexture.width}x{loadedTexture.height}, Original texture size: {originalTexture.width}x{originalTexture.height}");
+    Debug.Log($"Start position before scaling: {startPositionCopy}");
+    if (startPositionCopy.HasValue && loadedTexture.width != originalTexture.width)
+    {
+      float scaleX = (float)originalTexture.width / loadedTexture.width;
+      float scaleY = (float)originalTexture.height / loadedTexture.height;
+      startPositionCopy = new Vector2(startPositionCopy.Value.x * scaleX, startPositionCopy.Value.y * scaleY);
+    }
+    Debug.Log($"Start position after scaling: {startPositionCopy}");
 
     yield return null;
     // Run both image processing and PSO optimization in background tasks
@@ -685,7 +763,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       try
       {
         // Process the MASKED image to get boundaries
-        ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath);
+        ImageProcessing.TrackBoundaries boundaries = ImageProcessing.ProcessImage(tempFilePath, isGrayScaleImage);
 
         if (!boundaries.success)
         {
@@ -698,7 +776,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           };
         }
 
-        float imageHeight = loadedTexture.height;
+        float imageHeight = originalTexture.height;
         // Flip Y of boundaries to Unity space
         boundaries.innerBoundary = FlipY(boundaries.innerBoundary, imageHeight);
         boundaries.outerBoundary = FlipY(boundaries.outerBoundary, imageHeight);
@@ -752,6 +830,8 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       string errorMsg = "Background processing task failed: " + combinedTask.Exception?.GetBaseException().Message;
       Debug.LogError(errorMsg);
 
+      ShowErrorPopUp();
+
       lastResults = new ProcessingResults
       {
         success = false,
@@ -764,6 +844,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         processButton.interactable = true;
       }
+          if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
 
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
@@ -791,7 +875,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         processButton.interactable = true;
       }
-
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
@@ -822,7 +909,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       {
         processButton.interactable = true;
       }
-
+    if (LoaderPanel != null)
+    {
+      LoaderPanel.SetActive(false);
+    }
       // HIDE LOADING SCREEN HERE
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
@@ -855,6 +945,10 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       // Example: LoadingScreenManager.Instance.HideLoadingScreen();
 
       isProcessing = false;
+      if (LoaderPanel != null)
+      {
+        LoaderPanel.SetActive(false);
+      }
       OnProcessingComplete?.Invoke(lastResults);
       yield break;
     }
@@ -892,15 +986,15 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       processButton.interactable = true;
     }
 
-    ACOTrackMaster.LoadTrack(lastResults);
+    // ACOTrackMaster.LoadTrack(lastResults);
 
-    trainer.StartTraining();
+    // trainer.StartTraining();
 
-    while (!trainer.IsDone())
-    {
-      yield return null;
-    }
-    lastResults.raceline = trainer.GetNewRaceline();
+    // while (!trainer.IsDone())
+    // {
+    //   yield return null;
+    // }
+    // lastResults.raceline = trainer.GetNewRaceline();
 
     // HIDE LOADING SCREEN HERE
     // Example: LoadingScreenManager.Instance.HideLoadingScreen();
@@ -915,6 +1009,137 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
     OnProcessingComplete?.Invoke(lastResults);
   }
+
+  // Background thread methods (add these to your class)
+private Color[] CreateMaskPixelsBackground(List<Vector2> centerlinePointsCopy, int maskWidthCopy,
+    int originalWidth, int originalHeight, int scaledWidth, int scaledHeight)
+{
+    if (centerlinePointsCopy.Count < 100)
+    {
+        return null;
+    }
+
+    // Calculate scale factor
+    float scaleX = (float)originalWidth / scaledWidth;
+    float scaleY = (float)originalHeight / scaledHeight;
+
+    // Create binary mask pixels array
+    Color[] maskPixels = new Color[originalWidth * originalHeight];
+
+    // Initialize to black (background)
+    for (int i = 0; i < maskPixels.Length; i++)
+    {
+        maskPixels[i] = Color.black;
+    }
+
+    // Scale centerline points to original resolution
+    List<Vector2> originalResolutionPoints = new List<Vector2>();
+    foreach (Vector2 point in centerlinePointsCopy)
+    {
+        Vector2 originalPoint = new Vector2(point.x * scaleX, point.y * scaleY);
+        originalResolutionPoints.Add(originalPoint);
+    }
+
+    // Scale mask width proportionally
+    int originalMaskWidth = Mathf.RoundToInt(maskWidthCopy * Mathf.Max(scaleX, scaleY));
+
+    // Draw centerline with scaled width
+    for (int i = 1; i < originalResolutionPoints.Count; i++)
+    {
+        DrawThickLineOnPixelArray(maskPixels, originalWidth, originalHeight,
+            originalResolutionPoints[i - 1], originalResolutionPoints[i], originalMaskWidth);
+    }
+
+    if (originalResolutionPoints.Count > 2)
+    {
+        DrawThickLineOnPixelArray(maskPixels, originalWidth, originalHeight,
+            originalResolutionPoints[originalResolutionPoints.Count - 1], 
+            originalResolutionPoints[0], originalMaskWidth);
+    }
+
+    return maskPixels;
+}
+
+private Color[] ApplyMaskBackground(Color[] sourcePixels, Color[] maskPixels)
+{
+    if (sourcePixels == null || maskPixels == null || sourcePixels.Length != maskPixels.Length)
+    {
+        return null;
+    }
+
+    Color[] resultPixels = new Color[sourcePixels.Length];
+
+    // Apply the mask
+    for (int i = 0; i < sourcePixels.Length; i++)
+    {
+        if (maskPixels[i].grayscale > 0.9f)
+        {
+            resultPixels[i] = sourcePixels[i];
+        }
+        else
+        {
+            resultPixels[i] = Color.white;
+        }
+    }
+
+    return resultPixels;
+}
+
+private void DrawThickLineOnPixelArray(Color[] pixelArray, int width, int height, 
+    Vector2 start, Vector2 end, int thickness)
+{
+    int x1 = Mathf.RoundToInt(start.x);
+    int y1 = Mathf.RoundToInt(start.y);
+    int x2 = Mathf.RoundToInt(end.x);
+    int y2 = Mathf.RoundToInt(end.y);
+
+    // Bresenham's line algorithm
+    int dx = Mathf.Abs(x2 - x1);
+    int dy = Mathf.Abs(y2 - y1);
+    int sx = x1 < x2 ? 1 : -1;
+    int sy = y1 < y2 ? 1 : -1;
+    int err = dx - dy;
+
+    int x = x1;
+    int y = y1;
+    int halfThickness = thickness / 2;
+
+    while (true)
+    {
+        // Draw thick line
+        for (int offsetX = -halfThickness; offsetX <= halfThickness; offsetX++)
+        {
+            for (int offsetY = -halfThickness; offsetY <= halfThickness; offsetY++)
+            {
+                int pixelX = x + offsetX;
+                int pixelY = y + offsetY;
+
+                if (pixelX >= 0 && pixelX < width && pixelY >= 0 && pixelY < height)
+                {
+                    int index = pixelY * width + pixelX;
+                    if (index >= 0 && index < pixelArray.Length)
+                    {
+                        pixelArray[index] = Color.white;
+                    }
+                }
+            }
+        }
+
+        if (x == x2 && y == y2) break;
+
+        int e2 = 2 * err;
+        if (e2 > -dy)
+        {
+            err -= dy;
+            x += sx;
+        }
+        if (e2 < dx)
+        {
+            err += dx;
+            y += sy;
+        }
+    }
+}
 
   // Helper class for background task results
   private class ProcessingTaskResult
@@ -1114,74 +1339,96 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
 
   private Texture2D ApplyMaskToImage(Texture2D sourceImage, Texture2D mask)
   {
-    // Create a new texture for the result
-    Texture2D result = new Texture2D(sourceImage.width, sourceImage.height, TextureFormat.RGBA32, false);
+      // Use the original high-res image as source
+      Texture2D highResSource = originalTexture;
+      
+      // Create result texture at original resolution
+      Texture2D result = new Texture2D(highResSource.width, highResSource.height, TextureFormat.RGBA32, false);
 
-    // Ensure mask is the same size as source
-    if (mask.width != sourceImage.width || mask.height != sourceImage.height)
-    {
-      Debug.LogError("Mask dimensions don't match image dimensions");
-      return null;
-    }
-
-    // Apply the mask - only keep pixels where mask is white
-    for (int y = 0; y < sourceImage.height; y++)
-    {
-      for (int x = 0; x < sourceImage.width; x++)
+      // Ensure mask is the same size as original source
+      if (mask.width != highResSource.width || mask.height != highResSource.height)
       {
-        Color sourcePixel = sourceImage.GetPixel(x, y);
-        Color maskPixel = mask.GetPixel(x, y);
-
-        // If mask pixel is white (or close to white), keep the original pixel
-        // Otherwise, make it transparent
-        if (maskPixel.grayscale > 0.9f) // Adjust threshold as needed
-        {
-          result.SetPixel(x, y, sourcePixel);
-        }
-        else
-        {
-          result.SetPixel(x, y, Color.white);
-        }
+          Debug.LogError($"Mask dimensions ({mask.width}x{mask.height}) don't match original image dimensions ({highResSource.width}x{highResSource.height})");
+          return null;
       }
-    }
 
-    result.Apply();
-    return result;
+      // Apply the mask to the original high-res image
+      for (int y = 0; y < highResSource.height; y++)
+      {
+          for (int x = 0; x < highResSource.width; x++)
+          {
+              Color sourcePixel = highResSource.GetPixel(x, y);
+              Color maskPixel = mask.GetPixel(x, y);
+
+              if (maskPixel.grayscale > 0.9f)
+              {
+                  result.SetPixel(x, y, sourcePixel);
+              }
+              else
+              {
+                  result.SetPixel(x, y, Color.white);
+              }
+          }
+      }
+
+      result.Apply();
+      return result;
   }
 
   private Texture2D CreateMaskFromCenterline()
   {
-    if (loadedTexture == null)
-    {
-      Debug.LogError("Need at least 100 centerline points and a loaded texture to create mask");
-      return null;
-    }
+      if (originalTexture == null || scaledTexture == null)
+      {
+          Debug.LogError("No original texture available");
+          return null;
+      }
 
-    //Create binary mask
-    Texture2D binaryMask = new Texture2D(loadedTexture.width, loadedTexture.height);
-    Color[] maskPixels = new Color[loadedTexture.width * loadedTexture.height];
+      if (centerlinePoints.Count < 100)
+      {
+          Debug.LogError("Need at least 100 centerline points to create mask");
+          return null;
+      }
 
-    //Initialize to black (background)
-    for (int i = 0; i < maskPixels.Length; i++)
-    {
-      maskPixels[i] = Color.black;
-    }
+      // Calculate scale factor between scaled UI texture and original texture
+      float scaleX = (float)originalTexture.width / scaledTexture.width;
+      float scaleY = (float)originalTexture.height / scaledTexture.height;
 
-    binaryMask.SetPixels(maskPixels);
+      // Create binary mask at ORIGINAL resolution
+      Texture2D binaryMask = new Texture2D(originalTexture.width, originalTexture.height);
+      Color[] maskPixels = new Color[originalTexture.width * originalTexture.height];
 
-    //Draw centerline with specified width
-    for (int i = 1; i < centerlinePoints.Count; i++)
-    {
-      DrawThickLineOnMask(binaryMask, centerlinePoints[i - 1], centerlinePoints[i], maskWidth);
-    }
+      // Initialize to black (background)
+      for (int i = 0; i < maskPixels.Length; i++)
+      {
+          maskPixels[i] = Color.black;
+      }
 
-    if (centerlinePoints.Count > 2)
-    {
-      DrawThickLineOnMask(binaryMask, centerlinePoints[centerlinePoints.Count - 1], centerlinePoints[0], maskWidth);
-    }
+      binaryMask.SetPixels(maskPixels);
 
-    binaryMask.Apply();
-    return binaryMask;
+      // Scale centerline points from UI coordinates to original resolution
+      List<Vector2> originalResolutionPoints = new List<Vector2>();
+      foreach (Vector2 point in centerlinePoints)
+      {
+          Vector2 originalPoint = new Vector2(point.x * scaleX, point.y * scaleY);
+          originalResolutionPoints.Add(originalPoint);
+      }
+
+      // Scale mask width proportionally
+      int originalMaskWidth = Mathf.RoundToInt(maskWidth * Mathf.Max(scaleX, scaleY));
+
+      // Draw centerline with scaled width at original resolution
+      for (int i = 1; i < originalResolutionPoints.Count; i++)
+      {
+          DrawThickLineOnMask(binaryMask, originalResolutionPoints[i - 1], originalResolutionPoints[i], originalMaskWidth);
+      }
+
+      if (originalResolutionPoints.Count > 2)
+      {
+          DrawThickLineOnMask(binaryMask, originalResolutionPoints[originalResolutionPoints.Count - 1], originalResolutionPoints[0], originalMaskWidth);
+      }
+
+      binaryMask.Apply();
+      return binaryMask;
   }
   private void DrawThickLineOnMask(Texture2D mask, Vector2 start, Vector2 end, int thickness)
   {
@@ -1288,7 +1535,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       if (racingLineComponent != null)
       {
         // Send the processed data to the racing line display
-        bool ACOenabled = true;
+        bool ACOenabled = false;
         racingLineComponent.DisplayRacelineData(racelineData, ACOenabled);
         Debug.Log($"Successfully sent processed track data to racing line page");
       }
@@ -1559,20 +1806,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   }
 
   private void OnDestroy()
-  {
-    if (loadedTexture != null)
-    {
-      Destroy(loadedTexture);
-    }
-
-    if (outputTexture != null)
-    {
-      Destroy(outputTexture);
-    }
-
-    if (centerlineOverlay != null)
-    {
-      Destroy(centerlineOverlay);
-    }
+  { 
+    if (originalTexture != null) Destroy(originalTexture);
+    if (scaledTexture != null) Destroy(scaledTexture);
+    if (loadedTexture != null) Destroy(loadedTexture);
+    if (outputTexture != null) Destroy(outputTexture);
+    if (centerlineOverlay != null) Destroy(centerlineOverlay);
   }
 }

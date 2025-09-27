@@ -67,6 +67,15 @@ Unity/Assets/StreamingAssets/TrackProcessor.exe
 
 # Ignore Unit Test files
 Unity/TestResults/
+
+# Ignore personal files
+Backend/ImageProcessing/todo
+Backend/ImageProcessing/old.txt
+Backend/ImageProcessing/CNNoutput
+Backend/ImageProcessing/TEST/data
+
+*.png
+*.Zone.Identifier
 /Backend/ImageProcessing/TEST/data
 Unity/Assets/StreamingAssets/TrackProcessor.exe
 Unity/Assets/StreamingAssets/TrackProcessor

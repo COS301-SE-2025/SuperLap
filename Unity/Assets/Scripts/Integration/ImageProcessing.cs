@@ -17,7 +17,7 @@ public class ImageProcessing
     public string errorMessage;
   }
 
-  public static TrackBoundaries ProcessImage(string imagePath)
+  public static TrackBoundaries ProcessImage(string imagePath, bool isGrayScale = true)
   {
     Debug.Log($"Processing image: {imagePath}");
     var result = new TrackBoundaries { success = false };
@@ -33,16 +33,21 @@ public class ImageProcessing
 
       // Get the path to the executable
       string exeName;
-      if (Application.platform == RuntimePlatform.WindowsPlayer ||
-          Application.platform == RuntimePlatform.WindowsEditor)
+
+      if (isGrayScale)
       {
-        exeName = "TrackProcessor.exe";
+        exeName = "TrackProcessor";
       }
       else
       {
-        exeName = "TrackProcessor"; // Linux / macOS (no .exe)
+        exeName = "CNN/CNN";
       }
 
+      if (Application.platform == RuntimePlatform.WindowsPlayer ||
+          Application.platform == RuntimePlatform.WindowsEditor)
+      {
+        exeName += ".exe";
+      }
       string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
       if (!File.Exists(exePath))
       {
@@ -64,7 +69,8 @@ public class ImageProcessing
         UseShellExecute = false,
         RedirectStandardOutput = true,
         RedirectStandardError = true,
-        CreateNoWindow = true
+        CreateNoWindow = true,
+        WorkingDirectory = Path.GetDirectoryName(exePath)
       };
 
       // Execute the process
@@ -98,7 +104,6 @@ public class ImageProcessing
 
         // Read the output file
         string jsonContent = File.ReadAllText(outputFilePath);
-        Debug.Log($"Read output file with {jsonContent.Length} characters");
 
         // Parse the results
         result = ParseTrackBoundaries(jsonContent);

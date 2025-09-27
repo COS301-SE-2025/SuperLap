@@ -30,6 +30,9 @@ namespace MotoGPTelemetry
     private UdpClient udp;
     private CancellationTokenSource cts;
     private Task listenerTask;
+    private string Model;
+    private string startTrack;
+    private int lastLapNo = 0;
     public List<RecordedData> PlayerPath;
 
     public TelemetryRecorder(int port = 7100)
@@ -166,7 +169,28 @@ namespace MotoGPTelemetry
       }
       return count > 0 ? totalSpeed / count : 0f;
     }
-    
+
+    public float getTopSpeed(int lapIndex)
+    {
+        float topSpeed = 0f;
+        for (int i = 0; i < PlayerPath.Count; i++)
+        {
+            if (PlayerPath[i].CurrentLap == lapIndex)
+            {
+                if (PlayerPath[i].Speed > topSpeed)
+                {
+                    topSpeed = PlayerPath[i].Speed;
+                }
+            }
+        }
+        return topSpeed;
+    }
+
+
+    public string getModel()
+    {
+      return Model;
+    }
 
     private void Listen(CancellationToken token)
     {
@@ -185,11 +209,43 @@ namespace MotoGPTelemetry
             float speedKmh = (frontKmh + rearKmh) / 2f;
             if (packet.CurrentLap == 255 || speedKmh < 2f) // invalid lap or stationary
             {
+              if (packet.CurrentLap == 255 && startTrack == packet.Track){ 
+                lastLapNo = 0;
+                PlayerPath.Clear();
+                Model = null;
+              }
+              
               continue;
             }
             else
             {
               Debug.Log($"Last Lap Time: {packet.LastLapTime}, Lap: {packet.CurrentLap}, Speed: {speedKmh}, X: {packet.CoordinatesX}, Y: {packet.CoordinatesY}");
+              if (string.IsNullOrEmpty(startTrack))
+              {
+                startTrack = packet.Track;
+              }
+              else if (startTrack != packet.Track)
+              {
+                Debug.LogWarning($"Track changed from {startTrack} to {packet.Track}. Stopping recording.");
+                cts.Cancel();
+                break;
+              }
+              if (packet.CurrentLap == lastLapNo + 1 || lastLapNo == 0)
+              {
+                lastLapNo = packet.CurrentLap;
+              }
+              else if (packet.CurrentLap != lastLapNo)
+              {
+                Debug.LogWarning($"Lap number jumped from {lastLapNo} to {packet.CurrentLap}. Ignoring this packet.");
+                lastLapNo = 0;
+                PlayerPath.Clear();
+                startTrack = packet.Track;
+                Model = null;
+              }
+              if (string.IsNullOrEmpty(Model))
+              {
+                Model = packet.Model;
+              }
               RecordedData record = new RecordedData
               {
                 LastLapTime = packet.LastLapTime,
