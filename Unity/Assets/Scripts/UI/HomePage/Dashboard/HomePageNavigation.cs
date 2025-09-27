@@ -244,56 +244,6 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-  // public void NavigateToAnalysisWithTrack(string trackName)
-  // {
-  //   NavigateToAnalysis();
-
-  //   if (analysisPage != null)
-  //   {
-  //     StartCoroutine(InitializeAnalysisWithTrackDelayed(trackName));
-  //   }
-  // }
-
-  // private IEnumerator InitializeAnalysisWithTrackDelayed(string trackName)
-  // {
-  //   yield return null;
-
-  //   AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>(true);
-  //   if (analysisComponent != null)
-  //   {
-  //     analysisComponent.DisplayTrackByName(trackName);
-  //   }
-  // }
-
-  // public void NavigateToAnalysisWithTrackIndex(int trackIndex)
-  // {
-  //   NavigateToAnalysis();
-
-  //   if (analysisPage != null)
-  //   {
-  //     AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
-  //     if (analysisComponent != null)
-  //     {
-  //       analysisComponent.DisplayTrackByIndex(trackIndex);
-  //     }
-  //   }
-  //   activePageIndex = 2;
-  // }
-
-  // public void NavigateToAnalysisWithTrack(Track track)
-  // {
-  //   NavigateToAnalysis();
-
-  //   if (analysisPage != null)
-  //   {
-  //     AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
-  //     if (analysisComponent != null)
-  //     {
-  //       analysisComponent.DisplaySpecificTrack(track);
-  //     }
-  //   }
-  // }
-
   private void UpdateActivePagePosition()
   {
     hideSupportPopups();
@@ -390,9 +340,9 @@ public class HomePageNavigation : MonoBehaviour
 
   private (int start, int end) GetTooltipRangeForPage()
   {
-    if (dashboardPage != null && dashboardPage.activeSelf) return (0, 2);
-    if (galleryPage != null && galleryPage.activeSelf) return (3, 5);
-    if (analysisPage != null && analysisPage.activeSelf) return (6, 8);
+    if (dashboardPage != null && dashboardPage.activeSelf) return (0, 3);
+    if (galleryPage != null && galleryPage.activeSelf) return (4, 4);
+    if (analysisPage != null && analysisPage.activeSelf) return (5, 8);
     if (teamPage != null && teamPage.activeSelf) return (9, 11);
     if (supportPage != null && supportPage.activeSelf) return (12, 14);
     if (motoGPPage != null && motoGPPage.activeSelf) return (15, 17);

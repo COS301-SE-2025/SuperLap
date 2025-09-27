@@ -36,7 +36,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   [SerializeField] private Color innerBoundaryColor = Color.red;
   [SerializeField] private Color roadColor = new Color(0.2f, 0.2f, 0.2f, 1);
   [SerializeField] private Color racelineColor = Color.green;
-  [SerializeField] private Color playerRaceLineColor = new Color(0, 0.5f, 1, 1);
+  [SerializeField] private Color playerRaceLineColor = Color.blue;
   [SerializeField] private Color deviationSectionColor = new Color(1, 0.4f, 0, 1);
 
   [Header("Track Controls")]

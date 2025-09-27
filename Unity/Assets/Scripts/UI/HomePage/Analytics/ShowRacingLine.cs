@@ -105,10 +105,11 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private float playerLineWidth = 1f;
 
   [Header("Track Colors")]
-  [SerializeField] private Color outerBoundaryColor = Color.blue;
-  [SerializeField] private Color innerBoundaryColor = Color.red;
-  [SerializeField] private Color roadColor = new Color(0.0f, 0.0f, 0.0f, 1);
+  [SerializeField] private Color outerBoundaryColor = Color.white;
+  [SerializeField] private Color innerBoundaryColor = Color.white;
+  [SerializeField] private Color roadColor = new Color(0.2f, 0.2f, 0.2f, 1);
   [SerializeField] private Color racelineColor = Color.green;
+  [SerializeField] private Color playerlineColor = Color.blue;
 
   [Header("Track Controls")]
   [SerializeField] private bool showOuterBoundary = true;
@@ -234,10 +235,10 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       ToggleFollowCar();
     }
 
-    if (Input.GetKeyDown(KeyCode.F))
-    {
-      ToggleShowBreakPoints();
-    }
+    // if (Input.GetKeyDown(KeyCode.F))
+    // {
+    //   ToggleShowBreakPoints();
+    // }
 
     if (Input.GetKey(KeyCode.Tab))
     {
@@ -251,6 +252,8 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
   void Start()
   {
+    if(controlPanel != null ) controlPanel.SetActive(false);
+
     if (!zoomContainer && trackContainer) zoomContainer = trackContainer.parent as RectTransform;
     if (!viewportRect) viewportRect = GetComponentInParent<Canvas>().GetComponent<RectTransform>();
     initialPosition = zoomContainer.anchoredPosition;
@@ -505,23 +508,23 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     goingToCar = followCar;
   }
 
-  private void ToggleShowBreakPoints()
-  {
-    showBreakPoints = !showBreakPoints;
-    showRaceLine = !showBreakPoints;
+  // private void ToggleShowBreakPoints()
+  // {
+  //   showBreakPoints = !showBreakPoints;
+  //   showRaceLine = !showBreakPoints;
 
-    foreach (var kvp in lineRenderers)
-    {
-      if (kvp.Key.StartsWith("ReplaySegment"))
-      {
-        kvp.Value.enabled = showBreakPoints;
-      }
-      else if (kvp.Key.StartsWith("Raceline"))
-      {
-        kvp.Value.enabled = showRaceLine;
-      }
-    }
-  }
+  //   foreach (var kvp in lineRenderers)
+  //   {
+  //     if (kvp.Key.StartsWith("ReplaySegment"))
+  //     {
+  //       kvp.Value.enabled = showBreakPoints;
+  //     }
+  //     else if (kvp.Key.StartsWith("Raceline"))
+  //     {
+  //       kvp.Value.enabled = showRaceLine;
+  //     }
+  //   }
+  // }
 
   private void ConstrainToViewport()
   {

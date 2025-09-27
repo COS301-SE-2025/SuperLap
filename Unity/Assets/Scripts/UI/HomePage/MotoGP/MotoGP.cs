@@ -230,7 +230,7 @@ public class MotoGP : MonoBehaviour
     dropdown.options.Clear();
     foreach (int lapIndex in lapIndices)
     {
-      dropdown.options.Add(new DropdownTransition.OptionData((lapIndex + 1).ToString()));
+      dropdown.options.Add(new DropdownTransition.OptionData((lapIndex).ToString()));
       lapIndexList.Add(lapIndex);
     }
 
