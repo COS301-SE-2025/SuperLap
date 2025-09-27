@@ -136,6 +136,10 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private float currentTime = 0f;
   [SerializeField] private float timeSpeed = 1f;
   [SerializeField] private bool isRacing = false;
+
+  [Header("Simplification Settings")]
+  [SerializeField] private float simplificationTolerance = 50.0f;
+
   private RectTransform carCursor;
   private UILineRenderer trailLineRenderer;
   private List<Vector2> trailPositions = new List<Vector2>();
@@ -580,10 +584,14 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
       replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
 
-      // for Sean: output the data
-      replay.SaveBinFileSimplified(50.0f);
+      // Get simplified segments for visualization
+      var originalSegments = replay.GetColoredSegments();
+      var simplifiedSegments = replay.SimplifyColoredSegments(originalSegments, simplificationTolerance);
 
-      CreateBreakingPoints(replay.GetReplays(), racelineWidth);
+      // for Sean: output the data
+      replay.SaveBinFileSimplified(simplificationTolerance);
+
+      CreateBreakingPointsFromSegments(simplifiedSegments, racelineWidth);
     }
 
     if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
@@ -664,6 +672,59 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return transformed - trackContainer.rect.size * 0.5f;
   }
 
+
+  private void CreateBreakingPointsFromSegments(List<(Vector2 start, Vector2 end, Color color)> segments, float width)
+  {
+    if (segments == null || segments.Count == 0) return;
+
+    (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(currentTrackData);
+    float scale = CalculateScale(bounds.size);
+    Vector2 offset = CalculateOffset(bounds.size, scale);
+
+    UILineRenderer currentLine = null;
+    List<Vector2> currentPoints = null;
+    Color currentColor = Color.clear;
+
+    int count = 0;
+
+    foreach (var seg in segments)
+    {
+      if (currentLine == null || seg.color != currentColor)
+      {
+        if (currentLine != null && currentPoints != null)
+        {
+          currentLine.Points = currentPoints.ToArray();
+        }
+
+        currentLine = new GameObject($"ReplaySegment_{count}", typeof(RectTransform), typeof(UILineRenderer))
+            .GetComponent<UILineRenderer>();
+
+        currentLine.transform.SetParent(trackContainer, false);
+        currentLine.material = lineMaterial;
+        currentLine.color = seg.color;
+        currentLine.LineThickness = width / currentZoom;
+
+        currentPoints = new List<Vector2>();
+        currentColor = seg.color;
+
+        lineRenderers[$"ReplaySegment_{count++}"] = currentLine;
+        
+        // Add the first point of this color segment
+        Vector2 startPoint = TransformPoint(seg.start, bounds.min, scale, offset);
+        currentPoints.Add(startPoint);
+      }
+
+      // Add the end point of each segment
+      Vector2 endPoint = TransformPoint(seg.end, bounds.min, scale, offset);
+      currentPoints.Add(endPoint);
+    }
+
+    // Finalize the last line renderer
+    if (currentLine != null && currentPoints != null && currentPoints.Count >= 2)
+    {
+      currentLine.Points = currentPoints.ToArray();
+    }
+  }
 
   private void CreateBreakingPoints(List<ReplayState> replays, float width)
   {
