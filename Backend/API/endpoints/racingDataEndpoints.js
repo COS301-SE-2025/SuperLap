@@ -136,6 +136,9 @@ module.exports = function (db) {
       const {
         trackName,
         userName,
+        fastestLapTime,
+        averageSpeed,
+        topSpeed,
         vehicleUsed,
         description
       } = req.body;
@@ -150,6 +153,9 @@ module.exports = function (db) {
         _id: recordId,
         trackName: trackName || 'Unknown',
         userName: userName || 'Anonymous',
+        fastestLapTime: fastestLapTime || null,
+        averageSpeed: averageSpeed || null,
+        topSpeed: topSpeed || null,
         vehicleUsed: vehicleUsed || 'Unknown',
         description: description || '',
         fileName: req.file.originalname,
@@ -179,7 +185,9 @@ module.exports = function (db) {
       const {
         trackName,
         userName,
-        lapTime,
+        fastestLapTime,
+        topSpeed,
+        averageSpeed,
         vehicleUsed,
         description,
         fileName,
@@ -203,7 +211,9 @@ module.exports = function (db) {
         _id: recordId,
         trackName: trackName || 'Unknown',
         userName: userName || 'Anonymous',
-        lapTime: lapTime || null,
+        fastestLapTime: fastestLapTime || null,
+        topSpeed: topSpeed || null,
+        averageSpeed: averageSpeed || null,
         vehicleUsed: vehicleUsed || 'Unknown',
         description: description || '',
         fileName: fileName || 'racing_data.csv',
@@ -269,7 +279,7 @@ module.exports = function (db) {
         query = { _id: dataId };
       }
       
-      const allowedUpdates = ['trackName', 'userName', 'vehicleUsed', 'description', 'lapTime'];
+      const allowedUpdates = ['trackName', 'userName', 'vehicleUsed', 'description', 'fastestLapTime'];
       const updateData = {};
 
       // Only allow specific fields to be updated
