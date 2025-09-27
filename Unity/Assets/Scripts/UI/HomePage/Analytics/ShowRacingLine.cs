@@ -9,6 +9,7 @@ using System.IO;
 using System.Collections;
 using System;
 using System.Globalization;
+using RainbowArt.CleanFlatUI;
 
 [System.Serializable]
 public class RacelineDisplayData
@@ -101,6 +102,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private float outerBoundaryWidth = 1f;
   [SerializeField] private float innerBoundaryWidth = 1f;
   [SerializeField] private float racelineWidth = 1f;
+  [SerializeField] private float playerLineWidth = 1f;
 
   [Header("Track Colors")]
   [SerializeField] private Color outerBoundaryColor = Color.blue;
@@ -139,6 +141,15 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private float currentTime = 0f;
   [SerializeField] private float timeSpeed = 1f;
   [SerializeField] private bool isRacing = false;
+
+
+  [Header("UI Controls")]
+  [SerializeField] private GameObject controlPanel;
+  [SerializeField] private DropdownTransition dropdown;
+
+
+  private RacingData activeSession;
+  private List<int> availableLapIndices = new List<int>();
   private RectTransform carCursor;
   private UILineRenderer trailLineRenderer;
   private List<Vector2> trailPositions = new List<Vector2>();
@@ -229,6 +240,15 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     if (Input.GetKeyDown(KeyCode.F))
     {
       ToggleShowBreakPoints();
+    }
+
+    if (Input.GetKey(KeyCode.Tab))
+    {
+      if(controlPanel != null ) controlPanel.SetActive(true);
+    }
+    else
+    {
+      if(controlPanel != null ) controlPanel.SetActive(false);
     }
   }
 
@@ -472,6 +492,16 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
   }
 
+  public void changePlayerLineWidth(float newWidth)
+  {
+    playerLineWidth = newWidth;
+
+    if (lineRenderers.TryGetValue("Playerline", out UILineRenderer renderer))
+    {
+      renderer.LineThickness = playerLineWidth / currentZoom;
+    }
+  }
+
   private void ToggleFollowCar()
   {
     followCar = !followCar;
@@ -526,7 +556,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         "OuterBoundary" => outerBoundaryWidth,
         "InnerBoundary" => innerBoundaryWidth,
         "Raceline" => racelineWidth,
-        "Playerline" => racelineWidth,
+        "Playerline" => playerLineWidth,
         _ when kvp.Key.StartsWith("ReplaySegment") => racelineWidth,
         _ => 1f
       };
@@ -605,7 +635,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (showPlayerLine && trackData.PlayerLine != null && trackData.PlayerLine.Count > 1)
     {
-      CreateLineRenderer("PlayerLine", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
+      CreateLineRenderer("Playerline", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
     }
 
     panOffset = Vector2.zero;
@@ -832,22 +862,50 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
   }
 
-  public void InitializeWithRacelineData(RacelineDisplayData data)
+  public void InitializeWithSession(RacingData session)
   {
-    if (data == null)
+    if (session == null || string.IsNullOrEmpty(session.csvData))
     {
-      Debug.LogWarning("Raceline data is null. Cannot initialize preview.");
+      Debug.LogWarning("InitializeWithSession called with null or invalid session.");
       return;
     }
 
-    if (!isInitialized)
+    activeSession = session;
+
+    List<int> lapIndices = RacingDataUtils.GetLapIndices(session.csvData);
+    if (lapIndices.Count == 0)
     {
-      pendingTrackData = data;
+      Debug.LogWarning("No laps found in session CSV.");
       return;
     }
 
-    StartCoroutine(DisplayRacelineDataNextFrame(data));
+    // Clear and repopulate dropdown
+    if (dropdown != null)
+    {
+      dropdown.options.Clear();
+
+      foreach (int lapIndex in lapIndices)
+      {
+        dropdown.options.Add(new DropdownTransition.OptionData($"Lap {lapIndex}"));
+      }
+
+      dropdown.value = 0;
+      dropdown.gameObject.SetActive(true);
+      dropdown.RefreshShownValue();
+    }
+
+    LoadLap(lapIndices[0]);
   }
+
+  public void LoadLap(int lapIndex)
+  {
+    RacelineDisplayData trackData = RacingDataUtils.GetTrackDataForLap(activeSession.csvData, lapIndex);
+    if (trackData != null)
+    {
+      StartCoroutine(DisplayRacelineDataNextFrame(trackData));
+    }
+  }
+
 
   private IEnumerator DisplayRacelineDataNextFrame(RacelineDisplayData data)
   {

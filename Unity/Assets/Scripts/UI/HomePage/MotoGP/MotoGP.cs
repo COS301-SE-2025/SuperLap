@@ -19,6 +19,7 @@ public class MotoGP : MonoBehaviour
   [SerializeField] private TextMeshProUGUI recordButtonText;
   [SerializeField] private GameObject confirmationPanel;
   [SerializeField] private TMP_InputField trackNameInput;
+  [SerializeField] private GameObject SaveOptionsDialog;
   bool isRecording = false;
   bool isWaitingForConfirmation = false;
   private MotoGPTelemetry.TelemetryRecorder recorder;
@@ -48,6 +49,7 @@ public class MotoGP : MonoBehaviour
     }
 
     if (confirmationPanel != null) confirmationPanel.SetActive(false);
+    if (SaveOptionsDialog != null) SaveOptionsDialog.SetActive(false);
   }
   private ExtensionFilter[] extensionFilters = new ExtensionFilter[]
   {
@@ -143,7 +145,7 @@ public class MotoGP : MonoBehaviour
 
     if (playerline == null)
     {
-      Debug.LogError("PlayerLine data could not be generated for selected lap.");
+      Debug.LogWarning("PlayerLine data could not be generated for selected lap.");
       return;
     }
 
@@ -154,7 +156,7 @@ public class MotoGP : MonoBehaviour
     }
     else
     {
-      Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
+      Debug.LogWarning("ShowMotoGP component not found on previewImage GameObject");
     }
 
     if (controlPanel != null) controlPanel.SetActive(true);
@@ -165,7 +167,7 @@ public class MotoGP : MonoBehaviour
   {
     if (!File.Exists(filePath))
     {
-      Debug.LogError("File does not exist: " + filePath);
+      Debug.LogWarning("File does not exist: " + filePath);
       return;
     }
 
@@ -173,7 +175,7 @@ public class MotoGP : MonoBehaviour
 
     if (lines.Length < 2)
     {
-      Debug.LogError("CSV file is empty or missing data rows.");
+      Debug.LogWarning("CSV file is empty or missing data rows.");
       return;
     }
 
@@ -182,7 +184,7 @@ public class MotoGP : MonoBehaviour
 
     if (lapIndexCol == -1)
     {
-      Debug.LogError("CSV does not contain a 'lapIndex' column.");
+      Debug.LogWarning("CSV does not contain a 'lapIndex' column.");
       return;
     }
 
@@ -237,10 +239,6 @@ public class MotoGP : MonoBehaviour
     dropdown.gameObject.SetActive(true);
     dropdown.RefreshShownValue();
 
-    if (uploadButton != null)
-    {
-      uploadButton.SetActive(true);
-    }
     if (DropDownText != null)
     {
       DropDownText.SetActive(true);
@@ -255,7 +253,7 @@ public class MotoGP : MonoBehaviour
 
     if (playerline == null)
     {
-      Debug.LogError("PlayerLine data could not be generated.");
+      Debug.LogWarning("PlayerLine data could not be generated.");
       return;
     }
 
@@ -266,25 +264,82 @@ public class MotoGP : MonoBehaviour
     }
     else
     {
-      Debug.LogError("ShowMotoGP component not found on previewImage GameObject");
+      Debug.LogWarning("ShowMotoGP component not found on previewImage GameObject");
     }
     if (controlPanel != null)
     {
       controlPanel.SetActive(true);
     }
   }
+
+  public void SaveSession()
+  {
+    if (recorder == null || recorder.PlayerPath.Count == 0)
+    {
+      Debug.LogWarning("No recorded session to save.");
+      return;
+    }
+
+    if (SaveOptionsDialog != null)
+      SaveOptionsDialog.SetActive(true);
+  }
+
+  public void OnSaveLocally()
+  {
+    if (SaveOptionsDialog != null)
+      SaveOptionsDialog.SetActive(false);
+
+    // Open a save dialog letting the user choose any location
+    string filePath = StandaloneFileBrowser.SaveFilePanel(
+        "Save CSV",          // Dialog title
+        "",                  // Default path
+        "MotoGPSession.csv", // Default file name
+        "csv"                // Extension
+    );
+
+    if (!string.IsNullOrEmpty(filePath))
+    {
+      recorder.SaveToCSV(filePath);
+      Debug.Log("Session saved locally at: " + filePath);
+    }
+    else
+    {
+      Debug.Log("Save canceled by user.");
+      CloseAllConfirmationPanels();
+    }
+  }
+
+  public void CloseAllConfirmationPanels()
+  {
+    if (confirmationPanel != null)
+      confirmationPanel.SetActive(false);
+
+    if (SaveOptionsDialog != null)
+      SaveOptionsDialog.SetActive(false);
+
+    Debug.Log("All confirmation panels closed.");
+  }
+
+
+  public void OnSaveToCloud()
+  {
+    if (SaveOptionsDialog != null)
+      SaveOptionsDialog.SetActive(false);
+
+    UploadData();
+  }
+
   public void UploadData()
   {
-    if (recorder != null && recorder.PlayerPath.Count > 0)
+    if (recorder == null || recorder.PlayerPath.Count == 0 || !string.IsNullOrEmpty(filePath))
     {
-      recorder.SaveToCSV();
-      string folder = Application.streamingAssetsPath;
-      string csvPath = Path.Combine(folder, "lastSession.csv");
-      filePath = csvPath;
-    }
-    if (string.IsNullOrEmpty(filePath))
-    {
-      Debug.LogError("No CSV file selected to upload.");
+      if (!string.IsNullOrEmpty(filePath))
+      {
+        Debug.LogWarning("CSV files cannot be uploaded to the cloud because they contain limited data.");
+        return;
+      }
+
+      Debug.LogWarning("No recorded session available to upload.");
       return;
     }
 
@@ -295,15 +350,8 @@ public class MotoGP : MonoBehaviour
       if (trackNameInput != null)
       {
         string defaultName = GetDefaultTrackName();
-
-        // Set placeholder text
         var placeholder = trackNameInput.placeholder as TMP_Text;
-        if (placeholder != null)
-        {
-          placeholder.text = defaultName;
-        }
-
-        // Clear input so user can type if they want
+        if (placeholder != null) placeholder.text = defaultName;
         trackNameInput.text = "";
       }
     }
@@ -366,7 +414,7 @@ public class MotoGP : MonoBehaviour
     }
     else
     {
-      Debug.LogError($"Upload failed: {message}");
+      Debug.LogWarning($"Upload failed: {message}");
     }
   }
 
@@ -380,12 +428,10 @@ public class MotoGP : MonoBehaviour
   {
     string trackId = "UnknownTrack";
 
-    // If recording session exists
     if (recorder != null && recorder.PlayerPath.Count > 0)
     {
       trackId = recorder.PlayerPath[0].TrackId;
     }
-    // Else try CSV
     else if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
     {
       string[] lines = File.ReadAllLines(filePath);

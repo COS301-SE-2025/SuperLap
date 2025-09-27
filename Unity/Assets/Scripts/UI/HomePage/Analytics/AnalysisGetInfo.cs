@@ -285,28 +285,19 @@ public class AnalysisGetInfo : MonoBehaviour
     byte[] csvBytes = System.Convert.FromBase64String(session.csvData);
     string csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
     File.WriteAllText(savePath, csvText);
-    CSVToBinConverter.LoadCSV.PlayerLine csvdata = CSVToBinConverter.LoadCSV.Convert(savePath, 1);
 
-    RacelineDisplayData trackData = new RacelineDisplayData
-    {
-      InnerBoundary = ConvertToUnityVector2(csvdata.InnerBoundary),
-      OuterBoundary = ConvertToUnityVector2(csvdata.OuterBoundary),
-      Raceline = ConvertToUnityVector2(csvdata.Raceline),
-      PlayerLine = ConvertToUnityVector2(csvdata.PlayerPath),
-    };
-    FinalTrackData = trackData;
     if (racingLineButton != null) racingLineButton.interactable = true;
     if (racingLinePreview != null)
     {
       racingLinePreview.gameObject.SetActive(true);
-      racingLinePreview.InitializeWithRacelineData(trackData);
+      racingLinePreview.InitializeWithSession(session);
     }
 
     if (sessionTotalLapsText != null)
       sessionTotalLapsText.text = EstimateLapsFromCsv(session.csvData).ToString();
   }
 
-    List<UnityEngine.Vector2> ConvertToUnityVector2(List<System.Numerics.Vector2> list)
+  List<UnityEngine.Vector2> ConvertToUnityVector2(List<System.Numerics.Vector2> list)
   {
     return list.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList();
   }
@@ -414,8 +405,84 @@ public class AnalysisGetInfo : MonoBehaviour
   public void OpenRacingLineForCurrentTrack()
   {
     if (homePageNavigation != null)
-      homePageNavigation.InitializeWithRacelineData(FinalTrackData);
+      homePageNavigation.InitializeWithSession(selectedSession);
   }
+  
 
   #endregion
+}
+
+public static class RacingDataUtils
+{
+    /// <summary>
+    /// Extracts all lap indices from the base64 CSV string.
+    /// </summary>
+    public static List<int> GetLapIndices(string base64Csv)
+    {
+        var indices = new HashSet<int>();
+
+        if (string.IsNullOrEmpty(base64Csv))
+            return indices.ToList();
+
+        try
+        {
+            byte[] bytes = Convert.FromBase64String(base64Csv);
+            string text = Encoding.UTF8.GetString(bytes);
+            string[] lines = text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 1; i < lines.Length; i++) // skip header
+            {
+                string[] cols = lines[i].Split('\t');
+                if (cols.Length < 2) continue;
+
+                if (int.TryParse(cols[1], out int lapIndex))
+                    indices.Add(lapIndex);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[RacingDataUtils] Failed to extract lap indices: {ex.Message}");
+        }
+
+        return indices.ToList();
+    }
+
+    /// <summary>
+    /// Loads RacelineDisplayData for a given lap index.
+    /// </summary>
+    public static RacelineDisplayData GetTrackDataForLap(string base64Csv, int lapIndex)
+    {
+        if (string.IsNullOrEmpty(base64Csv))
+            return null;
+
+        try
+        {
+            // Save CSV temporarily
+            string savePath = Path.Combine(Application.streamingAssetsPath, "temp_csv.csv");
+            byte[] csvBytes = Convert.FromBase64String(base64Csv);
+            string csvText = Encoding.UTF8.GetString(csvBytes);
+            File.WriteAllText(savePath, csvText);
+
+            // Convert using existing CSVToBinConverter
+            var csvdata = CSVToBinConverter.LoadCSV.Convert(savePath, lapIndex);
+
+            return new RacelineDisplayData
+            {
+                InnerBoundary = ConvertToUnityVector2(csvdata.InnerBoundary),
+                OuterBoundary = ConvertToUnityVector2(csvdata.OuterBoundary),
+                Raceline = ConvertToUnityVector2(csvdata.Raceline),
+                PlayerLine = ConvertToUnityVector2(csvdata.PlayerPath),
+            };
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[RacingDataUtils] Failed to load track data for lap {lapIndex}: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static List<UnityEngine.Vector2> ConvertToUnityVector2(List<System.Numerics.Vector2> list)
+    {
+        return list?.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList() ?? new List<UnityEngine.Vector2>();
+    }
 }

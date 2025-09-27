@@ -200,7 +200,7 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-    public void InitializeWithRacelineData(RacelineDisplayData data)
+  public void InitializeWithSession(RacingData selectedSession)
   {
     NavigateToRacingLine();
 
@@ -209,12 +209,12 @@ public class HomePageNavigation : MonoBehaviour
       ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
       if (racingLineComponent != null)
       {
-        racingLineComponent.InitializeWithRacelineData(data);
+        racingLineComponent.InitializeWithSession(selectedSession);
       }
     }
   }
 
-    public void NavigateToRacingLineWithTrackAndSession(string trackName, RacingData session)
+  public void NavigateToRacingLineWithTrackAndSession(string trackName, RacingData session)
   {
     NavigateToRacingLine();
 

@@ -108,7 +108,7 @@ namespace MotoGPTelemetry
       return ret;
     }
     public int getFastestLapIndex()
-    { 
+    {
       Dictionary<int, float> lapTimes = new Dictionary<int, float>();
       for (int i = 0; i < PlayerPath.Count; i++)
       {
@@ -172,18 +172,18 @@ namespace MotoGPTelemetry
 
     public float getTopSpeed(int lapIndex)
     {
-        float topSpeed = 0f;
-        for (int i = 0; i < PlayerPath.Count; i++)
+      float topSpeed = 0f;
+      for (int i = 0; i < PlayerPath.Count; i++)
+      {
+        if (PlayerPath[i].CurrentLap == lapIndex)
         {
-            if (PlayerPath[i].CurrentLap == lapIndex)
-            {
-                if (PlayerPath[i].Speed > topSpeed)
-                {
-                    topSpeed = PlayerPath[i].Speed;
-                }
-            }
+          if (PlayerPath[i].Speed > topSpeed)
+          {
+            topSpeed = PlayerPath[i].Speed;
+          }
         }
-        return topSpeed;
+      }
+      return topSpeed;
     }
 
 
@@ -209,12 +209,13 @@ namespace MotoGPTelemetry
             float speedKmh = (frontKmh + rearKmh) / 2f;
             if (packet.CurrentLap == 255 || speedKmh < 2f) // invalid lap or stationary
             {
-              if (packet.CurrentLap == 255 && startTrack == packet.Track){ 
+              if (packet.CurrentLap == 255 && startTrack == packet.Track)
+              {
                 lastLapNo = 0;
                 PlayerPath.Clear();
                 Model = null;
               }
-              
+
               continue;
             }
             else
@@ -283,25 +284,34 @@ namespace MotoGPTelemetry
       }
     }
 
-    public void SaveToCSV()
+    public void SaveToCSV(string path = null)
     {
-      string folder = Application.streamingAssetsPath;
-      if (!Directory.Exists(folder))
+      string csvPath = path ?? Path.Combine(Application.streamingAssetsPath, "lastSession.csv");
+
+      string directory = Path.GetDirectoryName(csvPath);
+      if (!Directory.Exists(directory))
       {
-        Directory.CreateDirectory(folder);
+        Directory.CreateDirectory(directory);
       }
 
-      string csvPath = Path.Combine(folder, "lastSession.csv");
-
-      using (var writer = new StreamWriter(csvPath, false, new UTF8Encoding(false)))
+      try
       {
-        writer.WriteLine("trackId\tlap_number\tworld_position_X\tworld_position_Y");
-        foreach (var record in PlayerPath)
+        using (var writer = new StreamWriter(csvPath, false, new UTF8Encoding(false)))
         {
-          writer.WriteLine($"{record.TrackId}\t{record.CurrentLap + 1}\t{record.CoordinatesX.ToString(CultureInfo.InvariantCulture)}\t{record.CoordinatesY.ToString(CultureInfo.InvariantCulture)}");
+          writer.WriteLine("trackId\tlap_number\tworld_position_X\tworld_position_Y");
+
+          foreach (var record in PlayerPath)
+          {
+            writer.WriteLine($"{record.TrackId}\t{record.CurrentLap + 1}\t{record.CoordinatesX.ToString(CultureInfo.InvariantCulture)}\t{record.CoordinatesY.ToString(CultureInfo.InvariantCulture)}");
+          }
         }
+
+        Debug.Log($"Telemetry data saved to {csvPath}");
       }
-      Debug.Log($"Telemetry data saved to {csvPath}");
+      catch (System.Exception e)
+      {
+        Debug.LogError($"Failed to save CSV: {e.Message}");
+      }
     }
 
   }
