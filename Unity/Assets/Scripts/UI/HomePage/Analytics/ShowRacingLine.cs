@@ -606,7 +606,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary, 3200)), simplificationTolerance)),
       OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary, 3200)), simplificationTolerance)),
       Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline, 3200)),
-      PlayerLine = EnsureLooped(EnsureBelowLimit(trackData.PlayerLine, 3200)),
+      PlayerLine = EnsureBelowLimit(trackData.PlayerLine, 3200),
     };
 
     ClearExistingLines();
