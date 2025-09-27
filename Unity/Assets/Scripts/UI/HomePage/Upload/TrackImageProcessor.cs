@@ -78,6 +78,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     public List<Vector2> innerBoundary;
     public List<Vector2> outerBoundary;
     public List<Vector2> raceline;
+    public List<Vector2> breakPoints;
     public float processingTime;
     public List<Vector2> centerlinePoints;
     public Vector2? startPosition;
@@ -956,6 +957,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
     List<Vector2> innerBoundary = FlipY(ConvertToUnityVectors(racelineResult.InnerBoundary), imageHeight);
     List<Vector2> outerBoundary = FlipY(ConvertToUnityVectors(racelineResult.OuterBoundary), imageHeight);
     List<Vector2> raceline = FlipY(ConvertToUnityVectors(racelineResult.Raceline), imageHeight);
+    List<Vector2> breakPoints = FlipY(ConvertToUnityVectors(racelineResult.BreakPoints), imageHeight);
 
     float processingTime = Time.realtimeSinceStartup - startTime;
 
@@ -967,6 +969,7 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       innerBoundary = innerBoundary,
       outerBoundary = outerBoundary,
       raceline = raceline,
+      breakPoints = breakPoints,
       processingTime = processingTime,
       centerlinePoints = centerlinePoints,
       startPosition = startPosition,
@@ -1497,7 +1500,7 @@ private void DrawThickLineOnPixelArray(Color[] pixelArray, int width, int height
     racelineData.OuterBoundary = results.outerBoundary ?? new List<Vector2>();
     racelineData.InnerBoundary = results.innerBoundary ?? new List<Vector2>();
     racelineData.Raceline = results.raceline ?? new List<Vector2>();
-
+    racelineData.BreakPoints = results.breakPoints ?? new List<Vector2>();
     return racelineData;
   }
 

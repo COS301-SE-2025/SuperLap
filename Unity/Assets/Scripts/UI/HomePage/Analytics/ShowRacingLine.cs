@@ -17,6 +17,7 @@ public class RacelineDisplayData
   public List<Vector2> OuterBoundary { get; set; }
   public List<Vector2> InnerBoundary { get; set; }
   public List<Vector2> Raceline { get; set; }
+  public List<Vector2> BreakPoints { get; set; }
   public List<Vector2> PlayerLine { get; set; }
 }
 
@@ -110,6 +111,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private Color roadColor = new Color(0.2f, 0.2f, 0.2f, 1);
   [SerializeField] private Color racelineColor = Color.green;
   [SerializeField] private Color playerlineColor = Color.blue;
+  [SerializeField] private Color breakPointColor = Color.red;
 
   [Header("Track Controls")]
   [SerializeField] private bool showOuterBoundary = true;
@@ -117,6 +119,9 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private bool showRaceLine = true;
   [SerializeField] private bool showPlayerLine = true;
   [SerializeField] private bool showBreakPoints = true;
+
+  [Header("Break Point Settings")]
+  [SerializeField] private float breakPointSize = 8f;
 
   [Header("Zoom/Pan Settings")]
   [SerializeField] private float zoomSpeed = 0.1f;
@@ -143,11 +148,9 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private float timeSpeed = 1f;
   [SerializeField] private bool isRacing = false;
 
-
   [Header("UI Controls")]
   [SerializeField] private GameObject controlPanel;
   [SerializeField] private DropdownTransition dropdown;
-
 
   private RacingData activeSession;
   private List<int> availableLapIndices = new List<int>();
@@ -157,6 +160,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   private Vector2[] racelinePoints;
   private RacelineDisplayData currentTrackData;
   private Dictionary<string, UILineRenderer> lineRenderers = new Dictionary<string, UILineRenderer>();
+  private List<GameObject> breakPointObjects = new List<GameObject>();
   private Vector2 panOffset = Vector2.zero;
   private Vector2 initialPosition;
   private bool isDragging = false;
@@ -235,24 +239,24 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       ToggleFollowCar();
     }
 
-    // if (Input.GetKeyDown(KeyCode.F))
-    // {
-    //   ToggleShowBreakPoints();
-    // }
+    if (Input.GetKeyDown(KeyCode.F))
+    {
+      ToggleShowBreakPoints();
+    }
 
     if (Input.GetKey(KeyCode.Tab))
     {
-      if(controlPanel != null ) controlPanel.SetActive(true);
+      if (controlPanel != null) controlPanel.SetActive(true);
     }
     else
     {
-      if(controlPanel != null ) controlPanel.SetActive(false);
+      if (controlPanel != null) controlPanel.SetActive(false);
     }
   }
 
   void Start()
   {
-    if(controlPanel != null ) controlPanel.SetActive(false);
+    if (controlPanel != null) controlPanel.SetActive(false);
 
     if (!zoomContainer && trackContainer) zoomContainer = trackContainer.parent as RectTransform;
     if (!viewportRect) viewportRect = GetComponentInParent<Canvas>().GetComponent<RectTransform>();
@@ -311,6 +315,11 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     foreach (var kvp in lineRenderers)
       if (kvp.Value != null) Destroy(kvp.Value.gameObject);
     lineRenderers.Clear();
+
+    // Destroy all break point objects
+    foreach (var breakPoint in breakPointObjects)
+      if (breakPoint != null) Destroy(breakPoint);
+    breakPointObjects.Clear();
 
     // Clear children of track container
     if (trackContainer != null)
@@ -381,7 +390,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return totalLength / carSpeed;
   }
 
-
   public void OnPointerDown(PointerEventData eventData)
   {
     if (!enablePanZoom) return;
@@ -440,7 +448,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     float previousZoom = currentZoom;
     currentZoom = Mathf.Clamp(currentZoom + zoomDelta, minZoom, maxZoom);
 
-
     if (!Mathf.Approximately(previousZoom, currentZoom))
     {
       RectTransformUtility.ScreenPointToLocalPointInRectangle(zoomContainer, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
@@ -452,6 +459,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     ConstrainToViewport();
     UpdateZoomContainer();
     UpdateLineWidths();
+    UpdateBreakPointSizes();
   }
 
   public void ResetView()
@@ -460,10 +468,12 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     panOffset = Vector2.zero;
     UpdateZoomContainer();
     UpdateLineWidths();
+    UpdateBreakPointSizes();
   }
 
   public void changeOuterBoundaryWidth(float newWidth)
   {
+    UpdateLineWidths();
     outerBoundaryWidth = newWidth;
 
     if (lineRenderers.TryGetValue("OuterBoundary", out UILineRenderer renderer))
@@ -474,6 +484,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
   public void changeInnerBoundaryWidth(float newWidth)
   {
+    UpdateLineWidths();
     innerBoundaryWidth = newWidth;
 
     if (lineRenderers.TryGetValue("InnerBoundary", out UILineRenderer renderer))
@@ -485,6 +496,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   public void changeRaceLineWidth(float newWidth)
   {
     racelineWidth = newWidth;
+    UpdateLineWidths();
 
     if (lineRenderers.TryGetValue("Raceline", out UILineRenderer renderer))
     {
@@ -494,6 +506,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
   public void changePlayerLineWidth(float newWidth)
   {
+    UpdateLineWidths();
     playerLineWidth = newWidth;
 
     if (lineRenderers.TryGetValue("Playerline", out UILineRenderer renderer))
@@ -508,23 +521,16 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     goingToCar = followCar;
   }
 
-  // private void ToggleShowBreakPoints()
-  // {
-  //   showBreakPoints = !showBreakPoints;
-  //   showRaceLine = !showBreakPoints;
+  private void ToggleShowBreakPoints()
+  {
+    showBreakPoints = !showBreakPoints;
 
-  //   foreach (var kvp in lineRenderers)
-  //   {
-  //     if (kvp.Key.StartsWith("ReplaySegment"))
-  //     {
-  //       kvp.Value.enabled = showBreakPoints;
-  //     }
-  //     else if (kvp.Key.StartsWith("Raceline"))
-  //     {
-  //       kvp.Value.enabled = showRaceLine;
-  //     }
-  //   }
-  // }
+    foreach (var breakPoint in breakPointObjects)
+    {
+      if (breakPoint != null)
+        breakPoint.SetActive(showBreakPoints);
+    }
+  }
 
   private void ConstrainToViewport()
   {
@@ -557,10 +563,27 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         "InnerBoundary" => innerBoundaryWidth,
         "Raceline" => racelineWidth,
         "Playerline" => playerLineWidth,
+        _ when kvp.Key.StartsWith("BreakPointSegment_") => racelineWidth * 2,
         _ when kvp.Key.StartsWith("ReplaySegment") => racelineWidth,
         _ => 1f
       };
       kvp.Value.LineThickness = baseWidth / currentZoom;
+    }
+  }
+
+  private void UpdateBreakPointSizes()
+  {
+    foreach (var breakPoint in breakPointObjects)
+    {
+      if (breakPoint != null)
+      {
+        RectTransform rectTransform = breakPoint.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+          float scaledSize = breakPointSize / currentZoom;
+          rectTransform.sizeDelta = new Vector2(scaledSize, scaledSize);
+        }
+      }
     }
   }
 
@@ -606,6 +629,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary, 3200)), simplificationTolerance)),
       Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline, 3200)),
       PlayerLine = EnsureBelowLimit(trackData.PlayerLine, 3200),
+      BreakPoints = trackData.BreakPoints // Keep break points as-is
     };
 
     ClearExistingLines();
@@ -613,7 +637,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(trackData);
     float scale = CalculateScale(bounds.size);
     Vector2 offset = CalculateOffset(bounds.size, scale);
-
 
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
 
@@ -637,9 +660,16 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       CreateLineRenderer("Playerline", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
     }
 
+    // Create break points from RacelineDisplayData
+    if (showBreakPoints && trackData.BreakPoints != null && trackData.BreakPoints.Count > 0)
+    {
+      CreateBreakPointRacelineSegments(trackData.BreakPoints, trackData.Raceline, bounds.min, scale, offset);
+    }
+
     panOffset = Vector2.zero;
     UpdateZoomContainer();
     UpdateLineWidths();
+    UpdateBreakPointSizes();
 
     isRacing = true;
     currentTime = 0f;
@@ -648,12 +678,181 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     SetupRacelineSegments();
   }
 
+  private void CreateBreakPointRacelineSegments(List<Vector2> breakPoints, List<Vector2> raceline, Vector2 min, float scale, Vector2 offset)
+  {
+    if (breakPoints == null || breakPoints.Count < 2 || raceline == null || raceline.Count < 2) return;
 
+    // Process break points in pairs (braking start + corner entry)
+    for (int i = 0; i < breakPoints.Count - 1; i += 2)
+    {
+      if (i + 1 >= breakPoints.Count) break;
+
+      Vector2 brakingStart = breakPoints[i];
+      Vector2 cornerEntry = breakPoints[i + 1];
+
+      // Find closest indices on raceline for these points
+      int startIndex = FindClosestPointIndex(raceline, brakingStart);
+      int endIndex = FindClosestPointIndex(raceline, cornerEntry);
+
+      // Extract the segment between these points
+      List<Vector2> segmentPoints = ExtractRacelineSegment(raceline, startIndex, endIndex);
+
+      if (segmentPoints.Count >= 2)
+      {
+        // Create line renderer for this segment
+        UILineRenderer segmentRenderer = new GameObject($"BreakPointSegment_{i / 2}", typeof(RectTransform), typeof(UILineRenderer))
+            .GetComponent<UILineRenderer>();
+
+        segmentRenderer.transform.SetParent(trackContainer, false);
+        segmentRenderer.material = lineMaterial;
+        segmentRenderer.color = breakPointColor; // Red color
+        segmentRenderer.LineThickness = (racelineWidth * 1.5f) / currentZoom; // Slightly thicker than raceline
+
+        // Transform points to screen coordinates
+        Vector2[] transformedPoints = segmentPoints.Select(p => TransformPoint(p, min, scale, offset)).ToArray();
+        segmentRenderer.Points = transformedPoints;
+
+        // Store in dictionaries
+        lineRenderers[$"BreakPointSegment_{i / 2}"] = segmentRenderer;
+
+        GameObject segmentContainer = segmentRenderer.gameObject;
+        segmentContainer.SetActive(showBreakPoints);
+        breakPointObjects.Add(segmentContainer);
+      }
+    }
+  }
+
+  private int FindClosestPointIndex(List<Vector2> points, Vector2 target)
+  {
+    int closestIndex = 0;
+    float closestDistanceSqr = float.MaxValue;
+
+    for (int i = 0; i < points.Count; i++)
+    {
+      float distanceSqr = (points[i] - target).sqrMagnitude;
+      if (distanceSqr < closestDistanceSqr)
+      {
+        closestDistanceSqr = distanceSqr;
+        closestIndex = i;
+      }
+    }
+
+    return closestIndex;
+  }
+
+  private List<Vector2> ExtractRacelineSegment(List<Vector2> raceline, int startIndex, int endIndex)
+  {
+    List<Vector2> segment = new List<Vector2>();
+
+    if (startIndex == endIndex)
+    {
+      segment.Add(raceline[startIndex]);
+      return segment;
+    }
+
+    // Handle wrap-around for circular tracks
+    if (endIndex < startIndex)
+    {
+      // Segment wraps around the end of the track
+      for (int i = startIndex; i < raceline.Count; i++)
+      {
+        segment.Add(raceline[i]);
+      }
+      for (int i = 0; i <= endIndex; i++)
+      {
+        segment.Add(raceline[i]);
+      }
+    }
+    else
+    {
+      // Normal forward segment
+      for (int i = startIndex; i <= endIndex; i++)
+      {
+        segment.Add(raceline[i]);
+      }
+    }
+
+    return segment;
+  }
+
+
+  // Also update your UpdateLineWidths method to include break point lines:
+  private void UpdateLineWidthsWithBreakPoints()
+  {
+    foreach (var kvp in lineRenderers)
+    {
+      if (!kvp.Value) continue;
+      float baseWidth = kvp.Key switch
+      {
+        "OuterBoundary" => outerBoundaryWidth,
+        "InnerBoundary" => innerBoundaryWidth,
+        "Raceline" => racelineWidth,
+        "Playerline" => playerLineWidth,
+        "BreakPointLines" => racelineWidth, // Scale break point lines with raceline
+        _ when kvp.Key.StartsWith("ReplaySegment") => racelineWidth,
+        _ => 1f
+      };
+      kvp.Value.LineThickness = baseWidth / currentZoom;
+    }
+  }
+
+  private void CreateBreakPoints(List<Vector2> breakPoints, Vector2 min, float scale, Vector2 offset)
+  {
+    if (breakPoints == null || breakPoints.Count == 0) return;
+
+    foreach (var breakPoint in breakPoints)
+    {
+      Vector2 transformedPoint = TransformPoint(breakPoint, min, scale, offset);
+
+      GameObject pointObject = new GameObject("BreakPoint", typeof(RectTransform), typeof(Image));
+      pointObject.transform.SetParent(trackContainer, false);
+
+      RectTransform rectTransform = pointObject.GetComponent<RectTransform>();
+      rectTransform.anchorMin = rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+      rectTransform.anchoredPosition = transformedPoint;
+
+      float scaledSize = breakPointSize / currentZoom;
+      rectTransform.sizeDelta = new Vector2(scaledSize, scaledSize);
+
+      Image image = pointObject.GetComponent<Image>();
+      image.color = breakPointColor;
+
+      // Make it circular
+      image.sprite = CreateCircleSprite();
+      image.type = Image.Type.Simple;
+
+      pointObject.SetActive(showBreakPoints);
+      breakPointObjects.Add(pointObject);
+    }
+  }
+
+  private Sprite CreateCircleSprite()
+  {
+    // Create a simple circle sprite
+    Texture2D circleTexture = new Texture2D(32, 32);
+    Color[] colors = new Color[32 * 32];
+    Vector2 center = new Vector2(16, 16);
+
+    for (int y = 0; y < 32; y++)
+    {
+      for (int x = 0; x < 32; x++)
+      {
+        float distance = Vector2.Distance(new Vector2(x, y), center);
+        colors[y * 32 + x] = distance <= 16 ? Color.white : Color.clear;
+      }
+    }
+
+    circleTexture.SetPixels(colors);
+    circleTexture.Apply();
+
+    return Sprite.Create(circleTexture, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f));
+  }
 
   private void ClearExistingLines()
   {
     foreach (Transform child in trackContainer) Destroy(child.gameObject);
     lineRenderers.Clear();
+    breakPointObjects.Clear();
   }
 
   private (Vector2 min, Vector2 max, Vector2 size) CalculateBounds(RacelineDisplayData trackData)
@@ -674,6 +873,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     UpdateBounds(trackData.OuterBoundary);
     UpdateBounds(trackData.InnerBoundary);
     UpdateBounds(trackData.Raceline);
+    UpdateBounds(trackData.BreakPoints);
 
     return (min, max, max - min);
   }
@@ -693,7 +893,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return Mathf.Clamp(scale, minTrackScale, maxTrackScale);
   }
 
-
   private Vector2 CalculateOffset(Vector2 size, float scale)
   {
     Vector2 scaledSize = size * scale;
@@ -703,14 +902,12 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     );
   }
 
-
   private Vector2 TransformPoint(Vector2 point, Vector2 min, float scale, Vector2 offset)
   {
     Vector2 transformed = (point - min) * scale + offset;
     transformed.y = trackContainer.rect.height - transformed.y;
     return transformed - trackContainer.rect.size * 0.5f;
   }
-
 
   private void CreateBreakingPoints(List<ReplayState> replays, float width)
   {
@@ -792,7 +989,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     roadMesh.color = roadColor;
   }
 
-
   private void CreateLineRenderer(string key, List<Vector2> points, Color color, float width, Vector2 min, float scale, Vector2 offset)
   {
     if (points == null || points.Count < 2) return;
@@ -850,16 +1046,12 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
   }
 
-
   private IEnumerator DisplayRacelineDataNextFrame(RacelineDisplayData data)
   {
     yield return new WaitForEndOfFrame();
     DisplayRacelineData(data);
     StartCoroutine(WaitForTrackLoadAndSettle());
   }
-
-
-
 
   private List<Vector2> ParseRacelineFromCsv(string csvText)
   {
@@ -928,7 +1120,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
   }
 
-
   private List<Vector2> EnsureLooped(List<Vector2> points)
   {
     if (points == null || points.Count < 2)
@@ -940,7 +1131,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
     return points;
   }
-
 
   private void SetupCarCursor()
   {

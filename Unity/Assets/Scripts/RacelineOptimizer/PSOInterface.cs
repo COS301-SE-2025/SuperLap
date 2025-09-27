@@ -6,6 +6,7 @@ using System.Linq;
 using System.Numerics;
 using UnityEngine;
 using Vector2 = System.Numerics.Vector2;
+using Vec2 = UnityEngine.Vector2;
 
 namespace RacelineOptimizer
 {
@@ -104,7 +105,9 @@ namespace RacelineOptimizer
       public List<Vector2> InnerBoundary { get; set; }
       public List<Vector2> OuterBoundary { get; set; }
       public List<Vector2> Raceline { get; set; }
+      public List<Vector2> BreakPoints { get; set; }
     }
+    
 
     public static RacelineResult GetRaceline(
     List<Vector2> innerBoundary,
@@ -137,7 +140,7 @@ namespace RacelineOptimizer
       {
         Debug.Log("Analyzing track boundaries for potential branches...");
         BranchDetector.AnalyzeTrackCharacteristics(edgeData.InnerBoundary, edgeData.OuterBoundary);
-        
+
         // Use provided config or create default
         branchConfig ??= new BranchDetector.BranchDetectionConfig
         {
@@ -147,7 +150,7 @@ namespace RacelineOptimizer
           SmoothingWindow = 5,
           DerivativeThreshold = 1.5f
         };
-        
+
         edgeData.ProcessBranches(branchConfig);
         Debug.Log("Branch detection and mitigation completed.");
       }
@@ -224,26 +227,192 @@ namespace RacelineOptimizer
       RacelineExporter.SaveToBinary(racelineFilePath, innerBoundary, outerBoundary, raceline, corners);
       Debug.Log($"Raceline optimization completed and saved to {racelineFilePath}");
 
+
+      // Helper local functions (put these near the method, or static helpers in the same class)
+      int MapIndexToRaceline(int idx, int sourceCount, int targetCount)
+      {
+        if (sourceCount <= 0 || targetCount <= 0) return 0;
+        int mapped = (int)((float)idx / (float)sourceCount * targetCount);
+        return Mathf.Clamp(mapped, 0, targetCount - 1);
+      }
+
+      float ComputeSegmentLength(List<Vector2> pts, int startIndex, int endIndex)
+      {
+        if (pts == null || pts.Count < 2) return 0f;
+        int n = pts.Count;
+        float length = 0f;
+        int i = startIndex;
+        while (true)
+        {
+          int next = (i + 1) % n;
+          length += Vector2.Distance(pts[i], pts[next]);
+          if (i == endIndex) break;
+          i = next;
+          // if we wrapped all the way round, stop
+          if (i == startIndex) break;
+        }
+        return length;
+      }
+
+      Vector2 GetPointAlongRaceline(List<Vector2> raceline, int startIndex, int endIndex, float fraction)
+      {
+          if (raceline == null || raceline.Count < 2) return new Vector2(0, 0);
+
+          int n = raceline.Count;
+          float totalDist = 0f;
+
+          // compute total segment distance from start → end
+          int i = startIndex;
+          while (i != endIndex)
+          {
+              int next = (i + 1) % n;
+              totalDist += Vector2.Distance(raceline[i], raceline[next]);
+              i = next;
+          }
+
+          float targetDist = totalDist * Mathf.Clamp01(fraction);
+          float traveled = 0f;
+          i = startIndex;
+
+          // walk until we reach targetDist
+          while (i != endIndex)
+          {
+              int next = (i + 1) % n;
+              float segLen = Vector2.Distance(raceline[i], raceline[next]);
+              if (traveled + segLen >= targetDist)
+              {
+                  float t = (targetDist - traveled) / segLen;
+                  return Vector2.Lerp(raceline[i], raceline[next], t);
+              }
+              traveled += segLen;
+              i = next;
+          }
+
+          return raceline[endIndex]; // fallback = end point
+      }
+
+
+      // Sum signed turning angles (in degrees) at interior points between startIndex and endIndex.
+    // Uses the segment angle between (p[k]-p[k-1]) and (p[k+1]-p[k]).
+    List<UnityEngine.Vector2> ConvertToUnityVector2(List<System.Numerics.Vector2> list)
+      {
+        return list.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList();
+      }
+
+      float ComputeTotalSignedAngleAlong(List<Vector2> pts, int startIndex, int endIndex)
+      {
+        List<UnityEngine.Vector2> uPts = ConvertToUnityVector2(pts);
+        if (uPts == null || uPts.Count < 3) return 0f;
+        int n = uPts.Count;
+
+        // compute forward step count from start to end (handle wrap)
+        int steps = endIndex >= startIndex ? endIndex - startIndex : (n - startIndex + endIndex);
+
+        // need at least two segments to have an interior turning angle
+        if (steps < 2) return 0f;
+
+        float total = 0f;
+        for (int s = 1; s < steps; s++)
+        {
+          int idx = (startIndex + s) % n;
+          int prev = (idx - 1 + n) % n;
+          int next = (idx + 1) % n;
+
+          Vec2 v1 = (uPts[idx] - uPts[prev]).normalized;
+          Vec2 v2 = (uPts[next] - uPts[idx]).normalized;
+
+
+
+          float cross = v1.x * v2.y - v1.y * v2.x;
+          float dot = Vec2.Dot(v1, v2);
+          float ang = Mathf.Atan2(cross, dot) * Mathf.Rad2Deg;
+          total += ang;
+        }
+        return total;
+      }
+
+      var breakPoints = new List<Vector2>();
+
+      // tune these for your units / desired behaviour
+      float minBrake = 42.69f;    // minimum braking distance
+      float maxBrake = 420f;  // maximum braking distance for the sharpest corners
+      float angleNormalization = 120f; // degrees that map to ~1.0 (tune)
+      float curvatureNormalization = 0.2f; // rad/m that maps to ~1.0 (tune)
+
+      for (int ci = 0; ci < corners.Count; ci++)
+      {
+        var corner = corners[ci];
+
+        // map corner indices (cornerTrack -> raceline)
+        int mappedStart = MapIndexToRaceline(corner.StartIndex, cornerTrack.Count, raceline.Count);
+        int mappedEnd = MapIndexToRaceline(corner.EndIndex, cornerTrack.Count, raceline.Count);
+
+        // compute metrics on the raceline between mappedStart..mappedEnd (handles wrap)
+        float totalAngleDeg = Mathf.Abs(ComputeTotalSignedAngleAlong(raceline, mappedStart, mappedEnd));
+        float segmentLen = ComputeSegmentLength(raceline, mappedStart, mappedEnd);
+
+        float totalAngleRad = totalAngleDeg * Mathf.Deg2Rad;
+        float curvature = (segmentLen > 0f && totalAngleRad > 1e-6f) ? totalAngleRad / segmentLen : 0f;
+        float estimatedRadius = (totalAngleRad > 1e-6f) ? (segmentLen / totalAngleRad) : float.MaxValue;
+
+        // normalize metrics (clamp 0..1)
+        float angleNorm = Mathf.Clamp01(totalAngleDeg / angleNormalization);
+        float curvatureNorm = Mathf.Clamp01(curvature / curvatureNormalization);
+
+        // pick a severity (you can weight these differently; here we take the max which is simple and robust)
+        float severity = Mathf.Max(angleNorm, curvatureNorm);
+
+        // map severity to braking distance
+        float brakingDistance = Mathf.Lerp(minBrake, maxBrake, severity);
+
+        // find braking start by walking backward along the raceline from mappedStart
+        Vector2 cornerEntry = GetPointAlongRaceline(raceline, mappedStart, mappedEnd, 0.45f);
+        Vector2 brakingStart = cornerEntry;
+        float accumulated = 0f;
+        int i = mappedStart;
+        while (accumulated < brakingDistance)
+        {
+          int prev = (i - 1 + raceline.Count) % raceline.Count;
+          float d = Vector2.Distance(raceline[i], raceline[prev]);
+          accumulated += d;
+          brakingStart = raceline[prev];
+          i = prev;
+
+          // safety: if we've looped full circle stop
+          if (i == mappedEnd) break;
+        }
+
+        breakPoints.Add(brakingStart);
+        breakPoints.Add(cornerEntry);
+
+        Debug.Log($"Corner #{ci}: totalAngle={totalAngleDeg:F1}°, len={segmentLen:F1}, radius≈{estimatedRadius:F1}, severity={severity:F2}, brakeDist={brakingDistance:F1}");
+      }
+
+      Debug.Log($"Identified {breakPoints.Count} braking points.");
       RacelineResult result = new RacelineResult
       {
         InnerBoundary = innerBoundary,
         OuterBoundary = outerBoundary,
-        Raceline = raceline
+        Raceline = raceline,
+        BreakPoints = breakPoints
       };
 
       return result;
     }
 
+    
+    
+
     // Utility method for testing branch detection settings
-    public static void TestBranchDetection(List<Vector2> innerBoundary, List<Vector2> outerBoundary, 
+    public static void TestBranchDetection(List<Vector2> innerBoundary, List<Vector2> outerBoundary,
       BranchDetector.BranchDetectionConfig config = null)
     {
       Debug.Log("=== Branch Detection Test ===");
       var widths = BranchDetector.AnalyzeTrackCharacteristics(innerBoundary, outerBoundary);
-      
+
       config ??= new BranchDetector.BranchDetectionConfig();
       var (processedInner, processedOuter) = BranchDetector.ProcessBoundaries(innerBoundary, outerBoundary, config);
-      
+
       if (processedInner.Count != innerBoundary.Count || processedOuter.Count != outerBoundary.Count)
       {
         Debug.Log("Branch mitigation modified the boundaries.");
