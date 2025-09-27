@@ -318,7 +318,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -7687868401182020513, guid: 455e38cd80852bc49af7b1ac0fa5b0e9, type: 3}
       propertyPath: m_text
-      value: Choose Lap
+      value: No Laps
       objectReference: {fileID: 0}
     - target: {fileID: -7687868401182020513, guid: 455e38cd80852bc49af7b1ac0fa5b0e9, type: 3}
       propertyPath: m_sharedMaterial
@@ -1378,12 +1378,11 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 576338091}
   - {fileID: 1079817675}
   m_Father: {fileID: 607754855}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -8694,7 +8693,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 540799125138992629, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 27.05
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 540799125138992629, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -8806,7 +8805,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4500527399937984766, guid: 5a349b60c11c2c44c94788c78edc4eb7, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -13947,7 +13946,7 @@ GameObject:
   - component: {fileID: 576338092}
   - component: {fileID: 576338094}
   m_Layer: 5
-  m_Name: BackUpPanel
+  m_Name: BackupPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13960,18 +13959,18 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 576338090}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1037233424}
-  m_Father: {fileID: 61440205}
+  m_Father: {fileID: 607754855}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 357.56693}
+  m_SizeDelta: {x: 0, y: -715.134}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &576338092
 MonoBehaviour:
@@ -14033,7 +14032,7 @@ MonoBehaviour:
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 1
-  m_ChildControlHeight: 0
+  m_ChildControlHeight: 1
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
@@ -14410,7 +14409,6 @@ GameObject:
   - component: {fileID: 607754860}
   - component: {fileID: 607754859}
   - component: {fileID: 607754861}
-  - component: {fileID: 607754862}
   m_Layer: 5
   m_Name: GalleryPage
   m_TagString: Untagged
@@ -14431,6 +14429,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 61440205}
+  - {fileID: 576338091}
   m_Father: {fileID: 1282553559}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -14498,32 +14497,6 @@ MonoBehaviour:
   trackImage: {fileID: 321400731}
   backupPanel: {fileID: 576338090}
   loaderPanel: {fileID: 1615689644}
---- !u!114 &607754862
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 607754854}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 0
-  m_Spacing: 0
-  m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 1
-  m_ChildControlWidth: 1
-  m_ChildControlHeight: 0
-  m_ChildScaleWidth: 0
-  m_ChildScaleHeight: 0
-  m_ReverseArrangement: 0
 --- !u!1 &608006862
 GameObject:
   m_ObjectHideFlags: 0
@@ -26757,7 +26730,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 473.5436}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1037233425
 MonoBehaviour:
@@ -46728,7 +46701,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000030517578}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -10, y: -9.999939}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1973076337
@@ -47273,7 +47246,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -7687868401182020513, guid: 455e38cd80852bc49af7b1ac0fa5b0e9, type: 3}
       propertyPath: m_text
-      value: Choose Lap
+      value: No laps
       objectReference: {fileID: 0}
     - target: {fileID: -7687868401182020513, guid: 455e38cd80852bc49af7b1ac0fa5b0e9, type: 3}
       propertyPath: m_sharedMaterial

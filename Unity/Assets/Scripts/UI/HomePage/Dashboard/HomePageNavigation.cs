@@ -338,13 +338,26 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-  private (int start, int end) GetTooltipRangeForPage()
-  {
-    if (dashboardPage != null && dashboardPage.activeSelf) return (0, 3);
-    if (galleryPage != null && galleryPage.activeSelf) return (4, 4);
-    if (analysisPage != null && analysisPage.activeSelf) return (5, 8);
-    if (motoGPPage != null && motoGPPage.activeSelf) return (9, 10);
+private (int start, int end) GetTooltipRangeForPage()
+{
+    bool IsBackupPanelActive(GameObject page)
+    {
+        if (page == null) return false;
+        Transform backup = page.transform.Find("BackupPanel");
+        return backup != null && backup.gameObject.activeSelf;
+    }
+
+    bool ShouldReturnTooltip(GameObject page) 
+    {
+        return page != null && page.activeSelf && !IsBackupPanelActive(page);
+    }
+
+    if (ShouldReturnTooltip(dashboardPage)) return (0, 3);
+    if (ShouldReturnTooltip(galleryPage)) return (4, 4);
+    if (ShouldReturnTooltip(analysisPage)) return (5, 8);
+    if (ShouldReturnTooltip(motoGPPage)) return (9, 10);
 
     return (-1, -1);
-  }
+}
+
 }
