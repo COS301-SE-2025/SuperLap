@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 public class ACOAgentReplay : MonoBehaviour
@@ -32,6 +33,12 @@ public class ACOAgentReplay : MonoBehaviour
 
     //DrawLineWithMesh();
   }
+
+  public void InitializeReplay(List<ReplayState> states)
+  {
+    replayStates = states;
+  }
+
   private static void WritePoints(BinaryWriter writer, List<Vector2> points)
   {
     writer.Write(points.Count);

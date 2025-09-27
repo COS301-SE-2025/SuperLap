@@ -157,6 +157,10 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   private bool isInitialized = false;
   private RacelineDisplayData pendingTrackData = null;
 
+  [Header("Training Settings")]
+  [SerializeField] private ACOTrainer acoTrainer;
+
+
   void OnEnable()
   {
     if (!isInitialized)
@@ -578,18 +582,27 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
 
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
+      long millis = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
 
     if (ACOenabled)
     {
+      Debug.Log("Start ACO Replay");
       ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
-      replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
-
+      // replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
+      replay.InitializeReplay(acoTrainer.GetNewRacelineReplay());
+      Debug.Log($"Load data: {DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - millis}ms");
+      millis = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
       // Get simplified segments for visualization
       var originalSegments = replay.GetColoredSegments();
       var simplifiedSegments = replay.SimplifyColoredSegments(originalSegments, simplificationTolerance);
 
+      Debug.Log($"Process: {DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - millis}ms");
+      millis = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
       // for Sean: output the data
       replay.SaveBinFile(simplificationTolerance);
+
+            Debug.Log($"Save bin: {DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - millis}ms");
+      millis = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
 
       CreateBreakingPointsFromSegments(simplifiedSegments, racelineWidth);
     }
@@ -607,6 +620,9 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     SetupCarCursor();
     SetupRacelineSegments();
+
+          Debug.Log($"Other: {DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - millis}ms");
+      millis = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
   }
 
 

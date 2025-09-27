@@ -27115,6 +27115,7 @@ MonoBehaviour:
   timeSpeed: 0.5
   isRacing: 1
   simplificationTolerance: 50
+  acoTrainer: {fileID: 0}
   minTrackScale: 0.2
   maxTrackScale: 2
 --- !u!1 &1345279357
@@ -31450,6 +31451,7 @@ MonoBehaviour:
   timeSpeed: 1
   isRacing: 1
   simplificationTolerance: 50
+  acoTrainer: {fileID: 591936640}
   minTrackScale: 0.2
   maxTrackScale: 2
 --- !u!114 &1594639264

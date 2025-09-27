@@ -89,6 +89,20 @@ public class ACOTrainer : MonoBehaviour
 
         return positions;
     }
+
+    public List<ReplayState> GetNewRacelineReplay()
+    {
+        List<ReplayState> states = new();
+
+        if (bestAgents.Count == 0) return states;
+
+        foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
+        {
+            states.AddRange(kvp.Value.ReplayStates);
+        }
+
+        return states;
+    }
     /// END PUBLIC METHODS
 
     private void HandleTraining()
@@ -202,54 +216,55 @@ public class ACOTrainer : MonoBehaviour
         }
     }
 
-  private void SaveBestAgentToFile()
-  {
-    string filePath = Path.Combine(Application.persistentDataPath, "bestAgent.txt");
-
-    Debug.Log($"=== SAVING BEST AGENT TO FILE ===");
-    Debug.Log($"Total splits to save: {bestAgents.Count}");
-
-    // Debug: Check for overlapping agents
-    foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
+    private void SaveBestAgentToFile()
     {
-      Debug.Log($"Split {kvp.Key}: {kvp.Value.ReplayStates.Count} replay states, target position: {kvp.Value.TargetPassPosition}");
-    }
+        string filePath = Path.Combine(Application.persistentDataPath, "bestAgent.txt");
 
-    using (StreamWriter writer = new StreamWriter(filePath))
-    {
-      int totalStatesWritten = 0;
+        Debug.Log($"=== SAVING BEST AGENT TO FILE ===");
+        Debug.Log($"Total splits to save: {bestAgents.Count}");
 
-      // Write all inputs from all segments
-      bestAgents.Values.ToList().ForEach((agent) =>
-      {
-        writer.WriteLine($"# Start of Agent {totalStatesWritten}");
-        Debug.Log($"Writing {agent.ReplayStates.Count} states from agent with {agent.TotalSteps} total steps");
-        int statesFromThisAgent = 0;
-        agent.ReplayStates.ForEach((state) =>
-              {
-                writer.WriteLine(state.ToString());
-                statesFromThisAgent++;
-                totalStatesWritten++;
-              });
-        Debug.Log($"Wrote {statesFromThisAgent} states from this agent");
-      });
+        // Debug: Check for overlapping agents
+        foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
+        {
+            Debug.Log($"Split {kvp.Key}: {kvp.Value.ReplayStates.Count} replay states, target position: {kvp.Value.TargetPassPosition}");
+        }
 
-      Debug.Log($"Total replay states written to file: {totalStatesWritten}");
-    }
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            int totalStatesWritten = 0;
 
-    Debug.Log($"Best agent path saved to: {filePath}");
-    Debug.Log($"=== SAVE COMPLETE ===");
+            // Write all inputs from all segments
+            bestAgents.Values.ToList().ForEach((agent) =>
+            {
+                writer.WriteLine($"# Start of Agent {totalStatesWritten}");
+                Debug.Log($"Writing {agent.ReplayStates.Count} states from agent with {agent.TotalSteps} total steps");
+                int statesFromThisAgent = 0;
+                agent.ReplayStates.ForEach((state) =>
+                {
+                    writer.WriteLine(state.ToString());
+                    statesFromThisAgent++;
+                    totalStatesWritten++;
+                });
+                Debug.Log($"Wrote {statesFromThisAgent} states from this agent");
+            });
 
-    SaveCompleted = true;
-    }
+            Debug.Log($"Total replay states written to file: {totalStatesWritten}");
+        }
+
+        Debug.Log($"Best agent path saved to: {filePath}");
+        Debug.Log($"=== SAVE COMPLETE ===");
+
+        SaveCompleted = true;
+    }  
     
+
     List<System.Numerics.Vector2> InitializeDistanceBasedCheckpoints()
     {
         List<System.Numerics.Vector2> checkpointPositions = new List<System.Numerics.Vector2>();
-        
+
         // Get raceline data from ACOTrackMaster
         List<System.Numerics.Vector2> raceline = ACOTrackMaster.GetCurrentRaceline();
-        
+
         // Calculate total raceline distance
         float totalRacelineDistance = 0f;
         Vector3 previousPoint = new Vector3(raceline[0].X, 0, raceline[0].Y);
@@ -260,11 +275,11 @@ public class ACOTrainer : MonoBehaviour
             totalRacelineDistance += Vector3.Distance(previousPoint, currentPoint);
             previousPoint = currentPoint;
         }
-        
+
         // Distribute checkpoints evenly along the raceline
         int totalCheckpoints = checkpointCount;
         float distancePerCheckpoint = totalRacelineDistance / totalCheckpoints;
-        
+
         float currentDistance = 0f;
         int racelineIndex = 0;
         System.Numerics.Vector2 lastRacelinePoint = raceline[0];
@@ -289,7 +304,7 @@ public class ACOTrainer : MonoBehaviour
 
         return checkpointPositions;
     }
-
+    
     private void InitializeSystem(int currentSplit)
     {
         UnityEngine.Profiling.Profiler.BeginSample("InitializeSystem");
