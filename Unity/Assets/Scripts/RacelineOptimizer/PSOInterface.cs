@@ -218,14 +218,14 @@ namespace RacelineOptimizer
       innerBoundary = edgeData.InnerBoundary;
       outerBoundary = edgeData.OuterBoundary;
 
-      // Save to bin file
-      if (!Directory.Exists(outputPath))
-      {
-        Directory.CreateDirectory(outputPath);
-      }
-      string racelineFilePath = Path.Combine(outputPath, $"{trackName}.bin");
-      RacelineExporter.SaveToBinary(racelineFilePath, innerBoundary, outerBoundary, raceline, corners);
-      Debug.Log($"Raceline optimization completed and saved to {racelineFilePath}");
+      // // Save to bin file
+      // if (!Directory.Exists(outputPath))
+      // {
+      //   Directory.CreateDirectory(outputPath);
+      // }
+      // string racelineFilePath = Path.Combine(outputPath, $"{trackName}.bin");
+      // RacelineExporter.SaveToBinary(racelineFilePath, innerBoundary, outerBoundary, raceline, corners);
+      // Debug.Log($"Raceline optimization completed and saved to {racelineFilePath}");
 
 
       // Helper local functions (put these near the method, or static helpers in the same class)
