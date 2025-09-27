@@ -198,7 +198,7 @@ public class MenuManagement : MonoBehaviour
 
   public void OnLoginButtonPressed()
   {
-      _ = Login(); // Fire-and-forget
+    _ = Login(); // Fire-and-forget
   }
   private async Task Login()
   {
@@ -257,9 +257,9 @@ public class MenuManagement : MonoBehaviour
   }
 
   public void OnRegisterButtonPressed()
-{
+  {
     _ = RegisterUser(); // Fire-and-forget
-}
+  }
 
   private async Task RegisterUser()
   {

@@ -154,15 +154,12 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   private UILineRenderer trailLineRenderer;
   private List<Vector2> trailPositions = new List<Vector2>();
   private Vector2[] racelinePoints;
-  private float traveledDistance = 0f;
   private RacelineDisplayData currentTrackData;
   private Dictionary<string, UILineRenderer> lineRenderers = new Dictionary<string, UILineRenderer>();
   private Vector2 panOffset = Vector2.zero;
   private Vector2 initialPosition;
   private bool isDragging = false;
   private Vector2 dragStartPosition;
-  private bool firstFollowExecuted = false;
-  private float followDelayTimer = 0f;
   private const float followDelay = 0.5f; // 500ms
   private bool isInitialized = false;
   private RacelineDisplayData pendingTrackData = null;
@@ -600,7 +597,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     if (!trackContainer || trackData == null) return;
 
     float simplificationTolerance = 5f;
-    int maxVertices = 64000;
     trackData = new RacelineDisplayData
     {
       InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary, 3200)), simplificationTolerance)),
@@ -807,61 +803,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     lineRenderers[key] = lr;
   }
 
-  public void InitializeWithTrackAndSession(string trackName, RacingData session)
-  {
-    if (string.IsNullOrEmpty(trackName))
-    {
-      Debug.LogError("Track name is null or empty in InitializeWithTrackAndSession");
-      return;
-    }
-
-    LoadTrackDataWithSession(trackName, session);
-  }
-
-  private async void LoadTrackDataWithSession(string trackName, RacingData session)
-  {
-    currentTrackData = null;
-
-    try
-    {
-      var (success, message, bytes) = await APIManager.Instance.GetTrackBorderAsync(trackName);
-
-      if (success && bytes != null)
-      {
-        RacelineDisplayData trackData = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
-
-        if (trackData != null)
-        {
-          if (session != null && !string.IsNullOrEmpty(session.csvData) && session.csvData != "0")
-          {
-
-            var csvBytes = Convert.FromBase64String(session.csvData);
-            var csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
-            var racelinePoints = ParseRacelineFromCsv(csvText);
-
-            if (racelinePoints != null && racelinePoints.Count > 1)
-              trackData.PlayerLine = racelinePoints;
-          }
-
-          DisplayRacelineData(trackData);
-          StartCoroutine(WaitForTrackLoadAndSettle());
-        }
-        else
-        {
-          Debug.LogError($"Failed to parse track data for {trackName}");
-        }
-      }
-      else
-      {
-        Debug.LogError($"Failed to load track borders: {message}");
-      }
-    }
-    catch (Exception ex)
-    {
-      Debug.LogError($"Exception while loading track border: {ex.Message}");
-    }
-  }
-
   public void InitializeWithSession(RacingData session)
   {
     if (session == null || string.IsNullOrEmpty(session.csvData))
@@ -1020,7 +961,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     racelinePoints = currentTrackData.Raceline.ConvertAll(p => TransformPoint(p, bounds.min, scale, offset)).ToArray();
     SetupRacelineSegments();
 
-    traveledDistance = 0f;
     trailPositions.Clear();
   }
 

@@ -51,8 +51,6 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
   [SerializeField] private Color outerBoundaryColor = Color.blue;
   [SerializeField] private Color racelineColor = Color.green;
   [SerializeField] private int lineThickness = 3;
-  [SerializeField] private int pointCount = 100;
-  [SerializeField] private GameObject meshHolder;
 
   private Texture2D originalTexture;
   private Texture2D scaledTexture;

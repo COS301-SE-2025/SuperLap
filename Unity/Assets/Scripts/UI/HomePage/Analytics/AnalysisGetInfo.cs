@@ -45,10 +45,7 @@ public class AnalysisGetInfo : MonoBehaviour
   private RacingData selectedSession;
   private List<RacingData> allSessions = new();
   private List<GameObject> instantiatedPanels = new();
-
   private HomePageNavigation homePageNavigation;
-
-  private RacelineDisplayData FinalTrackData = null;
   private APIManager apiManager;
 
   private bool isLoading = false;

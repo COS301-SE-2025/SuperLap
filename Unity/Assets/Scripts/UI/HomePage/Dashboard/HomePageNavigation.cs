@@ -214,34 +214,6 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-  public void NavigateToRacingLineWithTrackAndSession(string trackName, RacingData session)
-  {
-    NavigateToRacingLine();
-
-    if (racingLinePage != null)
-    {
-      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
-      if (racingLineComponent != null)
-      {
-        racingLineComponent.InitializeWithTrackAndSession(trackName, session);
-      }
-    }
-  }
-
-  public void NavigateToRacingLineWithTrack(Track track)
-  {
-    NavigateToRacingLine();
-
-    if (racingLinePage != null)
-    {
-      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
-      if (racingLineComponent != null)
-      {
-        racingLineComponent.InitializeWithTrack(track.name);
-      }
-    }
-  }
-
   public void NavigateToPage(int pageIndex)
   {
     activePageIndex = pageIndex;

@@ -21,7 +21,6 @@ public class MotoGP : MonoBehaviour
   [SerializeField] private TMP_InputField trackNameInput;
   [SerializeField] private GameObject SaveOptionsDialog;
   bool isRecording = false;
-  bool isWaitingForConfirmation = false;
   private MotoGPTelemetry.TelemetryRecorder recorder;
   List<int> lapIndexList = new List<int>();
   void Start()
@@ -116,7 +115,7 @@ public class MotoGP : MonoBehaviour
       dropdown.options.Clear();
       foreach (int lapIndex in laps)
       {
-        dropdown.options.Add(new DropdownTransition.OptionData((lapIndex.ToString())));
+        dropdown.options.Add(new DropdownTransition.OptionData($"Lap {lapIndex}"));
         lapIndexList.Add(lapIndex);
       }
 
