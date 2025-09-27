@@ -116,7 +116,7 @@ public class MotoGP : MonoBehaviour
       dropdown.options.Clear();
       foreach (int lapIndex in laps)
       {
-        dropdown.options.Add(new DropdownTransition.OptionData(lapIndex));
+        dropdown.options.Add(new DropdownTransition.OptionData((lapIndex.ToString())));
         lapIndexList.Add(lapIndex);
       }
 
