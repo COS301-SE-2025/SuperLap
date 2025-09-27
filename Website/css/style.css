@@ -93,7 +93,7 @@ html {
     cursor: pointer;
     background: #ffff;
     border: none;
-    background: #25292C;
+    background: #db1f1f;
     /*Should be: #db1f1f*/
     border-radius: 30px;
     overflow: hidden;
@@ -1150,8 +1150,8 @@ textarea::placeholder {
 
 .skill-per.syst {
     animation-delay: 0.2s;
-    inset: 0 75% 0 0;
-    /* 25% width (100 - 75) */
+    inset: 0 10% 0 0;
+    /* 90% width (100 - 10) */
 }
 
 @keyframes progress {
