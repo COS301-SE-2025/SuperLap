@@ -880,6 +880,8 @@ MonoBehaviour:
   currentTime: 0
   timeSpeed: 0.5
   isRacing: 1
+  simplificationTolerance: 50
+  acoTrainer: {fileID: 0}
   minTrackScale: 0.2
   maxTrackScale: 2
 --- !u!114 &37695118

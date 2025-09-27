@@ -986,15 +986,15 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
       processButton.interactable = true;
     }
 
-    // ACOTrackMaster.LoadTrack(lastResults);
+    ACOTrackMaster.LoadTrack(lastResults);
 
-    // trainer.StartTraining();
+    trainer.StartTraining();
 
-    // while (!trainer.IsDone())
-    // {
-    //   yield return null;
-    // }
-    // lastResults.raceline = trainer.GetNewRaceline();
+    while (!trainer.IsDone())
+    {
+      yield return null;
+    }
+    lastResults.raceline = trainer.GetNewRaceline();
 
     // HIDE LOADING SCREEN HERE
     // Example: LoadingScreenManager.Instance.HideLoadingScreen();
@@ -1535,7 +1535,7 @@ private void DrawThickLineOnPixelArray(Color[] pixelArray, int width, int height
       if (racingLineComponent != null)
       {
         // Send the processed data to the racing line display
-        bool ACOenabled = false;
+        bool ACOenabled = true;
         racingLineComponent.DisplayRacelineData(racelineData, ACOenabled);
         Debug.Log($"Successfully sent processed track data to racing line page");
       }
