@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 607b588a3b0ad3742b61b83bc61e0421
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Selector/SelectorBasicNoLoop/SelectorBasicNoLoop_Expand.prefab
+  uploadId: 658581

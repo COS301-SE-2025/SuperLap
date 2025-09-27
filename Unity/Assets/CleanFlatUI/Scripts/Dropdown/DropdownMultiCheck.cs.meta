@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: c22c6e7c93fbe794fbd4c111e6f36421
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Dropdown/DropdownMultiCheck.cs
+  uploadId: 658581

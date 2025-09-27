@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 016c6d2328149b045bd331975fb4f09b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Slider/SliderRangeBasic/SliderRangeBasic_Flip.prefab
+  uploadId: 658581

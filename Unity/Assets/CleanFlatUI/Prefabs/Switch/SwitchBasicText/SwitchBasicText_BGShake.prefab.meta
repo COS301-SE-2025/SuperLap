@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e1da79d643e5da044b930158fec3004a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Switch/SwitchBasicText/SwitchBasicText_BGShake.prefab
+  uploadId: 658581

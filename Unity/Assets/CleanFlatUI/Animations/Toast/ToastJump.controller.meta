@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 57d97fff749ddfb4d996108ac7f219e4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Toast/ToastJump.controller
+  uploadId: 658581

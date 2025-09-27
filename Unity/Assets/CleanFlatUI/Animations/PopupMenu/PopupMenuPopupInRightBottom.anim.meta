@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 38eafae56a3ed0940be182affc7d922e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/PopupMenu/PopupMenuPopupInRightBottom.anim
+  uploadId: 658581

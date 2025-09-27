@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e3a1ee8b661354647a7f08514ded7a24
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabViewFadeOn.anim
+  uploadId: 658581

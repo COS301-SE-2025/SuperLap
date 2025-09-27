@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bfcc426075d5fd84f9918e3da5c9b5d9
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Switch/SwitchRoundText/SwitchRoundText_BGExpand.prefab
+  uploadId: 658581

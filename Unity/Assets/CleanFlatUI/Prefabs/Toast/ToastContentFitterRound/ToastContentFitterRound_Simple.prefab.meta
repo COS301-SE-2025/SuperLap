@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b66cd30574352df448c0d5d010de81ac
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Toast/ToastContentFitterRound/ToastContentFitterRound_Simple.prefab
+  uploadId: 658581

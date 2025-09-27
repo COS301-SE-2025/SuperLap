@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: fb4442e5938a95342a43f137c93c84a9
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Selector/SelectorBasic/SelectorBasic_PopupStretch.prefab
+  uploadId: 658581

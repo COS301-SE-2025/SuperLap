@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e61b5b095e6b4a94f9a7a3e7cf04607d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Image/ImageMoveRightAuto.controller
+  uploadId: 658581

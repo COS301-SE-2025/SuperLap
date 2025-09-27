@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: fc3d8707a66ed6143b35c0663ee35885
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ButtonGradient/ButtonGradientBasicOutline/ButtonGradientBasicOutline_Gray_SwapBeamFlip.prefab
+  uploadId: 658581

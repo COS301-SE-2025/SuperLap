@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 886b0a685648a934ea14a9c81da1e6dd
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabStretchOff.anim
+  uploadId: 658581

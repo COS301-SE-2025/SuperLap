@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b4f534536c074274cacef021e80223e3
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/ProgressBar/ProgressBarAuto/ProgressBarAuto_Basic.prefab
+  uploadId: 658581

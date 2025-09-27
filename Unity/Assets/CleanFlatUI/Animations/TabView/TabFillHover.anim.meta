@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2de74b5932a4cde4b81547f2c9e8de48
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabFillHover.anim
+  uploadId: 658581

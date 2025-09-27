@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7ceae1f6a68f9b54695336459d0df566
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Button/ButtonPushVertical.anim
+  uploadId: 658581

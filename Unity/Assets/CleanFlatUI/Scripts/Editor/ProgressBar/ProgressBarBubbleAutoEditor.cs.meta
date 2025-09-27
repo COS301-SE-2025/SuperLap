@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1a03486fc7340714dafe1a43c9026855
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Scripts/Editor/ProgressBar/ProgressBarBubbleAutoEditor.cs
+  uploadId: 658581

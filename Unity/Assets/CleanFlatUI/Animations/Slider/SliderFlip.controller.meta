@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b1fb4b457c0340d458b6889dd5e4f302
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/Slider/SliderFlip.controller
+  uploadId: 658581

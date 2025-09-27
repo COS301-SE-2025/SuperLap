@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1aa23bec76d9ffe45804a49574cefdbc
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Prefabs/Notification/NotificationBasic/NotificationBasicContentFitterMultiButton_SlideUp.prefab
+  uploadId: 658581

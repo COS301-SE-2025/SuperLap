@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5ba40b924b774d74cb691168efabeb10
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/TabView/TabFillOffInit.anim
+  uploadId: 658581

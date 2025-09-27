@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 989b0b7b03c65df4aafe7ebdf27a1fda
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 244547
+  packageName: Super Clean UI - Flat Pack
+  packageVersion: 2.4.2
+  assetPath: Assets/CleanFlatUI/Animations/InputField/InputFieldFillRightOutValue.anim
+  uploadId: 658581
