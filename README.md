@@ -62,13 +62,13 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 🔹 [Demo 3 Video](https://youtu.be/MwTzlo7a2MI)  
 🔹 [Demo 3 Presentation](https://www.canva.com/design/DAGwWVct_5E/t6GvNHMUKxhPdGHImorjKg/edit?utm_content=DAGwWVct_5E&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
-<!--🔹 [Demo 4 Video](lk)  
+<!-- 🔹 [Demo 4 Video](lk)  
 🔹 [Demo 4 Presentation](vd) -->
 
 
 <h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
 
-+ [Project Board](https://github.com/orgs/COS301-SE-2025/projects/227?query=is%3Aopen)
++ [Project Board](https://github.com/orgs/COS301-SE-2025/projects/237)
 - [Software Requirements Specification](https://drive.google.com/file/d/1JVoedYRQwiwmW4Hm1UECwJvs-9Z6TlSJ/view?usp=sharing)
 - [Functional Requirements](https://drive.google.com/file/d/1pn0vYUoMiVoSpRDKIi1Jas7gbBUHUsyY/view?usp=sharing)
 - [Architectural Requirements](https://drive.google.com/file/d/1xP-0g8ttMVAUbZDo6pwQAowe1QMp0AbL/view?usp=sharing)
