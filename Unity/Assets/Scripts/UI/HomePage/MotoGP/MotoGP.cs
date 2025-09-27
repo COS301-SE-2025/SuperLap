@@ -396,6 +396,17 @@ public class MotoGP : MonoBehaviour
       vehicleUsed = "MotoGP Bike";
     }
 
+    if (recorder != null && recorder.PlayerPath.Count > 0)
+    {
+      filePath = Path.Combine(Application.streamingAssetsPath, "lastSession.csv");
+      recorder.SaveToCSV();
+    }
+    else
+    {
+      Debug.LogWarning("Somehow recorder is null not saving");
+      return;
+    }
+    
 
     var (success, message, data) = await APIManager.Instance.UploadRacingDataAsync(
         filePath,
