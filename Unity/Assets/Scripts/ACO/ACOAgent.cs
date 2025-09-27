@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 public class ACOAgent
 {
-    private static float enginePower = 250000f;
+    private static float enginePower = 80000f;
     private static float maxTractionForce = 7000f;
     private static float brakingForce = 8000f;
 
@@ -62,7 +62,7 @@ public class ACOAgent
     private int instanceId;
     public int ID => instanceId;
     Random random;
-    public readonly static float Scale = 0.25f;
+    public readonly static float Scale = 0.20f;
 
     public Vector2 Forward
     {

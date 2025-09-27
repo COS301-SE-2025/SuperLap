@@ -75,7 +75,7 @@ public class ACOAgentReplay : MonoBehaviour
   private Color[] ApplyColorWeighting()
   {
     Color[] weightedColors = new Color[replayStates.Count];
-    int segmentSize = 50;
+    int segmentSize = 100;
 
     for (int i = 0; i < replayStates.Count; i++)
     {
@@ -102,7 +102,7 @@ public class ACOAgentReplay : MonoBehaviour
       {
         segmentColor = Color.red;
       }
-      else if (yellowCount >= 25)
+      else if (yellowCount >= 50)
       {
         segmentColor = Color.yellow;
       }
