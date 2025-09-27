@@ -39437,8 +39437,8 @@ MonoBehaviour:
   zoomContainer: {fileID: 538952438}
   viewportRect: {fileID: 888397668}
   timeline: {fileID: 2049921479}
-  playTexture: {fileID: 2800000, guid: 37749a2e1d394d148967361b7f24a7f6, type: 3}
-  pauseTexture: {fileID: 2800000, guid: 7dd55a1b16f883544a4a264ee96308b6, type: 3}
+  playTexture: {fileID: 2800000, guid: 7dd55a1b16f883544a4a264ee96308b6, type: 3}
+  pauseTexture: {fileID: 2800000, guid: 37749a2e1d394d148967361b7f24a7f6, type: 3}
   play_0: {fileID: 2800000, guid: 7780b494d68cf9a48b5dc976da868898, type: 3}
   play_1: {fileID: 2800000, guid: 1348aebe93e3e934180668b73fa4a186, type: 3}
   play_2: {fileID: 2800000, guid: 7f27e5594cb71b2429a30e9272143e52, type: 3}
@@ -45578,7 +45578,7 @@ PrefabInstance:
     - target: {fileID: 3808407403234983720, guid: d639e84fc4a19814eb3fd4b896f6d603, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 37749a2e1d394d148967361b7f24a7f6, type: 3}
+      objectReference: {fileID: 21300000, guid: 7dd55a1b16f883544a4a264ee96308b6, type: 3}
     - target: {fileID: 6141192144270998900, guid: d639e84fc4a19814eb3fd4b896f6d603, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
