@@ -52,6 +52,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   [SerializeField] private float maxZoom = 3f;
   [SerializeField] private float panSpeed = 1f;
   [SerializeField] private bool invertZoom = false;
+  [SerializeField] private float panPadding = 1000f;
 
   private MotoGPDisplayData currentTrackData;
   private Dictionary<string, UILineRenderer> lineRenderers = new Dictionary<string, UILineRenderer>();
@@ -171,7 +172,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   public void changeDeviationSectionWidth(float newWidth)
   {
     deviationSectionWidth = newWidth;
-    
+
     foreach (var renderer in deviationLineRenderers)
     {
       if (renderer != null)
@@ -184,11 +185,9 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
   private void ConstrainToViewport()
   {
     if (!viewportRect || !trackContainer) return;
-
     Vector2 scaledSize = trackContainer.rect.size * currentZoom;
     Vector2 viewportSize = viewportRect.rect.size;
-    Vector2 maxOffset = Vector2.Max((scaledSize - viewportSize) * 0.5f, Vector2.zero);
-
+    Vector2 maxOffset = Vector2.Max((scaledSize - viewportSize) * 0.5f + new Vector2(panPadding, panPadding), Vector2.zero);
     panOffset.x = Mathf.Clamp(panOffset.x, -maxOffset.x, maxOffset.x);
     panOffset.y = Mathf.Clamp(panOffset.y, -maxOffset.y, maxOffset.y);
   }
@@ -236,18 +235,18 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     }
     return points;
   }
-  
+
   private List<Vector2> Downsample(List<Vector2> points, int step)
   {
     return points.Where((pt, idx) => idx % step == 0).ToList();
   }
-  
+
   private List<Vector2> EnsureBelowLimit(List<Vector2> points, int limit = 64000)
   {
     if (points == null)
       return points;
 
-    int step = 2; 
+    int step = 2;
     while (points.Count > limit)
     {
       points = Downsample(points, step);
@@ -305,14 +304,14 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     if (playerPath == null || playerPath.Count < 2) return;
 
     bool[] isDeviationIndex = new bool[playerPath.Count];
-    
+
     if (deviationSections != null && showDeviationSections)
     {
       foreach (Vector2 section in deviationSections)
       {
         int startIndex = Mathf.FloorToInt(section.x);
         int endIndex = Mathf.FloorToInt(section.y);
-        
+
         for (int i = Mathf.Max(0, startIndex); i <= Mathf.Min(playerPath.Count - 1, endIndex); i++)
         {
           isDeviationIndex[i] = true;
@@ -334,16 +333,16 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
           CreatePlayerPathSegment(currentSegment, currentIsDeviation, segmentCount, min, scale, offset);
           segmentCount++;
         }
-        
+
         currentSegment.Clear();
         currentIsDeviation = thisIsDeviation;
-        
+
         if (i > 0)
         {
           currentSegment.Add(playerPath[i - 1]);
         }
       }
-      
+
       currentSegment.Add(playerPath[i]);
     }
 
@@ -367,7 +366,7 @@ public class ShowMotoGP : MonoBehaviour, IDragHandler, IScrollHandler, IPointerD
     lr.color = segmentColor;
     lr.LineThickness = segmentWidth / currentZoom;
     lr.Points = segmentPoints.ConvertAll(p => TransformPoint(p, min, scale, offset)).ToArray();
-    
+
     if (isDeviation)
     {
       deviationLineRenderers.Add(lr);

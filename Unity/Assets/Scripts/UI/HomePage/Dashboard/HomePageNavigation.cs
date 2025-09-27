@@ -352,7 +352,7 @@ private (int start, int end) GetTooltipRangeForPage()
         return page != null && page.activeSelf && !IsBackupPanelActive(page);
     }
 
-    if (ShouldReturnTooltip(dashboardPage)) return (0, 3);
+    if (dashboardPage && dashboardPage.gameObject.activeSelf) return (0, 3);
     if (ShouldReturnTooltip(galleryPage)) return (4, 4);
     if (ShouldReturnTooltip(analysisPage)) return (5, 8);
     if (ShouldReturnTooltip(motoGPPage)) return (9, 10);
