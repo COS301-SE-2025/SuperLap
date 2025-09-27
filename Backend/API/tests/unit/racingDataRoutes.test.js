@@ -34,7 +34,9 @@ describe('Racing Data Routes Unit Tests', function () {
             const racingData = {
                 trackName: testTrack.name,
                 userName: testUser.username,
-                lapTime: '1:23.456',
+                fastestLapTime: '1:23.456',
+                topSpeed: '308',
+                averageSpeed: '187',
                 vehicleUsed: 'Test Car',
                 description: 'Test lap data',
                 fileName: 'test.csv',
@@ -92,7 +94,7 @@ describe('Racing Data Routes Unit Tests', function () {
             const racingData = {
                 trackName: testTrack.name,
                 userName: testUser.username,
-                lapTime: '1:23.456'
+                fastestLapTime: '1:23.456'
             };
 
             const res = await request(app).post('/racing-data').send(racingData);
@@ -283,7 +285,9 @@ describe('Racing Data Routes Unit Tests', function () {
             await request(app).post('/racing-data').send({
                 trackName: testTrack.name,
                 userName: testUser.username,
-                lapTime: '1:25.000',
+                fastestLapTime: '1:25.000',
+                topSpeed: '302',
+                averageSpeed: '193',
                 csvData: testCsvBase64
             });
             
@@ -292,14 +296,16 @@ describe('Racing Data Routes Unit Tests', function () {
             await request(app).post('/racing-data').send({
                 trackName: testTrack.name,
                 userName: testUser.username,
-                lapTime: '1:23.000',
+                fastestLapTime: '1:23.000',
+                topSpeed: '300',
+                averageSpeed: '183',
                 csvData: testCsvBase64
             });
 
             const res = await request(app).get(`/racing-data/user/${testUser.username}/last`);
             expect(res.status).toBe(200);
             expect(res.body).toHaveProperty('userName', testUser.username);
-            expect(res.body).toHaveProperty('lapTime', '1:23.000');
+            expect(res.body).toHaveProperty('fastestLapTime', '1:23.000');
             
             // Cleanup
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -455,18 +461,18 @@ describe('Racing Data Routes Unit Tests', function () {
             
             const updateData = {
                 description: 'Updated description',
-                lapTime: '1:22.000',
+                fastestLapTime: '1:22.000',
                 vehicleUsed: 'Updated Car'
             };
             
             const res = await request(app).put(`/racing-data/${racingDataId}`).send(updateData);
             expect(res.status).toBe(200);
             expect(res.body).toHaveProperty('message', 'Racing data updated successfully');
-            
+
             // Verify update
             const updatedData = await db.collection('racingData').findOne({ _id: new ObjectId(racingDataId) });
             expect(updatedData.description).toBe('Updated description');
-            expect(updatedData.lapTime).toBe('1:22.000');
+            expect(updatedData.fastestLapTime).toBe('1:22.000');
             expect(updatedData.lastModified).toBeDefined();
             
             // Cleanup
