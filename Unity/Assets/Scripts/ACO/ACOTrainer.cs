@@ -200,12 +200,6 @@ public class ACOTrainer : MonoBehaviour
                 // Always overwrite the current split's best agent (this ensures only the best is kept)
                 bestAgents[c] = bestAgent;
 
-                // Debug: Show current state of bestAgents dictionary
-                foreach (var kvp in bestAgents.OrderBy(kv => kv.Key))
-                {
-                    Debug.Log($"  Split {kvp.Key}: {kvp.Value.TotalSteps} steps, target pos: {kvp.Value.TargetPassPosition}, speed: {kvp.Value.TargetPassSpeed}");
-                }
-
                 retryCounter = 5; // Reset retry counter
                 c++;
 

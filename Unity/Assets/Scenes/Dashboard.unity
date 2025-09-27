@@ -11202,7 +11202,7 @@ MonoBehaviour:
   maxConcurrentProcessing: 1
   agentCount: 1
   threadCount: 1
-  checkpointCount: 1
+  checkpointCount: 5
   enableDebugLogs: 1
   OnBatchStarted:
     m_PersistentCalls:

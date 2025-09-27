@@ -20,7 +20,7 @@ public class ACOAgent
 
     private bool enableRecommendations = true;
     private int recommendationSteps = 10;
-    private float steeringSensitivity = 0.1f;
+    private float steeringSensitivity = 0.03f;
     private float throttleSensitivity = 0.15f;
     private float testInputStrength = 0.5f;
     private float inputThreshold = 0.3f;
@@ -62,7 +62,7 @@ public class ACOAgent
     private int instanceId;
     public int ID => instanceId;
     Random random;
-    public readonly static float Scale = 0.3f;
+    public readonly static float Scale = 0.25f;
 
     public Vector2 Forward
     {
