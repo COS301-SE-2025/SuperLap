@@ -32,86 +32,6 @@ public class ACOAgentReplay : MonoBehaviour
 
     //DrawLineWithMesh();
   }
-
-  public void SaveBinFile()
-  {
-    Debug.Log("Start save bin");
-    
-    string outputPath = Path.Combine(Application.streamingAssetsPath, DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_breakPoints.bin");
-    List<(Vector2 start, Vector2 end, Color color)> segments = GetColoredSegments();
-    // simplify the list
-    List<(Vector2 start, Vector2 end, Color color)> simplifiedSegments = new List<(Vector2, Vector2, Color)>();
-
-    Debug.Log("1");
-
-    if (segments.Count > 0)
-    {
-      Vector2 currentStart = segments[0].start;
-      Color currentColor = segments[0].color;
-
-      for (int i = 1; i < segments.Count; i++)
-      {
-        if (!segments[i].color.Equals(currentColor))
-        {
-          simplifiedSegments.Add((currentStart, segments[i - 1].end, currentColor));
-          currentStart = segments[i].start;
-          currentColor = segments[i].color;
-        }
-      }
-
-      simplifiedSegments.Add((currentStart, segments[segments.Count - 1].end, currentColor));
-    }
-
-    Debug.Log("2");
-
-    List<Vector2> redSegments = new List<Vector2>(); // Braking - implicit pairs (index 0=start, 1=end, 2=start, 3=end, etc.)
-    List<Vector2> yellowSegments = new List<Vector2>(); // Idling - implicit pairs
-    List<Vector2> greenSegments = new List<Vector2>(); // Acceleration - implicit pairs
-
-    foreach (var segment in simplifiedSegments)
-    {
-      if (segment.color.Equals(Color.red))
-      {
-        redSegments.Add(segment.start);
-        redSegments.Add(segment.end);
-      }
-      else if (segment.color.Equals(Color.yellow))
-      {
-        yellowSegments.Add(segment.start);
-        yellowSegments.Add(segment.end);
-      }
-      else if (segment.color.Equals(Color.green))
-      {
-        greenSegments.Add(segment.start);
-        greenSegments.Add(segment.end);
-      }
-    }
-
-    Debug.Log("3");
-
-    List<Vector2> playerLine = replayStates.Select(rs => new Vector2(rs.position.X, rs.position.Y)).ToList();
-
-    var trackData = ACOTrackMaster.instance.LastProcessingResults;
-
-    string outputDir = Path.GetDirectoryName(outputPath);
-
-    if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-      Directory.CreateDirectory(outputDir);
-
-    using (var writer = new BinaryWriter(File.Create(outputPath)))
-    {
-      WritePoints(writer, trackData.outerBoundary);
-      WritePoints(writer, trackData.innerBoundary);
-      WritePoints(writer, playerLine);
-      WritePoints(writer, yellowSegments);
-      WritePoints(writer, redSegments);
-    }
-
-    Debug.Log("4");
-
-    Debug.Log($"Acceleration data with {replayStates.Count} states written to: {outputPath}");
-  }
-
   private static void WritePoints(BinaryWriter writer, List<Vector2> points)
   {
     writer.Write(points.Count);
@@ -143,70 +63,6 @@ public class ACOAgentReplay : MonoBehaviour
     }
 
     return segments;
-  }
-
-  private void DrawLineWithMesh()
-  {
-    if (meshFilter == null)
-    {
-      meshFilter = gameObject.AddComponent<MeshFilter>();
-      meshRenderer = gameObject.AddComponent<MeshRenderer>();
-      Material mat = new Material(Shader.Find("Sprites/Default"));
-      meshRenderer.material = mat;
-    }
-
-    if (replayStates.Count < 2) return;
-
-    // Apply color weighting to create weighted colors array
-    Color[] weightedColors = ApplyColorWeighting();
-
-    List<Vector3> vertices = new List<Vector3>();
-    List<Color> colors = new List<Color>();
-    List<int> triangles = new List<int>();
-
-    float lineWidth = 10.0f;
-
-    for (int i = 0; i < replayStates.Count - 1; i++)
-    {
-      Vector3 pos1 = new Vector3(replayStates[i].position.X, 1, replayStates[i].position.Y);
-      Vector3 pos2 = new Vector3(replayStates[i + 1].position.X, 1, replayStates[i + 1].position.Y);
-
-      Vector3 direction = (pos2 - pos1).normalized;
-      Vector3 perpendicular = Vector3.Cross(direction, Vector3.up) * lineWidth * 0.5f;
-
-      // Use the weighted color instead of the original throttle color
-      Color segmentColor = weightedColors[i];
-
-      int vertexIndex = vertices.Count;
-
-      // Create quad for this segment
-      vertices.Add(pos1 - perpendicular);
-      vertices.Add(pos1 + perpendicular);
-      vertices.Add(pos2 + perpendicular);
-      vertices.Add(pos2 - perpendicular);
-
-      colors.Add(segmentColor);
-      colors.Add(segmentColor);
-      colors.Add(segmentColor);
-      colors.Add(segmentColor);
-
-      // Create triangles for the quad
-      triangles.Add(vertexIndex);
-      triangles.Add(vertexIndex + 1);
-      triangles.Add(vertexIndex + 2);
-
-      triangles.Add(vertexIndex);
-      triangles.Add(vertexIndex + 2);
-      triangles.Add(vertexIndex + 3);
-    }
-
-    Mesh mesh = new Mesh();
-    mesh.vertices = vertices.ToArray();
-    mesh.colors = colors.ToArray();
-    mesh.triangles = triangles.ToArray();
-    mesh.RecalculateNormals();
-
-    meshFilter.mesh = mesh;
   }
 
   private Color[] ApplyColorWeighting()
@@ -346,7 +202,7 @@ public class ACOAgentReplay : MonoBehaviour
   private List<(Vector2 start, Vector2 end, Color color)> SimplifyColorGroup(List<(Vector2 start, Vector2 end, Color color)> group, float tolerance)
   {
     if (group.Count <= 1) return group;
-    
+
     // Extract points from the segments to form a continuous path
     List<Vector2> points = new List<Vector2>();
     points.Add(group[0].start);
@@ -354,55 +210,22 @@ public class ACOAgentReplay : MonoBehaviour
     {
       points.Add(segment.end);
     }
-    
+
     // Simplify the path using Douglas-Peucker
     List<Vector2> simplifiedPoints = DouglasPeucker(points, tolerance);
-    
+
     // Convert back to segments with the original color
     var simplifiedSegments = new List<(Vector2, Vector2, Color)>();
     Color groupColor = group[0].color;
-    
+
     for (int i = 0; i < simplifiedPoints.Count - 1; i++)
     {
       simplifiedSegments.Add((simplifiedPoints[i], simplifiedPoints[i + 1], groupColor));
     }
-    
+
     return simplifiedSegments;
   }
-
-  private List<Vector2> DouglasPeuckerWithProtectedPoints(List<Vector2> points, float tolerance, HashSet<int> protectedIndices)
-  {
-    if (points.Count <= 2) return new List<Vector2>(points);
-    
-    // Find segments between protected points
-    List<int> protectedList = protectedIndices.OrderBy(x => x).ToList();
-    List<Vector2> simplifiedPoints = new List<Vector2>();
-    
-    for (int i = 0; i < protectedList.Count - 1; i++)
-    {
-      int startIdx = protectedList[i];
-      int endIdx = protectedList[i + 1];
-      
-      // Extract segment between protected points
-      List<Vector2> segment = points.GetRange(startIdx, endIdx - startIdx + 1);
-      
-      // Simplify this segment (keeping start and end points)
-      List<Vector2> simplifiedSegment = DouglasPeucker(segment, tolerance);
-      
-      // Add to result (skip first point if not the very first segment to avoid duplicates)
-      if (i == 0)
-      {
-        simplifiedPoints.AddRange(simplifiedSegment);
-      }
-      else
-      {
-        simplifiedPoints.AddRange(simplifiedSegment.Skip(1));
-      }
-    }
-    
-    return simplifiedPoints;
-  }
-
+  
   private List<Vector2> DouglasPeucker(List<Vector2> points, float tolerance)
   {
     if (points.Count <= 2) return new List<Vector2>(points);
@@ -459,18 +282,16 @@ public class ACOAgentReplay : MonoBehaviour
     return Vector2.Distance(point, projection);
   }
 
-  public void SaveBinFileSimplified(float simplificationTolerance = 5.0f)
+  public void SaveBinFile(float simplificationTolerance = 5.0f)
   {
-    Debug.Log("Start save bin with simplified track");
-    
     string outputPath = Path.Combine(Application.streamingAssetsPath, DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_simplified_breakPoints.bin");
     
     // Get colored segments first
     List<(Vector2 start, Vector2 end, Color color)> segments = GetColoredSegments();
-    
+
     // Simplify the colored segments while preserving color boundaries
     List<(Vector2 start, Vector2 end, Color color)> simplifiedSegments = SimplifyColoredSegments(segments, simplificationTolerance);
-    
+
     // Extract the simplified player line from the simplified segments
     List<Vector2> simplifiedPlayerLine = new List<Vector2>();
     if (simplifiedSegments.Count > 0)

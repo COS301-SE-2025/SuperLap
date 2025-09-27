@@ -561,7 +561,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (!trackContainer || trackData == null) return;
 
-    float simplificationTolerance = 5f;
+    float simplificationTolerance = 0.5f;
 
     trackData = new RacelineDisplayData
     {
@@ -589,7 +589,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       var simplifiedSegments = replay.SimplifyColoredSegments(originalSegments, simplificationTolerance);
 
       // for Sean: output the data
-      replay.SaveBinFileSimplified(simplificationTolerance);
+      replay.SaveBinFile(simplificationTolerance);
 
       CreateBreakingPointsFromSegments(simplifiedSegments, racelineWidth);
     }
@@ -672,7 +672,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return transformed - trackContainer.rect.size * 0.5f;
   }
 
-
   private void CreateBreakingPointsFromSegments(List<(Vector2 start, Vector2 end, Color color)> segments, float width)
   {
     if (segments == null || segments.Count == 0) return;
@@ -708,7 +707,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         currentColor = seg.color;
 
         lineRenderers[$"ReplaySegment_{count++}"] = currentLine;
-        
+
         // Add the first point of this color segment
         Vector2 startPoint = TransformPoint(seg.start, bounds.min, scale, offset);
         currentPoints.Add(startPoint);
@@ -725,70 +724,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       currentLine.Points = currentPoints.ToArray();
     }
   }
-
-  private void CreateBreakingPoints(List<ReplayState> replays, float width)
-  {
-    if (replays == null || replays.Count < 2) return;
-
-    ACOAgentReplay replay = GetComponent<ACOAgentReplay>();
-    var segments = replay.GetColoredSegments();
-
-    if (segments == null || segments.Count == 0) return;
-
-    (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(currentTrackData);
-    float scale = CalculateScale(bounds.size);
-    Vector2 offset = CalculateOffset(bounds.size, scale);
-
-    UILineRenderer currentLine = null;
-    List<Vector2> currentPoints = null;
-    Color currentColor = Color.clear;
-
-    int count = 0;
-
-    Vector2? firstPoint = null;
-
-    foreach (var seg in segments)
-    {
-      if (currentLine == null || seg.color != currentColor)
-      {
-        if (currentLine != null)
-        {
-          currentLine.Points = currentPoints.ToArray();
-        }
-
-        currentLine = new GameObject($"ReplaySegment_{count}", typeof(RectTransform), typeof(UILineRenderer))
-            .GetComponent<UILineRenderer>();
-
-        currentLine.transform.SetParent(trackContainer, false);
-        currentLine.material = lineMaterial;
-        currentLine.color = seg.color;
-        currentLine.LineThickness = width / currentZoom;
-
-        currentPoints = new List<Vector2>();
-        currentColor = seg.color;
-
-        lineRenderers[$"ReplaySegment_{count++}"] = currentLine;
-      }
-
-      Vector2 startPoint = TransformPoint(seg.start, bounds.min, scale, offset);
-      Vector2 endPoint = TransformPoint(seg.end, bounds.min, scale, offset);
-
-      if (firstPoint == null)
-      {
-        firstPoint = startPoint;
-      }
-
-      currentPoints.Add(startPoint);
-      currentPoints.Add(endPoint);
-    }
-
-    if (currentLine != null && currentPoints != null && currentPoints.Count >= 2 && firstPoint.HasValue)
-    {
-      currentPoints.Add(firstPoint.Value);
-      currentLine.Points = currentPoints.ToArray();
-    }
-  }
-
+  
   private void CreateRoadArea(List<Vector2> outer, List<Vector2> inner, Vector2 min, float scale, Vector2 offset)
   {
     if (outer == null || inner == null || outer.Count < 3 || inner.Count < 3) return;
@@ -810,7 +746,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   private void CreateLineRenderer(string key, List<Vector2> points, Color color, float width, Vector2 min, float scale, Vector2 offset)
   {
     if (points == null || points.Count < 2) return;
-
     UILineRenderer lr = new GameObject(key, typeof(RectTransform), typeof(UILineRenderer)).GetComponent<UILineRenderer>();
     lr.transform.SetParent(trackContainer, false);
     lr.material = lineMaterial;
