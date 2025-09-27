@@ -110,7 +110,7 @@ namespace CSVToBinConverter
       };
     }
 
-    public static PlayerlineSettings LoadSettings(string path)
+    private static PlayerlineSettings LoadSettings(string path)
     {
       try
       {

@@ -28,8 +28,8 @@ def process_json_file(json_path, output_dir, supersample=3):
         height = int(max(ys) - min(ys)) + 10
 
     boxes = data.get("boxes", [])
-    inner_box = find_box(boxes, ["outside", "outer"])
-    outer_box = find_box(boxes, ["inside", "inner"])
+    outer_box = find_box(boxes, ["outside", "outer"])
+    inner_box = find_box(boxes, ["inside", "inner"])
 
     if not outer_box:
         boxes_sorted = sorted(boxes, key=lambda b: len(b.get("points", [])), reverse=True)
@@ -56,14 +56,14 @@ def process_json_file(json_path, output_dir, supersample=3):
         inner_pts_ss = [(x * ss, y * ss) for x, y in inner_pts]
         draw.polygon(inner_pts_ss, fill=0)
 
-    out_big = Image.new("RGB", (W, H), (255, 255, 255))
-    white_layer = Image.new("RGB", (W, H), (0, 0, 0))
+    out_big = Image.new("RGB", (W, H), (0, 0, 0))
+    white_layer = Image.new("RGB", (W, H), (255, 255, 255))
     out_big.paste(white_layer, mask=mask)
 
     out = out_big.resize((width, height), resample=Image.LANCZOS) if ss > 1 else out_big
 
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, f"{track_name}.png")
+    output_path = os.path.join(output_dir, f"{track_name}(Mask).png")
     out.save(output_path)
     print(f"Saved {output_path} ({width}x{height})")
 

@@ -33,21 +33,16 @@ public class ImageProcessing
 
       // Get the path to the executable
       string exeName;
-
-      if (isGrayScale)
-      {
-        exeName = "TrackProcessor";
-      }
-      else
-      {
-        exeName = "CNN/CNN";
-      }
-
       if (Application.platform == RuntimePlatform.WindowsPlayer ||
           Application.platform == RuntimePlatform.WindowsEditor)
       {
-        exeName += ".exe";
+        exeName = "TrackProcessor.exe";
       }
+      else
+      {
+        exeName = "TrackProcessor"; // Linux / macOS (no .exe)
+      }
+
       string exePath = Path.Combine(Application.streamingAssetsPath, exeName);
       if (!File.Exists(exePath))
       {
@@ -69,8 +64,7 @@ public class ImageProcessing
         UseShellExecute = false,
         RedirectStandardOutput = true,
         RedirectStandardError = true,
-        CreateNoWindow = true,
-        WorkingDirectory = Path.GetDirectoryName(exePath)
+        CreateNoWindow = true
       };
 
       // Execute the process
@@ -104,6 +98,7 @@ public class ImageProcessing
 
         // Read the output file
         string jsonContent = File.ReadAllText(outputFilePath);
+        Debug.Log($"Read output file with {jsonContent.Length} characters");
 
         // Parse the results
         result = ParseTrackBoundaries(jsonContent);

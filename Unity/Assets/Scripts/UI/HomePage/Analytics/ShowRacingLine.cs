@@ -8,7 +8,6 @@ using LibTessDotNet;
 using System.IO;
 using System.Collections;
 using System;
-using System.Globalization;
 
 [System.Serializable]
 public class RacelineDisplayData
@@ -112,8 +111,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   [SerializeField] private bool showOuterBoundary = true;
   [SerializeField] private bool showInnerBoundary = true;
   [SerializeField] private bool showRaceLine = true;
-  [SerializeField] private bool showPlayerLine = true;
-  [SerializeField] private bool showBreakPoints = true;
 
   [Header("Zoom/Pan Settings")]
   [SerializeField] private float zoomSpeed = 0.1f;
@@ -225,11 +222,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     {
       ToggleFollowCar();
     }
-
-    if (Input.GetKeyDown(KeyCode.F))
-    {
-      ToggleShowBreakPoints();
-    }
   }
 
   void Start()
@@ -258,23 +250,14 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
   private void OnDisable()
   {
-    ClearPreview();
-  }
-
-  public void ClearPreview()
-  {
-    // Stop any coroutines running raceline updates
     StopAllCoroutines();
 
-    // Clear internal data
     racelinePoints = null;
     racelineSegmentLengths = null;
     totalRacelineLength = 0f;
     currentTrackData = null;
-    pendingTrackData = null;
     trailPositions.Clear();
 
-    // Destroy the car cursor and trail
     if (carCursor != null)
     {
       Destroy(carCursor.gameObject);
@@ -287,25 +270,26 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       trailLineRenderer = null;
     }
 
-    // Destroy all line renderers
     foreach (var kvp in lineRenderers)
-      if (kvp.Value != null) Destroy(kvp.Value.gameObject);
+    {
+      if (kvp.Value != null)
+        Destroy(kvp.Value.gameObject);
+    }
     lineRenderers.Clear();
 
-    // Clear children of track container
     if (trackContainer != null)
-      foreach (Transform child in trackContainer) Destroy(child.gameObject);
+    {
+      foreach (Transform child in trackContainer)
+        Destroy(child.gameObject);
+    }
 
-    // Reset pan/zoom/camera
     panOffset = Vector2.zero;
-    currentZoom = 10f;
     followCar = false;
     goingToCar = false;
-    currentTime = 0f;
-
-    UpdateZoomContainer();
-    UpdateLineWidths();
+    currentTime = 0;
   }
+
+
 
   private void HandleCameraFollow()
   {
@@ -472,28 +456,10 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     }
   }
 
-  private void ToggleFollowCar()
+  public void ToggleFollowCar()
   {
     followCar = !followCar;
     goingToCar = followCar;
-  }
-
-  private void ToggleShowBreakPoints()
-  {
-    showBreakPoints = !showBreakPoints;
-    showRaceLine = !showBreakPoints;
-
-    foreach (var kvp in lineRenderers)
-    {
-      if (kvp.Key.StartsWith("ReplaySegment"))
-      {
-        kvp.Value.enabled = showBreakPoints;
-      }
-      else if (kvp.Key.StartsWith("Raceline"))
-      {
-        kvp.Value.enabled = showRaceLine;
-      }
-    }
   }
 
   private void ConstrainToViewport()
@@ -526,8 +492,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         "OuterBoundary" => outerBoundaryWidth,
         "InnerBoundary" => innerBoundaryWidth,
         "Raceline" => racelineWidth,
-        "Playerline" => racelineWidth,
-        _ when kvp.Key.StartsWith("ReplaySegment") => racelineWidth,
         _ => 1f
       };
       kvp.Value.LineThickness = baseWidth / currentZoom;
@@ -538,18 +502,18 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
   {
     return list.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList();
   }
-
+  
   private List<Vector2> Downsample(List<Vector2> points, int step)
   {
     return points.Where((pt, idx) => idx % step == 0).ToList();
   }
-
+  
   private List<Vector2> EnsureBelowLimit(List<Vector2> points, int limit = 64000)
   {
     if (points == null)
       return points;
 
-    int step = 2;
+    int step = 2; 
     while (points.Count > limit)
     {
       points = Downsample(points, step);
@@ -558,7 +522,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return points;
   }
 
-  public void DisplayRacelineData(RacelineDisplayData trackData, bool ACOenabled = false)
+  public void DisplayRacelineData(RacelineDisplayData trackData)
   {
     if (!isInitialized)
     {
@@ -570,13 +534,12 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     if (!trackContainer || trackData == null) return;
 
     float simplificationTolerance = 5f;
-    int maxVertices = 64000;
+
     trackData = new RacelineDisplayData
     {
-      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary, 3200)), simplificationTolerance)),
-      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary, 3200)), simplificationTolerance)),
-      Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline, 3200)),
-      PlayerLine = EnsureLooped(EnsureBelowLimit(trackData.PlayerLine, 3200)),
+      InnerBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.InnerBoundary)), simplificationTolerance)),
+      OuterBoundary = LineSimplifier.SmoothLine(LineSimplifier.RamerDouglasPeucker(EnsureLooped(EnsureBelowLimit(trackData.OuterBoundary)), simplificationTolerance)),
+      Raceline = EnsureLooped(EnsureBelowLimit(trackData.Raceline))
     };
 
     ClearExistingLines();
@@ -588,25 +551,9 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     CreateRoadArea(trackData.OuterBoundary, trackData.InnerBoundary, bounds.min, scale, offset);
 
-    if (ACOenabled)
-    {
-      ACOAgentReplay replay = gameObject.AddComponent<ACOAgentReplay>();
-      replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
-
-      // for Sean: output the data
-      replay.SaveBinFile();
-
-      CreateBreakingPoints(replay.GetReplays(), racelineWidth);
-    }
-
-    if (showOuterBoundary && trackData.OuterBoundary != null) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
-    if (showInnerBoundary && trackData.InnerBoundary != null) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
-    if (showRaceLine && trackData.Raceline != null) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
-
-    if (showPlayerLine && trackData.PlayerLine != null && trackData.PlayerLine.Count > 1)
-    {
-      CreateLineRenderer("PlayerLine", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
-    }
+    if (showOuterBoundary) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
+    if (showInnerBoundary) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
+    if (showRaceLine) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
 
     panOffset = Vector2.zero;
     UpdateZoomContainer();
@@ -682,70 +629,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     return transformed - trackContainer.rect.size * 0.5f;
   }
 
-
-  private void CreateBreakingPoints(List<ReplayState> replays, float width)
-  {
-    if (replays == null || replays.Count < 2) return;
-
-    ACOAgentReplay replay = GetComponent<ACOAgentReplay>();
-    var segments = replay.GetColoredSegments();
-
-    if (segments == null || segments.Count == 0) return;
-
-    (Vector2 min, Vector2 max, Vector2 size) bounds = CalculateBounds(currentTrackData);
-    float scale = CalculateScale(bounds.size);
-    Vector2 offset = CalculateOffset(bounds.size, scale);
-
-    UILineRenderer currentLine = null;
-    List<Vector2> currentPoints = null;
-    Color currentColor = Color.clear;
-
-    int count = 0;
-
-    Vector2? firstPoint = null;
-
-    foreach (var seg in segments)
-    {
-      if (currentLine == null || seg.color != currentColor)
-      {
-        if (currentLine != null)
-        {
-          currentLine.Points = currentPoints.ToArray();
-        }
-
-        currentLine = new GameObject($"ReplaySegment_{count}", typeof(RectTransform), typeof(UILineRenderer))
-            .GetComponent<UILineRenderer>();
-
-        currentLine.transform.SetParent(trackContainer, false);
-        currentLine.material = lineMaterial;
-        currentLine.color = seg.color;
-        currentLine.LineThickness = width / currentZoom;
-
-        currentPoints = new List<Vector2>();
-        currentColor = seg.color;
-
-        lineRenderers[$"ReplaySegment_{count++}"] = currentLine;
-      }
-
-      Vector2 startPoint = TransformPoint(seg.start, bounds.min, scale, offset);
-      Vector2 endPoint = TransformPoint(seg.end, bounds.min, scale, offset);
-
-      if (firstPoint == null)
-      {
-        firstPoint = startPoint;
-      }
-
-      currentPoints.Add(startPoint);
-      currentPoints.Add(endPoint);
-    }
-
-    if (currentLine != null && currentPoints != null && currentPoints.Count >= 2 && firstPoint.HasValue)
-    {
-      currentPoints.Add(firstPoint.Value);
-      currentLine.Points = currentPoints.ToArray();
-    }
-  }
-
   private void CreateRoadArea(List<Vector2> outer, List<Vector2> inner, Vector2 min, float scale, Vector2 offset)
   {
     if (outer == null || inner == null || outer.Count < 3 || inner.Count < 3) return;
@@ -775,112 +658,6 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     lr.LineThickness = width / currentZoom;
     lr.Points = points.ConvertAll(p => TransformPoint(p, min, scale, offset)).ToArray();
     lineRenderers[key] = lr;
-  }
-
-  public void InitializeWithTrackAndSession(string trackName, RacingData session)
-  {
-    if (string.IsNullOrEmpty(trackName))
-    {
-      Debug.LogError("Track name is null or empty in InitializeWithTrackAndSession");
-      return;
-    }
-
-    LoadTrackDataWithSession(trackName, session);
-  }
-
-  private async void LoadTrackDataWithSession(string trackName, RacingData session)
-  {
-    currentTrackData = null;
-
-    try
-    {
-      var (success, message, bytes) = await APIManager.Instance.GetTrackBorderAsync(trackName);
-
-      if (success && bytes != null)
-      {
-        RacelineDisplayData trackData = RacelineDisplayImporter.LoadFromBinaryBytes(bytes);
-
-        if (trackData != null)
-        {
-          if (session != null && !string.IsNullOrEmpty(session.csvData) && session.csvData != "0")
-          {
-
-            var csvBytes = Convert.FromBase64String(session.csvData);
-            var csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
-            var racelinePoints = ParseRacelineFromCsv(csvText);
-
-            if (racelinePoints != null && racelinePoints.Count > 1)
-              trackData.PlayerLine = racelinePoints;
-          }
-
-          DisplayRacelineData(trackData);
-          StartCoroutine(WaitForTrackLoadAndSettle());
-        }
-        else
-        {
-          Debug.LogError($"Failed to parse track data for {trackName}");
-        }
-      }
-      else
-      {
-        Debug.LogError($"Failed to load track borders: {message}");
-      }
-    }
-    catch (Exception ex)
-    {
-      Debug.LogError($"Exception while loading track border: {ex.Message}");
-    }
-  }
-
-  public void InitializeWithRacelineData(RacelineDisplayData data)
-  {
-    if (data == null)
-    {
-      Debug.LogWarning("Raceline data is null. Cannot initialize preview.");
-      return;
-    }
-
-    if (!isInitialized)
-    {
-      pendingTrackData = data;
-      return;
-    }
-
-    StartCoroutine(DisplayRacelineDataNextFrame(data));
-  }
-
-  private IEnumerator DisplayRacelineDataNextFrame(RacelineDisplayData data)
-  {
-    yield return new WaitForEndOfFrame();
-    DisplayRacelineData(data);
-    StartCoroutine(WaitForTrackLoadAndSettle());
-  }
-
-
-
-
-  private List<Vector2> ParseRacelineFromCsv(string csvText)
-  {
-    var points = new List<Vector2>();
-    if (string.IsNullOrEmpty(csvText)) return points;
-
-    string[] lines = csvText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-    for (int i = 1; i < lines.Length; i++) // skip header
-    {
-      string line = lines[i].Trim();
-      if (string.IsNullOrEmpty(line)) continue;
-
-      string[] cols = line.Split('\t'); // your file is tab-delimited
-      if (cols.Length < 4) continue;   // trackId, lap_number, x, y
-
-      if (float.TryParse(cols[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
-          float.TryParse(cols[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
-      {
-        points.Add(new Vector2(x, y));
-      }
-    }
-
-    return points;
   }
 
   public void InitializeWithTrack(string trackName)

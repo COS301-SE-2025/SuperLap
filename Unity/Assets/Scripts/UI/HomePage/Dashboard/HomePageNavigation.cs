@@ -200,34 +200,6 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
-    public void InitializeWithRacelineData(RacelineDisplayData data)
-  {
-    NavigateToRacingLine();
-
-    if (racingLinePage != null)
-    {
-      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
-      if (racingLineComponent != null)
-      {
-        racingLineComponent.InitializeWithRacelineData(data);
-      }
-    }
-  }
-
-    public void NavigateToRacingLineWithTrackAndSession(string trackName, RacingData session)
-  {
-    NavigateToRacingLine();
-
-    if (racingLinePage != null)
-    {
-      ShowRacingLine racingLineComponent = racingLinePage.GetComponentInChildren<ShowRacingLine>();
-      if (racingLineComponent != null)
-      {
-        racingLineComponent.InitializeWithTrackAndSession(trackName, session);
-      }
-    }
-  }
-
   public void NavigateToRacingLineWithTrack(Track track)
   {
     NavigateToRacingLine();
@@ -272,6 +244,27 @@ public class HomePageNavigation : MonoBehaviour
     }
   }
 
+  public void NavigateToAnalysisWithTrack(string trackName)
+  {
+    NavigateToAnalysis();
+
+    if (analysisPage != null)
+    {
+      StartCoroutine(InitializeAnalysisWithTrackDelayed(trackName));
+    }
+  }
+
+  private IEnumerator InitializeAnalysisWithTrackDelayed(string trackName)
+  {
+    yield return null;
+
+    AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>(true);
+    if (analysisComponent != null)
+    {
+      analysisComponent.DisplayTrackByName(trackName);
+    }
+  }
+
   // public void NavigateToAnalysisWithTrack(string trackName)
   // {
   //   NavigateToAnalysis();
@@ -282,43 +275,14 @@ public class HomePageNavigation : MonoBehaviour
   //   }
   // }
 
-  // private IEnumerator InitializeAnalysisWithTrackDelayed(string trackName)
-  // {
-  //   yield return null;
+  public void NavigateToAnalysisWithTrack(Track track)
+  {
+    NavigateToAnalysis();
 
   //   AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>(true);
   //   if (analysisComponent != null)
   //   {
   //     analysisComponent.DisplayTrackByName(trackName);
-  //   }
-  // }
-
-  // public void NavigateToAnalysisWithTrackIndex(int trackIndex)
-  // {
-  //   NavigateToAnalysis();
-
-  //   if (analysisPage != null)
-  //   {
-  //     AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
-  //     if (analysisComponent != null)
-  //     {
-  //       analysisComponent.DisplayTrackByIndex(trackIndex);
-  //     }
-  //   }
-  //   activePageIndex = 2;
-  // }
-
-  // public void NavigateToAnalysisWithTrack(Track track)
-  // {
-  //   NavigateToAnalysis();
-
-  //   if (analysisPage != null)
-  //   {
-  //     AnalysisGetInfo analysisComponent = analysisPage.GetComponentInChildren<AnalysisGetInfo>();
-  //     if (analysisComponent != null)
-  //     {
-  //       analysisComponent.DisplaySpecificTrack(track);
-  //     }
   //   }
   // }
 

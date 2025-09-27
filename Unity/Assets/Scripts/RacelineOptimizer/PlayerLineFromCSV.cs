@@ -98,12 +98,14 @@ namespace CSVToBinConverter
       if (playerline.Count == 0)
       {
         Debug.Log("No valid playerline data found.");
+        return null;
       }
 
       string trackPath = Path.Combine(Application.streamingAssetsPath, "MotoGPTracks", $"{trackName}.bin");
       if (!File.Exists(trackPath))
       {
         Debug.Log($"Error: Edge file not found at {trackPath}");
+        return null;
       }
 
       EdgeData edgeData = EdgeData.LoadFromBinary(trackPath, true);
@@ -111,6 +113,7 @@ namespace CSVToBinConverter
       if (edgeData.OuterBoundary.Count == 0 || edgeData.InnerBoundary.Count == 0)
       {
         Debug.Log($"Error: Edge data for {trackName} is empty or malformed.");
+        return null;
       }
       List<Vector2> worstSections = DeviationAnalyzer.GetWorstDeviationSections(playerline, edgeData.Raceline, 5);
       Debug.Log($"Found {worstSections.Count} worst deviation sections.");

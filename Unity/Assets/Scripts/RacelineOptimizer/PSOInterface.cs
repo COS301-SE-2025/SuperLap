@@ -112,9 +112,7 @@ namespace RacelineOptimizer
     string trackName = "track",
     int numParticles = 100,
     int iterations = 6000,
-    string outputPath = "Output",
-    bool enableBranchDetection = true,
-    BranchDetector.BranchDetectionConfig branchConfig = null)
+    string outputPath = "Output")
     {
       Debug.Log($"Processing track: {trackName}...");
       Debug.Log($"Running PSO with {numParticles} particles and {iterations} iterations");
@@ -215,7 +213,7 @@ namespace RacelineOptimizer
       innerBoundary = edgeData.InnerBoundary;
       outerBoundary = edgeData.OuterBoundary;
 
-      // Save to bin file
+      // 🔹 Save to bin file
       if (!Directory.Exists(outputPath))
       {
         Directory.CreateDirectory(outputPath);
@@ -234,25 +232,5 @@ namespace RacelineOptimizer
       return result;
     }
 
-    // Utility method for testing branch detection settings
-    public static void TestBranchDetection(List<Vector2> innerBoundary, List<Vector2> outerBoundary, 
-      BranchDetector.BranchDetectionConfig config = null)
-    {
-      Debug.Log("=== Branch Detection Test ===");
-      var widths = BranchDetector.AnalyzeTrackCharacteristics(innerBoundary, outerBoundary);
-      
-      config ??= new BranchDetector.BranchDetectionConfig();
-      var (processedInner, processedOuter) = BranchDetector.ProcessBoundaries(innerBoundary, outerBoundary, config);
-      
-      if (processedInner.Count != innerBoundary.Count || processedOuter.Count != outerBoundary.Count)
-      {
-        Debug.Log("Branch mitigation modified the boundaries.");
-      }
-      else
-      {
-        Debug.Log("No branches detected or boundaries unchanged.");
-      }
-      Debug.Log("=== End Branch Detection Test ===");
-    }
   }
 }

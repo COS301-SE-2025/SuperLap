@@ -207,6 +207,60 @@ jobs:
           echo "::error::Test polling timeout - Unity tests may still be running"
           exit 1
 
+      - name: Generate Coverage Badge
+        if: env.coverage_available == 'true'
+        run: |
+          COVERAGE="${{ env.line_coverage }}"
+          echo "🎨 Generating coverage badge with $COVERAGE% coverage"
+          python scripts/generate-badge.py "$COVERAGE" docs/images/coverage-badge.svg
+
+      - name: Commit Coverage Badge
+        if: env.coverage_available == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Check if badge file changed
+          if git diff --quiet docs/images/coverage-badge.svg 2>/dev/null; then
+            echo "Coverage badge unchanged, skipping commit"
+          else
+            git add docs/images/coverage-badge.svg
+            git commit -m "Update coverage badge: ${{ env.line_coverage }}% [skip ci]"
+            git push
+            echo "✅ Coverage badge updated and committed"
+          fi
+
+      - name: Create Coverage Check
+        if: env.coverage_available == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const coverage = '${{ env.line_coverage }}';
+            const methodCoverage = '${{ env.method_coverage }}';
+            const testCount = '${{ env.test_class_count }}';
+            
+            const summary = `Unity Test Coverage: ${coverage}%`;
+            
+            const output = {
+              title: 'Unity Test Coverage Report',
+              summary: summary,
+              text: `## 🧪 Unity Test Coverage\n\n` +
+                    `- **Line Coverage:** ${coverage}%\n` +
+                    `- **Method Coverage:** ${methodCoverage}%\n` +
+                    `- **Test Classes:** ${testCount}\n\n` +
+                    `Coverage includes EditMode tests and selected MainAssembly classes.`
+            };
+            
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Unity Test Coverage',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: 'neutral',
+              output: output
+            });
+
       - name: Calculate and Report Coverage
         if: always()
         run: |
@@ -234,47 +288,68 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-      - name: Update Coverage Badge Gist
-        if: env.coverage_available == 'true' && github.ref == 'refs/heads/main'
+      - name: Comment Coverage on PR
+        if: github.event_name == 'pull_request' && hashFiles('coverage-summary.json') != ''
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GIST_TOKEN }}
           script: |
-            const coverage = '${{ env.line_coverage }}';
-            const coverageFloat = parseFloat(coverage);
-            
-            // Determine badge color based on coverage percentage
-            let color = 'red';
-            if (coverageFloat >= 90) color = 'brightgreen';
-            else if (coverageFloat >= 80) color = 'green';
-            else if (coverageFloat >= 70) color = 'yellow';
-            else if (coverageFloat >= 60) color = 'orange';
-            
-            // Create the badge JSON for shields.io endpoint
-            const badgeData = {
-              schemaVersion: 1,
-              label: 'Unity Coverage',
-              message: `${coverage}%`,
-              color: color
-            };
-            
-            // Update or create the gist
-            const gistId = '${{ secrets.COVERAGE_GIST_ID }}';
-            const filename = 'unity-coverage.json';
+            const fs = require('fs');
             
             try {
-              // Try to update existing gist
-              await github.rest.gists.update({
-                gist_id: gistId,
-                files: {
-                  [filename]: {
-                    content: JSON.stringify(badgeData, null, 2)
+              const coverage = JSON.parse(fs.readFileSync('coverage-summary.json', 'utf8'));
+              
+              if (coverage.editmode_tests_found) {
+                const linePercent = coverage.overall_line_coverage;
+                const methodPercent = coverage.overall_method_coverage;
+                const quality = linePercent >= 90 ? '🟢 Excellent' : 
+                               linePercent >= 70 ? '🟡 Good' : '🔴 Needs Improvement';
+                
+                let comment = `## 🧪 Unity Test Coverage Report
+            
+            | Metric | Coverage | Status |
+            |--------|----------|---------|
+            | 📊 Overall Quality | ${quality} | |
+            | 📝 Line Coverage | ${linePercent}% (${coverage.total_covered_lines}/${coverage.total_coverable_lines}) | ${linePercent >= 70 ? '✅' : '❌'} |
+            | 🔧 Method Coverage | ${methodPercent}% (${coverage.total_covered_methods}/${coverage.total_methods}) | ${methodPercent >= 70 ? '✅' : '❌'} |
+            | 🎯 Test Classes | ${coverage.test_count} | |
+            
+            ### 📋 Coverage by Assembly
+            `;
+                
+                if (coverage.by_assembly) {
+                  if (coverage.by_assembly.EditMode && coverage.by_assembly.EditMode.length > 0) {
+                    comment += `\n**EditMode Tests (${coverage.by_assembly.EditMode.length}):**\n`;
+                    coverage.by_assembly.EditMode.forEach(test => {
+                      const status = test.line_coverage >= 90 ? '🟢' : test.line_coverage >= 70 ? '🟡' : '🔴';
+                      comment += `- ${status} ${test.name}: ${test.line_coverage}%\n`;
+                    });
+                  }
+                  
+                  if (coverage.by_assembly.MainAssembly && coverage.by_assembly.MainAssembly.length > 0) {
+                    comment += `\n**MainAssembly Classes (${coverage.by_assembly.MainAssembly.length}):**\n`;
+                    coverage.by_assembly.MainAssembly.forEach(test => {
+                      const status = test.line_coverage >= 90 ? '🟢' : test.line_coverage >= 70 ? '🟡' : '🔴';
+                      comment += `- ${status} ${test.name}: ${test.line_coverage}%\n`;
+                    });
                   }
                 }
-              });
-              console.log(`✅ Updated coverage gist: ${coverage}%`);
+                
+                const summary = coverage.summary;
+                comment += `\n### � Summary
+            - 🟢 Excellent (≥90%): ${summary.excellent} classes
+            - 🟡 Good (70-89%): ${summary.good} classes  
+            - 🔴 Needs work (<70%): ${summary.needs_improvement} classes
+            
+            ---
+            *Coverage calculated from selected EditMode tests and MainAssembly classes*`;
+                
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: comment
+                });
+              }
             } catch (error) {
-              console.log(`❌ Failed to update gist: ${error.message}`);
-              // If gist doesn't exist or token doesn't have access, log the error
-              core.setFailed(`Failed to update coverage gist: ${error.message}`);
-            }
+              console.log('Could not post coverage comment:', error);
+            };

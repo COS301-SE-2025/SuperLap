@@ -215,7 +215,11 @@ public class MenuManagement : MonoBehaviour
 
         if (success)
         {
-          UserManager.Instance.Username = username;
+          PlayerPrefs.SetString("Username", user.username);
+          PlayerPrefs.SetString("Email", user.email);
+          PlayerPrefs.SetString("Password", user.password);
+          PlayerPrefs.Save();
+
           Debug.Log("Login successful: " + message);
           goToScene("Dashboard");
         }
@@ -291,6 +295,11 @@ public class MenuManagement : MonoBehaviour
 
         if (success)
         {
+          PlayerPrefs.SetString("Username", username);
+          PlayerPrefs.SetString("Email", email);
+          PlayerPrefs.SetString("Password", password);
+          PlayerPrefs.Save();
+
           Debug.Log("Registration successful: " + message);
           goToScene("Login");
         }

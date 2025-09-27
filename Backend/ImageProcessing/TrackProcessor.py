@@ -7,6 +7,8 @@ import os
 
 NUM_EDGE_POINTS = 4550  # Fixed number of points for each boundary
 
+NUM_EDGE_POINTS = 4550  # Fixed number of points for each boundary
+
 class TrackProcessor:
     def __init__(self):
         self.original_image = None
@@ -143,6 +145,19 @@ def write_result_to_file(result, output_file):
         print(f"Error writing to file: {e}", file=sys.stderr)
         return False
 
+def run_cnn_on_tracks(image_paths):
+    model = load_model_from_file()  # loads 'MapSegmentationGenerator.keras' by default
+
+    # Run prediction and save outputs
+    results = process_images(model, image_paths)
+
+    # Print/log output paths for terminal
+    for img_path, pred_path in results.items():
+        print(f"Predicted mask for {img_path} saved at {pred_path}")
+
+    return results
+
+#================================================================================Main and run bellow
 def main():
     if len(sys.argv) < 2:
         result = {
