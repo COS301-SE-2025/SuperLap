@@ -46,4 +46,31 @@ public class Polygon
         }
         return inside;
     }
+
+    internal float DistanceToPolygonEdge(Vector2 simPosition)
+    {
+        float minDistance = float.MaxValue;
+
+        for (int i = 0; i < polygon.Length; i++)
+        {
+            Vector2 a = polygon[i];
+            Vector2 b = polygon[(i + 1) % polygon.Length];
+            float distance = DistanceToSegment(simPosition, a, b);
+            minDistance = Math.Min(minDistance, distance);
+        }
+
+        return minDistance;
+    }
+
+    private float DistanceToSegment(Vector2 simPosition, Vector2 a, Vector2 b)
+    {
+        Vector2 ab = b - a;
+        Vector2 ap = simPosition - a;
+        float abSquared = Vector2.Dot(ab, ab);
+        if (abSquared == 0) return Vector2.Distance(simPosition, a); // a and b are the same point
+
+        float t = Math.Max(0, Math.Min(1, Vector2.Dot(ap, ab) / abSquared));
+        Vector2 projection = a + t * ab;
+        return Vector2.Distance(simPosition, projection);
+    }
 }

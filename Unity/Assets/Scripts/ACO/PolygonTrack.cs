@@ -40,4 +40,11 @@ public class PolygonTrack
         bool inInner = inner.PointInPolygon(point);
         return !inInner; // In track if in outer but not in inner
     }
+
+    internal float GetDistanceToTrackEdge(Vector2 simPosition)
+    {
+        float distToOuter = outer.DistanceToPolygonEdge(simPosition);
+        float distToInner = inner.DistanceToPolygonEdge(simPosition);
+        return Math.Min(distToOuter, distToInner);
+    }
 }

@@ -218,7 +218,8 @@ public class ACOAgent
                                                    trajectoryLength, recommendationSteps, offTrackThreshold,
                                                    physicsConfig, out offTrackRatio, track))
             {
-                options.Add((-1, -1)); // Brake
+                if (!recommendTurnRight)
+                    options.Add((-1, -1)); // Brake
             }
             else
             {
@@ -235,7 +236,8 @@ public class ACOAgent
                                                    trajectoryLength, recommendationSteps, offTrackThreshold,
                                                    physicsConfig, out offTrackRatio, track))
             {
-                options.Add((-1, 1)); // Brake
+                if (!recommendTurnLeft)
+                    options.Add((-1, 1)); // Brake
             }
             else
             {
@@ -257,7 +259,7 @@ public class ACOAgent
             else
             {
                 options.Add((1, 0)); // Accelerate
-                options.Add((0, 0)); // Idle
+                // options.Add((0, 0)); // Idle
             }
         }
 

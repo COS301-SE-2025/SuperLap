@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Numerics;
 
 public static class ACOTrajectoryPredictor
@@ -140,7 +141,8 @@ public static class ACOTrajectoryPredictor
     public static bool CheckIfPathGoesOffTrack(float steeringInput, Vector2 currentPosition, Vector2 currentForward, 
                                              float currentSpeed, float currentTurnAngle, float throttleInput, 
                                              float trajectoryLength, int recommendationSteps, float offTrackThreshold, 
-                                             MotorcyclePhysicsConfig physicsConfig, out float offTrackRatio, PolygonTrack track)
+                                             MotorcyclePhysicsConfig physicsConfig, out float offTrackRatio, PolygonTrack track,
+                                             float maxDistanceOffTrack = 5.0f)
     {
         // Convert forward vector to bearing for accurate simulation
         float currentBearing = CalculateBearingFromForward(currentForward);
@@ -165,9 +167,15 @@ public static class ACOTrajectoryPredictor
             // Check if this position is on track
             if (!track.PointInTrack(simPosition))
             {
-                offTrackPoints++;
+                // add a check here to see if the point is just slightly off track
+                if (track.GetDistanceToTrackEdge(simPosition) > maxDistanceOffTrack)
+                {
+                    offTrackPoints++;
+                }
             }
         }
+
+        
         
         // Consider path as "going off track" if more than the threshold of check points are off track
         offTrackRatio = (float)offTrackPoints / totalCheckPoints;
