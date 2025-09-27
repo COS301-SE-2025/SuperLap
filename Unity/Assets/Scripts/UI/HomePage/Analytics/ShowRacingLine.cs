@@ -581,7 +581,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
       replay.InitializeTextFile(Path.Combine(Application.persistentDataPath, "bestAgent.txt"));
 
       // for Sean: output the data
-      replay.SaveBinFile();
+      replay.SaveBinFileSimplified(50.0f);
 
       CreateBreakingPoints(replay.GetReplays(), racelineWidth);
     }

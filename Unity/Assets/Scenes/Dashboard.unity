@@ -11163,10 +11163,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc458b22978f77b8db0119ad0975682e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  checkpointCount: 20
+  checkpointCount: 10
   maxRetries: 5
   threadCount: 1
-  agentCount: 2
+  agentCount: 1
 --- !u!4 &591936641
 Transform:
   m_ObjectHideFlags: 0

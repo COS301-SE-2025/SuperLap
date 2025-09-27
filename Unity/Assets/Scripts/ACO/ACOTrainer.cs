@@ -139,7 +139,7 @@ public class ACOTrainer : MonoBehaviour
                     Debug.LogWarning($"Could not find solution for split {c}. Retrying. Attempts remaining: {retryCounter}");
                     retryCounter--;
                     InitializeSystem(c);
-                    // running = true;
+                    running = true;
                     return;
                 }
                 else
@@ -287,6 +287,7 @@ public class ACOTrainer : MonoBehaviour
 
     private void InitializeSystem(int currentSplit)
     {
+        UnityEngine.Profiling.Profiler.BeginSample("InitializeSystem");
         // Validate split index
         var checkPoints = InitializeDistanceBasedCheckpoints();
         
@@ -347,7 +348,7 @@ public class ACOTrainer : MonoBehaviour
             float bear;
             float speed;
             float turnAngle;
-            
+
             if (currentSplit > 0 && bestAgents.ContainsKey(currentSplit - 1))
             {
                 // Use the end state of the previous successful segment
@@ -378,6 +379,7 @@ public class ACOTrainer : MonoBehaviour
             wt.SetCheckPoints(cps[currentSplit], cps[(currentSplit + 1) % checkPoints.Count], cps[(currentSplit + 2) % checkPoints.Count]);
             wt.StartThread();
         });
+        UnityEngine.Profiling.Profiler.EndSample();
     }
 
     float CalculateBearing(System.Numerics.Vector2 forward)
