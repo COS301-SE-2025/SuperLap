@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 public class ACOAgent
 {
-    private static float enginePower = 150000f;
+    private static float enginePower = 250000f;
     private static float maxTractionForce = 7000f;
     private static float brakingForce = 8000f;
 

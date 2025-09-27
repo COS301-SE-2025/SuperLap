@@ -577,7 +577,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (!trackContainer || trackData == null) return;
 
-    float simplificationTolerance = 5f;
+    float simplificationTolerance = 0.5f;
     int maxVertices = 64000;
     trackData = new RacelineDisplayData
     {
@@ -613,11 +613,11 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (showOuterBoundary && trackData.OuterBoundary != null) CreateLineRenderer("OuterBoundary", trackData.OuterBoundary, outerBoundaryColor, outerBoundaryWidth, bounds.min, scale, offset);
     if (showInnerBoundary && trackData.InnerBoundary != null) CreateLineRenderer("InnerBoundary", trackData.InnerBoundary, innerBoundaryColor, innerBoundaryWidth, bounds.min, scale, offset);
-    if (showRaceLine && trackData.Raceline != null) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
+    // if (showRaceLine && trackData.Raceline != null) CreateLineRenderer("Raceline", trackData.Raceline, racelineColor, racelineWidth, bounds.min, scale, offset);
 
     if (showPlayerLine && trackData.PlayerLine != null && trackData.PlayerLine.Count > 1)
     {
-      CreateLineRenderer("PlayerLine", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
+      // CreateLineRenderer("PlayerLine", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
     }
 
     panOffset = Vector2.zero;
