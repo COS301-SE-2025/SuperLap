@@ -482,7 +482,11 @@ public class TrackImageProcessor : MonoBehaviour, IPointerDownHandler, IPointerU
           scaledTexture = ScaleTexture(tempTexture, outputImageWidth, outputImageHeight);
           loadedTexture = scaledTexture; // Use scaled version for UI operations
           
-          Destroy(tempTexture);
+          if (Application.isPlaying){
+            Destroy(tempTexture);
+          }else{
+            DestroyImmediate(tempTexture);
+          }
 
           Sprite imageSprite = Sprite.Create(
               scaledTexture, // Use scaled texture for UI
