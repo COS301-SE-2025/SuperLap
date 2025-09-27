@@ -333,7 +333,7 @@ public class HomePageNavigation : MonoBehaviour
     {
       if (tooltips[i] == null) continue;
       tooltips[i].ShowTooltip();
-      yield return new WaitForSeconds(3f);
+      yield return new WaitForSeconds(5f);
       tooltips[i].HideTooltip();
     }
   }
@@ -356,6 +356,7 @@ private (int start, int end) GetTooltipRangeForPage()
     if (ShouldReturnTooltip(galleryPage)) return (4, 4);
     if (ShouldReturnTooltip(analysisPage)) return (5, 8);
     if (ShouldReturnTooltip(motoGPPage)) return (9, 10);
+    if (uploadPage && uploadPage.gameObject.activeSelf) return (11, 15);
 
     return (-1, -1);
 }
