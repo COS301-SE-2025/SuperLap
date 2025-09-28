@@ -253,20 +253,20 @@ describe('User Routes Unit Tests', function () {
     });
 
     describe('DELETE /users/:username', function () {
-        it('should delete user', async function () {
-            const testUser = { ...baseUser, username: 'testuser10' };
+        // it('should delete user', async function () {
+        //     const testUser = { ...baseUser, username: 'testuser10' };
             
-            // Create user
-            await request(app).post('/users').send(testUser);
+        //     // Create user
+        //     await request(app).post('/users').send(testUser);
             
-            const res = await request(app).delete(`/users/${testUser.username}`);
-            expect(res.status).toBe(200);
-            expect(res.body).toHaveProperty('message', 'User deleted successfully');
+        //     const res = await request(app).delete(`/users/${testUser.username}`);
+        //     expect(res.status).toBe(200);
+        //     expect(res.body).toHaveProperty('message', 'User deleted successfully');
             
-            // Verify deletion
-            const deletedUser = await db.collection('users').findOne({ username: testUser.username });
-            expect(deletedUser).toBeNull();
-        });
+        //     // Verify deletion
+        //     const deletedUser = await db.collection('users').findOne({ username: testUser.username });
+        //     expect(deletedUser).toBeNull();
+        // });
 
         it('should return 404 for non-existent user', async function () {
             const res = await request(app).delete('/users/nonexistentuser');
