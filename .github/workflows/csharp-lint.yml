@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main, dev]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   run-linters:
     name: Run linters and formatters
@@ -31,19 +35,6 @@ jobs:
           echo "🎨 Formatting C# files with CSharpier..."
           csharpier format Unity/ || echo "Some files may not have been formatted"
           echo "✅ C# formatting completed"
-          
-      - name: Run basic C# syntax check
-        run: |
-          # Count and validate C# files
-          cs_files=$(find Unity/ -name "*.cs" -type f | wc -l)
-          echo "📊 Found $cs_files C# files in Unity directory"
-          
-          # Basic syntax validation using grep patterns
-          echo "🔍 Running basic C# syntax checks..."
-          
-          # Check for missing semicolons (basic check)
-          missing_semicolons=$(find Unity/ -name "*.cs" -exec grep -l "}\s*$" {} \; | wc -l)
-          echo "✅ Basic syntax validation completed"
 
       - name: Commit formatting changes
         run: |
@@ -54,7 +45,8 @@ jobs:
             git commit -m "Auto-format C# code with CSharpier"
             # Only push in real GitHub Actions environment, not in act
             if [ "$GITHUB_ACTIONS" = "true" ]; then
-              git push
+              # Push to the current branch (handles detached HEAD in GitHub Actions)
+              git push origin HEAD:${{ github.head_ref || github.ref_name }}
             else
               echo "Skipping push in local test environment"
             fi

@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main, dev]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   run-linters:
     name: Run linters
@@ -47,7 +51,8 @@ jobs:
             git commit -m "Auto-format Python code with black and isort"
             # Only push in real GitHub Actions environment, not in act
             if [ "$GITHUB_ACTIONS" = "true" ]; then
-              git push
+              # Push to the current branch (handles detached HEAD in GitHub Actions)
+              git push origin HEAD:${{ github.head_ref || github.ref_name }}
             else
               echo "Skipping push in local test environment"
             fi
