@@ -1,4 +1,4 @@
-name: C# Linting and Formatting
+name: Python Linting
 
 on:
   pull_request:
@@ -10,39 +10,45 @@ permissions:
 
 jobs:
   run-linters:
-    name: Run linters and formatters
+    name: Run linters
     runs-on: self-hosted
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v1
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          dotnet-version: "8.0.x"
+          python-version: "3.x"
 
-      - name: Install CSharpier (C# formatter)
+      - name: Install Python linting dependencies
         run: |
-          dotnet tool install -g csharpier
+          python -m pip install --upgrade pip
+          pip install flake8 black isort
 
-      - name: Auto-format C# code with CSharpier
+      - name: Run Python linting with flake8
         run: |
-          # Add .NET tools to PATH
-          export PATH="$PATH:/root/.dotnet/tools"
-          
-          # Format Unity directory using CSharpier
-          echo "🎨 Formatting C# files with CSharpier..."
-          csharpier format Unity/ || echo "Some files may not have been formatted"
-          echo "✅ C# formatting completed"
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 Backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings. GitHub editor is 127 chars wide
+          flake8 Backend/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Auto-format Python code with black
+        run: |
+          black Backend/
+
+      - name: Auto-sort imports with isort
+        run: |
+          isort Backend/
 
       - name: Commit formatting changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add Unity/
+          git add Backend/
           if ! git diff --staged --quiet; then
-            git commit -m "Auto-format C# code with CSharpier"
+            git commit -m "Auto-format Python code with black and isort"
             # Only push in real GitHub Actions environment, not in act
             if [ "$GITHUB_ACTIONS" = "true" ]; then
               # Push to the current branch (handles detached HEAD in GitHub Actions)

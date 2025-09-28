@@ -192,11 +192,11 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Download button functionality (placeholder)
+// Download button functionality
 function download() {
-    alert('Download functionality will be available when the system is complete on September 29th, 2025.');
+    // Direct download from the GitHub release link
+    window.location.href = "https://github.com/COS301-SE-2025/SuperLap/releases/download/v1.0.0.alpha/SuperLap.Installer.exe";
 }
-
 // Print functionality
 function printHelp() {
     window.print();

@@ -1,7 +1,9 @@
-import json
-from PIL import Image, ImageDraw
-import os
 import argparse
+import json
+import os
+
+from PIL import Image, ImageDraw
+
 
 def find_box(boxes, keywords):
     for b in boxes:
@@ -11,8 +13,10 @@ def find_box(boxes, keywords):
                 return b
     return None
 
+
 def points_to_tuples(points):
     return [(float(x), float(y)) for x, y in points]
+
 
 def process_json_file(json_path, output_dir, supersample=3):
     track_name = os.path.splitext(os.path.basename(json_path))[0]
@@ -23,7 +27,8 @@ def process_json_file(json_path, output_dir, supersample=3):
     height = int(float(data.get("height", 0)))
     if width == 0 or height == 0:
         all_pts = [pt for box in data.get("boxes", []) for pt in box.get("points", [])]
-        xs = [p[0] for p in all_pts]; ys = [p[1] for p in all_pts]
+        xs = [p[0] for p in all_pts]
+        ys = [p[1] for p in all_pts]
         width = int(max(xs) - min(xs)) + 10
         height = int(max(ys) - min(ys)) + 10
 
@@ -32,7 +37,9 @@ def process_json_file(json_path, output_dir, supersample=3):
     outer_box = find_box(boxes, ["inside", "inner"])
 
     if not outer_box:
-        boxes_sorted = sorted(boxes, key=lambda b: len(b.get("points", [])), reverse=True)
+        boxes_sorted = sorted(
+            boxes, key=lambda b: len(b.get("points", [])), reverse=True
+        )
         outer_box = boxes_sorted[0] if boxes_sorted else None
         inner_box = boxes_sorted[1] if len(boxes_sorted) > 1 else None
 
@@ -67,11 +74,30 @@ def process_json_file(json_path, output_dir, supersample=3):
     out.save(output_path)
     print(f"Saved {output_path} ({width}x{height})")
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Draw masks from all JSON polygons in a folder.")
-    parser.add_argument("--input_dir", "-i", default="JSON", help="Folder containing JSON files (default: JSON)")
-    parser.add_argument("--output_dir", "-o", default="Tracks", help="Folder to save PNG masks (default: Tracks)")
-    parser.add_argument("--supersample", "-s", type=int, default=3, help="Supersampling factor (default 3)")
+    parser = argparse.ArgumentParser(
+        description="Draw masks from all JSON polygons in a folder."
+    )
+    parser.add_argument(
+        "--input_dir",
+        "-i",
+        default="JSON",
+        help="Folder containing JSON files (default: JSON)",
+    )
+    parser.add_argument(
+        "--output_dir",
+        "-o",
+        default="Tracks",
+        help="Folder to save PNG masks (default: Tracks)",
+    )
+    parser.add_argument(
+        "--supersample",
+        "-s",
+        type=int,
+        default=3,
+        help="Supersampling factor (default 3)",
+    )
     args = parser.parse_args()
 
     json_files = [f for f in os.listdir(args.input_dir) if f.endswith(".json")]
@@ -82,6 +108,7 @@ def main():
     for f in json_files:
         json_path = os.path.join(args.input_dir, f)
         process_json_file(json_path, args.output_dir, supersample=args.supersample)
+
 
 if __name__ == "__main__":
     main()

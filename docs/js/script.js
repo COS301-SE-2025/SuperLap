@@ -1,9 +1,7 @@
 //------------------------------------------------------------------------- Download Button Functionality
 function download() {
-    // Placeholder download action
-    alert("❌ Download unavailable at the Moment. But we're working on it!");
-    // You can also trigger an actual file download like this:
-    // window.location.href = 'path/to/your/file.pdf';
+    // Direct download from the GitHub release link
+    window.location.href = "https://github.com/COS301-SE-2025/SuperLap/releases/download/v1.0.0.alpha/SuperLap.Installer.exe";
 }
 
 //------------------------------------------------------------------------- Back to Top Button Functionality
