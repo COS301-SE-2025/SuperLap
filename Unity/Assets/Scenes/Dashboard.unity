@@ -32687,7 +32687,7 @@ MonoBehaviour:
   LoaderPanel: {fileID: 1615689644}
   trainer: {fileID: 591936640}
   particleCount: 100
-  maxIterations: 1000
+  maxIterations: 10000
   maskWidth: 50
   centerlineColor: {r: 0, g: 1, b: 0.6117647, a: 0.9137255}
   startPositionColor: {r: 1, g: 0, b: 0, a: 1}
