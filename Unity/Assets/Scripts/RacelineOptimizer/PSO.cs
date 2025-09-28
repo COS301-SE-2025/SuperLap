@@ -184,7 +184,7 @@ namespace RacelineOptimizer
 
     public float[] Optimize(List<(Vector2 inner, Vector2 outer)> track, List<CornerDetector.CornerSegment> corners, List<(Vector2 inner, Vector2 outer)> cornerTrack, int numParticles = 30, int iterations = 100)
     {
-      bool isCounterClockwise = IsTrackCounterClockwise(track.Select(p => (p.inner + p.outer) / 2).ToList());
+      bool isCounterClockwise = !IsTrackCounterClockwise(track.Select(p => (p.inner + p.outer) / 2).ToList());
       object globalLock = new();
       ThreadLocal<Random> threadRand = new(() => new Random(Guid.NewGuid().GetHashCode()));
       int dimensions = track.Count;
