@@ -46,6 +46,7 @@ jobs:
             # Only push in real GitHub Actions environment, not in act
             if [ "$GITHUB_ACTIONS" = "true" ]; then
               # Push to the current branch (handles detached HEAD in GitHub Actions)
+              git pull --rebase origin ${{ github.head_ref || github.ref_name }}
               git push origin HEAD:${{ github.head_ref || github.ref_name }}
             else
               echo "Skipping push in local test environment"
