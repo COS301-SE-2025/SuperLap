@@ -35,23 +35,20 @@ jobs:
             elif docker exec test-mongodb mongo --eval "db.runCommand('ping')" > /dev/null 2>&1; then
               echo "MongoDB is ready!"
               break
-            elif nc -z localhost 27017; then
-              echo "MongoDB port is open, checking connection..."
-              if timeout 5 bash -c "</dev/tcp/localhost/27017"; then
-                echo "MongoDB is ready!"
-                break
-              fi
             fi
             echo "Waiting for MongoDB... ($i/60)"
             sleep 2
           done
           
-          # Final check
-          if ! nc -z localhost 27017; then
-            echo "MongoDB failed to start!"
-            docker logs test-mongodb
-            exit 1
+          # Final check using Docker exec instead of nc
+          if ! docker exec test-mongodb mongosh --eval "db.runCommand('ping')" > /dev/null 2>&1; then
+            if ! docker exec test-mongodb mongo --eval "db.runCommand('ping')" > /dev/null 2>&1; then
+              echo "MongoDB failed to start!"
+              docker logs test-mongodb
+              exit 1
+            fi
           fi
+          echo "MongoDB connection verified!"
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -70,6 +67,8 @@ jobs:
         env:
           # Set up MongoDB connection for tests
           MONGO_URI: mongodb://localhost:27017/Superlap_test
+          # Set NODE_ENV for test environment
+          NODE_ENV: test
 
       - name: Cleanup MongoDB container
         if: always()

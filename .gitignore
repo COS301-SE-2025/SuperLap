@@ -67,17 +67,28 @@ Unity/Assets/StreamingAssets/TrackProcessor.exe
 
 # Ignore Unit Test files
 Unity/TestResults/
+
+# Ignore personal files
+Backend/ImageProcessing/todo
+Backend/ImageProcessing/old.txt
+Backend/ImageProcessing/CNNoutput
+Backend/ImageProcessing/TEST/data
+
+
+*.Zone.Identifier
 /Backend/ImageProcessing/TEST/data
 Unity/Assets/StreamingAssets/TrackProcessor.exe
 Unity/Assets/StreamingAssets/TrackProcessor
 
 #Ignore RLMatrix DLL files
 Unity/Assets/Plugins/Windows/x86_64
-
-# Ignore These:
-processedTracks
-Backend/ImageProcessing/trackImages
-Backend/RacelineOptimizer/bin
-Backend/RacelineOptimizer/Output
-Backend/RacelineOptimizer/Input
-Backend/RacelineOptimizer/obj
+/Backend/RacelineOptimizer/MotoGPTelemetry/bin
+/Backend/RacelineOptimizer/MotoGPTelemetry/obj
+Backend/RacelineOptimizer/MotoGPTelemetry/lastSession.csv
+/Backend/RacelineOptimizer/bin
+/Backend/RacelineOptimizer/obj
+/Backend/MotoGPTelemetry/bin
+/Backend/MotoGPTelemetry/obj
+/Unity/Output
+Unity/Assets/StreamingAssets/CNN.exe
+Unity/Assets/StreamingAssets/CNN

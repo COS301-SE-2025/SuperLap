@@ -17,7 +17,7 @@ namespace CSVToBinConverter
       if (headerLine == null)
         throw new Exception("CSV is empty");
       string[] headers = headerLine.Split('\t');
-      int lapIdxIndex = Array.IndexOf(headers, "lapIndex");
+      int lapIdxIndex = Array.IndexOf(headers, "lap_number");
       int xIdx = Array.IndexOf(headers, "world_position_X");
       int yIdx = Array.IndexOf(headers, "world_position_Y");
       int trackIndex = Array.IndexOf(headers, "trackId");
