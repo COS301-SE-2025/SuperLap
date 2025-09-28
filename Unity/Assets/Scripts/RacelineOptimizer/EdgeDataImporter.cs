@@ -31,30 +31,30 @@ public class EdgeData
     }
     return edgeData;
   }
-    public static EdgeData LoadFromLists(List<Vector2> outerBoundary, List<Vector2> innerBoundary)
-    {
-        var edgeData = new EdgeData();
+  public static EdgeData LoadFromLists(List<Vector2> outerBoundary, List<Vector2> innerBoundary)
+  {
+    var edgeData = new EdgeData();
 
-        edgeData.OuterBoundary = new List<Vector2>(outerBoundary);
-        edgeData.InnerBoundary = new List<Vector2>(innerBoundary);
-        edgeData.Raceline = new List<Vector2>();
+    edgeData.OuterBoundary = new List<Vector2>(outerBoundary);
+    edgeData.InnerBoundary = new List<Vector2>(innerBoundary);
+    edgeData.Raceline = new List<Vector2>();
 
-        return edgeData;
-    }
+    return edgeData;
+  }
 
   public float GetAverageTrackWidth()
+  {
+    int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
+    if (count == 0) return 0f;
+
+    float total = 0f;
+    for (int i = 0; i < count; i++)
     {
-        int count = Math.Min(InnerBoundary.Count, OuterBoundary.Count);
-        if (count == 0) return 0f;
-
-        float total = 0f;
-        for (int i = 0; i < count; i++)
-        {
-            total += Vector2.Distance(InnerBoundary[i], OuterBoundary[i]);
-        }
-
-        return total / count;
+      total += Vector2.Distance(InnerBoundary[i], OuterBoundary[i]);
     }
+
+    return total / count;
+  }
 
   public Vector2 GetCenter()
   {
@@ -96,5 +96,11 @@ public class EdgeData
     }
 
     return points;
+  }
+
+  public void setNewBoundaries(List<Vector2> newInner, List<Vector2> newOuter)
+  {
+    InnerBoundary = newInner;
+    OuterBoundary = newOuter;
   }
 }

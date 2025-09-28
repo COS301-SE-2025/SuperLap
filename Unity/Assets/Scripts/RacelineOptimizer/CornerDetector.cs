@@ -135,8 +135,8 @@ public class CornerDetector
                     track[candidate.End].inner,
                     track[candidate.Start].outer,
                     track[candidate.End].outer,
-                    MathF.Abs(candidate.AngleChange),
-                    !candidate.IsLeftTurn,
+                    MathF.Abs(candidate.TotalAngle),   // <-- total swept angle (degrees)
+                    candidate.IsLeftTurn,             // keep sign consistent with how you defined IsLeftTurn
                     candidate.Start,
                     candidate.End,
                     cornerLength

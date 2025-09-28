@@ -70,150 +70,183 @@ def cleanup_workspace(workspace_path):
     """Clean up test workspace directory"""
     try:
         if os.path.exists(workspace_path):
-            shutil.rmtree(workspace_path)
-            print(f"Cleaned up workspace: {workspace_path}")
+            # Force remove with retries for Windows compatibility
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    shutil.rmtree(workspace_path)
+                    print(f"Cleaned up workspace: {workspace_path}")
+                    return
+                except (OSError, PermissionError) as e:
+                    if attempt < max_retries - 1:
+                        print(f"Cleanup attempt {attempt + 1} failed, retrying in 2s: {e}")
+                        time.sleep(2)
+                    else:
+                        print(f"Failed to cleanup workspace after {max_retries} attempts: {e}")
     except Exception as e:
         print(f"Error cleaning up workspace {workspace_path}: {e}")
 
-def clone_repository(test_result, repo_info):
-    """Clone the repository at specified commit/branch"""
+def setup_workspace(test_result):
+    """Set up a clean workspace directory for the test"""
     try:
-        repo_url = f"https://github.com/{repo_info['repository']}.git"
         workspace_path = os.path.join(WORK_DIR, test_result.test_id)
         
-        log_message(test_result, f"Cloning repository: {repo_url}")
-        log_message(test_result, f"Target branch/commit: {repo_info['branch']} ({repo_info['commit_sha'][:8]})")
+        # Clean up any existing workspace
+        if os.path.exists(workspace_path):
+            cleanup_workspace(workspace_path)
         
-        # Create workspace directory
+        # Create fresh workspace
         os.makedirs(workspace_path, exist_ok=True)
         test_result.workspace_path = workspace_path
         
-        # Clone the full repository (needed to access all commits, including PR merge commits)
-        clone_cmd = [
-            "git", "clone", 
-            repo_url, workspace_path
-        ]
+        log_message(test_result, f"Created workspace: {workspace_path}")
+        return True
         
-        log_message(test_result, "Cloning full repository to access specific commit")
-        result = subprocess.run(
-            clone_cmd, 
-            capture_output=True, 
-            text=True, 
-            timeout=300  # 5 minute timeout for clone
-        )
+    except Exception as e:
+        log_message(test_result, f"Failed to setup workspace: {str(e)}")
+        return False
+
+def clone_repository(test_result, repo_info):
+    """Clone the repository and checkout the specified commit"""
+    try:
+        if not setup_workspace(test_result):
+            return False
+            
+        repo_url = f"https://github.com/{repo_info['repository']}.git"
+        workspace_path = test_result.workspace_path
+        commit_sha = repo_info['commit_sha']
+        branch = repo_info.get('branch', 'main')
         
-        if result.returncode != 0:
-            raise Exception(f"Git clone failed: {result.stderr}")
+        log_message(test_result, f"Cloning repository: {repo_info['repository']}")
+        log_message(test_result, f"Target commit: {commit_sha}")
+        log_message(test_result, f"Branch context: {branch}")
         
-        # Change to repository directory
+        # Store original directory
         original_cwd = os.getcwd()
-        os.chdir(workspace_path)
         
         try:
-            # STRICT: Must checkout the exact commit - this is critical for PR testing
-            log_message(test_result, f"STRICT: Checking out exact commit {repo_info['commit_sha'][:8]} (no fallbacks)")
+            # Step 1: Initialize empty repo
+            log_message(test_result, "Initializing repository")
+            init_result = subprocess.run(
+                ["git", "init"],
+                cwd=workspace_path,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
             
+            if init_result.returncode != 0:
+                raise Exception(f"Git init failed: {init_result.stderr}")
+            
+            # Step 2: Add remote origin
+            log_message(test_result, "Adding remote origin")
+            remote_result = subprocess.run(
+                ["git", "remote", "add", "origin", repo_url],
+                cwd=workspace_path,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if remote_result.returncode != 0:
+                raise Exception(f"Failed to add remote: {remote_result.stderr}")
+            
+            # Step 3: Fetch the specific commit directly
+            log_message(test_result, f"Fetching commit {commit_sha[:8]}")
+            fetch_result = subprocess.run(
+                ["git", "fetch", "origin", commit_sha],
+                cwd=workspace_path,
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+            
+            if fetch_result.returncode != 0:
+                # If direct fetch fails, try fetching all pull request refs
+                log_message(test_result, "Direct fetch failed, fetching all PR refs")
+                fetch_pr_result = subprocess.run(
+                    ["git", "fetch", "origin", "+refs/pull/*/head:refs/remotes/origin/pr/*"],
+                    cwd=workspace_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=300
+                )
+                
+                if fetch_pr_result.returncode != 0:
+                    # Final fallback: fetch everything
+                    log_message(test_result, "PR fetch failed, performing full fetch")
+                    fetch_all_result = subprocess.run(
+                        ["git", "fetch", "origin"],
+                        cwd=workspace_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=300
+                    )
+                    
+                    if fetch_all_result.returncode != 0:
+                        raise Exception(f"All fetch attempts failed. Last error: {fetch_all_result.stderr}")
+            
+            # Step 4: Checkout the specific commit
+            log_message(test_result, f"Checking out commit {commit_sha[:8]}")
             checkout_result = subprocess.run(
-                ["git", "checkout", repo_info['commit_sha']],
+                ["git", "checkout", commit_sha],
+                cwd=workspace_path,
                 capture_output=True,
                 text=True,
                 timeout=60
             )
             
             if checkout_result.returncode != 0:
-                # If direct checkout fails, this might be a GitHub Actions merge commit
-                # Detach HEAD first to avoid fetch conflicts
-                log_message(test_result, f"Direct checkout failed, detaching HEAD and fetching PR refs for commit {repo_info['commit_sha'][:8]}")
-                
-                # Detach HEAD to avoid "refusing to fetch into branch" error
-                detach_result = subprocess.run(
-                    ["git", "checkout", "--detach", "HEAD"],
-                    capture_output=True,
-                    text=True,
-                    timeout=30
-                )
-                
-                if detach_result.returncode != 0:
-                    log_message(test_result, f"Warning: Could not detach HEAD: {detach_result.stderr}")
-                
-                # Fetch all PR refs to get GitHub Actions merge commits
-                fetch_result = subprocess.run(
-                    ["git", "fetch", "origin", "+refs/pull/*/merge:refs/remotes/origin/pr/*/merge"],
-                    capture_output=True,
-                    text=True,
-                    timeout=120
-                )
-                
-                if fetch_result.returncode == 0:
-                    log_message(test_result, "Successfully fetched PR merge refs")
-                    
-                    # Try checkout again after fetching PR refs
-                    checkout_retry = subprocess.run(
-                        ["git", "checkout", repo_info['commit_sha']],
-                        capture_output=True,
-                        text=True,
-                        timeout=60
-                    )
-                    
-                    if checkout_retry.returncode != 0:
-                        # Final attempt: fetch all pull request refs
-                        log_message(test_result, "PR merge refs checkout failed, fetching all PR refs")
-                        
-                        fetch_all_prs = subprocess.run(
-                            ["git", "fetch", "origin", "+refs/pull/*:refs/remotes/origin/pull/*"],
-                            capture_output=True,
-                            text=True,
-                            timeout=180
-                        )
-                        
-                        if fetch_all_prs.returncode == 0:
-                            final_checkout = subprocess.run(
-                                ["git", "checkout", repo_info['commit_sha']],
-                                capture_output=True,
-                                text=True,
-                                timeout=60
-                            )
-                            
-                            if final_checkout.returncode != 0:
-                                error_msg = f"FAILED: Cannot checkout required commit {repo_info['commit_sha'][:8]} after all fetch attempts. Error: {final_checkout.stderr.strip()}"
-                                log_message(test_result, error_msg)
-                                raise Exception(error_msg)
-                        else:
-                            error_msg = f"FAILED: Cannot fetch PR refs for commit {repo_info['commit_sha'][:8]}. Error: {fetch_all_prs.stderr.strip()}"
-                            log_message(test_result, error_msg)
-                            raise Exception(error_msg)
-                else:
-                    error_msg = f"FAILED: Cannot fetch PR merge refs for commit {repo_info['commit_sha'][:8]}. Error: {fetch_result.stderr.strip()}"
-                    log_message(test_result, error_msg)
-                    raise Exception(error_msg)
+                raise Exception(f"Failed to checkout commit {commit_sha}: {checkout_result.stderr}")
             
-            log_message(test_result, f"SUCCESS: Checked out exact commit {repo_info['commit_sha'][:8]}")
-            
-            # Verify we're on the correct commit
+            # Step 5: Verify we're on the correct commit
             verify_result = subprocess.run(
                 ["git", "rev-parse", "HEAD"],
+                cwd=workspace_path,
                 capture_output=True,
                 text=True,
                 timeout=30
             )
             
-            if verify_result.returncode == 0:
-                current_commit = verify_result.stdout.strip()
-                if current_commit.startswith(repo_info['commit_sha']):
-                    log_message(test_result, f"VERIFIED: On correct commit {current_commit[:8]}")
-                else:
-                    error_msg = f"VERIFICATION FAILED: Expected {repo_info['commit_sha'][:8]} but got {current_commit[:8]}"
-                    log_message(test_result, error_msg)
-                    raise Exception(error_msg)
+            if verify_result.returncode != 0:
+                raise Exception(f"Failed to verify commit: {verify_result.stderr}")
             
+            current_commit = verify_result.stdout.strip()
+            if not current_commit.startswith(commit_sha[:8]):
+                raise Exception(f"Commit verification failed. Expected {commit_sha[:8]}, got {current_commit[:8]}")
+            
+            log_message(test_result, f"Successfully checked out commit {current_commit[:8]}")
+            
+            # Step 6: Get commit info for logging
+            try:
+                info_result = subprocess.run(
+                    ["git", "log", "-1", "--pretty=format:%H %s %an <%ae> %ci"],
+                    cwd=workspace_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                if info_result.returncode == 0:
+                    log_message(test_result, f"Commit info: {info_result.stdout}")
+            except Exception:
+                pass  # Non-critical, continue if this fails
+            
+            return True
+            
+        except subprocess.TimeoutExpired as e:
+            raise Exception(f"Git operation timed out: {e}")
+        except Exception as e:
+            raise e
         finally:
             os.chdir(original_cwd)
         
-        log_message(test_result, "Repository cloned successfully")
-        return True
-        
     except Exception as e:
         log_message(test_result, f"Failed to clone repository: {str(e)}")
+        # Clean up failed workspace
+        if test_result.workspace_path and os.path.exists(test_result.workspace_path):
+            cleanup_workspace(test_result.workspace_path)
+            test_result.workspace_path = None
         return False
 
 def run_unity_tests(test_result):
@@ -446,13 +479,13 @@ def execute_test(test_result, repo_info):
         test_result.end_time = datetime.now()
         running_tests -= 1
         
-        # Clean up workspace after a delay
+        # Schedule workspace cleanup after a delay
         if test_result.workspace_path:
-            def cleanup_later():
+            def delayed_cleanup():
                 time.sleep(300)  # Wait 5 minutes before cleanup
                 cleanup_workspace(test_result.workspace_path)
             
-            threading.Thread(target=cleanup_later, daemon=True).start()
+            threading.Thread(target=delayed_cleanup, daemon=True).start()
         
         log_message(test_result, f"Test execution completed with status: {test_result.status}")
 
@@ -678,54 +711,6 @@ def calculate_coverage_metrics(test_id):
 
 @app.route('/api/coverage/<test_id>/download', methods=['GET'])
 def download_coverage(test_id):
-    """Download code coverage results as a zip file"""
-    try:
-        if test_id not in active_tests:
-            return jsonify({'error': 'Test not found'}), 404
-        
-        test_result = active_tests[test_id]
-        
-        if not test_result.workspace_path:
-            return jsonify({'error': 'No workspace path available'}), 404
-        
-        coverage_dir = os.path.join(test_result.workspace_path, "Unity", "CodeCoverage")
-        
-        if not os.path.exists(coverage_dir):
-            return jsonify({'error': 'No code coverage results found'}), 404
-        
-        # Create a temporary zip file
-        import zipfile
-        import tempfile
-        from flask import send_file
-        
-        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
-        temp_zip.close()
-        
-        try:
-            with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for root, dirs, files in os.walk(coverage_dir):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        arc_name = os.path.relpath(file_path, coverage_dir)
-                        zipf.write(file_path, arc_name)
-            
-            return send_file(
-                temp_zip.name,
-                as_attachment=True,
-                download_name=f'coverage-{test_id}.zip',
-                mimetype='application/zip'
-            )
-            
-        except Exception as e:
-            # Clean up temp file on error
-            try:
-                os.unlink(temp_zip.name)
-            except:
-                pass
-            raise e
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
     """Download code coverage results as a zip file"""
     try:
         if test_id not in active_tests:

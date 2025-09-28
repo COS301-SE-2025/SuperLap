@@ -6,39 +6,37 @@ using System.Collections.Generic;
 public class GalleryGetInfo : MonoBehaviour
 {
   [Header("Getters")]
-  public GameObject defaultPanel;
-
+  [SerializeField] private GameObject defaultPanel;
   public GameObject scrollPanel;
 
   [Header("Layout Settings")]
-  public RectTransform contentPanel;
-  public Transform column1Parent;
-  public Transform column2Parent;
-  public Transform column3Parent;
+  [SerializeField] private RectTransform contentPanel; // This should have GridLayoutGroup
 
   [Header("Panel Content References")]
-  public TextMeshProUGUI trackNameText;
-  public Image trackImage;
+  [SerializeField] private TextMeshProUGUI trackNameText;
+  [SerializeField] private Image trackImage;
 
   [Header("Backup Panel")]
-  public GameObject backupPanel;
+  [SerializeField] private GameObject backupPanel;
+
+  [Header("Loader")]
+  [SerializeField] private GameObject loaderPanel;
+
   private APIManager apiManager;
   private List<GameObject> instantiatedPanels = new List<GameObject>();
-  private int currentColumn = 0;
 
   public void Awake()
   {
     apiManager = APIManager.Instance;
 
     if (defaultPanel != null)
-    {
       defaultPanel.SetActive(false);
-    }
 
     if (backupPanel != null)
-    {
       backupPanel.SetActive(false);
-    }
+
+    if (loaderPanel != null)
+      loaderPanel.SetActive(false);
   }
 
   private void Start()
@@ -46,8 +44,7 @@ public class GalleryGetInfo : MonoBehaviour
     LoadAllTracks();
   }
 
-
-  public void LoadAllTracks()
+  public async void LoadAllTracks()
   {
     if (apiManager == null)
     {
@@ -55,12 +52,21 @@ public class GalleryGetInfo : MonoBehaviour
       backupPanel.SetActive(true);
       return;
     }
+
     ClearAllPanels();
-    Debug.Log("Loading tracks from API...");
-    apiManager.GetAllTracks(OnTracksLoaded);
+
+    if (loaderPanel != null)
+      loaderPanel.SetActive(true);
+
+    var (success, message, tracks) = await apiManager.GetAllTracksAsync();
+
+    if (loaderPanel != null)
+      loaderPanel.SetActive(false);
+
+    OnTracksLoaded(success, message, tracks);
   }
 
-  private void OnTracksLoaded(bool success, string message, List<APIManager.Track> tracks)
+  private void OnTracksLoaded(bool success, string message, List<Track> tracks)
   {
     if (!success)
     {
@@ -84,32 +90,22 @@ public class GalleryGetInfo : MonoBehaviour
     }
   }
 
-  private void CreateTrackPanel(APIManager.Track track)
+  private void CreateTrackPanel(Track track)
   {
     if (defaultPanel == null)
     {
       Debug.Log("Default panel is not assigned!");
       return;
     }
-    GameObject newPanel = Instantiate(defaultPanel);
-    Transform targetParent = GetNextColumnParent();
-    newPanel.transform.SetParent(targetParent, false);
+
+    GameObject newPanel = Instantiate(defaultPanel, contentPanel); // 👈 simplified
     newPanel.SetActive(true);
+
     ConfigureTrackPanel(newPanel, track);
     instantiatedPanels.Add(newPanel);
   }
 
-  private Transform GetNextColumnParent()
-  {
-    Transform[] columns = { column1Parent, column2Parent, column3Parent };
-    Transform selectedColumn = columns[currentColumn];
-
-    currentColumn = (currentColumn + 1) % 3;
-
-    return selectedColumn;
-  }
-
-  private void ConfigureTrackPanel(GameObject panel, APIManager.Track track)
+  private void ConfigureTrackPanel(GameObject panel, Track track)
   {
     Transform contentPanel = panel.transform.Find("Content");
     if (contentPanel == null)
@@ -139,14 +135,12 @@ public class GalleryGetInfo : MonoBehaviour
     panel.name = $"Track_{track.name}";
   }
 
-  private void OnTrackSelected(APIManager.Track track)
+  private void OnTrackSelected(Track track)
   {
-    Debug.Log($"Track selected: {track.name}");
-
     HomePageNavigation navigation = FindAnyObjectByType<HomePageNavigation>();
     if (navigation != null)
     {
-      navigation.NavigateToAnalysisWithTrack(track.name);
+      navigation.NavigateToRacingLineWithTrack(track.name);
     }
     else
     {
@@ -154,20 +148,19 @@ public class GalleryGetInfo : MonoBehaviour
     }
   }
 
-  private void LoadTrackImage(string trackName, Image targetImage)
+  private async void LoadTrackImage(string trackName, Image targetImage)
   {
-    apiManager.GetTrackImage(trackName, (success, message, texture) =>
+    var (success, message, texture) = await apiManager.GetTrackImageAsync(trackName);
+
+    if (success && texture != null)
     {
-      if (success && texture != null)
-      {
-        Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f);
-        targetImage.sprite = sprite;
-      }
-      else
-      {
-        Debug.LogWarning($"Failed to load image for track {trackName}: {message}");
-      }
-    });
+      Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f);
+      targetImage.sprite = sprite;
+    }
+    else
+    {
+      Debug.LogWarning($"Failed to load image for track {trackName}: {message}");
+    }
   }
 
   private void ClearAllPanels()
@@ -181,8 +174,8 @@ public class GalleryGetInfo : MonoBehaviour
     }
 
     instantiatedPanels.Clear();
-    currentColumn = 0;
   }
+
   public void RefreshGallery()
   {
     LoadAllTracks();
