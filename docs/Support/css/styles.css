@@ -12,6 +12,10 @@ White: #ffffff
 */
 
 /*-------------------------------------------------------------------------Body*/
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -19,6 +23,7 @@ body {
     background: #161a1d;
     color: #ffffff;
     line-height: 1.6;
+    overflow-x: hidden;
 }
 
 main {
@@ -29,7 +34,7 @@ html {
     scroll-behavior: smooth;
 }
 
-/*-------------------------------------------------------------------------Navbar (Same as home page)*/
+/*-------------------------------------------------------------------------Navbar*/
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -39,7 +44,7 @@ html {
     color: #ffffff;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 1000;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
@@ -51,6 +56,8 @@ html {
     display: flex;
     gap: 2em;
     list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 .nav-links a {
@@ -78,6 +85,7 @@ html {
     -webkit-user-select: none;
     touch-action: manipulation;
     will-change: transform;
+    white-space: nowrap;
 }
 
 .nav-links a:hover,
@@ -96,6 +104,7 @@ html {
     border: none;
     border-radius: 30px;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .button-content {
@@ -138,6 +147,61 @@ html {
 
 .download-btn:hover .download-icon {
     opacity: 1;
+}
+
+/*-------------------------------------------------------------------------Mobile Menu*/
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5em;
+}
+
+.mobile-nav {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(22, 26, 29, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 1001;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.mobile-nav.active {
+    display: flex;
+}
+
+.mobile-nav .nav-links {
+    flex-direction: column;
+    gap: 1.5em;
+}
+
+.mobile-nav .nav-links a {
+    font-size: 1.5rem;
+    padding: 1em 2em;
+}
+
+.mobile-nav .download-btn {
+    margin-top: 2em;
+}
+
+.close-mobile-menu {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 2rem;
+    cursor: pointer;
 }
 
 /*-------------------------------------------------------------------------Help Page Specific Styles*/
@@ -326,6 +390,13 @@ html {
     height: auto;
     border-radius: 8px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    cursor: zoom-in;
+}
+
+.image-container img.zoomed {
+    cursor: zoom-out;
+    transform: scale(1.2);
+    transition: transform 0.3s ease;
 }
 
 .image-caption {
@@ -457,7 +528,7 @@ html {
     text-decoration: underline;
 }
 
-/* Back to Top Button (Same as home page) */
+/* Back to Top Button */
 .back-to-top {
     width: 50px;
     height: 50px;
@@ -521,7 +592,7 @@ html {
     transition-duration: 0.3s;
 }
 
-/* Footer (Same as home page) */
+/* Footer */
 footer {
     background: #25292C;
     color: #ccc;
@@ -530,10 +601,212 @@ footer {
     margin-top: 4em;
 }
 
-/* Responsive Design */
+/* Animation Classes */
+.fade-in {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.help-section,
+.step-container,
+.subsection {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.toc-item.active {
+    background: #db1f1f !important;
+    transform: translateY(-5px);
+    border-color: #f27a69;
+}
+
+/* Search Box */
+#searchBox {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 1001;
+    background: #25292C;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    display: none;
+}
+
+#searchInput {
+    padding: 8px;
+    border: none;
+    border-radius: 5px;
+    background: #161a1d;
+    color: white;
+    width: 250px;
+}
+
+#searchBox button {
+    background: #db1f1f;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+/*-------------------------------------------------------------------------Responsive Design*/
+@media (max-width: 992px) {
+    .help-page {
+        padding: 0 1.5em;
+    }
+    
+    .toc-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    
+    .requirements-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    
+    .nav-links {
+        gap: 1em;
+    }
+    
+    .nav-links a {
+        padding: 0.8em 1.2em;
+        font-size: 16px;
+    }
+}
+
 @media (max-width: 768px) {
+    .navbar {
+        padding: 1em;
+    }
+    
+    .nav-center {
+        display: none;
+    }
+    
+    .mobile-menu-btn {
+        display: block;
+    }
+    
     .help-page {
         padding: 0 1em;
+    }
+    
+    .help-header {
+        padding: 3em 1.5em;
+        margin-top: 1em;
+    }
+    
+    .help-intro h1 {
+        font-size: 2.5rem;
+    }
+    
+    .help-intro p {
+        font-size: 1.1rem;
+    }
+    
+    .section-header {
+        padding: 1.5em;
+    }
+    
+    .section-header h2 {
+        font-size: 2rem;
+    }
+    
+    .step-container {
+        flex-direction: column;
+        gap: 1em;
+        align-items: flex-start;
+    }
+    
+    .step-number {
+        align-self: flex-start;
+    }
+    
+    .toc-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .toc-item {
+        flex-direction: column;
+        text-align: center;
+        padding: 1em;
+    }
+    
+    .toc-icon {
+        margin: 0 0 0.5em 0;
+    }
+    
+    .requirements-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .requirement-item {
+        flex-direction: column;
+        text-align: center;
+        padding: 1em;
+    }
+    
+    .req-icon {
+        margin-bottom: 0.5em;
+    }
+    
+    .content-container,
+    .subsection {
+        padding: 1.5em;
+    }
+    
+    .toc-container {
+        padding: 1.5em;
+    }
+    
+    .back-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+    }
+    
+    .back-to-top:hover {
+        width: 120px;
+    }
+    
+    .back-to-top:hover::before {
+        font-size: 14px;
+    }
+    
+    #searchBox {
+        right: 10px;
+        top: 90px;
+        left: 10px;
+        width: auto;
+    }
+    
+    #searchInput {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0.8em;
+    }
+    
+    .help-header {
+        padding: 2em 1em;
     }
     
     .help-intro h1 {
@@ -545,62 +818,19 @@ footer {
     }
     
     .section-header h2 {
-        font-size: 2rem;
-    }
-    
-    .step-container {
-        flex-direction: column;
-        gap: 1em;
-    }
-    
-    .step-number {
-        align-self: flex-start;
-    }
-    
-    .toc-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .requirements-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .requirement-item {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .navbar {
-        padding: 1em;
-    }
-    
-    .nav-links {
-        gap: 1em;
-    }
-    
-    .nav-links a {
-        padding: 0.8em 1.5em;
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .help-intro h1 {
         font-size: 1.8rem;
     }
     
-    .section-header h2 {
-        font-size: 1.8rem;
+    .subsection-title {
+        font-size: 1.5rem;
     }
     
-    .nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
+    .step-content h3 {
+        font-size: 1.3rem;
     }
     
-    .navbar {
-        flex-direction: column;
-        gap: 1em;
+    .step-content p {
+        font-size: 1rem;
     }
     
     .content-container,
@@ -610,5 +840,119 @@ footer {
     
     .toc-container {
         padding: 1em;
+    }
+    
+    .image-container {
+        padding: 1em;
+    }
+    
+    .image-container img.zoomed {
+        transform: scale(1.1);
+    }
+    
+    .tip-box {
+        padding: 1em;
+    }
+    
+    .feature-list {
+        padding: 1em;
+    }
+    
+    .download-btn {
+        width: 90px;
+        height: 40px;
+    }
+    
+    .svg-container,
+    .text-container {
+        height: 40px;
+    }
+    
+    .text-container .text {
+        font-size: 13px;
+    }
+    
+    .download-icon {
+        height: 20px;
+        width: 20px;
+    }
+    
+    .button-content {
+        transform: translateY(-40px);
+    }
+    
+    .mobile-nav .nav-links a {
+        font-size: 1.3rem;
+        padding: 0.8em 1.5em;
+    }
+    
+    .close-mobile-menu {
+        top: 1.5rem;
+        right: 1.5rem;
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .help-intro h1 {
+        font-size: 1.8rem;
+    }
+    
+    .section-header h2 {
+        font-size: 1.6rem;
+    }
+    
+    .toc-content h3 {
+        font-size: 1.1rem;
+    }
+    
+    .step-content h3 {
+        font-size: 1.2rem;
+    }
+    
+    .download-btn {
+        width: 80px;
+        height: 35px;
+    }
+    
+    .text-container .text {
+        font-size: 12px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .toc-item:hover,
+    .nav-links a:hover,
+    .requirement-item:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .toc-item:active,
+    .nav-links a:active,
+    .requirement-item:active {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(219, 31, 31, 0.2);
+    }
+    
+    .back-to-top:hover {
+        width: 50px;
+    }
+    
+    .back-to-top:hover::before {
+        font-size: 0px;
+    }
+    
+    .download-btn:hover .button-content {
+        transform: translateY(-45px);
+    }
+    
+    .download-btn:hover .text {
+        opacity: 1;
+    }
+    
+    .download-btn:hover .download-icon {
+        opacity: 0;
     }
 }
