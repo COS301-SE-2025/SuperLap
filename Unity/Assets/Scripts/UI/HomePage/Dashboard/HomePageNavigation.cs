@@ -71,6 +71,7 @@ public class HomePageNavigation : MonoBehaviour
 
   public void NavigateToUpload()
   {
+    UpdateActivePagePosition();
     dashboardPage.SetActive(false);
     uploadPage.SetActive(true);
     galleryPage.SetActive(false);
@@ -333,32 +334,56 @@ public class HomePageNavigation : MonoBehaviour
     {
       if (tooltips[i] == null) continue;
       tooltips[i].ShowTooltip();
-      yield return new WaitForSeconds(5f);
+      yield return new WaitForSeconds(3f);
       tooltips[i].HideTooltip();
     }
   }
 
-private (int start, int end) GetTooltipRangeForPage()
-{
+  private (int start, int end) GetTooltipRangeForPage()
+  {
     bool IsBackupPanelActive(GameObject page)
     {
-        if (page == null) return false;
-        Transform backup = page.transform.Find("BackupPanel");
-        return backup != null && backup.gameObject.activeSelf;
+      if (page == null) return false;
+      Transform backup = page.transform.Find("BackupPanel");
+      return backup != null && backup.gameObject.activeSelf;
     }
 
-    bool ShouldReturnTooltip(GameObject page) 
+    bool ShouldReturnTooltip(GameObject page)
     {
-        return page != null && page.activeSelf && !IsBackupPanelActive(page);
+      return page != null && page.activeSelf && !IsBackupPanelActive(page);
     }
+
+    Transform FindDeepChild(Transform parent, string name)
+    {
+      foreach (Transform child in parent)
+      {
+        if (child.name == name)
+          return child;
+
+        var result = FindDeepChild(child, name);
+        if (result != null)
+          return result;
+      }
+      return null;
+    }
+
+    bool IsChildActiveDeep(GameObject parent, string childName)
+    {
+      if (parent == null) return false;
+      var child = FindDeepChild(parent.transform, childName);
+      return child != null && child.gameObject.activeSelf;
+    }
+
+
 
     if (dashboardPage && dashboardPage.gameObject.activeSelf) return (0, 3);
     if (ShouldReturnTooltip(galleryPage)) return (4, 4);
     if (ShouldReturnTooltip(analysisPage)) return (5, 8);
     if (ShouldReturnTooltip(motoGPPage)) return (9, 10);
-    if (uploadPage && uploadPage.gameObject.activeSelf) return (11, 15);
-
+    if (IsChildActiveDeep(uploadPage, "UploadImage")) return (11, 15);
+    else if (IsChildActiveDeep(uploadPage, "TraceWidthSlider")) return (11, 14);
+    else if (uploadPage && uploadPage.activeSelf) return (11, 11);
     return (-1, -1);
-}
+  }
 
 }
