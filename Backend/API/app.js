@@ -6,6 +6,7 @@ const { setupSwagger } = require('./swagger');
 const app = express();
 // Swagger setup
 setupSwagger(app);
+app.use(express.json({ limit: '10mb' }));
 
 app.use(express.json());
 const uri = process.env.MONGO_URI;
@@ -27,9 +28,11 @@ async function connectToDb() {
 
       const trackRouter = require('./endpoints/trackEndpoints')(db);
       const userRouter = require('./endpoints/userEndpoints')(db);
+      const racingDataRouter = require('./endpoints/racingDataEndpoints')(db);
 
       app.use('', trackRouter);
       app.use('', userRouter);
+      app.use('', racingDataRouter);
 
       console.log("Connected to MongoDB");
       return;
