@@ -1,9 +1,10 @@
+import json
 import os
 import struct
-import json
-import numpy as np
+
 import geopandas as gpd
-from shapely.geometry import Polygon, LineString
+import numpy as np
+from shapely.geometry import LineString, Polygon
 
 BIN_DIR = "bin"
 CSV_INPUT_DIR = "CSVInput"
@@ -15,6 +16,7 @@ CANVAS_WIDTH = 1920
 CANVAS_HEIGHT = 1080
 
 os.makedirs(QGIS_DIR, exist_ok=True)
+
 
 def get_json_path(track_name):
     return os.path.join(OUTPUT_DIR, f"{track_name}.json")
@@ -34,18 +36,27 @@ def load_transform(track_name):
     return {}
 
 
-def apply_transform(points, tx=0, ty=0, scale=1.0, rotation_deg=0,
-                    reflect_x=False, reflect_y=False, shear_x=0.0, shear_y=0.0):
+def apply_transform(
+    points,
+    tx=0,
+    ty=0,
+    scale=1.0,
+    rotation_deg=0,
+    reflect_x=False,
+    reflect_y=False,
+    shear_x=0.0,
+    shear_y=0.0,
+):
     if not points:
         return []
 
     arr = np.array(points, dtype=float)
     angle = np.radians(rotation_deg)
 
-    rot_matrix = np.array([[np.cos(angle), -np.sin(angle)],
-                           [np.sin(angle),  np.cos(angle)]])
-    shear_matrix = np.array([[1, shear_x],
-                             [shear_y, 1]])
+    rot_matrix = np.array(
+        [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
+    )
+    shear_matrix = np.array([[1, shear_x], [shear_y, 1]])
     transform_matrix = rot_matrix @ shear_matrix
 
     transformed = (arr @ transform_matrix.T) * scale
@@ -57,6 +68,7 @@ def apply_transform(points, tx=0, ty=0, scale=1.0, rotation_deg=0,
     transformed[:, 1] += ty
     return transformed.tolist()
 
+
 def list_bin_files():
     bin_files = [f for f in os.listdir(BIN_DIR) if f.endswith(".bin")]
     if not bin_files:
@@ -66,11 +78,14 @@ def list_bin_files():
     for i, f in enumerate(bin_files, 1):
         print(f" {i}. {f}")
     choice = int(input("Select a BIN file: ")) - 1
-    return os.path.join(BIN_DIR, bin_files[choice]), bin_files[choice].replace(".bin", "")
+    return os.path.join(BIN_DIR, bin_files[choice]), bin_files[choice].replace(
+        ".bin", ""
+    )
 
 
 def load_bin_boundaries(bin_path):
     """Load outer and inner boundaries from the bin file."""
+
     def read_points(reader):
         count = struct.unpack("<i", reader.read(4))[0]
         return [list(struct.unpack("<ff", reader.read(8))) for _ in range(count)]
@@ -112,9 +127,9 @@ def load_playerline_csv(track_name):
             ys.append(float(fields[y_idx]))
     return [list(p) for p in zip(xs, ys)]
 
-from shapely.geometry import Polygon, LineString
 
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import LineString, Polygon
+
 
 def save_qgis_files(outer, inner, playerline, track_name):
     """Save boundaries and playerline as GeoJSON for QGIS editing"""
@@ -122,38 +137,46 @@ def save_qgis_files(outer, inner, playerline, track_name):
 
     if outer and inner:
         track_poly = Polygon(shell=outer, holes=[inner])
-        features.append({
-            "type": "Feature",
-            "properties": {"type": "track_area", "name": track_name},
-            "geometry": track_poly.__geo_interface__
-        })
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {"type": "track_area", "name": track_name},
+                "geometry": track_poly.__geo_interface__,
+            }
+        )
     else:
         if outer:
             track_poly = Polygon(shell=outer)
-            features.append({
-                "type": "Feature",
-                "properties": {"type": "outer_boundary", "name": track_name},
-                "geometry": track_poly.__geo_interface__
-            })
+            features.append(
+                {
+                    "type": "Feature",
+                    "properties": {"type": "outer_boundary", "name": track_name},
+                    "geometry": track_poly.__geo_interface__,
+                }
+            )
         if inner:
             track_poly = Polygon(shell=inner)
-            features.append({
-                "type": "Feature",
-                "properties": {"type": "inner_boundary", "name": track_name},
-                "geometry": track_poly.__geo_interface__
-            })
+            features.append(
+                {
+                    "type": "Feature",
+                    "properties": {"type": "inner_boundary", "name": track_name},
+                    "geometry": track_poly.__geo_interface__,
+                }
+            )
 
     if playerline:
         player_line = LineString(playerline)
-        features.append({
-            "type": "Feature",
-            "properties": {
-                "type": "playerline",
-                "name": track_name,
-                "editable": False
-            },
-            "geometry": player_line.__geo_interface__
-        })
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {
+                    "type": "playerline",
+                    "name": track_name,
+                    "editable": False,
+                },
+                "geometry": player_line.__geo_interface__,
+            }
+        )
 
     geojson = {"type": "FeatureCollection", "features": features}
 
@@ -165,6 +188,7 @@ def save_qgis_files(outer, inner, playerline, track_name):
         json.dump(geojson, f, indent=4)
     print(f"QGIS GeoJSON saved to {output_path}")
     save_qgis_project(track_name)
+
 
 def save_qgis_project(track_name):
     """Create a minimal QGIS .qgs project file (XML-based)"""
@@ -192,6 +216,7 @@ def save_qgis_project(track_name):
     with open(project_path, "w", encoding="utf-8") as f:
         f.write(project_xml)
     print(f"QGIS project file saved to {project_path}")
+
 
 def main():
     bin_result = list_bin_files()
