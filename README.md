@@ -74,8 +74,8 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 - [Architectural Requirements](docs/ArchitecturalRequirements.pdf)
 - [Deployment Model](docs/DeploymentModel.pdf)
 <!-- + [Class Diagram](docs/images/ClassDiagram.png) -->
-+ [Architecture Diagram](docs/ArchitectureDiagram.pdf)
-+ [Domain Model](docs/DomainModel.pdf)
++ [Architecture Diagram](docs/images/ArchitectureDiagram.png)
++ [Domain Model](docs/images/ClassDiagram.png)
 + [Deployment Diagram](docs/images/DeploymentDiagram.png)
 + [Use Case Diagrams](docs/images/UsecaseDiagarms.png)
 <!-- - [Installation Manual](docs/InstallationManual.pdf) -->
