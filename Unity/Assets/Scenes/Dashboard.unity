@@ -129,7 +129,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -3909358886715836153, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
       propertyPath: m_text
-      value: 3
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: -3909358886715836153, guid: ad8c27f0966275841889a2aab9aaf480, type: 3}
       propertyPath: m_fontAsset
@@ -28706,10 +28706,10 @@ RectTransform:
   m_Children:
   - {fileID: 1542809222}
   - {fileID: 1827386517}
-  - {fileID: 1228887151}
   - {fileID: 583000123}
   - {fileID: 1855759849}
   - {fileID: 761502245}
+  - {fileID: 1228887151}
   - {fileID: 93048036}
   m_Father: {fileID: 1417876285}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -30374,7 +30374,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 39.8
+  m_fontSize: 39.85
   m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -36565,7 +36565,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 39.8
+  m_fontSize: 39.85
   m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -43513,8 +43513,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 411.79962, y: -86.85596}
-  m_SizeDelta: {x: 794.606, y: 144.88}
+  m_AnchoredPosition: {x: 411.79962, y: -115.98303}
+  m_SizeDelta: {x: 794.606, y: 203.1342}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1737800516
 MonoBehaviour:
@@ -43536,14 +43536,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Spacebar - Follow and Unfollow Cursor
-
-    Click and drag - Pan around
-    the track
-
-    ScrollWheel - Zoom in and out
-
-    Hold TAB - Show advanaved Controls'
+  m_text: "Navigation: \nSpacebar - Follow and Unfollow Cursor\nClick and drag -
+    Pan around the track\nScrollWheel - Zoom in and out\nHold TAB - Show advanced
+    Controls\nF - Toggle Break points"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 487e40bc5a3faa4d8a3ba62cbdd307ea, type: 2}
   m_sharedMaterial: {fileID: -7190893634375909534, guid: 487e40bc5a3faa4d8a3ba62cbdd307ea, type: 2}
@@ -49700,7 +49695,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 38
+  m_fontSize: 38.05
   m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 1
