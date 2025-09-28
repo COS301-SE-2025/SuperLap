@@ -931,7 +931,7 @@ MonoBehaviour:
   outerBoundaryWidth: 3
   innerBoundaryWidth: 3
   racelineWidth: 3
-  playerLineWidth: 1
+  playerLineWidth: 3
   outerBoundaryColor: {r: 1, g: 1, b: 1, a: 1}
   innerBoundaryColor: {r: 1, g: 1, b: 1, a: 1}
   roadColor: {r: 0, g: 0, b: 0, a: 1}
@@ -33490,7 +33490,7 @@ MonoBehaviour:
   outerBoundaryWidth: 3
   innerBoundaryWidth: 3
   racelineWidth: 3
-  playerLineWidth: 1
+  playerLineWidth: 3
   outerBoundaryColor: {r: 1, g: 1, b: 1, a: 1}
   innerBoundaryColor: {r: 1, g: 1, b: 1, a: 1}
   roadColor: {r: 0, g: 0, b: 0, a: 1}
