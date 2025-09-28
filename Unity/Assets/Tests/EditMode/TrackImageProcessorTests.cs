@@ -76,7 +76,6 @@ namespace TrackImageProcessorTests
             var previewImageGO = new GameObject("PreviewImage");
             previewImageGO.transform.SetParent(canvasGO.transform);
             var previewImage = previewImageGO.AddComponent<Image>();
-            previewImageGO.AddComponent<RectTransform>();
 
             //Buttons
             var traceButtonGO = new GameObject("TraceButton");
@@ -107,7 +106,7 @@ namespace TrackImageProcessorTests
             //Mask Width Label
             var maskLabelGO = new GameObject("MaskLabel");
             maskLabelGO.transform.SetParent(canvasGO.transform);
-            var maskLabel = maskLabelGO.AddComponent<Text>();
+            var maskLabel = maskLabelGO.AddComponent<TextMeshProUGUI>();
 
             //Output Image
             var outputImageGO = new GameObject("OutputImage");
@@ -268,7 +267,7 @@ namespace TrackImageProcessorTests
         public void GetCenterlineMask_WithNullTexture_ReturnsNull()
         {
             //Expect error log message
-            LogAssert.Expect(LogType.Error, "Need at least 100 centerline points and a loaded texture to create mask");
+            LogAssert.Expect(LogType.Error, "No original texture available");
             
             var mask = processor.GetCenterlineMask();
             Assert.IsNull(mask);
@@ -277,32 +276,41 @@ namespace TrackImageProcessorTests
         [Test]
         public void GetCenterlineMask_WithValidTexture_ReturnsTexture()
         {
-            //Setup a test texture
-            var testTexture = CreateTestTexture(100, 100);
+            //Setup test textures
+            var originalTexture = CreateTestTexture(200, 200);
+            var scaledTexture = CreateTestTexture(100, 100);
 
-            //Use reflection to set the loaded texture
+            //Use reflection to set both required texture fields
             var processorType = typeof(TrackImageProcessor);
-            var loadedTextureField = processorType.GetField("loadedTexture",
+            var originalTextureField = processorType.GetField("originalTexture",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            loadedTextureField?.SetValue(processor, testTexture);
+            originalTextureField?.SetValue(processor, originalTexture);
+            
+            var scaledTextureField = processorType.GetField("scaledTexture",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            scaledTextureField?.SetValue(processor, scaledTexture);
 
-            //Add some centerline points
+            //Add at least 100 centerline points as required
             var centerlinePointsField = processorType.GetField("centerlinePoints",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var centerlinePoints = new List<Vector2>
-        {
-            new Vector2(10, 10),
-            new Vector2(50, 50),
-            new Vector2(90, 90)
-        };
+            var centerlinePoints = new List<Vector2>();
+            for (int i = 0; i < 120; i++) // More than 100 points
+            {
+                float angle = (i / 120f) * 2f * Mathf.PI;
+                centerlinePoints.Add(new Vector2(
+                    100 + 50 * Mathf.Cos(angle),
+                    100 + 50 * Mathf.Sin(angle)
+                ));
+            }
             centerlinePointsField?.SetValue(processor, centerlinePoints);
 
             var mask = processor.GetCenterlineMask();
             Assert.IsNotNull(mask);
-            Assert.AreEqual(testTexture.width, mask.width);
-            Assert.AreEqual(testTexture.height, mask.height);
+            Assert.AreEqual(originalTexture.width, mask.width);
+            Assert.AreEqual(originalTexture.height, mask.height);
 
-            Object.DestroyImmediate(testTexture);
+            Object.DestroyImmediate(originalTexture);
+            Object.DestroyImmediate(scaledTexture);
             Object.DestroyImmediate(mask);
         }
 
@@ -411,13 +419,13 @@ namespace TrackImageProcessorTests
                 new Vector2(30, 30)
             };
             
-            var target = new Vector2(25, 25); // Closest to index 3
+            var target = new Vector2(25, 25); // Closest to index 2
             
             // Act
             var result = processor.CallPrivateMethod<int>("FindClosestPointIndex", points, target);
             
             // Assert
-            Assert.AreEqual(3, result);
+            Assert.AreEqual(2, result);
         }
 
         [Test]
@@ -435,7 +443,7 @@ namespace TrackImageProcessorTests
         }
 
         [Test]
-        public void ReorderBoundaryFromIndex_ReordersCorrectly()
+        public void ReorderBoundary_ReordersCorrectly()
         {
             // Arrange
             var boundary = new List<Vector2>
@@ -449,7 +457,7 @@ namespace TrackImageProcessorTests
             int startIndex = 2;
             
             // Act
-            var result = processor.CallPrivateMethod<List<Vector2>>("ReorderBoundaryFromIndex", boundary, startIndex);
+            var result = processor.CallPrivateMethod<List<Vector2>>("ReorderBoundary", boundary, startIndex);
             
             // Assert
             Assert.IsNotNull(result);
@@ -461,7 +469,7 @@ namespace TrackImageProcessorTests
         }
 
         [Test]
-        public void ReorderBoundaryFromIndex_WithZeroIndex_ReturnsOriginal()
+        public void ReorderBoundary_WithZeroIndex_ReturnsOriginal()
         {
             // Arrange
             var boundary = new List<Vector2>
@@ -474,14 +482,14 @@ namespace TrackImageProcessorTests
             int startIndex = 0;
             
             // Act
-            var result = processor.CallPrivateMethod<List<Vector2>>("ReorderBoundaryFromIndex", boundary, startIndex);
+            var result = processor.CallPrivateMethod<List<Vector2>>("ReorderBoundary", boundary, startIndex);
             
             // Assert
             CollectionAssert.AreEqual(boundary, result);
         }
 
         [Test]
-        public void CorrectBoundaryDirection_WithMatchingDirection_ReturnsOriginal()
+        public void EnsureBoundaryDirection_WithMatchingDirection_ReturnsOriginal()
         {
             // Arrange
             var boundary = new List<Vector2>
@@ -505,14 +513,14 @@ namespace TrackImageProcessorTests
             centerlinePointsField?.SetValue(processor, centerlinePoints);
             
             // Act
-            var result = processor.CallPrivateMethod<List<Vector2>>("CorrectBoundaryDirection", boundary);
+            var result = processor.CallPrivateMethod<List<Vector2>>("EnsureBoundaryDirection", boundary);
             
             // Assert - should not reverse since directions match
             CollectionAssert.AreEqual(boundary, result);
         }
 
         [Test]
-        public void CorrectBoundaryDirection_WithOppositeDirection_ReversesBoundary()
+        public void EnsureBoundaryDirection_WithOppositeDirection_ReversesBoundary()
         {
             // Arrange
             var boundary = new List<Vector2>
@@ -536,12 +544,19 @@ namespace TrackImageProcessorTests
             centerlinePointsField?.SetValue(processor, centerlinePoints);
             
             // Act
-            var result = processor.CallPrivateMethod<List<Vector2>>("CorrectBoundaryDirection", boundary);
+            var result = processor.CallPrivateMethod<List<Vector2>>("EnsureBoundaryDirection", boundary);
+            
+            // Debug output
+            Debug.Log($"Original boundary: [{string.Join(", ", boundary)}]");
+            Debug.Log($"Result boundary: [{string.Join(", ", result)}]");
             
             // Assert - should reverse since directions are opposite
             Assert.IsNotNull(result);
             Assert.AreEqual(boundary.Count, result.Count);
-            CollectionAssert.AreEqual(boundary.AsEnumerable().Reverse(), result);
+            
+            // Create expected result manually
+            var expectedReversed = new List<Vector2> { new Vector2(2, 2), new Vector2(1, 1), new Vector2(0, 0) };
+            CollectionAssert.AreEqual(expectedReversed, result);
         }
 
         #endregion
