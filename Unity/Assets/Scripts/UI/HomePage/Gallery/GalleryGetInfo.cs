@@ -10,10 +10,7 @@ public class GalleryGetInfo : MonoBehaviour
   public GameObject scrollPanel;
 
   [Header("Layout Settings")]
-  [SerializeField] private RectTransform contentPanel;
-  [SerializeField] private Transform column1Parent;
-  [SerializeField] private Transform column2Parent;
-  [SerializeField] private Transform column3Parent;
+  [SerializeField] private RectTransform contentPanel; // This should have GridLayoutGroup
 
   [Header("Panel Content References")]
   [SerializeField] private TextMeshProUGUI trackNameText;
@@ -27,30 +24,25 @@ public class GalleryGetInfo : MonoBehaviour
 
   private APIManager apiManager;
   private List<GameObject> instantiatedPanels = new List<GameObject>();
-  private int currentColumn = 0;
 
   public void Awake()
   {
     apiManager = APIManager.Instance;
 
     if (defaultPanel != null)
-    {
       defaultPanel.SetActive(false);
-    }
 
     if (backupPanel != null)
-    {
       backupPanel.SetActive(false);
-    }
 
-    if (loaderPanel != null) loaderPanel.SetActive(false);
+    if (loaderPanel != null)
+      loaderPanel.SetActive(false);
   }
 
   private void Start()
   {
     LoadAllTracks();
   }
-
 
   public async void LoadAllTracks()
   {
@@ -63,15 +55,16 @@ public class GalleryGetInfo : MonoBehaviour
 
     ClearAllPanels();
 
-    if (loaderPanel != null) loaderPanel.SetActive(true);
+    if (loaderPanel != null)
+      loaderPanel.SetActive(true);
 
     var (success, message, tracks) = await apiManager.GetAllTracksAsync();
 
-    if (loaderPanel != null) loaderPanel.SetActive(false);
+    if (loaderPanel != null)
+      loaderPanel.SetActive(false);
 
     OnTracksLoaded(success, message, tracks);
   }
-
 
   private void OnTracksLoaded(bool success, string message, List<Track> tracks)
   {
@@ -97,7 +90,6 @@ public class GalleryGetInfo : MonoBehaviour
     }
   }
 
-
   private void CreateTrackPanel(Track track)
   {
     if (defaultPanel == null)
@@ -106,24 +98,11 @@ public class GalleryGetInfo : MonoBehaviour
       return;
     }
 
-    GameObject newPanel = Instantiate(defaultPanel);
-    Transform targetParent = GetNextColumnParent();
-    newPanel.transform.SetParent(targetParent, false);
+    GameObject newPanel = Instantiate(defaultPanel, contentPanel); // 👈 simplified
     newPanel.SetActive(true);
 
     ConfigureTrackPanel(newPanel, track);
     instantiatedPanels.Add(newPanel);
-  }
-
-
-  private Transform GetNextColumnParent()
-  {
-    Transform[] columns = { column1Parent, column2Parent, column3Parent };
-    Transform selectedColumn = columns[currentColumn];
-
-    currentColumn = (currentColumn + 1) % 3;
-
-    return selectedColumn;
   }
 
   private void ConfigureTrackPanel(GameObject panel, Track track)
@@ -184,7 +163,6 @@ public class GalleryGetInfo : MonoBehaviour
     }
   }
 
-
   private void ClearAllPanels()
   {
     foreach (GameObject panel in instantiatedPanels)
@@ -196,8 +174,8 @@ public class GalleryGetInfo : MonoBehaviour
     }
 
     instantiatedPanels.Clear();
-    currentColumn = 0;
   }
+
   public void RefreshGallery()
   {
     LoadAllTracks();
