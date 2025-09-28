@@ -37,7 +37,7 @@ Website at: [https://cos301-se-2025.github.io/SuperLap/](https://cos301-se-2025.
 
 <h2 style="font-weight: bold; color: #E54B4B;">Project Description</h2>
 Hello! We’re Quintessential, the creators of the upcoming <span style="font-weight: bold; color: #FFA987;">SuperLap Racing Line Optimization System</span>. We’re developing a smart tool that will help superbike riders discover the fastest racing line on any track using Reinforcement Learning and Computer Vision.
-Our system will take a <span style="font-weight: bold; color: #FFA987;">top-down track image</span>, learn through trial and error, and generate a visual map of the optimal path—bringing pro-level telemetry insights to students, amateur racers, and motorsport enthusiasts.
+Our system will take a <span style="font-weight: bold; color: #FFA987;">top-down track image</span>, learn through trial and error, and generate a visual map of the optimal path -- bringing pro-level telemetry insights to students, amateur racers, and motorsport enthusiasts.
 By simulating AI-driven racing strategies, we aim to make high-performance insights accessible to everyone, improving training and reducing guesswork. Because in racing, every millisecond will matter.
 
 <h2 style="font-weight: bold; color: #E54B4B;">Table of Contents</h2>
@@ -62,8 +62,8 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 🔹 [Demo 3 Video](https://youtu.be/MwTzlo7a2MI)  
 🔹 [Demo 3 Presentation](https://www.canva.com/design/DAGwWVct_5E/t6GvNHMUKxhPdGHImorjKg/edit?utm_content=DAGwWVct_5E&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
-<!-- 🔹 [Demo 4 Video](lk)  
-🔹 [Demo 4 Presentation](vd) -->
+🔹 [Demo 4 Video](lk)  
+🔹 [Demo 4 Presentation](https://www.canva.com/design/DAG0E_OdT80/kKDhkYu-e1aSD2pRujoqww/edit?utm_content=DAG0E_OdT80&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 
 <h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
