@@ -657,7 +657,7 @@ public class ShowRacingLine : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     if (showPlayerLine && trackData.PlayerLine != null && trackData.PlayerLine.Count > 1)
     {
-      CreateLineRenderer("Playerline", trackData.PlayerLine, Color.yellow, racelineWidth, bounds.min, scale, offset);
+      CreateLineRenderer("Playerline", trackData.PlayerLine, playerlineColor, racelineWidth, bounds.min, scale, offset);
     }
 
     // Create break points from RacelineDisplayData
