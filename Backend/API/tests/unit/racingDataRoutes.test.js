@@ -108,7 +108,8 @@ describe('Racing Data Routes Unit Tests', function () {
         });
 
         it('should reject CSV data that is too large', async function () {
-            const largeData = 'x'.repeat(100 * 1024 * 1024 + 1); // Over 100MB
+            const oneMB = 1024 * 1024;
+            const largeData = 'x'.repeat(2 * oneMB); // 2MB
             const largeCsvBase64 = Buffer.from(largeData).toString('base64');
 
             const racingData = {
@@ -119,7 +120,7 @@ describe('Racing Data Routes Unit Tests', function () {
 
             const res = await request(app).post('/racing-data').send(racingData);
             expect(res.status).toBe(413);
-            expect(res.body).toHaveProperty('message', 'CSV data too large. Maximum size is 100MB.');
+            expect(res.body).toHaveProperty('message', 'CSV data too large. Maximum size is 1MB.');
     });
 });
 
