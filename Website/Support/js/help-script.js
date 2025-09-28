@@ -1,4 +1,4 @@
-// Help Page JavaScript - Enhanced Mobile Version
+// Help Page JavaScript
 
 // Back to Top Button Functionality
 window.addEventListener('scroll', function() {
@@ -17,56 +17,8 @@ function scrollToTop() {
     });
 }
 
-// Mobile Menu Functionality
-function toggleMobileMenu() {
-    const mobileNav = document.getElementById('mobileNav');
-    const body = document.body;
-    
-    if (mobileNav.classList.contains('active')) {
-        mobileNav.classList.remove('active');
-        body.style.overflow = '';
-    } else {
-        mobileNav.classList.add('active');
-        body.style.overflow = 'hidden';
-    }
-}
-
-function closeMobileMenu() {
-    const mobileNav = document.getElementById('mobileNav');
-    const body = document.body;
-    
-    mobileNav.classList.remove('active');
-    body.style.overflow = '';
-}
-
-// Initialize mobile menu if it doesn't exist
-function createMobileMenu() {
-    const navbar = document.querySelector('.navbar');
-    
-    // Add mobile navigation if it doesn't exist
-    if (!document.querySelector('.mobile-nav')) {
-        const navLinks = document.querySelector('.nav-links');
-        const downloadBtn = document.querySelector('.download-btn');
-        
-        const mobileNav = document.createElement('div');
-        mobileNav.id = 'mobileNav';
-        mobileNav.className = 'mobile-nav';
-        
-        mobileNav.innerHTML = `
-            <button class="close-mobile-menu" onclick="closeMobileMenu()">×</button>
-            ${navLinks.outerHTML}
-            ${downloadBtn.outerHTML}
-        `;
-        
-        document.body.appendChild(mobileNav);
-    }
-}
-
 // Smooth scrolling for TOC links
 document.addEventListener('DOMContentLoaded', function() {
-    // Create mobile menu
-    createMobileMenu();
-    
     const tocLinks = document.querySelectorAll('.toc-item');
     
     tocLinks.forEach(link => {
@@ -84,30 +36,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     top: offsetPosition,
                     behavior: 'smooth'
                 });
-                
-                // Close mobile menu if open
-                closeMobileMenu();
             }
         });
-    });
-
-    // Mobile navigation links
-    document.addEventListener('click', function(e) {
-        if (e.target.matches('.mobile-nav .nav-links a')) {
-            closeMobileMenu();
-        }
-    });
-
-    // Close mobile menu when clicking outside
-    document.addEventListener('click', function(e) {
-        const mobileNav = document.getElementById('mobileNav');
-        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-        
-        if (mobileNav && mobileNav.classList.contains('active') && 
-            !mobileNav.contains(e.target) && 
-            !mobileMenuBtn.contains(e.target)) {
-            closeMobileMenu();
-        }
     });
 
     // Highlight active section in navigation
@@ -218,76 +148,55 @@ document.addEventListener('DOMContentLoaded', function() {
     elementsToObserve.forEach(element => {
         observer.observe(element);
     });
+});
 
-    // Handle window resize for mobile responsiveness
-    let resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            // Close mobile menu on resize to desktop
-            if (window.innerWidth > 768) {
-                closeMobileMenu();
-            }
-            
-            // Adjust image zoom on mobile
-            if (window.innerWidth <= 480) {
-                images.forEach(img => {
-                    if (img.classList.contains('zoomed')) {
-                        img.style.transform = 'scale(1.1)';
-                    }
-                });
-            }
-        }, 250);
-    });
-
-    // Touch gesture support for mobile
-    let touchStartY = 0;
-    let touchEndY = 0;
+// Add CSS for fade-in animation
+const style = document.createElement('style');
+style.textContent = `
+    .fade-in {
+        animation: fadeInUp 0.6s ease forwards;
+    }
     
-    document.addEventListener('touchstart', function(e) {
-        touchStartY = e.changedTouches[0].screenY;
-    }, { passive: true });
-    
-    document.addEventListener('touchend', function(e) {
-        touchEndY = e.changedTouches[0].screenY;
-        handleSwipe();
-    }, { passive: true });
-    
-    function handleSwipe() {
-        const swipeThreshold = 100;
-        const diff = touchStartY - touchEndY;
-        
-        if (Math.abs(diff) > swipeThreshold) {
-            if (diff > 0) {
-                // Swipe up - hide back to top button temporarily
-                const backToTop = document.getElementById('backToTop');
-                if (backToTop && backToTop.classList.contains('show')) {
-                    backToTop.style.transform = 'translateY(20px)';
-                    setTimeout(() => {
-                        backToTop.style.transform = '';
-                    }, 1000);
-                }
-            }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
-
-    // Prevent zoom on double tap for better UX
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function(event) {
-        const now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 300) {
-            event.preventDefault();
-        }
-        lastTouchEnd = now;
-    }, false);
-});
+    
+    .help-section,
+    .step-container,
+    .subsection {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    
+    .toc-item.active {
+        background: #db1f1f !important;
+        transform: translateY(-5px);
+        border-color: #f27a69;
+    }
+    
+    .image-container img {
+        transition: transform 0.3s ease, z-index 0.3s ease;
+    }
+    
+    .req-link {
+        transition: transform 0.15s ease, color 0.3s ease;
+    }
+`;
+document.head.appendChild(style);
 
 // Download button functionality
 function download() {
     // Direct download from the GitHub release link
-    window.location.href = "https://github.com/COS301-SE-2025/SuperLap/releases/download/v1.0.0/SuperLap.Installer.exe";
+    window.location.href = "https://github.com/COS301-SE-2025/SuperLap/releases/download/v1.0.0.alpha/SuperLap.Installer.exe";
 }
-
 // Print functionality
 function printHelp() {
     window.print();
@@ -295,32 +204,17 @@ function printHelp() {
 
 // Add keyboard navigation
 document.addEventListener('keydown', function(e) {
-    // Don't trigger shortcuts when mobile menu is open
-    if (document.getElementById('mobileNav')?.classList.contains('active')) {
-        if (e.key === 'Escape') {
-            closeMobileMenu();
-        }
-        return;
-    }
-    
     // Press 'H' to go to top
     if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.altKey) {
         scrollToTop();
-    }
-    
-    // Press Escape to close search or mobile menu
-    if (e.key === 'Escape') {
-        closeMobileMenu();
-        closeSearch();
     }
     
     // Press numbers 1-4 to navigate to sections
     const sectionMap = {
         '1': '#login-register',
         '2': '#racing-line', 
-        '3': '#gallery',
-        '4': '#analytics',
-        '5': '#game-integration'
+        '3': '#gallery-analytics',
+        '4': '#game-integration'
     };
     
     if (sectionMap[e.key] && !e.ctrlKey && !e.altKey) {
@@ -353,19 +247,12 @@ function addSearchFunctionality() {
     document.addEventListener('keydown', function(e) {
         if (e.ctrlKey && e.key === 'f') {
             e.preventDefault();
-            const searchBox = document.getElementById('searchBox');
-            const searchInput = document.getElementById('searchInput');
-            
-            if (window.innerWidth <= 768) {
-                searchBox.style.left = '10px';
-                searchBox.style.right = '10px';
-                searchBox.style.width = 'auto';
-                searchInput.style.width = '100%';
-                searchInput.style.maxWidth = '200px';
-            }
-            
-            searchBox.style.display = 'block';
-            searchInput.focus();
+            document.getElementById('searchBox').style.display = 'block';
+            document.getElementById('searchInput').focus();
+        }
+        
+        if (e.key === 'Escape') {
+            document.getElementById('searchBox').style.display = 'none';
         }
     });
     
@@ -395,57 +282,9 @@ function closeSearch() {
 // Initialize search functionality
 addSearchFunctionality();
 
-// Performance optimizations for mobile
-function optimizeForMobile() {
-    // Reduce animations on slower devices
-    const isLowEnd = navigator.hardwareConcurrency <= 2 || 
-                     navigator.deviceMemory <= 2 || 
-                     /Android.*Chrome\/[.0-9]*\s(Mobile|eliboM)/i.test(navigator.userAgent);
-    
-    if (isLowEnd) {
-        const style = document.createElement('style');
-        style.textContent = `
-            *, *::before, *::after {
-                animation-duration: 0.1s !important;
-                animation-delay: 0s !important;
-                transition-duration: 0.1s !important;
-                transition-delay: 0s !important;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-    
-    // Lazy load images on mobile
-    if ('IntersectionObserver' in window && window.innerWidth <= 768) {
-        const imageObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    if (img.dataset.src) {
-                        img.src = img.dataset.src;
-                        img.removeAttribute('data-src');
-                        observer.unobserve(img);
-                    }
-                }
-            });
-        });
-        
-        document.querySelectorAll('img[data-src]').forEach(img => {
-            imageObserver.observe(img);
-        });
-    }
-}
-
-// Initialize mobile optimizations
-document.addEventListener('DOMContentLoaded', optimizeForMobile);
-
-// Debug logging
 console.log('SuperLap Help Page loaded successfully!');
-console.log('Mobile features enabled');
 console.log('Keyboard shortcuts:');
 console.log('- Press H to scroll to top');
 console.log('- Press 1-4 to navigate to sections');
 console.log('- Press Ctrl+F to search');
-console.log('- Press Escape to close menus');
 console.log('- Click images to zoom in/out');
-console.log('- Swipe gestures supported on mobile');

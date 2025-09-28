@@ -1150,8 +1150,8 @@ textarea::placeholder {
 
 .skill-per.syst {
     animation-delay: 0.2s;
-    inset: 0 20% 0 0;
-    /* 80% width (100 - 20) */
+    inset: 0 0 0 0;
+    /* 100% width (100 - 0) */
 }
 
 @keyframes progress {
