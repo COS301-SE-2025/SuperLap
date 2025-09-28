@@ -12306,10 +12306,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc458b22978f77b8db0119ad0975682e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  checkpointCount: 5
+  checkpointCount: 3
   maxRetries: 1
-  threadCount: 1
-  agentCount: 2
+  threadCount: 4
+  agentCount: 20
 --- !u!4 &591936641
 Transform:
   m_ObjectHideFlags: 0
@@ -37868,8 +37868,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1426841444}
   m_HandleRect: {fileID: 1426841443}
   m_Direction: 2
-  m_Value: 1.0000001
-  m_Size: 0.40000007
+  m_Value: 0.9999999
+  m_Size: 0.4
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

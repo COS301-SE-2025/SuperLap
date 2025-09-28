@@ -142,7 +142,7 @@ public static class ACOTrajectoryPredictor
                                              float currentSpeed, float currentTurnAngle, float throttleInput, 
                                              float trajectoryLength, int recommendationSteps, float offTrackThreshold, 
                                              MotorcyclePhysicsConfig physicsConfig, out float offTrackRatio, PolygonTrack track,
-                                             float maxDistanceOffTrack = 5.0f)
+                                             float maxDistanceOffTrack = 0.0f)
     {
         // Convert forward vector to bearing for accurate simulation
         float currentBearing = CalculateBearingFromForward(currentForward);

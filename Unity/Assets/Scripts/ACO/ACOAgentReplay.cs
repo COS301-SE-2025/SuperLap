@@ -98,11 +98,11 @@ public class ACOAgentReplay : MonoBehaviour
 
       // Apply color rules
       Color segmentColor;
-      if (redCount >= 10)
+      if (redCount >= 15)
       {
         segmentColor = Color.red;
       }
-      else if (yellowCount >= 50)
+      else if (yellowCount >= 15)
       {
         segmentColor = Color.yellow;
       }

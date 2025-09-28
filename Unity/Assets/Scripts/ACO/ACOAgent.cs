@@ -5,7 +5,7 @@ public class ACOAgent
 {
     private static float enginePower = 250000f;
     private static float maxTractionForce = 7000f;
-    private static float brakingForce = 6000f;
+    private static float brakingForce = 8000f;
 
     private static float mass = 200f;
     private static float dragCoefficient = 0.6f;
@@ -20,7 +20,7 @@ public class ACOAgent
 
     private bool enableRecommendations = true;
     private int recommendationSteps = 5;
-    private float steeringSensitivity = 0.2f;
+    private float steeringSensitivity = 0.03f;
     private float throttleSensitivity = 0.15f;
     private float testInputStrength = 0.5f;
     private float inputThreshold = 0.3f;
@@ -62,7 +62,7 @@ public class ACOAgent
     private int instanceId;
     public int ID => instanceId;
     Random random;
-    public readonly static float Scale = 0.5f;
+    public readonly static float Scale = 0.7f;
 
     public Vector2 Forward
     {
@@ -275,8 +275,8 @@ public class ACOAgent
             {
                 // Add some basic options when no recommendations are active
                 options.Add((1, 0));  // Accelerate
-                options.Add((0, 0));  // Idle
-                options.Add((-1, 0)); // Brake
+                // options.Add((0, 0));  // Idle
+                // options.Add((-1, 0)); // Brake
             }
         }
 
