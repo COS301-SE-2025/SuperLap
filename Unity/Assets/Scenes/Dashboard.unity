@@ -24150,7 +24150,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 38
+  m_fontSize: 38.05
   m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -39405,7 +39405,7 @@ MonoBehaviour:
   outerBoundaryWidth: 3
   innerBoundaryWidth: 3
   racelineWidth: 3
-  playerLineWidth: 1
+  playerLineWidth: 3
   outerBoundaryColor: {r: 1, g: 1, b: 1, a: 1}
   innerBoundaryColor: {r: 1, g: 1, b: 1, a: 1}
   roadColor: {r: 0, g: 0, b: 0, a: 1}
@@ -45217,7 +45217,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 53.6
+  m_fontSize: 53.65
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
