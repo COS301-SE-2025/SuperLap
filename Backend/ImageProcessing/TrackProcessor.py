@@ -1,11 +1,13 @@
+import json
+import os
 import sys
+
 import cv2 as cv
 import numpy as np
 from scipy.interpolate import interp1d
-import json
-import os
 
 NUM_EDGE_POINTS = 4550  # Fixed number of points for each boundary
+
 
 class TrackProcessor:
     def __init__(self):
@@ -88,7 +90,7 @@ class TrackProcessor:
                     "success": False,
                     "outer_boundary": [],
                     "inner_boundary": [],
-                    "error": "Failed to load image"
+                    "error": "Failed to load image",
                 }
 
             processed_result = self.processImg(img)
@@ -97,7 +99,7 @@ class TrackProcessor:
                     "success": False,
                     "outer_boundary": [],
                     "inner_boundary": [],
-                    "error": "Failed to process image"
+                    "error": "Failed to process image",
                 }
 
             boundaries = self.detectBoundaries(processed_result["processed_image"])
@@ -106,23 +108,27 @@ class TrackProcessor:
                     "success": False,
                     "outer_boundary": [],
                     "inner_boundary": [],
-                    "error": "Failed to detect track boundaries"
+                    "error": "Failed to detect track boundaries",
                 }
 
             outer_coords = []
             inner_coords = []
 
             if boundaries["outer"] is not None:
-                outer_coords = self.resampleContour(boundaries["outer"], NUM_EDGE_POINTS)
+                outer_coords = self.resampleContour(
+                    boundaries["outer"], NUM_EDGE_POINTS
+                )
 
             if boundaries["inner"] is not None:
-                inner_coords = self.resampleContour(boundaries["inner"], NUM_EDGE_POINTS)
+                inner_coords = self.resampleContour(
+                    boundaries["inner"], NUM_EDGE_POINTS
+                )
 
             return {
                 "success": True,
                 "outer_boundary": outer_coords,
                 "inner_boundary": inner_coords,
-                "error": None
+                "error": None,
             }
 
         except Exception as e:
@@ -130,18 +136,20 @@ class TrackProcessor:
                 "success": False,
                 "outer_boundary": [],
                 "inner_boundary": [],
-                "error": str(e)
+                "error": str(e),
             }
+
 
 def write_result_to_file(result, output_file):
     """Write result to file instead of printing to stdout"""
     try:
-        with open(output_file, 'w') as f:
-            json.dump(result, f, separators=(',', ':'))
+        with open(output_file, "w") as f:
+            json.dump(result, f, separators=(",", ":"))
         return True
     except Exception as e:
         print(f"Error writing to file: {e}", file=sys.stderr)
         return False
+
 
 def main():
     if len(sys.argv) < 2:
@@ -149,20 +157,20 @@ def main():
             "success": False,
             "outer_boundary": [],
             "inner_boundary": [],
-            "error": "No image path provided"
+            "error": "No image path provided",
         }
         if len(sys.argv) >= 3:
             write_result_to_file(result, sys.argv[2])
         else:
-            print(json.dumps(result, separators=(',', ':')))
+            print(json.dumps(result, separators=(",", ":")))
         sys.exit(1)
 
     img_path = sys.argv[1]
     output_file = sys.argv[2] if len(sys.argv) >= 3 else None
-    
+
     processor = TrackProcessor()
     result = processor.processImageForCSharp(img_path)
-    
+
     if output_file:
         # Write to file
         if write_result_to_file(result, output_file):
@@ -171,8 +179,9 @@ def main():
             sys.exit(2)  # File write error
     else:
         # Fallback to stdout (for backwards compatibility)
-        print(json.dumps(result, separators=(',', ':')))
+        print(json.dumps(result, separators=(",", ":")))
         sys.exit(0 if result["success"] else 1)
+
 
 if __name__ == "__main__":
     main()

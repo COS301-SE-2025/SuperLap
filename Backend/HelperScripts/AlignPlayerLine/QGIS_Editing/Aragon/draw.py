@@ -1,13 +1,15 @@
 import json
+
 from PIL import Image, ImageDraw
+
 
 def main():
     input_file = "Aragon_for_qgis.geojson"
     with open(input_file, "r", encoding="utf-8") as f:
         geojson_data = json.load(f)
 
-    outer_coords = geojson_data['features'][0]['geometry']['coordinates'][1]
-    inner_coords = geojson_data['features'][0]['geometry']['coordinates'][0]
+    outer_coords = geojson_data["features"][0]["geometry"]["coordinates"][1]
+    inner_coords = geojson_data["features"][0]["geometry"]["coordinates"][0]
 
     all_coords = outer_coords + inner_coords
     x_coords = [coord[0] for coord in all_coords]
@@ -30,8 +32,8 @@ def main():
     # Create mask (white outer, black inner hole)
     mask = Image.new("L", (width, height), 0)
     mask_draw = ImageDraw.Draw(mask)
-    mask_draw.polygon(outer_points, fill=255)   # fill track area
-    mask_draw.polygon(inner_points, fill=0)     # punch hole
+    mask_draw.polygon(outer_points, fill=255)  # fill track area
+    mask_draw.polygon(inner_points, fill=0)  # punch hole
 
     # Apply mask
     img = Image.new("RGB", (width, height), "black")
@@ -41,6 +43,7 @@ def main():
     output_file = "aragon_track.png"
     img.save(output_file)
     print(f"Saved {output_file} ({width}x{height})")
+
 
 if __name__ == "__main__":
     main()

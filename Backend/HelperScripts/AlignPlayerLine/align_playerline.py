@@ -1,13 +1,15 @@
+import json
 import os
 import struct
-import json
 import tkinter as tk
 from tkinter import ttk
+
 import matplotlib
+
 matplotlib.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 CSV_INPUT_DIR = "CSVInput"
 BIN_DIR = "bin"
@@ -95,13 +97,22 @@ def parse_csv(csv_path):
     return np.array(xs), np.array(ys), track_name
 
 
-def apply_transform(points, tx=0, ty=0, scale=1.0, rotation_deg=0,
-                    reflect_x=False, reflect_y=False, shear_x=0.0, shear_y=0.0):
+def apply_transform(
+    points,
+    tx=0,
+    ty=0,
+    scale=1.0,
+    rotation_deg=0,
+    reflect_x=False,
+    reflect_y=False,
+    shear_x=0.0,
+    shear_y=0.0,
+):
     angle = np.radians(rotation_deg)
-    rot_matrix = np.array([[np.cos(angle), -np.sin(angle)],
-                           [np.sin(angle),  np.cos(angle)]])
-    shear_matrix = np.array([[1, shear_x],
-                             [shear_y, 1]])
+    rot_matrix = np.array(
+        [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
+    )
+    shear_matrix = np.array([[1, shear_x], [shear_y, 1]])
     transform_matrix = rot_matrix @ shear_matrix
     transformed = (points @ transform_matrix.T) * scale
     if reflect_x:
@@ -132,9 +143,9 @@ def interactive_align(csv_points, outer, inner, track_name):
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.set_aspect("equal")
 
-    outer_line, = ax.plot(outer[:, 0], outer[:, 1], "r-", label="Outer")
-    inner_line, = ax.plot(inner[:, 0], inner[:, 1], "b-", label="Inner")
-    player_line, = ax.plot([], [], "g-", label="Playerline")
+    (outer_line,) = ax.plot(outer[:, 0], outer[:, 1], "r-", label="Outer")
+    (inner_line,) = ax.plot(inner[:, 0], inner[:, 1], "b-", label="Inner")
+    (player_line,) = ax.plot([], [], "g-", label="Playerline")
     ax.legend()
 
     canvas = FigureCanvasTkAgg(fig, master=root)
@@ -143,13 +154,14 @@ def interactive_align(csv_points, outer, inner, track_name):
     def update(*args):
         transformed = apply_transform(
             csv_points.copy(),
-            tx.get(), ty.get(),
+            tx.get(),
+            ty.get(),
             scale.get(),
             rotation.get(),
             reflect_x.get(),
             reflect_y.get(),
             shear_x.get(),
-            shear_y.get()
+            shear_y.get(),
         )
         player_line.set_data(transformed[:, 0], transformed[:, 1])
         outer_line.set_visible(show_boundaries.get())
@@ -163,7 +175,9 @@ def interactive_align(csv_points, outer, inner, track_name):
         frame = ttk.Frame(panel)
         frame.pack(fill="x", pady=2)
         ttk.Label(frame, text=label, width=8).pack(side="left")
-        spin = ttk.Spinbox(frame, textvariable=var, from_=from_, to=to_, increment=step, width=8)
+        spin = ttk.Spinbox(
+            frame, textvariable=var, from_=from_, to=to_, increment=step, width=8
+        )
         spin.pack(side="left", fill="x", expand=True)
 
     add_spinbox("Tx", tx, -10000, 10000, 1)
@@ -173,21 +187,30 @@ def interactive_align(csv_points, outer, inner, track_name):
     add_spinbox("ShearX", shear_x, -5, 5, 0.01)
     add_spinbox("ShearY", shear_y, -5, 5, 0.01)
 
-    ttk.Checkbutton(panel, text="Reflect X", variable=reflect_x).pack(anchor="w", pady=2)
-    ttk.Checkbutton(panel, text="Reflect Y", variable=reflect_y).pack(anchor="w", pady=2)
-    ttk.Checkbutton(panel, text="Show Boundaries", variable=show_boundaries).pack(anchor="w", pady=2)
+    ttk.Checkbutton(panel, text="Reflect X", variable=reflect_x).pack(
+        anchor="w", pady=2
+    )
+    ttk.Checkbutton(panel, text="Reflect Y", variable=reflect_y).pack(
+        anchor="w", pady=2
+    )
+    ttk.Checkbutton(panel, text="Show Boundaries", variable=show_boundaries).pack(
+        anchor="w", pady=2
+    )
 
     def save_current():
-        save_json_auto({
-            "tx": tx.get(),
-            "ty": ty.get(),
-            "scale": scale.get(),
-            "rotation": rotation.get(),
-            "shear_x": shear_x.get(),
-            "shear_y": shear_y.get(),
-            "reflect_x": reflect_x.get(),
-            "reflect_y": reflect_y.get()
-        }, track_name)
+        save_json_auto(
+            {
+                "tx": tx.get(),
+                "ty": ty.get(),
+                "scale": scale.get(),
+                "rotation": rotation.get(),
+                "shear_x": shear_x.get(),
+                "shear_y": shear_y.get(),
+                "reflect_x": reflect_x.get(),
+                "reflect_y": reflect_y.get(),
+            },
+            track_name,
+        )
 
     ttk.Button(panel, text="Save JSON", command=save_current).pack(fill="x", pady=10)
 
@@ -222,7 +245,17 @@ def interactive_align(csv_points, outer, inner, track_name):
     canvas.mpl_connect("motion_notify_event", on_motion)
     canvas.mpl_connect("button_release_event", on_release)
 
-    for var in (tx, ty, scale, rotation, reflect_x, reflect_y, shear_x, shear_y, show_boundaries):
+    for var in (
+        tx,
+        ty,
+        scale,
+        rotation,
+        reflect_x,
+        reflect_y,
+        shear_x,
+        shear_y,
+        show_boundaries,
+    ):
         var.trace_add("write", update)
 
     def on_close():
@@ -238,7 +271,6 @@ def interactive_align(csv_points, outer, inner, track_name):
     root.destroy()
 
 
-
 def main():
     csv_path = list_csv_files()
     if not csv_path:
@@ -249,7 +281,9 @@ def main():
     outer, inner, raceline, playerline = load_bin(track_name)
 
     print(f"\nLoaded track: {track_name}")
-    print("Adjust transforms using the Tkinter panel. Use 'Save JSON' to export values.\n")
+    print(
+        "Adjust transforms using the Tkinter panel. Use 'Save JSON' to export values.\n"
+    )
 
     interactive_align(csv_points, outer, inner, track_name)
 
