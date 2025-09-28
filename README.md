@@ -1,5 +1,14 @@
+<!--
+   _____ _               _      _      _       _          _ _ 
+  / ____| |             | |    | |    (_)     | |        | | |
+ | |    | |__   ___  ___| | __ | |     _ _ __ | | _____  | | |
+ | |    | '_ \ / _ \/ __| |/ / | |    | | '_ \| |/ / __| | | |
+ | |____| | | |  __/ (__|   <  | |____| | | | |   <\__ \ |_|_|
+  \_____|_| |_|\___|\___|_|\_\ |______|_|_| |_|_|\_\___/ (_|_)
+-->
+
 <p align="center">
-    <img src="docs/images/temp.png" alt="Logo" width="100"/>
+    <img src="docs/images/bike.png" alt="Logo" width="100"/>
 </p>
 <p align="center">
     <img src="docs/images/banner1.png" alt="Banner"/>
@@ -90,6 +99,12 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 
 <h2 style="font-weight: bold; color: #E54B4B;">Meet the Quintessential Team</h2>
 
+<p align="center">
+    <img src="docs/images/teammates/group.jpg" alt="Banner"/>
+    <br>
+    <em>Qwinton, Sean, Amber, Simon, Milan</em>
+</p>
+
 
 | Name | Description | GitHub      | LinkedIn |
 |-------|-------------|-----------|-----------|
@@ -105,4 +120,6 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
     <img src="docs/images/Wireframe.png" alt="Wireframe"/>
 </p>
 
-
+<p align="center">
+    <img src="docs/images/logo.png" alt="Logo" width="300"/>
+</p>

@@ -2,6 +2,9 @@ const express = require('express');
 const multer = require('multer');
 const { ObjectId } = require('mongodb');
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+const sizeLimit = isTestEnv ? 1024 * 1024 : 100 * 1024 * 1024; // Decrease limit for testing
+
 // Configure multer for file uploads with larger limits for performance tests
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -199,9 +202,12 @@ module.exports = function (db) {
       }
 
       // Check if base64 data is too large (over 100MB when decoded)
+      console.log("Received CSV data size (base64):", csvData.length);
       const decodedSize = Buffer.from(csvData, 'base64').length;
-      if (decodedSize > 100 * 1024 * 1024) {
-        return res.status(413).json({ message: "CSV data too large. Maximum size is 100MB." });
+      console.log("Decoded CSV data size (bytes):", decodedSize);
+      if (decodedSize > sizeLimit) {
+        console.log("CSV data exceeds maximum size.");
+        return res.status(413).json({ message: `CSV data too large. Maximum size is ${sizeLimit / (1024 * 1024)}MB.` });
       }
 
       // Create unique ID
