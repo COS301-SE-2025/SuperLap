@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------- Download Button Functionality
 function download() {
     // Direct download from the GitHub release link
-    window.location.href = "https://github.com/COS301-SE-2025/SuperLap/releases/download/v1.0.0.alpha/SuperLap.Installer.exe";
+    window.location.href = "https://github.com/COS301-SE-2025/SuperLap/releases/download/v1.0.0/SuperLap.Installer.exe";
 }
 
 //------------------------------------------------------------------------- Back to Top Button Functionality
