@@ -45,12 +45,11 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 - [Project Description](#project-description)
 - [Table of Contents](#table-of-contents)
 - [Demo Links](#demo-links)
-- [Project Management](#project-management)
 - [Documentation](#documentation)
 - [Meet the Quintessential Team](#meet-the-quintessential-team)
-- [Wireframe](#wireframe)
+<!-- - [Wireframe](#wireframe) -->
 
-<h2 style="font-weight: bold; color: #E54B4B;">Demo Links</h2>
+## Demo Links
 
 🔸 [Project Day Video](https://youtu.be/Xwz9ME_4Er0)  
 🔸 [Project Day Presentation](https://www.canva.com/design/DAG2QWZrPbY/IvtaCTcb9lllqUGwrHFkDA/edit?utm_content=DAG2QWZrPbY&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
@@ -67,13 +66,14 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 🔹 [Demo 4 Video](https://www.youtube.com/watch?v=twPX_xDZ8cg)  
 🔹 [Demo 4 Presentation](https://www.canva.com/design/DAG0E_OdT80/kKDhkYu-e1aSD2pRujoqww/edit?utm_content=DAG0E_OdT80&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
-<h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
+## Documentation
 
 + [Project Board](https://github.com/orgs/COS301-SE-2025/projects/237)
 - [Software Requirements Specification](docs/SRS.pdf)
 - [Functional Requirements](docs/FunctionalRequirements.pdf)
 - [Architectural Requirements](docs/ArchitecturalRequirements.pdf)
-- [Deployment Model](docs/DeploymentModel.pdf)
++ [ALL OTHER DOCUMENTATION LINKS →](https://github.com/COS301-SE-2025/SuperLap/wiki/Documentation-Links)
+<!-- - [Deployment Model](docs/DeploymentModel.pdf)
 + [Architecture Diagram](docs/images/ArchitectureDiagram.png)
 + [Domain Model](docs/images/ClassDiagram.png)
 + [Deployment Diagram](docs/images/DeploymentDiagram.png)
@@ -83,12 +83,12 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 + [Coding Standards](docs/CodingStandards.pdf)
 + [Testing Policy](docs/TestingPolicy.pdf)
 + [Contributing](docs/Contributing.pdf)
-<!-- + [Burn Down Chart](docs/Burn.pdf) -->
++ [Burn Down Chart](docs/Burn.pdf)
 - [Appendix: Old Versions of SRS](docs/Appendix.pdf)
 - [Appendix: Old Technical Installation Manual](docs/AppendixTM.pdf)
-- [Appendix: Old User Manual](docs/AppendixUM.pdf)
+- [Appendix: Old User Manual](docs/AppendixUM.pdf) -->
 
-<h2 style="font-weight: bold; color: #E54B4B;">Meet the Quintessential Team</h2>
+## Meet the Quintessential Team
 
 <p align="center">
     <img src="docs/images/teammates/group.jpg" alt="Banner"/>
