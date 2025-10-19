@@ -52,6 +52,8 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 
 <h2 style="font-weight: bold; color: #E54B4B;">Demo Links</h2>
 
+🔸 [Project Day Video](https://youtu.be/Xwz9ME_4Er0)  
+🔸 [Project Day Presentation](https://www.canva.com/design/DAG2QWZrPbY/IvtaCTcb9lllqUGwrHFkDA/edit?utm_content=DAG2QWZrPbY&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 🔹 [Demo 1 Video](https://youtu.be/JzFT60XwmTg)  
 🔹 [Demo 1 Presentation](https://www.canva.com/design/DAGolqiGbpo/pvPyxXwBTqHanQH77_W3Yw/edit?utm_content=DAGolqiGbpo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
@@ -65,7 +67,6 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 🔹 [Demo 4 Video](https://www.youtube.com/watch?v=twPX_xDZ8cg)  
 🔹 [Demo 4 Presentation](https://www.canva.com/design/DAG0E_OdT80/kKDhkYu-e1aSD2pRujoqww/edit?utm_content=DAG0E_OdT80&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
-
 <h2 style="font-weight: bold; color: #E54B4B;">Documentation</h2>
 
 + [Project Board](https://github.com/orgs/COS301-SE-2025/projects/237)
@@ -73,23 +74,19 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 - [Functional Requirements](docs/FunctionalRequirements.pdf)
 - [Architectural Requirements](docs/ArchitecturalRequirements.pdf)
 - [Deployment Model](docs/DeploymentModel.pdf)
-<!-- + [Class Diagram](docs/images/ClassDiagram.png) -->
 + [Architecture Diagram](docs/images/ArchitectureDiagram.png)
 + [Domain Model](docs/images/ClassDiagram.png)
 + [Deployment Diagram](docs/images/DeploymentDiagram.png)
 + [Use Case Diagrams](docs/images/UsecaseDiagarms.png)
-<!-- - [Installation Manual](docs/InstallationManual.pdf) -->
 - [Technical Installation Manual](docs/TechnicalInstallationManual.pdf)
 - [User Manual](docs/UserManual.pdf)
-<!-- + [Machine Learning Specification](docs/MachineLearningSpecification.pdf)
-+ [API Documentation](docs/APIDocumentation.pdf) -->
-- [Coding Standards](docs/CodingStandards.pdf)
-- [Testing Policy](docs/TestingPolicy.pdf)
-- [Contributing](docs/Contributing.pdf)
-- [Burn Down Chart](docs/Burn.pdf)
-+ [Appendix: Old Versions of SRS](docs/Appendix.pdf)
-+ [Appendix: Old Technical Installation Manual](docs/AppendixTM.pdf)
-+ [Appendix: Old User Manual](docs/AppendixUM.pdf)
++ [Coding Standards](docs/CodingStandards.pdf)
++ [Testing Policy](docs/TestingPolicy.pdf)
++ [Contributing](docs/Contributing.pdf)
+<!-- + [Burn Down Chart](docs/Burn.pdf) -->
+- [Appendix: Old Versions of SRS](docs/Appendix.pdf)
+- [Appendix: Old Technical Installation Manual](docs/AppendixTM.pdf)
+- [Appendix: Old User Manual](docs/AppendixUM.pdf)
 
 <h2 style="font-weight: bold; color: #E54B4B;">Meet the Quintessential Team</h2>
 
@@ -110,9 +107,9 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 
 <h2 style="font-weight: bold; color: #E54B4B;">WireFrame</h2>
 
-<p align="center">
+<!-- <p align="center">
     <img src="docs/images/Wireframe.png" alt="Wireframe"/>
-</p>
+</p> -->
 
 <p align="center">
     <img src="docs/images/logo.png" alt="Logo" width="300"/>
