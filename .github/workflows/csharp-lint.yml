@@ -1,12 +1,16 @@
-name: C# Linting
+name: C# Linting and Formatting
 
 on:
   pull_request:
     branches: [main, dev]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   run-linters:
-    name: Run linters
+    name: Run linters and formatters
     runs-on: self-hosted
 
     steps:
@@ -16,10 +20,37 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "6.0.x"
+          dotnet-version: "8.0.x"
 
-      - name: Run C# linting
-        uses: wearerequired/lint-action@v2
-        with:
-          dotnet_format: true
-          dotnet_format_args: "Unity/Unity.sln"
+      - name: Install CSharpier (C# formatter)
+        run: |
+          dotnet tool install -g csharpier
+
+      - name: Auto-format C# code with CSharpier
+        run: |
+          # Add .NET tools to PATH
+          export PATH="$PATH:/root/.dotnet/tools"
+          
+          # Format Unity directory using CSharpier
+          echo "🎨 Formatting C# files with CSharpier..."
+          csharpier format Unity/ || echo "Some files may not have been formatted"
+          echo "✅ C# formatting completed"
+
+      - name: Commit formatting changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add Unity/
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto-format C# code with CSharpier"
+            # Only push in real GitHub Actions environment, not in act
+            if [ "$GITHUB_ACTIONS" = "true" ]; then
+              # Push to the current branch (handles detached HEAD in GitHub Actions)
+              git pull --rebase origin ${{ github.head_ref || github.ref_name }}
+              git push origin HEAD:${{ github.head_ref || github.ref_name }}
+            else
+              echo "Skipping push in local test environment"
+            fi
+          else
+            echo "No formatting changes to commit"
+          fi

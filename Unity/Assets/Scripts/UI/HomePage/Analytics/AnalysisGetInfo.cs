@@ -1,309 +1,485 @@
-using UnityEngine;
-using TMPro;
-using UnityEngine.UI;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using System.Threading.Tasks;
+using UnityEngine.EventSystems;
+using System.Linq;
+using UnityEngine.UI.Extensions;
+using LibTessDotNet;
+using System.Globalization;
 
 public class AnalysisGetInfo : MonoBehaviour
 {
   [Header("Track Info Display")]
-  public TMP_Text trackNameText;
-  public TMP_Text trackLocationText;
-  public TMP_Text trackTypeText;
-  public TMP_Text trackDescriptionText;
-  public TMP_Text trackCityText;
-  public TMP_Text trackCountryText;
+  [SerializeField] private TMP_Text trackNameText;
+  [SerializeField] private TMP_Text trackLocationText;
+  [SerializeField] private TMP_Text trackTypeText;
+  [SerializeField] private TMP_Text trackDescriptionText;
+  [SerializeField] private TMP_Text trackCityText;
+  [SerializeField] private TMP_Text trackCountryText;
+  [SerializeField] private Button racingLineButton;
+
+  [Header("Session Info Display")]
+  [SerializeField] private TMP_Text sessionFastestLapTimeText;
+  [SerializeField] private TMP_Text sessionAverageSpeedText;
+  [SerializeField] private TMP_Text sessionTopSpeedText;
+  [SerializeField] private TMP_Text sessionVehicleUsedText;
+  [SerializeField] private TMP_Text sessionDateUploadedText;
+  [SerializeField] private TMP_Text sessionTotalLapsText;
+
+  [Header("Session Scroll View")]
+  [SerializeField] private GameObject defaultSessionPanel;
+  [SerializeField] private Transform contentParent;
+  [SerializeField] private GameObject loaderPanel;
+  [SerializeField] private GameObject backupPanel;
+
+  [Header("Dashboard settings")]
+  [SerializeField] bool isDashboard = false;
+
   private ShowRacingLine racingLinePreview;
+  private RacingData selectedSession;
+  private List<RacingData> allSessions = new();
+  private List<GameObject> instantiatedPanels = new();
   private HomePageNavigation homePageNavigation;
-
   private APIManager apiManager;
-  private int trackIndex = 0;
 
+  private bool isLoading = false;
   private string trackName;
+  private string staticUserName = "Postman";
 
-  public void Awake()
+
+  private void Awake()
   {
-    try
-    {
-      apiManager = APIManager.Instance;
-      homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
-      racingLinePreview = FindAnyObjectByType<ShowRacingLine>();
+    apiManager = APIManager.Instance;
+    homePageNavigation = FindAnyObjectByType<HomePageNavigation>();
+    racingLinePreview = GetComponentInChildren<ShowRacingLine>();
 
-      if (racingLinePreview != null)
-      {
-        racingLinePreview.gameObject.SetActive(false);
-      }
-    }
-    catch (System.Exception e)
-    {
-      Debug.Log($"Failed to initialize components: {e.Message}");
-      SetDefaultValues();
-    }
+    if (defaultSessionPanel != null) defaultSessionPanel.SetActive(false);
+    if (backupPanel != null) backupPanel.SetActive(false);
+    if (loaderPanel != null) loaderPanel.SetActive(false);
+    if (racingLinePreview != null) racingLinePreview.gameObject.SetActive(false);
+    if (racingLineButton != null) racingLineButton.interactable = false;
   }
 
-  public void Start()
+
+  private void ResetValues()
   {
-    try
+    if (trackNameText != null) trackNameText.text = "Loading...";
+    if (trackTypeText != null) trackTypeText.text = "";
+    if (trackCityText != null) trackCityText.text = "";
+    if (trackCountryText != null) trackCountryText.text = "";
+    if (trackDescriptionText != null) trackDescriptionText.text = "";
+    if (trackLocationText != null) trackLocationText.text = "";
+
+    if (racingLineButton != null) racingLineButton.interactable = false;
+    if (racingLinePreview != null) racingLinePreview.gameObject.SetActive(false);
+
+    trackName = "";
+    isLoading = false;
+  }
+
+  private void OnEnable()
+  {
+    if (!isLoading)
     {
-      if (apiManager != null)
+      if (string.IsNullOrEmpty(UserManager.Instance.Username))
       {
-        apiManager.GetAllTracks(OnTracksLoaded);
+        StartCoroutine(WaitForUsernameAndLoadSessions());
       }
       else
       {
-        Debug.Log("APIManager is null");
-        SetDefaultValues();
+        staticUserName = UserManager.Instance.Username;
+        StartCoroutine(LoadSessionsSequentially());
       }
-
-    }
-    catch (System.Exception e)
-    {
-      Debug.Log($"Error in Start: {e.Message}");
-      SetDefaultValues();
     }
   }
 
-  private void SetDefaultValues()
+  private IEnumerator WaitForUsernameAndLoadSessions()
   {
-    if (trackNameText != null) trackNameText.text = "Default Track";
-    if (trackTypeText != null) trackTypeText.text = "Default Type";
-    if (trackCityText != null) trackCityText.text = "Default City";
-    if (trackCountryText != null) trackCountryText.text = "Default Country";
-    if (trackDescriptionText != null) trackDescriptionText.text = "Default track description";
-    if (trackLocationText != null) trackLocationText.text = "Lat: 0.000000, Lon: 0.000000";
+    float timeout = 0.5f;
+    float timer = 0f;
+
+    while (string.IsNullOrEmpty(UserManager.Instance.Username) && timer < timeout)
+    {
+      timer += Time.deltaTime;
+      yield return null;
+    }
+
+    staticUserName = !string.IsNullOrEmpty(UserManager.Instance.Username)
+        ? UserManager.Instance.Username
+        : "Postman";
+
+    Debug.Log($"Using username: {staticUserName}");
+
+    StartCoroutine(LoadSessionsSequentially());
   }
 
+  //   private IEnumerator WaitForUsernameAndLoadSessions()
+  // {
+  //   yield return new WaitUntil(() => !string.IsNullOrEmpty(UserManager.Instance.Username));
+  //   staticUserName = UserManager.Instance.Username;
+  //   StartCoroutine(LoadSessionsSequentially());
+  // }
 
-  private void OnTracksLoaded(bool success, string message, List<APIManager.Track> tracks)
+  private void OnDisable()
   {
-    if (!success)
-    {
-      Debug.Log($"Failed to load tracks: {message}");
-      DisplayErrorMessage("Failed to load track data");
-      return;
-    }
-
-    if (tracks == null || tracks.Count == 0)
-    {
-      Debug.LogWarning("No tracks found in the database");
-      DisplayErrorMessage("No tracks available");
-      return;
-    }
-
-    if (trackIndex < tracks.Count)
-    {
-      DisplayTrackInfo(tracks[trackIndex]);
-    }
-    else
-    {
-      DisplayTrackInfo(tracks[0]);
-    }
+    StopAllCoroutines();
+    ResetValues();
+    if (racingLinePreview != null)
+      racingLinePreview.gameObject.SetActive(false);
   }
 
-  private void DisplayTrackInfo(APIManager.Track track)
+  private void Start()
   {
-    if (trackNameText != null)
-      trackNameText.text = track.name ?? "Unknown Track";
+    ResetValues();
+    if (!isLoading)
+      StartCoroutine(LoadSessionsSequentially());
+  }
 
-    if (trackTypeText != null)
-      trackTypeText.text = track.type ?? "Unknown Type";
+  #region Session Loading
 
-    if (trackCityText != null)
-      trackCityText.text = track.city ?? "Unknown City";
+  private IEnumerator LoadSessionsSequentially()
+  {
+    isLoading = true;
+    if (loaderPanel != null) loaderPanel.SetActive(true);
 
-    if (trackCountryText != null)
-      trackCountryText.text = track.country ?? "Unknown Country";
+    var task = apiManager.GetAllRacingDataAsync();
+    yield return new WaitUntil(() => task.IsCompleted);
+    var result = task.Result;
 
-    if (trackDescriptionText != null)
-      trackDescriptionText.text = track.description ?? "No description available";
-
-    if (trackLocationText != null)
+    if (!result.success || result.data == null || result.data.Count == 0)
     {
-      if (!string.IsNullOrEmpty(track.location))
+      if (loaderPanel != null) loaderPanel.SetActive(false);
+      if (backupPanel != null) backupPanel.SetActive(true);
+      Debug.LogWarning("No racing sessions found.");
+      isLoading = false;
+      yield break;
+    }
+    allSessions = result.data.FindAll(s => s.userName == staticUserName);
+    if (allSessions.Count == 0)
+    {
+      if (loaderPanel != null) loaderPanel.SetActive(false);
+      if (backupPanel != null) backupPanel.SetActive(true);
+      isLoading = false;
+      yield break;
+    }
+
+    allSessions.Sort((a, b) => DateTime.Parse(b.dateUploaded).CompareTo(DateTime.Parse(a.dateUploaded)));
+
+    if (loaderPanel != null) loaderPanel.SetActive(false);
+    if (backupPanel != null) backupPanel.SetActive(false);
+    ClearAllPanels();
+
+    if (!isDashboard)
+    {
+      foreach (var session in allSessions)
+        CreateSessionPanel(session);
+    }
+
+    selectedSession = allSessions[0];
+    DisplaySessionInfo(selectedSession);
+    StartCoroutine(LoadRacingDataForSession(selectedSession));
+
+    isLoading = false;
+  }
+
+  private void CreateSessionPanel(RacingData session)
+  {
+    if (defaultSessionPanel == null || contentParent == null) return;
+
+    GameObject panelInstance = Instantiate(defaultSessionPanel, contentParent);
+    panelInstance.SetActive(true);
+
+    Button panelButton = panelInstance.GetComponent<Button>();
+    if (panelButton != null)
+      panelButton.onClick.AddListener(() => OnSessionSelected(session));
+
+    TMP_Text infoText = panelInstance.GetComponentInChildren<TMP_Text>();
+    if (infoText != null)
+    {
+      infoText.text = $"{session.trackName}";
+    }
+
+    instantiatedPanels.Add(panelInstance);
+  }
+
+  private void OnSessionSelected(RacingData session)
+  {
+    selectedSession = session;
+
+    if (racingLinePreview != null)
+      racingLinePreview.ClearPreview(); // Reset previous session
+
+    DisplaySessionInfo(session);
+    StartCoroutine(LoadRacingDataForSessionDelayed(session));
+  }
+
+  #endregion
+
+  #region Session Display
+
+  private void DisplaySessionInfo(RacingData session)
+  {
+    if (sessionFastestLapTimeText != null) sessionFastestLapTimeText.text = $"{session.fastestLapTime} s";
+    if (sessionAverageSpeedText != null) sessionAverageSpeedText.text = $"{session.averageSpeed} km/h";
+    if (sessionTopSpeedText != null) sessionTopSpeedText.text = $"{session.topSpeed} km/h";
+    if (sessionVehicleUsedText != null) sessionVehicleUsedText.text = session.vehicleUsed ?? "N/A";
+    if (sessionDateUploadedText != null)
+      sessionDateUploadedText.text = !string.IsNullOrEmpty(session.dateUploaded)
+          ? DateTime.Parse(session.dateUploaded).ToString("yyyy-MM-dd HH:mm")
+          : "Unknown Date";
+  }
+
+  #endregion
+
+  #region Track & Raceline
+
+  private IEnumerator LoadRacingDataForSessionDelayed(RacingData session)
+  {
+    yield return null; // wait one frame for layout to update
+    yield return LoadRacingDataForSession(session); // call your original coroutine
+  }
+  private IEnumerator LoadRacingDataForSession(RacingData session)
+  {
+    if (session == null)
+    {
+      Debug.LogWarning("No session available.");
+      yield break;
+    }
+
+    if (string.IsNullOrEmpty(session.csvData) || session.csvData == "0")
+    {
+      var task = apiManager.DownloadRacingDataCsvAsync(session._id);
+      yield return new WaitUntil(() => task.IsCompleted);
+
+      var result = task.Result;
+      if (result.success)
       {
-        string[] coordinates = track.location.Split(',');
-        if (coordinates.Length >= 2)
-        {
-          if (float.TryParse(coordinates[0].Trim(), out float latitude) &&
-              float.TryParse(coordinates[1].Trim(), out float longitude))
-          {
-            trackLocationText.text = $"Lat: {latitude:F6}, Lon: {longitude:F6}";
-          }
-          else
-          {
-            trackLocationText.text = track.location;
-          }
-        }
-        else
-        {
-          trackLocationText.text = track.location;
-        }
+        session.csvData = System.Convert.ToBase64String(result.csvBytes);
       }
       else
       {
-        trackLocationText.text = "Location: Unknown";
+        Debug.LogWarning($"Failed to download CSV for session {session._id}: {result.message}");
+        yield break;
       }
     }
+
+    string trackId = ExtractTrackIdFromCsv(session.csvData);
+    if (string.IsNullOrEmpty(trackId))
+    {
+      Debug.LogWarning("TrackId not found in CSV");
+      yield break;
+    }
+
+    yield return LoadTrackMetaDataCoroutine(trackId);
+    string savePath = Path.Combine(Application.streamingAssetsPath, "temp_csv.csv");
+
+    byte[] csvBytes = System.Convert.FromBase64String(session.csvData);
+    string csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
+    File.WriteAllText(savePath, csvText);
+
+    if (racingLineButton != null) racingLineButton.interactable = true;
+    if (racingLinePreview != null)
+    {
+      racingLinePreview.gameObject.SetActive(true);
+      racingLinePreview.InitializeWithSession(session);
+    }
+
+    if (sessionTotalLapsText != null)
+      sessionTotalLapsText.text = EstimateLapsFromCsv(session.csvData).ToString();
+  }
+
+  List<UnityEngine.Vector2> ConvertToUnityVector2(List<System.Numerics.Vector2> list)
+  {
+    return list.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList();
+  }
+
+  private IEnumerator LoadTrackMetaDataCoroutine(string trackId)
+  {
+    var task = LoadTrackMetaData(trackId);
+    yield return new WaitUntil(() => task.IsCompleted);
+  }
+
+  private async Task LoadTrackMetaData(string trackId)
+  {
+    if (string.IsNullOrEmpty(trackId)) return;
+
+    var (successAll, messageAll, tracks) = await apiManager.GetAllTracksAsync();
+    if (!successAll || tracks == null || tracks.Count == 0)
+    {
+      Debug.LogWarning("No tracks available from API");
+      return;
+    }
+
+    Track matchedTrack = tracks.Find(t => !string.IsNullOrEmpty(t.name) && t.name.Contains(trackId));
+    if (matchedTrack == null)
+    {
+      Debug.LogWarning($"No track found matching trackId {trackId}");
+      return;
+    }
+
+    var (successByName, messageByName, fullTrack) = await apiManager.GetTrackByNameAsync(matchedTrack.name);
+    Track trackToDisplay = successByName && fullTrack != null ? fullTrack : matchedTrack;
+
+    DisplayTrackInfo(trackToDisplay);
+  }
+
+
+  private string ExtractTrackIdFromCsv(string base64Csv)
+  {
+    if (string.IsNullOrEmpty(base64Csv)) return null;
+
+    try
+    {
+      byte[] bytes = Convert.FromBase64String(base64Csv);
+      string text = Encoding.UTF8.GetString(bytes);
+      string[] lines = text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+      if (lines.Length < 2) return null;
+
+      string[] columns = lines[1].Split('\t');
+      return columns.Length > 0 ? columns[0] : null;
+    }
+    catch { return null; }
+  }
+
+  private int EstimateLapsFromCsv(string base64Csv)
+  {
+    if (string.IsNullOrEmpty(base64Csv)) return 0;
+
+    byte[] bytes = Convert.FromBase64String(base64Csv);
+    string text = Encoding.UTF8.GetString(bytes);
+    string[] lines = text.Split('\n');
+    HashSet<string> laps = new HashSet<string>();
+
+    for (int i = 1; i < lines.Length; i++)
+    {
+      string line = lines[i].Trim();
+      if (string.IsNullOrEmpty(line)) continue;
+      string[] cols = line.Split('\t');
+      if (cols.Length < 2) continue;
+      laps.Add(cols[1]);
+    }
+
+    return laps.Count;
+  }
+
+  private void DisplayTrackInfo(Track track)
+  {
+    if (trackNameText != null) trackNameText.text = track.name ?? "Unknown Track";
+    if (trackTypeText != null) trackTypeText.text = track.type ?? "Unknown Type";
+    if (trackCityText != null) trackCityText.text = track.city ?? "Unknown City";
+    if (trackCountryText != null) trackCountryText.text = track.country ?? "Unknown Country";
+    if (trackDescriptionText != null) trackDescriptionText.text = track.description ?? "No description available";
+    if (trackLocationText != null) trackLocationText.text = track.location ?? "Location: Unknown";
 
     trackName = track.name;
 
-    if (racingLinePreview != null)
-    {
-        racingLinePreview.gameObject.SetActive(true);
-        racingLinePreview.InitializeWithTrack(trackName);
-    }
-    else
-    {
-        Debug.LogWarning("Racing line preview component not assigned");
-    }
-
-    LoadRacingLinePreview();
+    if (racingLineButton != null) racingLineButton.interactable = true;
   }
 
-  public void DisplayTrackByIndex(int index)
-  {
-    try
-    {
-      if (apiManager != null)
-      {
-        trackIndex = index;
-        apiManager.GetAllTracks(OnTracksLoaded);
-      }
-      else
-      {
-        Debug.Log("APIManager is null in DisplayTrackByIndex");
-        SetDefaultValues();
-      }
-    }
-    catch (System.Exception e)
-    {
-      Debug.Log($"Error in DisplayTrackByIndex: {e.Message}");
-      SetDefaultValues();
-    }
-  }
-  public void DisplayTrackByName(string trackName)
-  {
-    this.trackName = trackName;
-    try
-    {
-      if (apiManager != null)
-      {
-        apiManager.GetTrackByName(trackName, (success, message, track) =>
-        {
-          if (success && track != null)
-          {
-            DisplayTrackInfo(track);
-          }
-          else
-          {
-            Debug.Log($"Failed to load track '{trackName}': {message}");
-            SetDefaultValues();
-          }
-        });
-      }
-      else
-      {
-        Debug.Log("APIManager is null in DisplayTrackByName");
-        SetDefaultValues();
-      }
-    }
-    catch (System.Exception e)
-    {
-      Debug.Log($"Error in DisplayTrackByName: {e.Message}");
-      SetDefaultValues();
-    }
-  }
-  public void DisplaySpecificTrack(APIManager.Track track)
-  {
-    if (track != null)
-    {
-      DisplayTrackInfo(track);
-    }
-    else
-    {
-      Debug.Log("Track object is null");
-      DisplayErrorMessage("Invalid track data");
-    }
-  }
+  #endregion
 
-  private void DisplayErrorMessage(string errorMsg)
-  {
-    if (trackNameText != null)
-      trackNameText.text = errorMsg;
+  #region Utility
 
-    if (trackTypeText != null) trackTypeText.text = "";
-    if (trackLocationText != null) trackLocationText.text = "";
-    if (trackDescriptionText != null) trackDescriptionText.text = "";
-    if (trackCityText != null) trackCityText.text = "";
-    if (trackCountryText != null) trackCountryText.text = "";
-  }
-
-  public void RefreshTrackInfo()
+  private void ClearAllPanels()
   {
-    try
-    {
-      if (apiManager != null)
-      {
-        apiManager.GetAllTracks(OnTracksLoaded);
-      }
-      else
-      {
-        Debug.Log("APIManager is null in RefreshTrackInfo");
-        SetDefaultValues();
-      }
-    }
-    catch (System.Exception e)
-    {
-      Debug.Log($"Error in RefreshTrackInfo: {e.Message}");
-      SetDefaultValues();
-    }
+    foreach (var panel in instantiatedPanels)
+      if (panel != null) Destroy(panel);
+    instantiatedPanels.Clear();
   }
 
   public string GetCurrentTrackName()
   {
-    return trackName;
+    if (!string.IsNullOrEmpty(trackName)) return trackName;
+    return selectedSession?.trackName ?? "Unknown";
   }
 
   public void OpenRacingLineForCurrentTrack()
   {
     if (homePageNavigation != null)
-    {
-      string trackName = GetCurrentTrackName();
-      homePageNavigation.NavigateToRacingLineWithTrack(trackName);
-    }
-    else
-    {
-      Debug.Log("HomePageNavigation reference not set in AnalysisGetInfo");
-    }
+      homePageNavigation.InitializeWithSession(selectedSession);
   }
+  
 
-  public void OpenRacingLineForCurrentTrackAuto()
-  {
-    if (homePageNavigation != null)
-    {
-      string trackName = GetCurrentTrackName();
-      homePageNavigation.NavigateToRacingLineWithTrack(trackName);
-    }
-    else
-    {
-      Debug.Log("HomePageNavigation component not found in scene");
-    }
-  }
+  #endregion
+}
 
-  private void LoadRacingLinePreview()
-  {
-    if (racingLinePreview != null)
+public static class RacingDataUtils
+{
+    /// <summary>
+    /// Extracts all lap indices from the base64 CSV string.
+    /// </summary>
+    public static List<int> GetLapIndices(string base64Csv)
     {
-      racingLinePreview.InitializeWithTrack(trackName);
+        var indices = new HashSet<int>();
+
+        if (string.IsNullOrEmpty(base64Csv))
+            return indices.ToList();
+
+        try
+        {
+            byte[] bytes = Convert.FromBase64String(base64Csv);
+            string text = Encoding.UTF8.GetString(bytes);
+            string[] lines = text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 1; i < lines.Length; i++) // skip header
+            {
+                string[] cols = lines[i].Split('\t');
+                if (cols.Length < 2) continue;
+
+                if (int.TryParse(cols[1], out int lapIndex))
+                    indices.Add(lapIndex);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[RacingDataUtils] Failed to extract lap indices: {ex.Message}");
+        }
+
+        return indices.ToList();
     }
-    else
+
+    /// <summary>
+    /// Loads RacelineDisplayData for a given lap index.
+    /// </summary>
+    public static RacelineDisplayData GetTrackDataForLap(string base64Csv, int lapIndex)
     {
-      Debug.LogWarning("Racing line preview component not assigned");
+        if (string.IsNullOrEmpty(base64Csv))
+            return null;
+
+        try
+        {
+            // Save CSV temporarily
+            string savePath = Path.Combine(Application.streamingAssetsPath, "temp_csv.csv");
+            byte[] csvBytes = Convert.FromBase64String(base64Csv);
+            string csvText = Encoding.UTF8.GetString(csvBytes);
+            File.WriteAllText(savePath, csvText);
+
+            // Convert using existing CSVToBinConverter
+            var csvdata = CSVToBinConverter.LoadCSV.Convert(savePath, lapIndex);
+
+            return new RacelineDisplayData
+            {
+                InnerBoundary = ConvertToUnityVector2(csvdata.InnerBoundary),
+                OuterBoundary = ConvertToUnityVector2(csvdata.OuterBoundary),
+                Raceline = ConvertToUnityVector2(csvdata.Raceline),
+                PlayerLine = ConvertToUnityVector2(csvdata.PlayerPath),
+            };
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[RacingDataUtils] Failed to load track data for lap {lapIndex}: {ex.Message}");
+            return null;
+        }
     }
-  }
 
-
-  public void RefreshRacingLinePreview()
-  {
-    LoadRacingLinePreview();
-  }
+    private static List<UnityEngine.Vector2> ConvertToUnityVector2(List<System.Numerics.Vector2> list)
+    {
+        return list?.Select(v => new UnityEngine.Vector2(v.X, v.Y)).ToList() ?? new List<UnityEngine.Vector2>();
+    }
 }

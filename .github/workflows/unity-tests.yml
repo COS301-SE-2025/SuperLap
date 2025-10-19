@@ -90,7 +90,7 @@ jobs:
           fi
 
           echo "test_id=$TEST_ID" >> $GITHUB_OUTPUT
-          echo "✅ External Unity test started with ID: $TEST_ID"
+          echo "External Unity test started with ID: $TEST_ID"
 
       - name: Wait for Test Completion
         run: |
@@ -99,21 +99,21 @@ jobs:
           MAX_ATTEMPTS=60  # 10 minutes with 10s intervals
           ATTEMPT=0
 
-          echo "🔄 Polling test results for ID: $TEST_ID"
+          echo "Polling test results for ID: $TEST_ID"
           echo "Service URL: $SERVICE_URL"
 
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             sleep 10  # Wait 10 seconds between checks
             ATTEMPT=$((ATTEMPT + 1))
             
-            echo "📡 Checking test status (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+            echo "Checking test status (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
             
             RESPONSE=$(curl -s \
               -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
               "$SERVICE_URL/api/test-status/$TEST_ID")
             
             if [ $? -ne 0 ]; then
-              echo "⚠️  Failed to connect to test service"
+              echo "Failed to connect to test service"
               continue
             fi
             
@@ -134,14 +134,14 @@ jobs:
                 TEST_CLASS_COUNT=$(echo "$RESPONSE" | jq -r '.coverage.testClassCount // 0')
                 
                 echo ""
-                echo "🎯 Unity Tests Completed!"
-                echo "📊 Results Summary:"
+                echo "Unity Tests Completed!"
+                echo "Results Summary:"
                 echo "   • Total Tests: $TOTAL_TESTS"
                 echo "   • Passed: $PASSED_TESTS"
                 echo "   • Failed: $FAILED_TESTS"
                 
                 if [ "$COVERAGE_AVAILABLE" = "true" ]; then
-                  echo "📈 Coverage Summary:"
+                  echo "Coverage Summary:"
                   echo "   • Line Coverage: $LINE_COVERAGE%"
                   echo "   • Method Coverage: $METHOD_COVERAGE%"
                   echo "   • Test Classes: $TEST_CLASS_COUNT"
@@ -152,7 +152,7 @@ jobs:
                   echo "method_coverage=$METHOD_COVERAGE" >> $GITHUB_ENV
                   echo "test_class_count=$TEST_CLASS_COUNT" >> $GITHUB_ENV
                 else
-                  echo "ℹ️  No coverage data available"
+                  echo "No coverage data available"
                   echo "coverage_available=false" >> $GITHUB_ENV
                   echo "line_coverage=0" >> $GITHUB_ENV
                   echo "method_coverage=0" >> $GITHUB_ENV
@@ -161,7 +161,7 @@ jobs:
                 echo ""
                 
                 # Get detailed logs
-                echo "📋 Test Logs:"
+                echo "Test Logs:"
                 LOGS_RESPONSE=$(curl -s \
                   -H "Authorization: Bearer ${{ secrets.UNITY_TEST_SERVICE_TOKEN || 'default-token' }}" \
                   "$SERVICE_URL/api/logs/$TEST_ID")
@@ -172,38 +172,38 @@ jobs:
                 fi
                 
                 if [ "$SUCCESS" = "true" ] && [ "$FAILED_TESTS" = "0" ] && [ "$TOTAL_TESTS" != "0" ]; then
-                  echo "✅ All Unity tests passed!"
+                  echo "All Unity tests passed!"
                   exit 0
                 else
-                  echo "❌ Unity tests failed!"
+                  echo "Unity tests failed!"
                   echo "::error::Unity tests failed ($FAILED_TESTS/$TOTAL_TESTS failed)"
                   exit 1
                 fi
                 ;;
               "failed"|"error")
                 ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error // "Unknown error"')
-                echo "❌ Test execution failed: $ERROR_MSG"
+                echo "Test execution failed: $ERROR_MSG"
                 echo "::error::Unity test execution failed: $ERROR_MSG"
                 exit 1
                 ;;
               "timeout")
-                echo "⏰ Tests timed out on the external service"
+                echo "Tests timed out on the external service"
                 echo "::error::Unity tests timed out"
                 exit 1
                 ;;
               "running")
-                echo "🔄 Tests still running..."
+                echo "Tests still running..."
                 ;;
               "queued")
-                echo "⏳ Tests queued, waiting to start..."
+                echo "Tests queued, waiting to start..."
                 ;;
               *)
-                echo "❓ Unknown status: $STATUS"
+                echo "Unknown status: $STATUS"
                 ;;
             esac
           done
 
-          echo "⏰ Test polling timed out after $((MAX_ATTEMPTS * 10)) seconds!"
+          echo "Test polling timed out after $((MAX_ATTEMPTS * 10)) seconds!"
           echo "::error::Test polling timeout - Unity tests may still be running"
           exit 1
 
@@ -212,15 +212,15 @@ jobs:
         run: |
           # Run our coverage calculation locally if coverage files exist
           if [ -f "Unity/CodeCoverage/Report/Summary.json" ]; then
-            echo "📊 Calculating coverage for selected test classes..."
+            echo "Calculating coverage for selected test classes..."
             python scripts/calculate-coverage.py --github
             
             # Also generate JSON for artifacts
             python scripts/calculate-coverage.py --json > coverage-summary.json
             
-            echo "✅ Coverage calculation completed"
+            echo "Coverage calculation completed"
           else
-            echo "ℹ️  No local coverage data found"
+            echo "No local coverage data found"
           fi
 
       - name: Upload Coverage Summary
@@ -235,7 +235,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Update Coverage Badge Gist
-        if: env.coverage_available == 'true' && github.ref == 'refs/heads/main'
+        if: env.coverage_available == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GIST_TOKEN }}
@@ -272,9 +272,9 @@ jobs:
                   }
                 }
               });
-              console.log(`✅ Updated coverage gist: ${coverage}%`);
+              console.log(`Updated coverage gist: ${coverage}%`);
             } catch (error) {
-              console.log(`❌ Failed to update gist: ${error.message}`);
+              console.log(`Failed to update gist: ${error.message}`);
               // If gist doesn't exist or token doesn't have access, log the error
               core.setFailed(`Failed to update coverage gist: ${error.message}`);
             }

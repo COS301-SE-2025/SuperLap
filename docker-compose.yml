@@ -6,7 +6,7 @@ services:
       context: ./Backend/API
     volumes:
       - ./Backend/API:/app
-      - node_modules:/app/node_modules  # Named volume for node_modules
+      - node_modules_api:/app/node_modules  # Named volume for node_modules
     ports:
       - "3000:3000"
     env_file:
@@ -22,6 +22,7 @@ services:
       - DISPLAY=${DISPLAY}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./Backend/ImageProcessing/processedTracks:/app/processedTracks  # Add this line
     command: python TrackProcessor.py
     depends_on:
       - api  # Waits for api service to start
@@ -39,6 +40,7 @@ services:
 # Define named volumes here
 volumes:
   node_modules:
+  node_modules_api:
 
   # node_frontend:
   #   build:
