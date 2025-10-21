@@ -105,7 +105,7 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 | Sean van der Merwe   | I am a final-year BSc Computer Science student. I’m a curious programmer, always looking for my next programming project to learn new things. I have experience with C++, Java, Python, Nodejs. I’m Excited to delve into AI and learn more about deep learning and image processing. I learn quickly, and excel at doing research on projects, and how to implement features efficiently. I developed the database system and business management software for Simulator Cave. Thus, I have experience with working with clients and delivering a quality product based off their expectations. On the SuperLap Racing Line Optimization System, I am excited to work with proper machine learning algorithms, and use image processing to gather data. I’m excited to see the improvements to the model and learn from each issue that might arise. | [GitHub](https://github.com/Thunder2505) | [LinkedIn](https://www.linkedin.com/in/seanvdmerwe2505/) |
 | Simon van der Merwe   | I am a third-year Computer and Data Science student with academic experience in various programming languages, including C++, Java, JavaScript/TypeScript, and Python. In my personal time, I find myself working on projects mostly using Rust, Go, and Dart, whether that be for game development using bevy, backend work or frontend development with Flutter. Based on this background, I believe my skills in web development (JavaScript/TypeScript), Python, and my prior C# game development experience in particular are relevant to this project. During university recesses, I participate in voluntary vacation work at BBD Software. This role has provided invaluable experience in a fast-paced environment, significantly improving my communication and collaboration skills within both large and small teams. Furthermore, it has given me direct exposure to client interactions. I consider myself a fast learner and an effective problem-solver, ready for all challenges, and look forward to working on this project. | [GitHub](https://github.com/u04576617) | [LinkedIn](https://za.linkedin.com/in/simon-van-der-merwe-50189729b) |
 
-<h2 style="font-weight: bold; color: #E54B4B;">WireFrame</h2>
+<!-- <h2 style="font-weight: bold; color: #E54B4B;">WireFrame</h2> -->
 
 <!-- <p align="center">
     <img src="docs/images/Wireframe.png" alt="Wireframe"/>
@@ -114,3 +114,4 @@ By simulating AI-driven racing strategies, we aim to make high-performance insig
 <p align="center">
     <img src="docs/images/logo.png" alt="Logo" width="300"/>
 </p>
+
